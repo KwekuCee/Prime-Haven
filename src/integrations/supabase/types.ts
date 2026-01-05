@@ -14,16 +14,271 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      designer_details: {
+        Row: {
+          available_hours: number | null
+          created_at: string
+          experience_level: string | null
+          id: string
+          monthly_points: number | null
+          payment_details: Json | null
+          payment_method: string | null
+          portfolio_url: string | null
+          professional_title: string | null
+          salary_estimated: number | null
+          skills: string[] | null
+          total_points: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_hours?: number | null
+          created_at?: string
+          experience_level?: string | null
+          id?: string
+          monthly_points?: number | null
+          payment_details?: Json | null
+          payment_method?: string | null
+          portfolio_url?: string | null
+          professional_title?: string | null
+          salary_estimated?: number | null
+          skills?: string[] | null
+          total_points?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_hours?: number | null
+          created_at?: string
+          experience_level?: string | null
+          id?: string
+          monthly_points?: number | null
+          payment_details?: Json | null
+          payment_method?: string | null
+          portfolio_url?: string | null
+          professional_title?: string | null
+          salary_estimated?: number | null
+          skills?: string[] | null
+          total_points?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_details: Json | null
+          payment_gateway: string | null
+          processed_by_admin_id: string | null
+          status: string | null
+          timestamp: string | null
+          transaction_id: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          payment_details?: Json | null
+          payment_gateway?: string | null
+          processed_by_admin_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+          transaction_id?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_details?: Json | null
+          payment_gateway?: string | null
+          processed_by_admin_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+          transaction_id?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          discord_invite_sent: boolean | null
+          dob: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          join_date: string | null
+          phone: string | null
+          registration_fee_paid: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discord_invite_sent?: boolean | null
+          dob?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          is_active?: boolean | null
+          join_date?: string | null
+          phone?: string | null
+          registration_fee_paid?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discord_invite_sent?: boolean | null
+          dob?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          join_date?: string | null
+          phone?: string | null
+          registration_fee_paid?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          client_preference: boolean | null
+          client_ref: string | null
+          created_at: string
+          designer_id: string
+          files_urls: string[] | null
+          final_approval_date: string | null
+          id: string
+          points_awarded: number | null
+          project_name: string
+          reviewer_id: string | null
+          revisions_count: number | null
+          service_type: string
+          status: string | null
+          submission_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_preference?: boolean | null
+          client_ref?: string | null
+          created_at?: string
+          designer_id: string
+          files_urls?: string[] | null
+          final_approval_date?: string | null
+          id?: string
+          points_awarded?: number | null
+          project_name: string
+          reviewer_id?: string | null
+          revisions_count?: number | null
+          service_type: string
+          status?: string | null
+          submission_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_preference?: boolean | null
+          client_ref?: string | null
+          created_at?: string
+          designer_id?: string
+          files_urls?: string[] | null
+          final_approval_date?: string | null
+          id?: string
+          points_awarded?: number | null
+          project_name?: string
+          reviewer_id?: string | null
+          revisions_count?: number | null
+          service_type?: string
+          status?: string | null
+          submission_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          action_type: string
+          admin_id: string | null
+          description: string | null
+          id: string
+          ip_address: unknown
+          new_value: Json | null
+          old_value: Json | null
+          timestamp: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: unknown
+          new_value?: Json | null
+          old_value?: Json | null
+          timestamp?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: unknown
+          new_value?: Json | null
+          old_value?: Json | null
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "designer" | "superadmin" | "masteradmin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +405,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["designer", "superadmin", "masteradmin"],
+    },
   },
 } as const
