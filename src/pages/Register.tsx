@@ -1,13 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard } from 'lucide-react';
+import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  registerPersonalSchema, 
+  registerSkillsSchema, 
+  registerAccountSchema,
+  RegisterPersonalData,
+  RegisterSkillsData,
+  RegisterAccountData,
+} from '@/lib/validations';
 
 const steps = [
   { id: 1, name: 'Personal', icon: User },
@@ -18,6 +30,8 @@ const steps = [
 
 const Register = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -25,7 +39,6 @@ const Register = () => {
     dob: '',
     portfolioUrl: '',
     professionalTitle: '',
-    primarySkills: [] as string[],
     experience: '',
     availableHours: '',
     previousCompany: '',
@@ -35,25 +48,128 @@ const Register = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signUp, user, loading: authLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const updateFormData = (field: string, value: any) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Step 1 form
+  const personalForm = useForm<RegisterPersonalData>({
+    resolver: zodResolver(registerPersonalSchema),
+    defaultValues: {
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      dob: formData.dob,
+      portfolioUrl: formData.portfolioUrl,
+      professionalTitle: formData.professionalTitle,
+    },
+  });
+
+  // Step 2 form
+  const skillsForm = useForm<RegisterSkillsData>({
+    resolver: zodResolver(registerSkillsSchema),
+    defaultValues: {
+      experience: formData.experience,
+      availableHours: formData.availableHours,
+      previousCompany: formData.previousCompany,
+    },
+  });
+
+  // Step 3 form
+  const accountForm = useForm<RegisterAccountData>({
+    resolver: zodResolver(registerAccountSchema),
+    defaultValues: {
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      agreeToTerms: formData.agreeToTerms as true,
+    },
+  });
+
+  const updateFormData = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const nextStep = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  const handleStep1Submit = (data: RegisterPersonalData) => {
+    Object.entries(data).forEach(([key, value]) => updateFormData(key, value));
+    setCurrentStep(2);
+  };
+
+  const handleStep2Submit = (data: RegisterSkillsData) => {
+    Object.entries(data).forEach(([key, value]) => updateFormData(key, value));
+    setCurrentStep(3);
+  };
+
+  const handleStep3Submit = (data: RegisterAccountData) => {
+    Object.entries(data).forEach(([key, value]) => updateFormData(key, value));
+    setCurrentStep(4);
   };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
-    toast({
-      title: 'Registration Initiated',
-      description: 'Backend integration required. Connect Lovable Cloud to enable payments.',
+  const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
+
+    const { error } = await signUp(formData.email, formData.password, {
+      full_name: formData.fullName,
     });
+
+    if (error) {
+      let errorMessage = 'An error occurred during registration';
+      
+      if (error.message.includes('User already registered')) {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+      } else if (error.message.includes('Password should be at least')) {
+        errorMessage = 'Password is too weak. Please use a stronger password.';
+      } else if (error.message.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else {
+        errorMessage = error.message;
+      }
+
+      toast({
+        variant: 'destructive',
+        title: 'Registration Failed',
+        description: errorMessage,
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    toast({
+      title: 'Registration Successful!',
+      description: 'Welcome to Prime Haven! Redirecting to your dashboard...',
+    });
+    
+    // The auth state listener will handle the redirect
   };
+
+  // Calculate password strength
+  const getPasswordStrength = (password: string): number => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(accountForm.watch('password') || '');
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -91,14 +207,15 @@ const Register = () => {
                   <motion.div
                     animate={{
                       scale: currentStep === step.id ? 1.1 : 1,
-                      backgroundColor: currentStep >= step.id ? 'hsl(16, 99%, 55%)' : 'hsl(0, 0%, 15%)',
                     }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      currentStep >= step.id ? 'bg-primary' : 'bg-muted'
+                    }`}
                   >
                     {currentStep > step.id ? (
                       <CheckCircle className="w-5 h-5 text-primary-foreground" />
                     ) : (
-                      <step.icon className="w-5 h-5 text-primary-foreground" />
+                      <step.icon className={`w-5 h-5 ${currentStep >= step.id ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
                     )}
                   </motion.div>
                   <span className={`text-xs ${currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -117,66 +234,83 @@ const Register = () => {
               className="space-y-6"
             >
               {currentStep === 1 && (
-                <>
+                <form onSubmit={personalForm.handleSubmit(handleStep1Submit)} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="fullName">Full Name *</Label>
                     <Input
                       id="fullName"
                       placeholder="John Doe"
-                      value={formData.fullName}
-                      onChange={(e) => updateFormData('fullName', e.target.value)}
+                      {...personalForm.register('fullName')}
+                      className={personalForm.formState.errors.fullName ? 'border-destructive' : ''}
                     />
+                    {personalForm.formState.errors.fullName && (
+                      <p className="text-sm text-destructive">{personalForm.formState.errors.fullName.message}</p>
+                    )}
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">Email Address *</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="john@example.com"
-                      value={formData.email}
-                      onChange={(e) => updateFormData('email', e.target.value)}
+                      {...personalForm.register('email')}
+                      className={personalForm.formState.errors.email ? 'border-destructive' : ''}
                     />
+                    {personalForm.formState.errors.email && (
+                      <p className="text-sm text-destructive">{personalForm.formState.errors.email.message}</p>
+                    )}
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
+                      <Label htmlFor="phone">Phone Number *</Label>
                       <Input
                         id="phone"
                         type="tel"
                         placeholder="+1 234 567 890"
-                        value={formData.phone}
-                        onChange={(e) => updateFormData('phone', e.target.value)}
+                        {...personalForm.register('phone')}
+                        className={personalForm.formState.errors.phone ? 'border-destructive' : ''}
                       />
+                      {personalForm.formState.errors.phone && (
+                        <p className="text-sm text-destructive">{personalForm.formState.errors.phone.message}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="dob">Date of Birth</Label>
+                      <Label htmlFor="dob">Date of Birth *</Label>
                       <Input
                         id="dob"
                         type="date"
-                        value={formData.dob}
-                        onChange={(e) => updateFormData('dob', e.target.value)}
+                        {...personalForm.register('dob')}
+                        className={personalForm.formState.errors.dob ? 'border-destructive' : ''}
                       />
+                      {personalForm.formState.errors.dob && (
+                        <p className="text-sm text-destructive">{personalForm.formState.errors.dob.message}</p>
+                      )}
                     </div>
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="portfolio">Portfolio URL (Optional)</Label>
                     <Input
                       id="portfolio"
                       type="url"
                       placeholder="https://yourportfolio.com"
-                      value={formData.portfolioUrl}
-                      onChange={(e) => updateFormData('portfolioUrl', e.target.value)}
+                      {...personalForm.register('portfolioUrl')}
+                      className={personalForm.formState.errors.portfolioUrl ? 'border-destructive' : ''}
                     />
+                    {personalForm.formState.errors.portfolioUrl && (
+                      <p className="text-sm text-destructive">{personalForm.formState.errors.portfolioUrl.message}</p>
+                    )}
                   </div>
-                </>
-              )}
 
-              {currentStep === 2 && (
-                <>
                   <div className="space-y-2">
-                    <Label>Professional Title</Label>
-                    <Select value={formData.professionalTitle} onValueChange={(v) => updateFormData('professionalTitle', v)}>
-                      <SelectTrigger>
+                    <Label>Professional Title *</Label>
+                    <Select 
+                      value={personalForm.watch('professionalTitle')} 
+                      onValueChange={(v) => personalForm.setValue('professionalTitle', v, { shouldValidate: true })}
+                    >
+                      <SelectTrigger className={personalForm.formState.errors.professionalTitle ? 'border-destructive' : ''}>
                         <SelectValue placeholder="Select your role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -188,11 +322,26 @@ const Register = () => {
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    {personalForm.formState.errors.professionalTitle && (
+                      <p className="text-sm text-destructive">{personalForm.formState.errors.professionalTitle.message}</p>
+                    )}
                   </div>
+
+                  <Button type="submit" variant="primary" className="w-full">
+                    Continue
+                  </Button>
+                </form>
+              )}
+
+              {currentStep === 2 && (
+                <form onSubmit={skillsForm.handleSubmit(handleStep2Submit)} className="space-y-6">
                   <div className="space-y-2">
-                    <Label>Years of Experience</Label>
-                    <Select value={formData.experience} onValueChange={(v) => updateFormData('experience', v)}>
-                      <SelectTrigger>
+                    <Label>Years of Experience *</Label>
+                    <Select 
+                      value={skillsForm.watch('experience')} 
+                      onValueChange={(v) => skillsForm.setValue('experience', v, { shouldValidate: true })}
+                    >
+                      <SelectTrigger className={skillsForm.formState.errors.experience ? 'border-destructive' : ''}>
                         <SelectValue placeholder="Select experience level" />
                       </SelectTrigger>
                       <SelectContent>
@@ -202,11 +351,18 @@ const Register = () => {
                         <SelectItem value="5+">5+ years</SelectItem>
                       </SelectContent>
                     </Select>
+                    {skillsForm.formState.errors.experience && (
+                      <p className="text-sm text-destructive">{skillsForm.formState.errors.experience.message}</p>
+                    )}
                   </div>
+
                   <div className="space-y-2">
-                    <Label>Available Hours Per Week</Label>
-                    <Select value={formData.availableHours} onValueChange={(v) => updateFormData('availableHours', v)}>
-                      <SelectTrigger>
+                    <Label>Available Hours Per Week *</Label>
+                    <Select 
+                      value={skillsForm.watch('availableHours')} 
+                      onValueChange={(v) => skillsForm.setValue('availableHours', v, { shouldValidate: true })}
+                    >
+                      <SelectTrigger className={skillsForm.formState.errors.availableHours ? 'border-destructive' : ''}>
                         <SelectValue placeholder="Select availability" />
                       </SelectTrigger>
                       <SelectContent>
@@ -217,69 +373,116 @@ const Register = () => {
                         <SelectItem value="40+">40+ hours</SelectItem>
                       </SelectContent>
                     </Select>
+                    {skillsForm.formState.errors.availableHours && (
+                      <p className="text-sm text-destructive">{skillsForm.formState.errors.availableHours.message}</p>
+                    )}
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="previousCompany">Previous Company / Education</Label>
                     <Input
                       id="previousCompany"
                       placeholder="Company or University name"
-                      value={formData.previousCompany}
-                      onChange={(e) => updateFormData('previousCompany', e.target.value)}
+                      {...skillsForm.register('previousCompany')}
                     />
                   </div>
-                </>
+
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={prevStep} className="flex-1">
+                      Previous
+                    </Button>
+                    <Button type="submit" variant="primary" className="flex-1">
+                      Continue
+                    </Button>
+                  </div>
+                </form>
               )}
 
               {currentStep === 3 && (
-                <>
+                <form onSubmit={accountForm.handleSubmit(handleStep3Submit)} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Create a strong password"
-                      value={formData.password}
-                      onChange={(e) => updateFormData('password', e.target.value)}
-                    />
+                    <Label htmlFor="password">Password *</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Create a strong password"
+                        {...accountForm.register('password')}
+                        className={accountForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     <div className="flex gap-1 mt-2">
                       {[1, 2, 3, 4].map((level) => (
                         <div
                           key={level}
-                          className={`h-1 flex-1 rounded-full ${
-                            formData.password.length >= level * 3 ? 'bg-primary' : 'bg-muted'
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            passwordStrength >= level ? 'bg-primary' : 'bg-muted'
                           }`}
                         />
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Use at least 12 characters with uppercase, lowercase, and numbers
+                      Use at least 8 characters with uppercase, lowercase, and numbers
                     </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => updateFormData('confirmPassword', e.target.value)}
-                    />
-                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-xs text-destructive">Passwords do not match</p>
+                    {accountForm.formState.errors.password && (
+                      <p className="text-sm text-destructive">{accountForm.formState.errors.password.message}</p>
                     )}
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm your password"
+                        {...accountForm.register('confirmPassword')}
+                        className={accountForm.formState.errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {accountForm.formState.errors.confirmPassword && (
+                      <p className="text-sm text-destructive">{accountForm.formState.errors.confirmPassword.message}</p>
+                    )}
+                  </div>
+
                   <div className="flex items-start space-x-3 pt-4">
                     <Checkbox
                       id="terms"
-                      checked={formData.agreeToTerms}
-                      onCheckedChange={(checked) => updateFormData('agreeToTerms', checked)}
+                      checked={accountForm.watch('agreeToTerms')}
+                      onCheckedChange={(checked) => accountForm.setValue('agreeToTerms', checked as true, { shouldValidate: true })}
                     />
-                    <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
+                    <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
                       I agree to the Terms of Service, Privacy Policy, and understand the point-based 
                       compensation system and 50% revenue share structure.
                     </label>
                   </div>
-                </>
+                  {accountForm.formState.errors.agreeToTerms && (
+                    <p className="text-sm text-destructive">{accountForm.formState.errors.agreeToTerms.message}</p>
+                  )}
+
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={prevStep} className="flex-1">
+                      Previous
+                    </Button>
+                    <Button type="submit" variant="primary" className="flex-1">
+                      Continue
+                    </Button>
+                  </div>
+                </form>
               )}
 
               {currentStep === 4 && (
@@ -311,27 +514,31 @@ const Register = () => {
                   <p className="text-xs text-center text-muted-foreground">
                     Secure payment powered by Paystack. Your payment information is encrypted.
                   </p>
+
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={prevStep} className="flex-1">
+                      Previous
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="primary" 
+                      onClick={handleFinalSubmit} 
+                      className="flex-1 glow-primary"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Pay & Register'
+                      )}
+                    </Button>
+                  </div>
                 </>
               )}
             </motion.div>
-
-            {/* Navigation Buttons */}
-            <div className="flex gap-4 mt-8">
-              {currentStep > 1 && (
-                <Button variant="outline" onClick={prevStep} className="flex-1">
-                  Previous
-                </Button>
-              )}
-              {currentStep < 4 ? (
-                <Button variant="primary" onClick={nextStep} className="flex-1">
-                  Continue
-                </Button>
-              ) : (
-                <Button variant="primary" onClick={handleSubmit} className="flex-1 glow-primary">
-                  Pay & Register
-                </Button>
-              )}
-            </div>
 
             {/* Login Link */}
             <p className="text-center text-muted-foreground mt-6">
