@@ -10,9 +10,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signIn, user, loading: authLoading } = useAuth();
@@ -28,9 +30,30 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/dashboard');
+      checkUserRoleAndNavigate(user.id);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
+
+  const checkUserRoleAndNavigate = async (userId: string) => {
+    setCheckingRole(true);
+    try {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      navigate('/dashboard');
+    } finally {
+      setCheckingRole(false);
+    }
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     const { error } = await signIn(data.email, data.password);
@@ -60,10 +83,9 @@ const Login = () => {
       title: 'Welcome back!',
       description: 'You have been signed in successfully.',
     });
-    navigate('/dashboard');
   };
 
-  if (authLoading) {
+  if (authLoading || checkingRole) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -159,6 +181,7 @@ const Login = () => {
                     placeholder="Enter your password"
                     {...register('password')}
                     className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -175,7 +198,6 @@ const Login = () => {
 
               <Button
                 type="submit"
-                variant="primary"
                 className="w-full"
                 disabled={isSubmitting}
               >
@@ -195,6 +217,15 @@ const Login = () => {
                 Not a member yet?{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
                   Join Prime Haven
+                </Link>
+              </p>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-muted-foreground text-sm">
+                Admin access?{' '}
+                <Link to="/admin" className="text-primary hover:underline font-medium">
+                  Admin Portal
                 </Link>
               </p>
             </div>
