@@ -65,6 +65,30 @@ export type Database = {
         }
         Relationships: []
       }
+      email_verification_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -116,6 +140,7 @@ export type Database = {
           discord_invite_sent: boolean | null
           dob: string | null
           email: string
+          email_verified: boolean | null
           full_name: string | null
           id: string
           is_active: boolean | null
@@ -129,6 +154,7 @@ export type Database = {
           discord_invite_sent?: boolean | null
           dob?: string | null
           email: string
+          email_verified?: boolean | null
           full_name?: string | null
           id: string
           is_active?: boolean | null
@@ -142,6 +168,7 @@ export type Database = {
           discord_invite_sent?: boolean | null
           dob?: string | null
           email?: string
+          email_verified?: boolean | null
           full_name?: string | null
           id?: string
           is_active?: boolean | null

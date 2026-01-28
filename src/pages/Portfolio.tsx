@@ -248,7 +248,7 @@ const Portfolio = () => {
           )}
         </section>
 
-        {/* Stats */}
+        {/* CTA Section */}
         <section className="container mx-auto px-6">
           <div className="glass rounded-2xl p-8 text-center">
             <h3 className="text-2xl font-heading font-bold mb-4">
@@ -257,9 +257,13 @@ const Portfolio = () => {
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Let's work together to create something amazing for your business.
             </p>
-            <a href="#contact">
+            <a 
+              href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20start%20a%20project" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
               <Button variant="primary" size="lg" className="glow-primary">
-                Start Your Project
+                Start Your Project With Us
               </Button>
             </a>
           </div>

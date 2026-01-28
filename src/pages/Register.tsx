@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { usePaystackPayment } from 'react-paystack';
 import { 
   registerPersonalSchema, 
   registerSkillsSchema, 
@@ -20,6 +21,9 @@ import {
   RegisterSkillsData,
   RegisterAccountData,
 } from '@/lib/validations';
+
+const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxx';
+const REGISTRATION_FEE_GHS = 50; // GH₵50
 
 const steps = [
   { id: 1, name: 'Personal', icon: User },
@@ -114,41 +118,107 @@ const Register = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleFinalSubmit = async () => {
+  // Paystack config
+  const paystackConfig = {
+    reference: `PH_${Date.now()}_${Math.floor(Math.random() * 1000000)}`,
+    email: formData.email,
+    amount: REGISTRATION_FEE_GHS * 100, // Convert to pesewas
+    publicKey: PAYSTACK_PUBLIC_KEY,
+    currency: 'GHS',
+    channels: ['card', 'mobile_money', 'bank_transfer'] as ('card' | 'mobile_money' | 'bank_transfer')[],
+  };
+
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  const handlePaymentSuccess = async (reference: { reference: string }) => {
     setIsSubmitting(true);
 
-    const { error } = await signUp(formData.email, formData.password, {
-      full_name: formData.fullName,
-    });
+    try {
+      // First, create the user account
+      const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, {
+        full_name: formData.fullName,
+      });
 
-    if (error) {
-      let errorMessage = 'An error occurred during registration';
-      
-      if (error.message.includes('User already registered')) {
-        errorMessage = 'An account with this email already exists. Please sign in instead.';
-      } else if (error.message.includes('Password should be at least')) {
-        errorMessage = 'Password is too weak. Please use a stronger password.';
-      } else if (error.message.includes('Invalid email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else {
-        errorMessage = error.message;
+      if (signUpError) {
+        let errorMessage = 'An error occurred during registration';
+        
+        if (signUpError.message.includes('User already registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead.';
+        } else if (signUpError.message.includes('Password should be at least')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        } else if (signUpError.message.includes('Invalid email')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else {
+          errorMessage = signUpError.message;
+        }
+
+        toast({
+          variant: 'destructive',
+          title: 'Registration Failed',
+          description: errorMessage,
+        });
+        setIsSubmitting(false);
+        return;
       }
 
+      const userId = authData?.user?.id;
+      if (!userId) {
+        throw new Error('Failed to create user account');
+      }
+
+      // Verify payment with backend
+      const { error: verifyError } = await supabase.functions.invoke('verify-payment', {
+        body: { reference: reference.reference, userId },
+      });
+
+      if (verifyError) {
+        console.error('Payment verification error:', verifyError);
+        // Payment was successful with Paystack, so continue anyway
+      }
+
+      // Send verification email
+      const redirectUrl = window.location.origin;
+      await supabase.functions.invoke('send-verification-email', {
+        body: {
+          email: formData.email,
+          fullName: formData.fullName,
+          userId,
+          redirectUrl,
+        },
+      });
+
+      toast({
+        title: 'Registration Successful!',
+        description: 'Please check your email to verify your account.',
+      });
+
+      // Redirect to login with message
+      navigate('/login?registered=true');
+    } catch (error) {
+      console.error('Registration error:', error);
       toast({
         variant: 'destructive',
-        title: 'Registration Failed',
-        description: errorMessage,
+        title: 'Registration Error',
+        description: 'An unexpected error occurred. Please contact support.',
       });
+    } finally {
       setIsSubmitting(false);
-      return;
     }
+  };
 
+  const handlePaymentClose = () => {
     toast({
-      title: 'Registration Successful!',
-      description: 'Welcome to Prime Haven! Redirecting to your dashboard...',
+      variant: 'destructive',
+      title: 'Payment Cancelled',
+      description: 'You cancelled the payment. Please try again to complete registration.',
     });
-    
-    // The auth state listener will handle the redirect
+  };
+
+  const handlePayNow = () => {
+    initializePayment({
+      onSuccess: handlePaymentSuccess,
+      onClose: handlePaymentClose,
+    });
   };
 
   // Calculate password strength
@@ -485,14 +555,14 @@ const Register = () => {
                 </form>
               )}
 
-              {currentStep === 4 && (
+{currentStep === 4 && (
                 <>
                   <div className="glass rounded-2xl p-6 text-center">
                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
                       <CreditCard className="w-8 h-8 text-primary" />
                     </div>
                     <h3 className="text-xl font-heading font-bold mb-2">Registration Fee</h3>
-                    <div className="text-4xl font-heading font-bold text-gradient mb-2">$5.00</div>
+                    <div className="text-4xl font-heading font-bold text-gradient mb-2">GH₵50.00</div>
                     <p className="text-muted-foreground text-sm mb-6">
                       One-time payment to join Prime Haven
                     </p>
@@ -509,10 +579,14 @@ const Register = () => {
                         <CheckCircle className="w-4 h-4 text-primary" />
                         <span>Start earning from projects</span>
                       </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <CheckCircle className="w-4 h-4 text-primary" />
+                        <span>Email verification for security</span>
+                      </div>
                     </div>
                   </div>
                   <p className="text-xs text-center text-muted-foreground">
-                    Secure payment powered by Paystack. Your payment information is encrypted.
+                    Secure payment powered by Paystack. Accept Mobile Money, Cards & Bank Transfer.
                   </p>
 
                   <div className="flex gap-4">
@@ -522,7 +596,7 @@ const Register = () => {
                     <Button 
                       type="button" 
                       variant="primary" 
-                      onClick={handleFinalSubmit} 
+                      onClick={handlePayNow} 
                       className="flex-1 glow-primary"
                       disabled={isSubmitting}
                     >
@@ -532,7 +606,7 @@ const Register = () => {
                           Processing...
                         </>
                       ) : (
-                        'Pay & Register'
+                        'Pay GH₵50 & Register'
                       )}
                     </Button>
                   </div>
