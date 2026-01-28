@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const projects = [
@@ -112,9 +113,11 @@ const PortfolioSection = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center mt-12"
         >
-          <Button variant="outline" size="lg">
-            View All Projects
-          </Button>
+          <Link to="/portfolio">
+            <Button variant="outline" size="lg">
+              View All Projects
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </section>
