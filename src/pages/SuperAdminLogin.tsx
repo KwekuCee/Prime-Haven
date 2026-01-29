@@ -61,20 +61,30 @@ const SuperAdminLogin = () => {
         return;
       }
 
-      // Set the session from the response
+      // Set the session from the response and wait for auth state to update
       if (response.session) {
+        // Set up a one-time listener for the auth state change
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            // Unsubscribe immediately after receiving the event
+            subscription.unsubscribe();
+            
+            toast({
+              title: 'Access Granted',
+              description: `Welcome back, ${response.user?.name || 'Admin'}!`,
+            });
+
+            // Navigate after auth state is confirmed
+            navigate('/superadmin', { replace: true });
+          }
+        });
+
+        // Now set the session - this will trigger the auth state change
         await supabase.auth.setSession({
           access_token: response.session.access_token,
           refresh_token: response.session.refresh_token,
         });
       }
-
-      toast({
-        title: 'Access Granted',
-        description: `Welcome back, ${response.user?.name || 'Admin'}!`,
-      });
-
-      navigate('/superadmin', { replace: true });
 
     } catch (error) {
       console.error('Login error:', error);
