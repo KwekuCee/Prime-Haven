@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import logo from '@/assets/prime-haven-logo.png';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -9,9 +10,8 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Logo & Tagline */}
           <div className="text-center md:text-left">
-            <Link to="/" className="text-2xl font-heading font-bold">
-              <span className="text-foreground">PRIME</span>
-              <span className="text-gradient">HAVEN</span>
+            <Link to="/">
+              <img src={logo} alt="Prime Haven" className="h-10 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm mt-2">
               Making IT Dreams a Reality
