@@ -1,0 +1,317 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Plus, Trash2, Upload, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+
+interface PortfolioItem {
+  id: string;
+  title: string;
+  client: string;
+  category: string;
+  image_url: string;
+  created_at: string;
+}
+
+const categories = [
+  'Graphic Design',
+  'UI/UX Design',
+  'Web Development',
+  'App Development',
+  'IT Solutions',
+  'Branding',
+];
+
+const ManagePortfolio = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [newItem, setNewItem] = useState({
+    title: '',
+    client: '',
+    category: '',
+    image_url: '',
+  });
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!user) {
+        navigate('/superadmin-login', { replace: true });
+        return;
+      }
+
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!roleData || !['superadmin', 'masteradmin'].includes(roleData.role)) {
+        toast({
+          variant: 'destructive',
+          title: 'Access Denied',
+          description: 'You need admin access to view this page.',
+        });
+        navigate('/superadmin-login', { replace: true });
+        return;
+      }
+
+      fetchPortfolioItems();
+    };
+
+    checkAuth();
+  }, [user, navigate, toast]);
+
+  const fetchPortfolioItems = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('portfolio_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPortfolioItems(data || []);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      // Table might not exist yet, that's okay
+      setPortfolioItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddItem = async () => {
+    if (!newItem.title || !newItem.client || !newItem.category || !newItem.image_url) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Fields',
+        description: 'Please fill in all fields.',
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const { data, error } = await supabase
+        .from('portfolio_items')
+        .insert([newItem])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setPortfolioItems([data, ...portfolioItems]);
+      setNewItem({ title: '', client: '', category: '', image_url: '' });
+      setShowForm(false);
+      toast({
+        title: 'Success',
+        description: 'Portfolio item added successfully.',
+      });
+    } catch (error: any) {
+      console.error('Error adding item:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to add portfolio item.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('portfolio_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPortfolioItems(portfolioItems.filter(item => item.id !== id));
+      toast({
+        title: 'Deleted',
+        description: 'Portfolio item removed.',
+      });
+    } catch (error: any) {
+      console.error('Error deleting item:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to delete item.',
+      });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link to="/superadmin">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-heading font-bold">Manage Portfolio</h1>
+              <p className="text-muted-foreground">Add and manage company works displayed on the website</p>
+            </div>
+          </div>
+          <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add New Work
+          </Button>
+        </div>
+
+        {/* Add New Item Form */}
+        {showForm && (
+          <Card className="glass mb-8">
+            <CardHeader>
+              <CardTitle>Add New Portfolio Item</CardTitle>
+              <CardDescription>Fill in the details for the new work</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Project Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g., TechFlow Dashboard"
+                    value={newItem.title}
+                    onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client">Client Name</Label>
+                  <Input
+                    id="client"
+                    placeholder="e.g., TechFlow Inc."
+                    value={newItem.client}
+                    onChange={(e) => setNewItem({ ...newItem, client: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={newItem.category}
+                    onValueChange={(value) => setNewItem({ ...newItem, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="image_url">Image URL</Label>
+                  <Input
+                    id="image_url"
+                    placeholder="https://example.com/image.jpg"
+                    value={newItem.image_url}
+                    onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-6">
+                <Button onClick={handleAddItem} disabled={isSaving} className="gap-2">
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Save Item
+                </Button>
+                <Button variant="outline" onClick={() => setShowForm(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Portfolio Items Grid */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : portfolioItems.length === 0 ? (
+          <Card className="glass">
+            <CardContent className="flex flex-col items-center justify-center py-20">
+              <ImageIcon className="w-16 h-16 text-muted-foreground/50 mb-4" />
+              <h3 className="text-xl font-heading font-bold mb-2">No Portfolio Items Yet</h3>
+              <p className="text-muted-foreground mb-6">Add your first work to display on the website</p>
+              <Button onClick={() => setShowForm(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add First Work
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {portfolioItems.map((item) => (
+              <Card key={item.id} className="glass overflow-hidden group">
+                <div className="aspect-[4/3] overflow-hidden relative">
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <span className="text-primary text-sm font-medium">{item.category}</span>
+                    <h3 className="text-lg font-heading font-bold">{item.title}</h3>
+                    <p className="text-muted-foreground text-sm">{item.client}</p>
+                  </div>
+                </div>
+                <CardContent className="p-4 flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">
+                    Added {new Date(item.created_at).toLocaleDateString()}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => window.open(item.image_url, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteItem(item.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ManagePortfolio;

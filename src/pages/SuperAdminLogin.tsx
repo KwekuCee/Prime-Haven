@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Shield, Crown, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -11,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 const superAdminLoginSchema = z.object({
   username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
@@ -25,27 +23,6 @@ const SuperAdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  // Check if already authenticated as admin
-  useEffect(() => {
-    const checkAdminAuth = async () => {
-      if (user) {
-        // Check if user has admin role
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-
-        if (roleData?.role === 'superadmin' || roleData?.role === 'masteradmin') {
-          navigate('/superadmin', { replace: true });
-        }
-      }
-    };
-
-    checkAdminAuth();
-  }, [user, navigate]);
 
   const {
     register,
@@ -113,10 +90,7 @@ const SuperAdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <div
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
@@ -232,7 +206,7 @@ const SuperAdminLogin = () => {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 };

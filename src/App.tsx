@@ -16,6 +16,7 @@ import EditProfile from "./pages/EditProfile";
 import ServiceDetail from "./pages/ServiceDetail";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import ManagePortfolio from "./pages/ManagePortfolio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/services/:serviceId" element={<ServiceDetail />} />
           <Route path="/superadmin-login" element={<SuperAdminLogin />} />
           <Route path="/superadmin" element={<SuperAdminDashboard />} />
+          <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
