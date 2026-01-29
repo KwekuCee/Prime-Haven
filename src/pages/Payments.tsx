@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, 
   CreditCard, 
   Smartphone, 
   Building, 
@@ -16,7 +15,6 @@ import {
   EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/components/DashboardLayout';
 
 // Ghana-specific payment methods
 const paymentMethods = [
@@ -260,46 +259,40 @@ const Payments = () => {
 
   if (loading && !paymentHistory.length) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading payment information...</p>
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading payment information...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border">
-        <div className="container mx-auto px-6 py-4">
+    <DashboardLayout>
+      <div className="p-6 lg:p-8">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/dashboard')}
-                className="hover:bg-secondary"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-heading font-bold">Payment Settings</h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage your payment methods and view earnings
-                </p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-heading font-bold mb-2">Payment Settings</h1>
+              <p className="text-muted-foreground">
+                Manage your payment methods and view earnings
+              </p>
             </div>
             <Badge variant="outline" className="gap-2">
               <DollarSign className="w-3 h-3" />
               GH₵{paymentStats.totalEarned.toFixed(2)} Earned
             </Badge>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Payment Setup */}
           <motion.div
@@ -638,7 +631,7 @@ const Payments = () => {
           </motion.div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

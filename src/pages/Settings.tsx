@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, 
-  Settings as SettingsIcon,
   Bell,
   Lock,
   User,
@@ -15,7 +13,8 @@ import {
   Trash2,
   Download,
   CheckCircle,
-  Loader2
+  Loader2,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/components/DashboardLayout';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -173,35 +173,27 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border">
-        <div className="container mx-auto px-6 py-4">
+    <DashboardLayout>
+      <div className="p-6 lg:p-8">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/dashboard')}
-                className="hover:bg-secondary"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-heading font-bold">Settings</h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage your account preferences and privacy
-                </p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-heading font-bold mb-2">Settings</h1>
+              <p className="text-muted-foreground">
+                Manage your account preferences and privacy
+              </p>
             </div>
             <Badge variant="outline">
               {userProfile?.email?.split('@')[0] || 'User'}
             </Badge>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Main Settings */}
           <motion.div
@@ -580,7 +572,7 @@ const Settings = () => {
           </motion.div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

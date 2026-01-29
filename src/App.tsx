@@ -12,6 +12,7 @@ import Portfolio from "./pages/Portfolio";
 import Settings from "./pages/Settings";
 import Payments from "./pages/Payments";
 import SubmitWork from "./pages/SubmitWork";
+import EditProfile from "./pages/EditProfile";
 import ServiceDetail from "./pages/ServiceDetail";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/submit-work" element={<SubmitWork />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/services/:serviceId" element={<ServiceDetail />} />
           <Route path="/superadmin-login" element={<SuperAdminLogin />} />
           <Route path="/admin/super" element={<SuperAdminDashboard />} />

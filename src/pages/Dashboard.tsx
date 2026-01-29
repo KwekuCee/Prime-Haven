@@ -1,118 +1,178 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Upload, 
-  Wallet, 
-  Settings, 
-  LogOut, 
   TrendingUp,
   Award,
   Clock,
   FileCheck,
-  Menu,
-  X
+  Upload,
+  Wallet,
+  Settings,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
-const stats = [
-  { label: 'Total Points', value: '1,250', icon: Award, trend: '+120 this month' },
-  { label: 'Monthly Rank', value: '#12', icon: TrendingUp, trend: 'of 47 designers' },
-  { label: 'Est. Salary', value: '$485', icon: Wallet, trend: 'Based on current points' },
-  { label: 'Submissions', value: '23', icon: FileCheck, trend: '18 approved' },
-];
+interface ProfileData {
+  full_name: string;
+  email_verified: boolean;
+  registration_fee_paid: boolean;
+}
 
-const recentActivity = [
-  { type: 'approved', project: 'TechFlow Dashboard', points: 15, time: '2 hours ago' },
-  { type: 'preference', project: 'Artisan Logo', points: 40, time: '1 day ago' },
-  { type: 'submitted', project: 'Nova Campaign', points: 0, time: '2 days ago' },
-  { type: 'revision', project: 'CloudSync UI', points: 5, time: '3 days ago' },
-];
+interface DesignerData {
+  total_points: number;
+  monthly_points: number;
+  salary_estimated: number;
+  professional_title: string;
+}
+
+interface Submission {
+  id: string;
+  project_name: string;
+  status: string;
+  points_awarded: number;
+  client_preference: boolean;
+  created_at: string;
+}
 
 const Dashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [designer, setDesigner] = useState<DesignerData | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [stats, setStats] = useState({
+    totalPoints: 0,
+    monthlyRank: 0,
+    totalDesigners: 0,
+    estSalary: 0,
+    totalSubmissions: 0,
+    approvedSubmissions: 0,
+  });
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+      return;
+    }
+
+    const loadDashboardData = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+
+        // Load profile, designer details, and submissions in parallel
+        const [profileResult, designerResult, submissionsResult] = await Promise.all([
+          supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
+          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title').eq('user_id', user.id).maybeSingle(),
+          supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10)
+        ]);
+
+        if (profileResult.data) {
+          setProfile(profileResult.data);
+        }
+
+        if (designerResult.data) {
+          setDesigner(designerResult.data);
+        }
+
+        if (submissionsResult.data) {
+          setSubmissions(submissionsResult.data);
+          
+          // Calculate stats
+          const approvedCount = submissionsResult.data.filter(s => s.status === 'approved').length;
+          setStats({
+            totalPoints: designerResult.data?.total_points || 0,
+            monthlyRank: 0, // Would need to query all designers to calculate
+            totalDesigners: 0,
+            estSalary: designerResult.data?.salary_estimated || 0,
+            totalSubmissions: submissionsResult.data.length,
+            approvedSubmissions: approvedCount,
+          });
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [user, authLoading, navigate]);
+
+  const getFirstName = () => {
+    if (!profile?.full_name) return 'Designer';
+    return profile.full_name.split(' ')[0];
+  };
+
+  const getActivityType = (submission: Submission) => {
+    if (submission.client_preference) return 'preference';
+    if (submission.status === 'approved') return 'approved';
+    if (submission.status === 'revision') return 'revision';
+    return 'submitted';
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const statsData = [
+    { 
+      label: 'Total Points', 
+      value: stats.totalPoints.toLocaleString(), 
+      icon: Award, 
+      trend: `+${designer?.monthly_points || 0} this month` 
+    },
+    { 
+      label: 'Monthly Rank', 
+      value: stats.monthlyRank > 0 ? `#${stats.monthlyRank}` : 'N/A', 
+      icon: TrendingUp, 
+      trend: stats.totalDesigners > 0 ? `of ${stats.totalDesigners} designers` : 'Calculating...' 
+    },
+    { 
+      label: 'Est. Salary', 
+      value: `GH₵${stats.estSalary.toFixed(2)}`, 
+      icon: Wallet, 
+      trend: 'Based on current points' 
+    },
+    { 
+      label: 'Submissions', 
+      value: stats.totalSubmissions.toString(), 
+      icon: FileCheck, 
+      trend: `${stats.approvedSubmissions} approved` 
+    },
+  ];
+
+  if (loading || authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 
-        bg-card border-r border-border transform transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-border flex items-center justify-between">
-            <Link to="/" className="text-xl font-heading font-bold">
-              <span className="text-foreground">PRIME</span>
-              <span className="text-gradient">HAVEN</span>
-            </Link>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/10 text-primary font-medium">
-              <LayoutDashboard className="w-5 h-5" />
-              Dashboard
-            </a>
-            <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
-              <Upload className="w-5 h-5" />
-              Submit Work
-            </a>
-            <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
-              <Wallet className="w-5 h-5" />
-              Payments
-            </a>
-            <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
-              <Settings className="w-5 h-5" />
-              Settings
-            </a>
-          </nav>
-
-          {/* User Info */}
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                JD
-              </div>
-              <div>
-                <p className="font-medium text-sm">John Doe</p>
-                <p className="text-xs text-muted-foreground">UI/UX Designer</p>
-              </div>
-            </div>
-            <Link to="/">
-              <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-8">
-        {/* Mobile Header */}
-        <div className="flex items-center justify-between mb-6 lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="text-foreground">
-            <Menu className="w-6 h-6" />
-          </button>
-          <span className="text-lg font-heading font-bold">Dashboard</span>
-          <div className="w-6" />
-        </div>
-
+    <DashboardLayout>
+      <div className="p-6 lg:p-8">
         {/* Welcome */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -120,16 +180,35 @@ const Dashboard = () => {
           className="mb-8"
         >
           <h1 className="text-3xl font-heading font-bold mb-2">
-            Welcome back, <span className="text-gradient">John</span>
+            Welcome back, <span className="text-gradient">{getFirstName()}</span>
           </h1>
           <p className="text-muted-foreground">
             Here's an overview of your performance this month.
           </p>
         </motion.div>
 
+        {/* Verification Alerts */}
+        {profile && (!profile.email_verified || !profile.registration_fee_paid) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30"
+          >
+            <p className="text-sm font-medium text-amber-500 mb-2">Action Required:</p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {!profile.email_verified && (
+                <li>• Please verify your email address to unlock all features</li>
+              )}
+              {!profile.registration_fee_paid && (
+                <li>• Complete your registration fee payment (GH₵50.00) to start submitting work</li>
+              )}
+            </ul>
+          </motion.div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
@@ -159,33 +238,44 @@ const Dashboard = () => {
             className="glass rounded-2xl p-6"
           >
             <h2 className="text-xl font-heading font-bold mb-4">Recent Activity</h2>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === 'approved' ? 'bg-green-500' :
-                      activity.type === 'preference' ? 'bg-primary' :
-                      activity.type === 'revision' ? 'bg-yellow-500' :
-                      'bg-muted-foreground'
-                    }`} />
-                    <div>
-                      <p className="font-medium text-sm">{activity.project}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{activity.type}</p>
+            {submissions.length > 0 ? (
+              <div className="space-y-4">
+                {submissions.slice(0, 5).map((submission) => {
+                  const activityType = getActivityType(submission);
+                  return (
+                    <div key={submission.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          activityType === 'approved' ? 'bg-green-500' :
+                          activityType === 'preference' ? 'bg-primary' :
+                          activityType === 'revision' ? 'bg-yellow-500' :
+                          'bg-muted-foreground'
+                        }`} />
+                        <div>
+                          <p className="font-medium text-sm">{submission.project_name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{activityType}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {submission.points_awarded > 0 && (
+                          <p className="text-sm text-primary font-medium">+{submission.points_awarded} pts</p>
+                        )}
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {getTimeAgo(submission.created_at)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {activity.points > 0 && (
-                      <p className="text-sm text-primary font-medium">+{activity.points} pts</p>
-                    )}
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {activity.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No submissions yet</p>
+                <p className="text-sm text-muted-foreground">Start by submitting your first work!</p>
+              </div>
+            )}
           </motion.div>
 
           {/* Quick Actions */}
@@ -197,15 +287,27 @@ const Dashboard = () => {
           >
             <h2 className="text-xl font-heading font-bold mb-4">Quick Actions</h2>
             <div className="space-y-3">
-              <Button variant="primary" className="w-full justify-start">
+              <Button 
+                variant="primary" 
+                className="w-full justify-start"
+                onClick={() => navigate('/submit-work')}
+              >
                 <Upload className="w-4 h-4 mr-2" />
                 Submit New Work
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/payments')}
+              >
                 <Wallet className="w-4 h-4 mr-2" />
                 Update Payment Method
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/edit-profile')}
+              >
                 <Settings className="w-4 h-4 mr-2" />
                 Edit Profile
               </Button>
@@ -222,20 +324,8 @@ const Dashboard = () => {
             </div>
           </motion.div>
         </div>
-
-        {/* Demo Notice */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 p-4 glass rounded-xl text-center"
-        >
-          <p className="text-sm text-muted-foreground">
-            <strong className="text-primary">Demo Mode</strong> — Connect Lovable Cloud to enable full dashboard functionality with real data.
-          </p>
-        </motion.div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
