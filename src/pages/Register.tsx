@@ -215,6 +215,14 @@ const Register = () => {
   };
 
   const handlePayNow = () => {
+    if (!PAYSTACK_PUBLIC_KEY) {
+      toast({
+        variant: 'destructive',
+        title: 'Payment Configuration Error',
+        description: 'Payment system is not properly configured. Please contact support.',
+      });
+      return;
+    }
     initializePayment({
       onSuccess: handlePaymentSuccess,
       onClose: handlePaymentClose,
@@ -562,7 +570,7 @@ const Register = () => {
                       <CreditCard className="w-8 h-8 text-primary" />
                     </div>
                     <h3 className="text-xl font-heading font-bold mb-2">Registration Fee</h3>
-                    <div className="text-4xl font-heading font-bold text-gradient mb-2">GH₵50.00</div>
+                    <div className="text-4xl font-heading font-bold text-gradient mb-2">GH₵100.00</div>
                     <p className="text-muted-foreground text-sm mb-6">
                       One-time payment to join Prime Haven
                     </p>
@@ -606,7 +614,7 @@ const Register = () => {
                           Processing...
                         </>
                       ) : (
-                        'Pay GH₵50 & Register'
+                        'Pay GH₵100 & Register'
                       )}
                     </Button>
                   </div>
