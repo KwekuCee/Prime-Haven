@@ -14,10 +14,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [checkingRole, setCheckingRole] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn, user, loading: authLoading } = useAuth();
+  const { signIn, signOut, user, loading: authLoading } = useAuth();
 
   const {
     register,
@@ -27,36 +26,20 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  // Redirect if already logged in
+  // Sign out any existing user when visiting login page
   useEffect(() => {
-    if (!authLoading && user) {
-      checkUserRoleAndNavigate(user.id);
-    }
-  }, [user, authLoading]);
-
-  const checkUserRoleAndNavigate = async (userId: string) => {
-    setCheckingRole(true);
-    try {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-
-      if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
-        navigate('/superadmin');
-      } else {
-        navigate('/dashboard');
+    const handleExistingSession = async () => {
+      if (!authLoading && user) {
+        // If user is already logged in and visits login page, sign them out first
+        // This ensures they can enter new credentials
+        await signOut();
       }
-    } catch (error) {
-      navigate('/dashboard');
-    } finally {
-      setCheckingRole(false);
-    }
-  };
+    };
+    handleExistingSession();
+  }, [authLoading]);
 
   const onSubmit = async (data: LoginFormData) => {
-    const { error } = await signIn(data.email, data.password);
+    const { error, data: authData } = await signIn(data.email, data.password);
 
     if (error) {
       let errorMessage = 'An error occurred during sign in';
@@ -83,9 +66,24 @@ const Login = () => {
       title: 'Welcome back!',
       description: 'You have been signed in successfully.',
     });
+
+    // Check user role and navigate accordingly
+    if (authData?.user) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authData.user.id)
+        .single();
+
+      if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
+        navigate('/superadmin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
   };
 
-  if (authLoading || checkingRole) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
