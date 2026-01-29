@@ -39,7 +39,7 @@ const App = () => (
           <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/services/:serviceId" element={<ServiceDetail />} />
           <Route path="/superadmin-login" element={<SuperAdminLogin />} />
-          <Route path="/admin/super" element={<SuperAdminDashboard />} />
+          <Route path="/superadmin" element={<SuperAdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

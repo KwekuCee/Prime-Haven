@@ -44,7 +44,7 @@ const Login = () => {
         .single();
 
       if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
-        navigate('/admin');
+        navigate('/superadmin');
       } else {
         navigate('/dashboard');
       }
@@ -224,7 +224,7 @@ const Login = () => {
             <div className="mt-4 text-center">
               <p className="text-muted-foreground text-sm">
                 Admin access?{' '}
-                <Link to="/admin" className="text-primary hover:underline font-medium">
+                <Link to="/superadmin-login" className="text-primary hover:underline font-medium">
                   Admin Portal
                 </Link>
               </p>
