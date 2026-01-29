@@ -71,11 +71,11 @@
   }
 
   p, span, label, a {
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .text-muted-foreground {
-    font-weight: 500;
+    font-weight: 600;
   }
 }
 

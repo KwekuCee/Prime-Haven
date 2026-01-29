@@ -1,25 +1,30 @@
 import { motion } from 'framer-motion';
 import { Palette, Layers, Globe, Cpu, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const services = [
   {
     icon: Palette,
     title: 'Graphic Design',
+    slug: 'graphic-design',
     description: 'Eye-catching visual content that captivates audiences and elevates your brand identity.',
   },
   {
     icon: Layers,
     title: 'UI/UX Design',
+    slug: 'ui-ux-design',
     description: 'Intuitive interfaces and seamless user experiences that delight and engage users.',
   },
   {
     icon: Globe,
     title: 'Web Development',
+    slug: 'web-development',
     description: 'High-performance websites and web applications built with cutting-edge technologies.',
   },
   {
     icon: Cpu,
     title: 'IT Solutions',
+    slug: 'it-solutions',
     description: 'Comprehensive technology solutions tailored to streamline your business operations.',
   },
 ];
@@ -55,6 +60,7 @@ const ServicesSection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
+            <Link to={`/services/${service.slug}`}>
               <motion.div
                 whileHover={{ y: -8 }}
                 className="glass glass-hover rounded-2xl p-8 h-full group cursor-pointer"
@@ -78,8 +84,9 @@ const ServicesSection = () => {
                   <ArrowUpRight className="w-4 h-4 ml-1" />
                 </div>
               </motion.div>
-            </motion.div>
-          ))}
+            </Link>
+          </motion.div>
+        ))}
         </div>
       </div>
     </section>

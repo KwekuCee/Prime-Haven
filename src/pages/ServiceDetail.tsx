@@ -94,14 +94,14 @@ const serviceDetails = {
 };
 
 const ServiceDetail = () => {
-  const { serviceSlug } = useParams<{ serviceSlug: string }>();
+  const { serviceId } = useParams<{ serviceId: string }>();
   const [service, setService] = useState<any>(null);
 
   useEffect(() => {
-    if (serviceSlug && serviceDetails[serviceSlug as keyof typeof serviceDetails]) {
-      setService(serviceDetails[serviceSlug as keyof typeof serviceDetails]);
+    if (serviceId && serviceDetails[serviceId as keyof typeof serviceDetails]) {
+      setService(serviceDetails[serviceId as keyof typeof serviceDetails]);
     }
-  }, [serviceSlug]);
+  }, [serviceId]);
 
   if (!service) {
     return (
