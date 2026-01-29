@@ -22,7 +22,7 @@ import {
   RegisterAccountData,
 } from '@/lib/validations';
 
-const PAYSTACK_PUBLIC_KEY = "pk_test_e31113a2712a46d69f918e28e2d2306e398634bf";
+const PAYSTACK_PUBLIC_KEY = "pk_live_e3dc92f03a2ca5a1b51e36bb2b67ddf1e659e34a";
 const REGISTRATION_FEE_GHS = 100; // GH₵100
 
 const steps = [
