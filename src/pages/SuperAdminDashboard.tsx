@@ -203,27 +203,27 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
 
+      // Fetch data separately to avoid foreign key relationship errors
       const [
-        { data: usersData, error: usersError },
+        { data: profilesData, error: profilesError },
+        { data: designerDetailsData, error: designerDetailsError },
+        { data: rolesData, error: rolesError },
         { data: submissionsData, error: submissionsError },
         { data: paymentsData, error: paymentsError },
         { data: logsData, error: logsError }
       ] = await Promise.all([
         supabase
           .from('profiles')
-          .select(`
-            id,
-            email,
-            full_name,
-            phone,
-            registration_fee_paid,
-            is_active,
-            created_at,
-            updated_at,
-            designer_details(*),
-            user_roles(role)
-          `)
+          .select('id, email, full_name, phone, registration_fee_paid, is_active, created_at, updated_at')
           .order('created_at', { ascending: false }),
+
+        supabase
+          .from('designer_details')
+          .select('*'),
+
+        supabase
+          .from('user_roles')
+          .select('user_id, role'),
 
         supabase
           .from('submissions')
@@ -232,16 +232,7 @@ const SuperAdminDashboard = () => {
 
         supabase
           .from('payments')
-          .select(`
-            id,
-            user_id,
-            amount,
-            type,
-            status,
-            transaction_id,
-            created_at,
-            profiles!payments_user_id_fkey(full_name)
-          `)
+          .select('id, user_id, amount, type, status, transaction_id, created_at')
           .order('created_at', { ascending: false }),
 
         supabase
@@ -251,12 +242,26 @@ const SuperAdminDashboard = () => {
           .limit(50)
       ]);
 
-      if (usersError) throw usersError;
+      if (profilesError) throw profilesError;
+      if (designerDetailsError) throw designerDetailsError;
+      if (rolesError) throw rolesError;
+
       if (submissionsError) throw submissionsError;
       if (paymentsError) throw paymentsError;
 
-      // Normalize users
-      const processedUsers: User[] = (usersData || []).map((u: any) => ({
+      // Create lookup maps for designer_details and user_roles
+      const designerDetailsMap = new Map((designerDetailsData || []).map((d: any) => [d.user_id, d]));
+      const rolesMap = new Map<string, Array<{ id?: string; user_id: string; role: string; created_at?: string }>>();
+      (rolesData || []).forEach((r: any) => {
+        if (!rolesMap.has(r.user_id)) {
+          rolesMap.set(r.user_id, []);
+        }
+        rolesMap.get(r.user_id)!.push({ user_id: r.user_id, role: r.role });
+      });
+      const profilesMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+
+      // Normalize users by combining data from separate queries
+      const processedUsers: User[] = (profilesData || []).map((u: any) => ({
         id: u.id,
         email: u.email || '',
         full_name: u.full_name || '',
@@ -265,8 +270,8 @@ const SuperAdminDashboard = () => {
         is_active: typeof u.is_active === 'boolean' ? u.is_active : true,
         created_at: u.created_at,
         updated_at: u.updated_at,
-        designer_details: Array.isArray(u.designer_details) ? u.designer_details[0] : u.designer_details || undefined,
-        user_roles: Array.isArray(u.user_roles) ? u.user_roles : (u.user_roles ? [u.user_roles] : [])
+        designer_details: designerDetailsMap.get(u.id) || undefined,
+        user_roles: rolesMap.get(u.id) || []
       }));
 
       // Create a map of user IDs to profiles for quick lookup
@@ -296,19 +301,22 @@ const SuperAdminDashboard = () => {
         };
       });
 
-      // Normalize payments
-      const processedPayments: Payment[] = (paymentsData || []).map((p: any) => ({
-        id: p.id,
-        user_id: p.user_id,
-        amount: p.amount || 0,
-        type: p.type || 'registration',
-        status: p.status || 'pending',
-        transaction_id: p.transaction_id || 'N/A',
-        created_at: p.created_at,
-        user_name: p.profiles?.full_name || 'Unknown',
-        description: p.description || '',
-        metadata: p.metadata || {}
-      }));
+      // Normalize payments with user lookup
+      const processedPayments: Payment[] = (paymentsData || []).map((p: any) => {
+        const profile = profilesMap.get(p.user_id);
+        return {
+          id: p.id,
+          user_id: p.user_id,
+          amount: p.amount || 0,
+          type: p.type || 'registration',
+          status: p.status || 'pending',
+          transaction_id: p.transaction_id || 'N/A',
+          created_at: p.created_at,
+          user_name: profile?.full_name || 'Unknown',
+          description: '',
+          metadata: {}
+        };
+      });
 
       // Normalize logs
       const processedLogs: SystemLog[] = (logsData || []).map((l: any) => ({
