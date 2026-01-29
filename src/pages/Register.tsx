@@ -166,6 +166,34 @@ const Register = () => {
         throw new Error('Failed to create user account');
       }
 
+      // Update profile with additional registration data (phone, DOB)
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({
+          phone: formData.phone,
+          dob: formData.dob || null,
+        })
+        .eq('id', userId);
+
+      if (profileUpdateError) {
+        console.error('Profile update error:', profileUpdateError);
+      }
+
+      // Update designer_details with professional info
+      const { error: designerUpdateError } = await supabase
+        .from('designer_details')
+        .update({
+          professional_title: formData.professionalTitle,
+          portfolio_url: formData.portfolioUrl || null,
+          experience_level: formData.experience,
+          available_hours: formData.availableHours ? parseInt(formData.availableHours.split('-')[0]) : null,
+        })
+        .eq('user_id', userId);
+
+      if (designerUpdateError) {
+        console.error('Designer details update error:', designerUpdateError);
+      }
+
       // Verify payment with backend
       const { error: verifyError } = await supabase.functions.invoke('verify-payment', {
         body: { reference: reference.reference, userId },
