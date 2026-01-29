@@ -25,6 +25,7 @@ export type Database = {
           payment_method: string | null
           portfolio_url: string | null
           professional_title: string | null
+          profile_photo_url: string | null
           salary_estimated: number | null
           skills: string[] | null
           total_points: number | null
@@ -41,6 +42,7 @@ export type Database = {
           payment_method?: string | null
           portfolio_url?: string | null
           professional_title?: string | null
+          profile_photo_url?: string | null
           salary_estimated?: number | null
           skills?: string[] | null
           total_points?: number | null
@@ -57,6 +59,7 @@ export type Database = {
           payment_method?: string | null
           portfolio_url?: string | null
           professional_title?: string | null
+          profile_photo_url?: string | null
           salary_estimated?: number | null
           skills?: string[] | null
           total_points?: number | null

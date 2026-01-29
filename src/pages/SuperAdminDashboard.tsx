@@ -77,6 +77,7 @@ interface User {
     portfolio_url: string;
     skills: string[];
     payment_method: string;
+    payment_details: any;
     created_at?: string;
     updated_at?: string;
   };
@@ -1302,20 +1303,55 @@ const SuperAdminDashboard = () => {
                           <TableHead className="font-semibold">Role</TableHead>
                           <TableHead className="font-semibold">Status</TableHead>
                           <TableHead className="font-semibold">Points</TableHead>
+                          <TableHead className="font-semibold">Payment Info</TableHead>
                           <TableHead className="font-semibold">Joined</TableHead>
                           <TableHead className="text-right font-semibold">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredUsers.map((userItem) => (
+                        {filteredUsers.map((userItem) => {
+                          const paymentMethod = userItem.designer_details?.payment_method;
+                          const paymentDetails = userItem.designer_details?.payment_details;
+                          const getPaymentDisplay = () => {
+                            if (!paymentMethod) return 'Not set';
+                            const methodLabels: Record<string, string> = {
+                              'mtn_momo': 'MTN MoMo',
+                              'vodafone_cash': 'Vodafone Cash',
+                              'airteltigo_money': 'AirtelTigo',
+                              'bank_transfer': 'Bank Transfer',
+                              'crypto': 'Crypto',
+                              'paypal': 'PayPal',
+                              'wise': 'Wise'
+                            };
+                            return methodLabels[paymentMethod] || paymentMethod;
+                          };
+                          const getPaymentDetailsDisplay = () => {
+                            if (!paymentDetails) return null;
+                            if (typeof paymentDetails === 'string') return paymentDetails;
+                            if (typeof paymentDetails === 'object') {
+                              if (paymentDetails.account) return paymentDetails.account;
+                              if (paymentDetails.email) return paymentDetails.email;
+                              return JSON.stringify(paymentDetails);
+                            }
+                            return String(paymentDetails);
+                          };
+                          return (
                           <TableRow key={userItem.id}>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <span className="text-sm font-bold text-primary">
-                                    {userItem.full_name?.charAt(0) || userItem.email.charAt(0)}
-                                  </span>
-                                </div>
+                                {userItem.designer_details?.profile_photo_url ? (
+                                  <img 
+                                    src={userItem.designer_details.profile_photo_url} 
+                                    alt={userItem.full_name || 'User'} 
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-sm font-bold text-primary">
+                                      {userItem.full_name?.charAt(0) || userItem.email.charAt(0)}
+                                    </span>
+                                  </div>
+                                )}
                                 <div>
                                   <p className="font-semibold">{userItem.full_name || 'No Name'}</p>
                                   <p className="text-xs text-muted-foreground font-medium">
@@ -1341,6 +1377,16 @@ const SuperAdminDashboard = () => {
                             </TableCell>
                             <TableCell>
                               <span className="font-bold text-primary">{userItem.designer_details?.total_points || 0}</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <p className="font-medium">{getPaymentDisplay()}</p>
+                                {getPaymentDetailsDisplay() && (
+                                  <p className="text-xs text-muted-foreground truncate max-w-[150px]" title={getPaymentDetailsDisplay() || ''}>
+                                    {getPaymentDetailsDisplay()}
+                                  </p>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="font-medium">{format(new Date(userItem.created_at), 'MMM d, yyyy')}</TableCell>
                             <TableCell className="text-right">
@@ -1376,7 +1422,8 @@ const SuperAdminDashboard = () => {
                               </DropdownMenu>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
