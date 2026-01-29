@@ -123,10 +123,6 @@ serve(async (req: Request): Promise<Response> => {
         personalizations: [
           {
             to: [{ email }],
-            dynamic_template_data: {
-              name: sanitizedName,
-              verification_link: verificationLink,
-            },
           },
         ],
         from: { email: "noreply@primehaven.com", name: "Prime Haven" },
@@ -158,7 +154,6 @@ serve(async (req: Request): Promise<Response> => {
                 <div class="container">
                   <div class="logo">
                     <img src="https://kbxijzsrywcwnyvtbruh.supabase.co/storage/v1/object/public/email-assets/prime-haven-logo.png?v=1" alt="Prime Haven" style="max-width: 180px; height: auto;" />
-                  </div>
                   </div>
                   <h2>Welcome to the Team, ${sanitizedName}!</h2>
                   <p>Thank you for joining Prime Haven. We're excited to have you as part of our creative community.</p>
