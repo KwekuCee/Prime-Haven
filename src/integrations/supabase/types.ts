@@ -134,6 +134,36 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_items: {
+        Row: {
+          category: string
+          client: string
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          title: string
+        }
+        Insert: {
+          category: string
+          client: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          title: string
+        }
+        Update: {
+          category?: string
+          client?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -76,7 +76,8 @@ const ManagePortfolio = () => {
   const fetchPortfolioItems = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      // Using 'any' cast since portfolio_items table is newly created
+      const { data, error } = await (supabase as any)
         .from('portfolio_items')
         .select('*')
         .order('created_at', { ascending: false });
@@ -104,7 +105,8 @@ const ManagePortfolio = () => {
 
     try {
       setIsSaving(true);
-      const { data, error } = await supabase
+      // Using 'any' cast since portfolio_items table is newly created
+      const { data, error } = await (supabase as any)
         .from('portfolio_items')
         .insert([newItem])
         .select()
@@ -112,7 +114,7 @@ const ManagePortfolio = () => {
 
       if (error) throw error;
 
-      setPortfolioItems([data, ...portfolioItems]);
+      setPortfolioItems([data as PortfolioItem, ...portfolioItems]);
       setNewItem({ title: '', client: '', category: '', image_url: '' });
       setShowForm(false);
       toast({
@@ -133,7 +135,8 @@ const ManagePortfolio = () => {
 
   const handleDeleteItem = async (id: string) => {
     try {
-      const { error } = await supabase
+      // Using 'any' cast since portfolio_items table is newly created
+      const { error } = await (supabase as any)
         .from('portfolio_items')
         .delete()
         .eq('id', id);
