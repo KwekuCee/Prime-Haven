@@ -29,6 +29,7 @@ const ALLOWED_REDIRECT_DOMAINS = [
   "127.0.0.1",
   "lovable.app",
   "lovable.dev",
+  "lovableproject.com",
   "youthquake-forge.lovable.app",
 ];
 
