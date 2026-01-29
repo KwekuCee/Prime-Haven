@@ -148,7 +148,7 @@ interface SystemSettings {
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [initialAuthCheck, setInitialAuthCheck] = useState(true);
@@ -379,8 +379,14 @@ const SuperAdminDashboard = () => {
     }
   }, [toast, loadSystemSettings, systemSettings.monthly_revenue?.amount]);
 
-  // Check admin access
+  // Check admin access - wait for auth to finish loading first
   useEffect(() => {
+    // Don't check until auth loading is complete
+    if (authLoading) {
+      console.log('⏳ Waiting for auth state to load...');
+      return;
+    }
+
     const checkAdminAccess = async () => {
       console.log('🔒 Checking admin access via Supabase Auth...');
       
@@ -442,7 +448,7 @@ const SuperAdminDashboard = () => {
     };
 
     checkAdminAccess();
-  }, [user, navigate, toast, loadDashboardDataSafe]);
+  }, [user, authLoading, navigate, toast, loadDashboardDataSafe]);
 
   // Handle PH approval (15 points)
   const handlePHApproval = async (submissionId: string) => {
