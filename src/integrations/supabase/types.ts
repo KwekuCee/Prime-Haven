@@ -148,6 +148,7 @@ export type Database = {
           phone: string | null
           registration_fee_paid: boolean | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -162,6 +163,7 @@ export type Database = {
           phone?: string | null
           registration_fee_paid?: boolean | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           created_at?: string
@@ -176,11 +178,15 @@ export type Database = {
           phone?: string | null
           registration_fee_paid?: boolean | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
       submissions: {
         Row: {
+          client_accepted: boolean | null
+          client_accepted_at: string | null
+          client_accepted_by: string | null
           client_preference: boolean | null
           client_ref: string | null
           created_at: string
@@ -188,6 +194,9 @@ export type Database = {
           files_urls: string[] | null
           final_approval_date: string | null
           id: string
+          ph_approved: boolean | null
+          ph_approved_at: string | null
+          ph_approved_by: string | null
           points_awarded: number | null
           project_name: string
           reviewer_id: string | null
@@ -198,6 +207,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_accepted?: boolean | null
+          client_accepted_at?: string | null
+          client_accepted_by?: string | null
           client_preference?: boolean | null
           client_ref?: string | null
           created_at?: string
@@ -205,6 +217,9 @@ export type Database = {
           files_urls?: string[] | null
           final_approval_date?: string | null
           id?: string
+          ph_approved?: boolean | null
+          ph_approved_at?: string | null
+          ph_approved_by?: string | null
           points_awarded?: number | null
           project_name: string
           reviewer_id?: string | null
@@ -215,6 +230,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_accepted?: boolean | null
+          client_accepted_at?: string | null
+          client_accepted_by?: string | null
           client_preference?: boolean | null
           client_ref?: string | null
           created_at?: string
@@ -222,6 +240,9 @@ export type Database = {
           files_urls?: string[] | null
           final_approval_date?: string | null
           id?: string
+          ph_approved?: boolean | null
+          ph_approved_at?: string | null
+          ph_approved_by?: string | null
           points_awarded?: number | null
           project_name?: string
           reviewer_id?: string | null
@@ -263,6 +284,33 @@ export type Database = {
           new_value?: Json | null
           old_value?: Json | null
           timestamp?: string | null
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }

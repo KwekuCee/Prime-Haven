@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff, Shield, Crown } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Shield, Crown, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 const superAdminLoginSchema = z.object({
-  email: z.string().email('Valid email is required'),
+  username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
   password: z.string().min(1, 'Password is required')
 });
 
@@ -62,7 +62,7 @@ const SuperAdminLogin = () => {
       // Use the admin-login edge function for secure authentication
       const { data: response, error } = await supabase.functions.invoke('admin-login', {
         body: {
-          email: data.email,
+          username: data.username,
           password: data.password,
         },
       });
@@ -74,7 +74,7 @@ const SuperAdminLogin = () => {
       if (!response?.success) {
         const errorMessage = response?.error === 'access_denied' 
           ? 'You do not have admin access.'
-          : 'Invalid email or password.';
+          : 'Invalid username or password.';
         
         toast({
           variant: 'destructive',
@@ -138,7 +138,7 @@ const SuperAdminLogin = () => {
             </div>
             <div>
               <h1 className="text-2xl font-heading font-bold">Prime Haven</h1>
-              <p className="text-sm text-muted-foreground">Admin Portal</p>
+              <p className="text-sm text-muted-foreground font-medium">Admin Portal</p>
             </div>
           </div>
         </div>
@@ -149,30 +149,33 @@ const SuperAdminLogin = () => {
               <Shield className="w-8 h-8 text-primary" />
             </div>
             <CardTitle className="text-xl">Secure Admin Access</CardTitle>
-            <CardDescription>
-              Sign in with your admin account
+            <CardDescription className="font-medium">
+              Sign in with your admin credentials
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@primehaven.com"
-                  {...register('email')}
-                  className={errors.email ? 'border-destructive' : ''}
-                  disabled={isLoading}
-                  autoComplete="email"
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                <Label htmlFor="username" className="font-semibold">Username</Label>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Enter username"
+                    {...register('username')}
+                    className={`pl-10 ${errors.username ? 'border-destructive' : ''}`}
+                    disabled={isLoading}
+                    autoComplete="username"
+                  />
+                  <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                </div>
+                {errors.username && (
+                  <p className="text-sm text-destructive font-medium">{errors.username.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="font-semibold">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -193,7 +196,7 @@ const SuperAdminLogin = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
                 )}
               </div>
 
@@ -201,7 +204,7 @@ const SuperAdminLogin = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full"
+                  className="w-full font-semibold"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -220,9 +223,9 @@ const SuperAdminLogin = () => {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground font-medium">
                 Regular designer?{' '}
-                <Link to="/login" className="text-primary hover:underline">
+                <Link to="/login" className="text-primary hover:underline font-semibold">
                   Login here
                 </Link>
               </p>
