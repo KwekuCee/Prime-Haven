@@ -22,8 +22,8 @@ import {
   RegisterAccountData,
 } from '@/lib/validations';
 
-const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxx';
-const REGISTRATION_FEE_GHS = 50; // GH₵50
+const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+const REGISTRATION_FEE_GHS = 100; // GH₵100
 
 const steps = [
   { id: 1, name: 'Personal', icon: User },
