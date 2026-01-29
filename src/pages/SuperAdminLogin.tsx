@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff, Shield, Crown, Lock, Building } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Eye, EyeOff, Shield, Crown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,18 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
-
-const SUPER_ADMIN_CREDENTIALS = {
-  admins: [
-    { username: 'primehaven-admin', password: 'MasterAccess@2024', name: 'Master Administrator' },
-    { username: 'ceo', password: 'CEOPrime@2024', name: 'CEO Access' },
-    { username: 'admin', password: 'AdminSecure@2024', name: 'System Administrator' }
-  ]
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const superAdminLoginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  email: z.string().email('Valid email is required'),
   password: z.string().min(1, 'Password is required')
 });
 
@@ -32,31 +25,27 @@ const SuperAdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Debug and auto-redirect if already authenticated
+  // Check if already authenticated as admin
   useEffect(() => {
-    console.log('🔍 SuperAdminLogin mounted');
-    
-    const authData = localStorage.getItem('superAdminAuth');
-    if (authData) {
-      try {
-        const auth = JSON.parse(authData);
-        const now = new Date().getTime();
-        const oneHour = 60 * 60 * 1000;
-        
-        if (now - auth.timestamp < oneHour) {
-          console.log('✅ Already authenticated, redirecting to /superadmin');
+    const checkAdminAuth = async () => {
+      if (user) {
+        // Check if user has admin role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        if (roleData?.role === 'superadmin' || roleData?.role === 'masteradmin') {
           navigate('/superadmin', { replace: true });
-        } else {
-          console.log('⚠️ Session expired, clearing auth');
-          localStorage.removeItem('superAdminAuth');
         }
-      } catch (error) {
-        console.error('Auth parse error:', error);
-        localStorage.removeItem('superAdminAuth');
       }
-    }
-  }, [navigate]);
+    };
+
+    checkAdminAuth();
+  }, [user, navigate]);
 
   const {
     register,
@@ -69,54 +58,53 @@ const SuperAdminLogin = () => {
   const onSubmit = async (data: SuperAdminLoginForm) => {
     setIsLoading(true);
     
-    console.log('🔐 Login attempt for:', data.username);
-    
     try {
-      const validAdmin = SUPER_ADMIN_CREDENTIALS.admins.find(
-        admin => admin.username === data.username && admin.password === data.password
-      );
+      // Use the admin-login edge function for secure authentication
+      const { data: response, error } = await supabase.functions.invoke('admin-login', {
+        body: {
+          email: data.email,
+          password: data.password,
+        },
+      });
 
-      if (validAdmin) {
-        console.log('✅ Credentials valid, storing auth');
-        
-        // Clear any existing auth
-        localStorage.removeItem('superAdminAuth');
-        
-        // Store new auth
-        localStorage.setItem('superAdminAuth', JSON.stringify({
-          isAuthenticated: true,
-          username: validAdmin.username,
-          name: validAdmin.name,
-          timestamp: new Date().getTime()
-        }));
+      if (error) {
+        throw new Error('Authentication failed');
+      }
 
-        toast({
-          title: 'Access Granted',
-          description: `Welcome back, ${validAdmin.name}!`,
-        });
-
-        console.log('🔄 Navigating to /superadmin');
+      if (!response?.success) {
+        const errorMessage = response?.error === 'access_denied' 
+          ? 'You do not have admin access.'
+          : 'Invalid email or password.';
         
-        // Small delay to ensure toast is visible
-        setTimeout(() => {
-          navigate('/superadmin', { replace: true });
-        }, 100);
-        
-        return;
-      } else {
-        console.log('❌ Invalid credentials');
         toast({
           variant: 'destructive',
           title: 'Access Denied',
-          description: 'Invalid username or password.',
+          description: errorMessage,
+        });
+        return;
+      }
+
+      // Set the session from the response
+      if (response.session) {
+        await supabase.auth.setSession({
+          access_token: response.session.access_token,
+          refresh_token: response.session.refresh_token,
         });
       }
+
+      toast({
+        title: 'Access Granted',
+        description: `Welcome back, ${response.user?.name || 'Admin'}!`,
+      });
+
+      navigate('/superadmin', { replace: true });
+
     } catch (error) {
       console.error('Login error:', error);
       toast({
         variant: 'destructive',
         title: 'Login Error',
-        description: 'An error occurred during login.',
+        description: 'An error occurred during login. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -137,7 +125,7 @@ const SuperAdminLogin = () => {
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
             onClick={(e) => {
               e.preventDefault();
-              navigate(-1); // Go back in history
+              navigate(-1);
             }}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -150,7 +138,7 @@ const SuperAdminLogin = () => {
             </div>
             <div>
               <h1 className="text-2xl font-heading font-bold">Prime Haven</h1>
-              <p className="text-sm text-muted-foreground">Super Admin Portal</p>
+              <p className="text-sm text-muted-foreground">Admin Portal</p>
             </div>
           </div>
         </div>
@@ -162,28 +150,29 @@ const SuperAdminLogin = () => {
             </div>
             <CardTitle className="text-xl">Secure Admin Access</CardTitle>
             <CardDescription>
-              Enter administrator credentials
+              Sign in with your admin account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Admin Username</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="primehaven-admin"
-                  {...register('username')}
-                  className={errors.username ? 'border-destructive' : ''}
+                  id="email"
+                  type="email"
+                  placeholder="admin@primehaven.com"
+                  {...register('email')}
+                  className={errors.email ? 'border-destructive' : ''}
                   disabled={isLoading}
+                  autoComplete="email"
                 />
-                {errors.username && (
-                  <p className="text-sm text-destructive">{errors.username.message}</p>
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Master Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -229,12 +218,6 @@ const SuperAdminLogin = () => {
                 </Button>
               </div>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Test credentials: <span className="font-mono text-xs">primehaven-admin / MasterAccess@2024</span>
-              </p>
-            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">

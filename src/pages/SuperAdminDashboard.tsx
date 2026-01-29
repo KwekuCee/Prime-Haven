@@ -374,19 +374,16 @@ const SuperAdminDashboard = () => {
     }
   }, [toast]);
 
-  // ✅ Check if user is authenticated as super admin
+  // ✅ Check if user is authenticated as admin via Supabase Auth
   useEffect(() => {
     const checkAdminAccess = async () => {
-      console.log('🔒 Checking super admin access...');
+      console.log('🔒 Checking admin access via Supabase Auth...');
       
-      // Check localStorage for super admin auth
-      const authData = localStorage.getItem('superAdminAuth');
-      
-      if (!authData) {
-        console.log('❌ No super admin auth found, redirecting to login');
+      if (!user) {
+        console.log('❌ No authenticated user, redirecting to login');
         toast({
           title: "Access Denied",
-          description: "Please login as super admin first.",
+          description: "Please login as admin first.",
           variant: "destructive",
         });
         navigate('/superadmin-login', { replace: true });
@@ -394,24 +391,37 @@ const SuperAdminDashboard = () => {
       }
 
       try {
-        const auth = JSON.parse(authData);
-        const now = new Date().getTime();
-        const oneHour = 60 * 60 * 1000;
-        
-        // Check if session is expired (1 hour)
-        if (now - auth.timestamp > oneHour) {
-          console.log('⚠️ Super admin session expired');
-          localStorage.removeItem('superAdminAuth');
+        // Check user's role in the database
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        if (roleError || !roleData) {
+          console.log('❌ No role found for user');
           toast({
-            title: "Session Expired",
-            description: "Please login again.",
+            title: "Access Denied",
+            description: "You do not have admin privileges.",
             variant: "destructive",
           });
-          navigate('/superadmin-login', { replace: true });
+          navigate('/dashboard', { replace: true });
           return;
         }
 
-        console.log('✅ Super admin authenticated:', auth.username);
+        const validAdminRoles = ['superadmin', 'masteradmin'];
+        if (!validAdminRoles.includes(roleData.role)) {
+          console.log('❌ User is not an admin, role:', roleData.role);
+          toast({
+            title: "Access Denied",
+            description: "You do not have admin privileges.",
+            variant: "destructive",
+          });
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        console.log('✅ Admin authenticated:', user.email, 'Role:', roleData.role);
         setInitialAuthCheck(false);
         
         // Load dashboard data
@@ -419,7 +429,6 @@ const SuperAdminDashboard = () => {
         
       } catch (error) {
         console.error('❌ Auth check error:', error);
-        localStorage.removeItem('superAdminAuth');
         toast({
           title: "Authentication Error",
           description: "Please login again.",
@@ -430,7 +439,7 @@ const SuperAdminDashboard = () => {
     };
 
     checkAdminAccess();
-  }, [navigate, toast, loadDashboardDataSafe]);
+  }, [user, navigate, toast, loadDashboardDataSafe]);
 
   // ✅ Fetch real data from Supabase (Alternative loader)
   const loadDashboardData = useCallback(async () => {
@@ -545,20 +554,17 @@ const SuperAdminDashboard = () => {
 
       if (updateError) throw updateError;
 
-      // Log the action to system_logs
-      const authData = localStorage.getItem('superAdminAuth');
-      const adminName = authData ? JSON.parse(authData).name : 'System';
-
-      await supabase
-        .from('system_logs')
-        .insert({
-          action_type: `submission_${action}`,
-          admin_id: adminName,
-          description: `${action.charAt(0).toUpperCase() + action.slice(1)} submission: ${submission.project_name} (${points} points)`,
-          timestamp: new Date().toISOString(),
-          ip_address: '127.0.0.1',
-          user_agent: navigator.userAgent
-        });
+      // Log the action to system_logs using actual user ID
+      if (user) {
+        await supabase
+          .from('system_logs')
+          .insert({
+            action_type: `submission_${action}`,
+            admin_id: user.id,
+            description: `${action.charAt(0).toUpperCase() + action.slice(1)} submission: ${submission.project_name} (${points} points)`,
+            timestamp: new Date().toISOString(),
+          });
+      }
 
       toast({
         title: `Submission ${action}d`,
@@ -640,20 +646,17 @@ const SuperAdminDashboard = () => {
           .eq('id', userId);
       }
 
-      // Log the action
-      const authData = localStorage.getItem('superAdminAuth');
-      const adminName = authData ? JSON.parse(authData).name : 'System';
-
-      await supabase
-        .from('system_logs')
-        .insert({
-          action_type: `user_${action}`,
-          admin_id: adminName,
-          description,
-          timestamp: new Date().toISOString(),
-          ip_address: '127.0.0.1',
-          user_agent: navigator.userAgent
-        });
+      // Log the action using actual user ID
+      if (user) {
+        await supabase
+          .from('system_logs')
+          .insert({
+            action_type: `user_${action}`,
+            admin_id: user.id,
+            description,
+            timestamp: new Date().toISOString(),
+          });
+      }
 
       toast({
         title: "Action completed",
@@ -755,28 +758,24 @@ const SuperAdminDashboard = () => {
     });
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('superAdminAuth');
+  // Handle logout using Supabase Auth
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logged out",
-      description: "You have been logged out from super admin.",
+      description: "You have been logged out.",
     });
     navigate('/login');
   };
 
-  // Get admin display name from localStorage
+  // Get admin display name from authenticated user
   const getAdminDisplayName = () => {
-    try {
-      const authData = localStorage.getItem('superAdminAuth');
-      if (authData) {
-        const auth = JSON.parse(authData);
-        return auth.name || auth.username || 'Super Admin';
-      }
-    } catch (e) {
-      console.error('Error parsing auth data:', e);
+    if (user) {
+      // Get profile data if available
+      const currentProfile = users.find(u => u.id === user.id);
+      return currentProfile?.full_name || user.email || 'Admin';
     }
-    return 'Super Admin';
+    return 'Admin';
   };
 
   const adminDisplayName = getAdminDisplayName();
