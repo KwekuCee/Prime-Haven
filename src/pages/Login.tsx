@@ -62,13 +62,31 @@ const Login = () => {
       return;
     }
 
-    toast({
-      title: 'Welcome back!',
-      description: 'You have been signed in successfully.',
-    });
-
-    // Check user role and navigate accordingly
+    // Check if email is verified in profiles table
     if (authData?.user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email_verified')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileData && !profileData.email_verified) {
+        // Sign out the user since email is not verified
+        await signOut();
+        toast({
+          variant: 'destructive',
+          title: 'Email Not Verified',
+          description: 'Please verify your email address before signing in. Check your inbox for the verification link.',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Welcome back!',
+        description: 'You have been signed in successfully.',
+      });
+
+      // Check user role and navigate accordingly
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
