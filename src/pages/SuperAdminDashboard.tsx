@@ -23,7 +23,8 @@ import {
   Edit,
   Star,
   ThumbsUp,
-  Save
+  Save,
+  ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import { format } from 'date-fns';
 
 // Types
@@ -176,6 +178,7 @@ const SuperAdminDashboard = () => {
   });
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const [revenueInput, setRevenueInput] = useState('');
+  const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
 
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
@@ -1162,6 +1165,26 @@ const SuperAdminDashboard = () => {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
+                                {/* View Files Button - always visible if there are files */}
+                                {submission.files_urls && submission.files_urls.length > 0 && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => setViewFilesSubmission(submission)}
+                                        >
+                                          <ImageIcon className="w-3 h-3 mr-1" />
+                                          View ({submission.files_urls.length})
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>View uploaded files</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                                 {!submission.ph_approved && submission.status !== 'rejected' && (
                                   <>
                                     <TooltipProvider>
@@ -1501,6 +1524,13 @@ const SuperAdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Submission Files Preview Dialog */}
+      <SubmissionFilesDialog
+        open={!!viewFilesSubmission}
+        onOpenChange={(open) => !open && setViewFilesSubmission(null)}
+        submission={viewFilesSubmission}
+      />
     </div>
   );
 };
