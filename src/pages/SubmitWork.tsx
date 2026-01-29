@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Upload, 
-  ArrowLeft, 
   FileText, 
-  Calendar,
   Tag,
-  DollarSign,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +17,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/DashboardLayout';
 
 const serviceTypes = [
   { id: 'logo', label: 'Logo Design', points: 45 },
@@ -28,121 +29,141 @@ const serviceTypes = [
   { id: 'uiux', label: 'UI/UX Design', points: 65 },
   { id: 'web', label: 'Web Design', points: 65 },
   { id: 'print', label: 'Print Design', points: 20 },
-  { id: 'flyer', label: 'Flyer Design', points: 30, bonusOnApproval: 10 },
+  { id: 'flyer', label: 'Flyer Design', points: 30 },
 ];
+
+interface UploadedFile {
+  file: File;
+  preview: string;
+  uploading: boolean;
+  url?: string;
+  error?: string;
+}
 
 const SubmitWork = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadError, setUploadError] = useState<string>('');
   
-  // Form state
   const [formData, setFormData] = useState({
     projectName: '',
     serviceType: 'logo',
     clientReference: '',
     description: '',
     deadline: '',
-    files: [] as string[], // URLs or base64 strings
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleServiceTypeChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      serviceType: value
-    }));
+    setFormData(prev => ({ ...prev, serviceType: value }));
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !user) return;
 
     const newFiles = Array.from(files);
-    
-    // Validate file types and size
-    const validFiles = newFiles.filter(file => {
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
-      const maxSize = 10 * 1024 * 1024; // 10MB (reduced for base64)
-      
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'application/pdf'];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+
+    for (const file of newFiles) {
       if (!validTypes.includes(file.type)) {
-        setUploadError(`Invalid file type: ${file.type}. Accepted: JPG, PNG, GIF, SVG`);
-        return false;
+        setUploadError(`Invalid file type: ${file.type}. Accepted: JPG, PNG, GIF, SVG, PDF`);
+        continue;
       }
-      
+
       if (file.size > maxSize) {
-        setUploadError(`File too large: ${file.name}. Max size: 10MB`);
-        return false;
-      }
-      
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    setUploadError('');
-    setLoading(true);
-    setUploadProgress(0);
-
-    try {
-      const uploadedUrls: string[] = [];
-      
-      for (const [index, file] of validFiles.entries()) {
-        // Convert file to base64 for temporary storage
-        const base64 = await fileToBase64(file);
-        
-        // Store as base64 string (temporary solution)
-        uploadedUrls.push(base64);
-        setUploadProgress((prev) => Math.min(prev + (100 / validFiles.length), 100));
+        setUploadError(`File too large: ${file.name}. Max size: 50MB`);
+        continue;
       }
 
-      if (uploadedUrls.length > 0) {
-        setUploadedFiles(prev => [...prev, ...validFiles]);
-        setFormData(prev => ({
-          ...prev,
-          files: [...prev.files, ...uploadedUrls]
-        }));
-        
+      // Create preview for images
+      const preview = file.type.startsWith('image/') 
+        ? URL.createObjectURL(file) 
+        : '';
+
+      const newUploadedFile: UploadedFile = {
+        file,
+        preview,
+        uploading: true,
+      };
+
+      setUploadedFiles(prev => [...prev, newUploadedFile]);
+      setUploadError('');
+
+      // Upload to Supabase Storage
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('submissions')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('submissions')
+          .getPublicUrl(filePath);
+
+        setUploadedFiles(prev => 
+          prev.map(f => 
+            f.file === file 
+              ? { ...f, uploading: false, url: filePath }
+              : f
+          )
+        );
+
         toast({
-          title: "Files uploaded successfully!",
-          description: `${uploadedUrls.length} file(s) have been uploaded. Note: Files are temporarily stored.`,
+          title: "File uploaded!",
+          description: `${file.name} has been uploaded successfully.`,
         });
+
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        setUploadedFiles(prev => 
+          prev.map(f => 
+            f.file === file 
+              ? { ...f, uploading: false, error: error.message || 'Upload failed' }
+              : f
+          )
+        );
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploadError('Failed to upload files. Please try again.');
-    } finally {
-      setLoading(false);
-      setUploadProgress(0);
     }
+
+    // Reset input
+    e.target.value = '';
   };
 
-  // Helper function to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
+  const removeFile = async (index: number) => {
+    const fileToRemove = uploadedFiles[index];
+    
+    // If file was uploaded, delete from storage
+    if (fileToRemove.url && user) {
+      try {
+        await supabase.storage
+          .from('submissions')
+          .remove([fileToRemove.url]);
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
 
-  const removeFile = (index: number) => {
+    // Revoke preview URL
+    if (fileToRemove.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
+    }
+
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-    setFormData(prev => ({
-      ...prev,
-      files: prev.files.filter((_, i) => i !== index)
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -168,7 +189,8 @@ const SubmitWork = () => {
       return;
     }
 
-    if (formData.files.length === 0) {
+    const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
+    if (successfulUploads.length === 0) {
       toast({
         title: "Files required",
         description: "Please upload at least one file.",
@@ -189,57 +211,38 @@ const SubmitWork = () => {
     setLoading(true);
 
     try {
-      // Convert base64 files to text URLs (store as text in database)
-      const fileUrls = formData.files.map((file, index) => {
-        // If it's already a URL, keep it. If it's base64, store as data URL
-        return file.startsWith('data:') ? `base64_image_${index}` : file;
-      });
+      const fileUrls = successfulUploads.map(f => f.url!);
 
       const submissionData = {
         designer_id: user.id,
-        project_name: formData.projectName,
+        project_name: formData.projectName.trim(),
         service_type: formData.serviceType,
         client_ref: formData.clientReference.trim(),
-        files_urls: fileUrls, // Store as text array
+        files_urls: fileUrls,
         submission_date: new Date().toISOString(),
         status: 'pending',
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
-        reviewer_id: null,
-        final_approval_date: null,
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('submissions')
-        .insert([submissionData])
-        .select()
-        .single();
+        .insert([submissionData]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Submission successful!",
-        description: "Your work has been submitted for review. You'll be notified when it's approved.",
+        description: "Your work has been submitted for review.",
       });
 
-      // Reset form
-      setFormData({
-        projectName: '',
-        serviceType: 'logo',
-        clientReference: '',
-        description: '',
-        deadline: '',
-        files: [],
+      // Cleanup previews
+      uploadedFiles.forEach(f => {
+        if (f.preview) URL.revokeObjectURL(f.preview);
       });
-      setUploadedFiles([]);
 
-      // Navigate to dashboard after delay
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
+      navigate('/dashboard');
 
     } catch (error: any) {
       console.error('Submission error:', error);
@@ -257,39 +260,31 @@ const SubmitWork = () => {
     return serviceTypes.find(service => service.id === formData.serviceType);
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/dashboard')}
-                className="hover:bg-secondary"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-heading font-bold">Submit Work</h1>
-                <p className="text-sm text-muted-foreground">
-                  Submit your completed work for review and points
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-2">
-                <CheckCircle className="w-3 h-3" />
-                Points Available: {getSelectedService()?.points || 15}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
+  const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
+  const uploadingFiles = uploadedFiles.filter(f => f.uploading);
 
-      <div className="container mx-auto px-6 py-8">
+  return (
+    <DashboardLayout>
+      <div className="p-6 lg:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-heading font-bold mb-2">Submit Work</h1>
+              <p className="text-muted-foreground">
+                Submit your completed work for review and points
+              </p>
+            </div>
+            <Badge variant="outline" className="gap-2">
+              <CheckCircle className="w-3 h-3" />
+              Points Available: {getSelectedService()?.points || 15}
+            </Badge>
+          </div>
+        </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Form */}
           <motion.div
@@ -298,18 +293,20 @@ const SubmitWork = () => {
             className="lg:col-span-2"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Project Name */}
-              <div className="glass rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-heading font-bold">Project Details</h2>
-                </div>
-                
-                <div className="space-y-4">
+              {/* Project Details */}
+              <Card className="glass">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <div>
+                      <CardTitle>Project Details</CardTitle>
+                      <CardDescription>Basic information about your work</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="projectName" className="mb-2 block">
-                      Project Name *
-                    </Label>
+                    <Label htmlFor="projectName">Project Name *</Label>
                     <Input
                       id="projectName"
                       name="projectName"
@@ -317,382 +314,317 @@ const SubmitWork = () => {
                       onChange={handleInputChange}
                       placeholder="e.g., TechFlow Dashboard Redesign"
                       required
-                      className="bg-card border-border"
+                      className="mt-2 bg-card border-border"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="description" className="mb-2 block">
-                      Description
-                    </Label>
+                    <Label htmlFor="description">Description</Label>
                     <Textarea
                       id="description"
                       name="description"
                       value={formData.description}
                       onChange={handleInputChange}
-                      placeholder="Brief description of the project, client requirements, design process..."
-                      rows={4}
-                      className="bg-card border-border resize-none"
+                      placeholder="Brief description of the project..."
+                      rows={3}
+                      className="mt-2 bg-card border-border resize-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="clientReference" className="mb-2 block">
-                        Client Reference * <span className="text-xs text-muted-foreground">(from job contract)</span>
+                      <Label htmlFor="clientReference">
+                        Client Reference * 
+                        <span className="text-xs text-muted-foreground ml-1">(from job contract)</span>
                       </Label>
                       <Input
                         id="clientReference"
                         name="clientReference"
                         value={formData.clientReference}
                         onChange={handleInputChange}
-                        placeholder="Enter exactly as shown in contract"
+                        placeholder="Enter exactly as shown"
                         required
-                        className="bg-card border-border"
+                        className="mt-2 bg-card border-border"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Must match contract exactly for approval</p>
                     </div>
 
                     <div>
-                      <Label htmlFor="deadline" className="mb-2 block">
-                        Deadline (Optional)
-                      </Label>
+                      <Label htmlFor="deadline">Deadline (Optional)</Label>
                       <Input
                         id="deadline"
                         name="deadline"
                         type="date"
                         value={formData.deadline}
                         onChange={handleInputChange}
-                        className="bg-card border-border"
+                        className="mt-2 bg-card border-border"
                       />
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Service Type */}
-              <div className="glass rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Tag className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-heading font-bold">Service Type</h2>
-                </div>
-                
-                <RadioGroup
-                  value={formData.serviceType}
-                  onValueChange={handleServiceTypeChange}
-                  className="grid grid-cols-2 md:grid-cols-3 gap-3"
-                >
-                  {serviceTypes.map((service) => (
-                    <div key={service.id}>
-                      <RadioGroupItem
-                        value={service.id}
-                        id={service.id}
-                        className="peer sr-only"
-                      />
-                      <Label
-                        htmlFor={service.id}
-                        className="flex flex-col items-center justify-center rounded-xl border-2 border-border bg-card p-4 hover:bg-secondary hover:border-primary/30 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
-                      >
-                        <span className="font-medium text-sm mb-1">{service.label}</span>
-                        <span className="text-xs text-primary font-bold">{service.points} pts</span>
-                      </Label>
+              <Card className="glass">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Tag className="w-5 h-5 text-primary" />
+                    <div>
+                      <CardTitle>Service Type</CardTitle>
+                      <CardDescription>Select the type of work you're submitting</CardDescription>
                     </div>
-                  ))}
-                </RadioGroup>
-              </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup
+                    value={formData.serviceType}
+                    onValueChange={handleServiceTypeChange}
+                    className="grid grid-cols-2 md:grid-cols-3 gap-3"
+                  >
+                    {serviceTypes.map((service) => (
+                      <div key={service.id}>
+                        <RadioGroupItem
+                          value={service.id}
+                          id={service.id}
+                          className="peer sr-only"
+                        />
+                        <Label
+                          htmlFor={service.id}
+                          className="flex flex-col items-center justify-center rounded-xl border-2 border-border bg-card p-4 hover:bg-secondary hover:border-primary/30 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
+                        >
+                          <span className="font-medium text-sm mb-1">{service.label}</span>
+                          <span className="text-xs text-primary font-bold">{service.points} pts</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </CardContent>
+              </Card>
 
               {/* File Upload */}
-              <div className="glass rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Upload className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-heading font-bold">Files Upload</h2>
-                </div>
-                
-                <div className="space-y-4">
+              <Card className="glass">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Upload className="w-5 h-5 text-primary" />
+                    <div>
+                      <CardTitle>File Upload</CardTitle>
+                      <CardDescription>Upload your design files (JPG, PNG, GIF, SVG, PDF - Max 50MB)</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors">
                     <Input
                       id="file-upload"
                       type="file"
                       multiple
-                      accept=".jpg,.jpeg,.png,.gif,.svg"
+                      accept=".jpg,.jpeg,.png,.gif,.svg,.pdf"
                       onChange={handleFileUpload}
                       className="hidden"
+                      disabled={uploadingFiles.length > 0}
                     />
                     <Label
                       htmlFor="file-upload"
                       className="cursor-pointer flex flex-col items-center"
                     >
                       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                        <Upload className="w-8 h-8 text-primary" />
+                        {uploadingFiles.length > 0 ? (
+                          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        ) : (
+                          <Upload className="w-8 h-8 text-primary" />
+                        )}
                       </div>
-                      <p className="font-medium mb-2">Click to upload files</p>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        JPG, PNG, GIF, SVG only (Max 10MB each)
+                      <p className="font-medium mb-2">
+                        {uploadingFiles.length > 0 
+                          ? `Uploading ${uploadingFiles.length} file(s)...` 
+                          : 'Click to upload files'}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Upload design files or screenshots
+                      <p className="text-sm text-muted-foreground">
+                        Drag and drop or click to browse
                       </p>
                     </Label>
-
-                    {loading && (
-                      <div className="mt-6">
-                        <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                          />
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Uploading... {uploadProgress.toFixed(0)}%
-                        </p>
-                      </div>
-                    )}
-
-                    {uploadError && (
-                      <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                        <p className="text-sm text-destructive flex items-center gap-2">
-                          <XCircle className="w-4 h-4" />
-                          {uploadError}
-                        </p>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Uploaded Files List */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-sm font-medium">Uploaded Files ({uploadedFiles.length})</p>
-                      <div className="space-y-2">
-                        {uploadedFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 rounded-lg bg-card border border-border"
-                          >
-                            <div className="flex items-center gap-3">
-                              <FileText className="w-4 h-4 text-muted-foreground" />
-                              <div>
-                                <p className="text-sm font-medium truncate max-w-[200px]">
-                                  {file.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeFile(index)}
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Note: Files are temporarily stored as base64. For production, use Supabase Storage.
+                  {uploadError && (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <p className="text-sm text-destructive flex items-center gap-2">
+                        <XCircle className="w-4 h-4" />
+                        {uploadError}
                       </p>
                     </div>
                   )}
-                </div>
-              </div>
+
+                  {/* Uploaded Files Grid */}
+                  {uploadedFiles.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {uploadedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="relative group rounded-lg border border-border overflow-hidden bg-card"
+                        >
+                          {file.preview ? (
+                            <img
+                              src={file.preview}
+                              alt={file.file.name}
+                              className="w-full h-32 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-32 flex items-center justify-center bg-secondary">
+                              <FileText className="w-12 h-12 text-muted-foreground" />
+                            </div>
+                          )}
+                          
+                          <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeFile(index)}
+                              disabled={file.uploading}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {file.uploading && (
+                            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                          )}
+
+                          {file.error && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-destructive/90 text-xs p-2 text-center">
+                              {file.error}
+                            </div>
+                          )}
+
+                          {file.url && !file.error && (
+                            <div className="absolute top-2 right-2">
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            </div>
+                          )}
+
+                          <div className="p-2">
+                            <p className="text-xs truncate">{file.file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Submit Button */}
-              <div className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/dashboard')}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Dashboard
-                </Button>
-                
-                <Button
-                  type="submit"
-                  disabled={loading || formData.files.length === 0}
-                  className="gap-2 min-w-[200px]"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Submit for Review
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full gap-2"
+                disabled={loading || uploadingFiles.length > 0 || successfulUploads.length === 0}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Submit Work
+                  </>
+                )}
+              </Button>
             </form>
           </motion.div>
 
-          {/* Right Column - Summary & Guidelines */}
+          {/* Right Column - Info */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
-            {/* Points Summary */}
-            <div className="glass rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <DollarSign className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-heading font-bold">Points Summary</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Selected Service:</span>
-                  <span className="font-medium">
-                    {serviceTypes.find(s => s.id === formData.serviceType)?.label}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Base Points:</span>
-                  <span className="text-primary font-bold text-lg">
-                    +{getSelectedService()?.points || 45} pts
-                  </span>
-                </div>
-
-                {formData.serviceType === 'flyer' && (
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-primary/10 border border-primary/20">
-                    <span className="text-sm font-medium">Bonus on Approval:</span>
-                    <span className="text-primary font-bold">+10 pts</span>
+            {/* Selected Service Info */}
+            <Card className="glass">
+              <CardHeader>
+                <CardTitle className="text-sm">Selected Service</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mx-auto mb-4">
+                    <Tag className="w-8 h-8" />
                   </div>
-                )}
-
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Potential Earnings:</span>
-                    <span className="text-primary font-bold">
-                      GH₵{(((getSelectedService()?.points || 45) + (formData.serviceType === 'flyer' ? 10 : 0)) * 0.35).toFixed(2)}
-                    </span>
-                  </div>
+                  <h3 className="font-heading font-bold text-lg mb-1">
+                    {getSelectedService()?.label}
+                  </h3>
+                  <p className="text-3xl font-bold text-primary mb-2">
+                    +{getSelectedService()?.points} pts
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    * Approx. GH₵0.35 per point. Includes bonuses where applicable.
+                    Points awarded upon approval
                   </p>
                 </div>
-
-                <div className="pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    💡 <strong>Revisions:</strong> Each change made to your submission adds +3 points when approved.
-                  </p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Submission Guidelines */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-lg font-heading font-bold mb-4">Submission Guidelines</h2>
-              
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">1</span>
+            <Card className="glass">
+              <CardContent className="pt-6">
+                <h3 className="font-medium text-sm mb-3">Submission Guidelines</h3>
+                <ul className="text-xs text-muted-foreground space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span>Use the exact client reference from your job contract</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span>Upload high-quality images or source files</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span>Include all deliverables mentioned in the contract</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span>Review your submission before final upload</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Upload Status */}
+            {uploadedFiles.length > 0 && (
+              <Card className="glass">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-sm">Upload Status</h3>
+                    <Badge variant="outline">
+                      {successfulUploads.length}/{uploadedFiles.length}
+                    </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Client Reference:</strong> Must match the job contract exactly or submission won't be approved
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">2</span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Uploaded</span>
+                      <span className="text-green-500">{successfulUploads.length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Uploading</span>
+                      <span className="text-primary">{uploadingFiles.length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Failed</span>
+                      <span className="text-destructive">
+                        {uploadedFiles.filter(f => f.error).length}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Ensure all design files are properly named and organized
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">3</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Include source files (AI, PSD, FIGMA) when possible
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">4</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Submissions are reviewed within 24-48 hours
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">5</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Each revision adds <strong>+3 bonus points</strong> when approved
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">6</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Flyer designs get <strong>+10 bonus points</strong> on approval
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <p className="text-sm font-medium text-foreground mb-1">Points Earned:</p>
-                <p className="text-xs text-muted-foreground">
-                  Base points + Revision bonus (+3 each) + Service bonuses (Flyer +10)
-                </p>
-              </div>
-            </div>
-
-            {/* Points Breakdown */}
-            <div className="glass rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Calendar className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-heading font-bold">Points Breakdown</h2>
-              </div>
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Logo Design:</span>
-                  <span className="font-medium text-primary">45 pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Brand Identity:</span>
-                  <span className="font-medium text-primary">50 pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">UI/UX Design:</span>
-                  <span className="font-medium text-primary">65 pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Web Design:</span>
-                  <span className="font-medium text-primary">65 pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Print Design:</span>
-                  <span className="font-medium text-primary">20 pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Flyer Design:</span>
-                  <span className="font-medium text-primary">30 pts <span className="text-xs text-green-500">(+10 bonus)</span></span>
-                </div>
-              </div>
-            </div>
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
