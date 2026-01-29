@@ -146,6 +146,11 @@ serve(async (req: Request): Promise<Response> => {
                   h2 { color: #fff; font-size: 24px; margin-bottom: 20px; }
                   p { color: #a0a0a0; line-height: 1.6; margin-bottom: 20px; }
                   .button { display: inline-block; background: linear-gradient(135deg, #fe4c18 0%, #ff7a45 100%); color: #000 !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+                  .social-buttons { text-align: center; margin: 30px 0; }
+                  .social-button { display: inline-block; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 8px; font-size: 14px; }
+                  .discord-button { background: #5865F2; color: #fff !important; }
+                  .instagram-button { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: #fff !important; }
+                  .section-title { color: #fff; font-size: 18px; text-align: center; margin-bottom: 16px; }
                   .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #1a1a1a; text-align: center; color: #666; font-size: 12px; }
                 </style>
               </head>
@@ -161,6 +166,13 @@ serve(async (req: Request): Promise<Response> => {
                     <a href="${verificationLink}" class="button">Verify Email Address</a>
                   </p>
                   <p>This link will expire in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
+                  
+                  <div class="social-buttons">
+                    <p class="section-title">Join Our Community</p>
+                    <a href="https://discord.gg/meXTeEdF" class="social-button discord-button">🎮 Join Our Discord</a>
+                    <a href="https://instagram.com/primehaven_co" class="social-button instagram-button">📸 Follow Us on Instagram</a>
+                  </div>
+                  
                   <div class="footer">
                     <p>© 2026 Prime Haven. Youth-driven design & IT solutions.</p>
                     <p>Questions? Contact us at primehaven26@gmail.com</p>
