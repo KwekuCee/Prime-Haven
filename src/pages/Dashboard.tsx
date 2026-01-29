@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp,
   Award,
@@ -9,9 +9,14 @@ import {
   Upload,
   Wallet,
   Settings,
-  Loader2
+  Loader2,
+  Trophy,
+  Medal,
+  Star,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +40,22 @@ interface Submission {
   status: string;
   points_awarded: number;
   client_preference: boolean;
+  ph_approved: boolean;
+  client_accepted: boolean;
   created_at: string;
+}
+
+interface LeaderboardEntry {
+  user_id: string;
+  full_name: string;
+  total_points: number;
+  monthly_points: number;
+  professional_title: string;
+}
+
+interface SystemSettings {
+  monthly_revenue?: { amount: number; currency: string };
+  revenue_share_percentage?: { value: number };
 }
 
 const Dashboard = () => {
@@ -45,6 +65,8 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [designer, setDesigner] = useState<DesignerData | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({});
   const [stats, setStats] = useState({
     totalPoints: 0,
     monthlyRank: 0,
@@ -52,6 +74,7 @@ const Dashboard = () => {
     estSalary: 0,
     totalSubmissions: 0,
     approvedSubmissions: 0,
+    monthlyRevenue: 0,
   });
 
   useEffect(() => {
@@ -66,11 +89,16 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        // Load profile, designer details, and submissions in parallel
-        const [profileResult, designerResult, submissionsResult] = await Promise.all([
+        // Load all data in parallel
+        const [profileResult, designerResult, submissionsResult, leaderboardResult, settingsResult] = await Promise.all([
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
           supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title').eq('user_id', user.id).maybeSingle(),
-          supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10)
+          supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10),
+          supabase.from('designer_details')
+            .select('user_id, total_points, monthly_points, professional_title, profiles!designer_details_user_id_fkey(full_name)')
+            .order('total_points', { ascending: false })
+            .limit(10),
+          supabase.from('system_settings').select('key, value')
         ]);
 
         if (profileResult.data) {
@@ -83,16 +111,52 @@ const Dashboard = () => {
 
         if (submissionsResult.data) {
           setSubmissions(submissionsResult.data);
+        }
+
+        // Process leaderboard
+        if (leaderboardResult.data) {
+          const processedLeaderboard: LeaderboardEntry[] = leaderboardResult.data.map((entry: any) => ({
+            user_id: entry.user_id,
+            full_name: entry.profiles?.full_name || 'Anonymous',
+            total_points: entry.total_points || 0,
+            monthly_points: entry.monthly_points || 0,
+            professional_title: entry.professional_title || 'Designer'
+          }));
+          setLeaderboard(processedLeaderboard);
+
+          // Calculate user's rank
+          const userRank = processedLeaderboard.findIndex(e => e.user_id === user.id) + 1;
           
-          // Calculate stats
-          const approvedCount = submissionsResult.data.filter(s => s.status === 'approved').length;
+          // Get system settings
+          let monthlyRevenue = 0;
+          let revenueShare = 50;
+          if (settingsResult.data) {
+            const settings: any = {};
+            settingsResult.data.forEach((item: any) => {
+              settings[item.key] = item.value;
+            });
+            setSystemSettings(settings);
+            monthlyRevenue = settings.monthly_revenue?.amount || 0;
+            revenueShare = settings.revenue_share_percentage?.value || 50;
+          }
+
+          // Calculate estimated salary based on points share
+          const totalAllPoints = processedLeaderboard.reduce((sum, e) => sum + (e.monthly_points || 0), 0);
+          const userMonthlyPoints = designerResult.data?.monthly_points || 0;
+          const estSalary = totalAllPoints > 0 
+            ? ((userMonthlyPoints / totalAllPoints) * (monthlyRevenue * (revenueShare / 100)))
+            : 0;
+
+          const approvedCount = submissionsResult.data?.filter((s: any) => s.status === 'approved' || s.client_accepted).length || 0;
+          
           setStats({
             totalPoints: designerResult.data?.total_points || 0,
-            monthlyRank: 0, // Would need to query all designers to calculate
-            totalDesigners: 0,
-            estSalary: designerResult.data?.salary_estimated || 0,
-            totalSubmissions: submissionsResult.data.length,
+            monthlyRank: userRank || 0,
+            totalDesigners: processedLeaderboard.length,
+            estSalary: estSalary,
+            totalSubmissions: submissionsResult.data?.length || 0,
             approvedSubmissions: approvedCount,
+            monthlyRevenue: monthlyRevenue,
           });
         }
 
@@ -112,10 +176,25 @@ const Dashboard = () => {
   };
 
   const getActivityType = (submission: Submission) => {
+    if (submission.client_accepted) return 'client_accepted';
+    if (submission.ph_approved) return 'ph_approved';
     if (submission.client_preference) return 'preference';
     if (submission.status === 'approved') return 'approved';
     if (submission.status === 'revision') return 'revision';
+    if (submission.status === 'rejected') return 'rejected';
     return 'submitted';
+  };
+
+  const getActivityLabel = (type: string) => {
+    switch (type) {
+      case 'client_accepted': return 'Client Accepted (+40 pts)';
+      case 'ph_approved': return 'PH Approved (+15 pts)';
+      case 'preference': return 'Client Preference';
+      case 'approved': return 'Approved';
+      case 'revision': return 'Needs Revision';
+      case 'rejected': return 'Rejected';
+      default: return 'Submitted';
+    }
   };
 
   const getTimeAgo = (dateString: string) => {
@@ -128,6 +207,13 @@ const Dashboard = () => {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
     return date.toLocaleDateString();
+  };
+
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-500" />;
+    if (rank === 2) return <Medal className="w-5 h-5 text-gray-400" />;
+    if (rank === 3) return <Medal className="w-5 h-5 text-amber-600" />;
+    return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>;
   };
 
   const statsData = [
@@ -163,7 +249,7 @@ const Dashboard = () => {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading dashboard...</p>
+            <p className="text-muted-foreground font-medium">Loading dashboard...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -182,10 +268,29 @@ const Dashboard = () => {
           <h1 className="text-3xl font-heading font-bold mb-2">
             Welcome back, <span className="text-gradient">{getFirstName()}</span>
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground font-medium">
             Here's an overview of your performance this month.
           </p>
         </motion.div>
+
+        {/* Monthly Revenue Banner */}
+        {stats.monthlyRevenue > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground">This Month's Revenue Pool</p>
+                <p className="text-xl font-bold text-primary">GH₵{stats.monthlyRevenue.toFixed(2)}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Verification Alerts */}
         {profile && (!profile.email_verified || !profile.registration_fee_paid) && (
@@ -194,8 +299,8 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30"
           >
-            <p className="text-sm font-medium text-amber-500 mb-2">Action Required:</p>
-            <ul className="text-sm text-muted-foreground space-y-1">
+            <p className="text-sm font-semibold text-amber-500 mb-2">Action Required:</p>
+            <ul className="text-sm text-muted-foreground space-y-1 font-medium">
               {!profile.email_verified && (
                 <li>• Please verify your email address to unlock all features</li>
               )}
@@ -222,14 +327,14 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className="text-3xl font-heading font-bold mb-1">{stat.value}</p>
-              <p className="text-muted-foreground text-sm">{stat.label}</p>
-              <p className="text-xs text-primary mt-2">{stat.trend}</p>
+              <p className="text-muted-foreground text-sm font-semibold">{stat.label}</p>
+              <p className="text-xs text-primary mt-2 font-medium">{stat.trend}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Three Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Activity */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -246,21 +351,24 @@ const Dashboard = () => {
                     <div key={submission.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${
+                          activityType === 'client_accepted' ? 'bg-primary' :
+                          activityType === 'ph_approved' ? 'bg-green-500' :
                           activityType === 'approved' ? 'bg-green-500' :
                           activityType === 'preference' ? 'bg-primary' :
                           activityType === 'revision' ? 'bg-yellow-500' :
+                          activityType === 'rejected' ? 'bg-red-500' :
                           'bg-muted-foreground'
                         }`} />
                         <div>
-                          <p className="font-medium text-sm">{submission.project_name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{activityType}</p>
+                          <p className="font-semibold text-sm">{submission.project_name}</p>
+                          <p className="text-xs text-muted-foreground font-medium">{getActivityLabel(activityType)}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         {submission.points_awarded > 0 && (
-                          <p className="text-sm text-primary font-medium">+{submission.points_awarded} pts</p>
+                          <p className="text-sm text-primary font-bold">+{submission.points_awarded} pts</p>
                         )}
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
                           <Clock className="w-3 h-3" />
                           {getTimeAgo(submission.created_at)}
                         </p>
@@ -272,8 +380,56 @@ const Dashboard = () => {
             ) : (
               <div className="text-center py-8">
                 <FileCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No submissions yet</p>
+                <p className="text-muted-foreground font-medium">No submissions yet</p>
                 <p className="text-sm text-muted-foreground">Start by submitting your first work!</p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Leaderboard */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="glass rounded-2xl p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-heading font-bold">Top Designers</h2>
+              <Trophy className="w-5 h-5 text-primary" />
+            </div>
+            {leaderboard.length > 0 ? (
+              <div className="space-y-3">
+                {leaderboard.slice(0, 5).map((entry, index) => {
+                  const isCurrentUser = entry.user_id === user?.id;
+                  return (
+                    <div 
+                      key={entry.user_id} 
+                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                        isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-muted/30 hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="w-8 h-8 flex items-center justify-center">
+                        {getRankIcon(index + 1)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold text-sm truncate ${isCurrentUser ? 'text-primary' : ''}`}>
+                          {entry.full_name}
+                          {isCurrentUser && <span className="text-xs ml-1">(You)</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-medium truncate">{entry.professional_title}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{entry.total_points}</p>
+                        <p className="text-xs text-muted-foreground font-medium">points</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">No data yet</p>
               </div>
             )}
           </motion.div>
@@ -282,14 +438,14 @@ const Dashboard = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.6 }}
             className="glass rounded-2xl p-6"
           >
             <h2 className="text-xl font-heading font-bold mb-4">Quick Actions</h2>
             <div className="space-y-3">
               <Button 
                 variant="primary" 
-                className="w-full justify-start"
+                className="w-full justify-start font-semibold"
                 onClick={() => navigate('/submit-work')}
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -297,7 +453,7 @@ const Dashboard = () => {
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full justify-start"
+                className="w-full justify-start font-semibold"
                 onClick={() => navigate('/payments')}
               >
                 <Wallet className="w-4 h-4 mr-2" />
@@ -305,7 +461,7 @@ const Dashboard = () => {
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full justify-start"
+                className="w-full justify-start font-semibold"
                 onClick={() => navigate('/edit-profile')}
               >
                 <Settings className="w-4 h-4 mr-2" />
@@ -313,14 +469,19 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {/* Info Box */}
+            {/* Points Info Box */}
             <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Points System:</strong><br />
-                • Submission: +15 pts<br />
-                • Client Preference: +40 pts<br />
-                • Revision: +5 pts
-              </p>
+              <p className="text-sm font-semibold text-foreground mb-2">Points System:</p>
+              <ul className="text-sm text-muted-foreground space-y-1 font-medium">
+                <li className="flex items-center gap-2">
+                  <Star className="w-3 h-3 text-primary" />
+                  PH Approval: +15 pts
+                </li>
+                <li className="flex items-center gap-2">
+                  <Award className="w-3 h-3 text-primary" />
+                  Client Acceptance: +40 pts
+                </li>
+              </ul>
             </div>
           </motion.div>
         </div>

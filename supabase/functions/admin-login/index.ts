@@ -10,7 +10,8 @@ const corsHeaders = {
 };
 
 interface AdminLoginRequest {
-  email: string;
+  username?: string;
+  email?: string;
   password: string;
 }
 
@@ -20,10 +21,12 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, password }: AdminLoginRequest = await req.json();
+    const { username, email, password }: AdminLoginRequest = await req.json();
 
-    // Input validation
-    if (!email || typeof email !== 'string' || email.length > 255) {
+    // Input validation - support both username and email for backwards compatibility
+    const loginIdentifier = username || email;
+    
+    if (!loginIdentifier || typeof loginIdentifier !== 'string' || loginIdentifier.length > 255) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_credentials" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -37,21 +40,36 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ success: false, error: "invalid_credentials" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    let userEmail = loginIdentifier;
+
+    // If username is provided (not an email), look up the email from profiles
+    if (username && !username.includes('@')) {
+      console.log("Looking up user by username:", username);
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("username", username)
+        .maybeSingle();
+
+      if (profileError || !profileData) {
+        console.log("Username lookup failed:", profileError?.message || "User not found");
+        return new Response(
+          JSON.stringify({ success: false, error: "invalid_credentials" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      userEmail = profileData.email;
+      console.log("Found email for username:", userEmail);
+    }
+
     // Authenticate using Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: userEmail,
       password,
     });
 
@@ -90,7 +108,7 @@ serve(async (req: Request): Promise<Response> => {
     // Get profile information
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, email")
+      .select("full_name, email, username")
       .eq("id", authData.user.id)
       .single();
 
@@ -98,7 +116,7 @@ serve(async (req: Request): Promise<Response> => {
     await supabase.from("system_logs").insert({
       action_type: "admin_login",
       admin_id: authData.user.id,
-      description: `Admin login: ${profileData?.full_name || email}`,
+      description: `Admin login: ${profileData?.full_name || profileData?.username || userEmail}`,
       timestamp: new Date().toISOString(),
     });
 
@@ -111,7 +129,8 @@ serve(async (req: Request): Promise<Response> => {
         user: {
           id: authData.user.id,
           email: authData.user.email,
-          name: profileData?.full_name || "Admin",
+          username: profileData?.username,
+          name: profileData?.full_name || profileData?.username || "Admin",
           role: roleData.role,
         },
       }),
