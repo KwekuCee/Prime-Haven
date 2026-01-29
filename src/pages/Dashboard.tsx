@@ -200,7 +200,7 @@ const Dashboard = () => {
                 <li>• Please verify your email address to unlock all features</li>
               )}
               {!profile.registration_fee_paid && (
-                <li>• Complete your registration fee payment (GH₵50.00) to start submitting work</li>
+                <li>• Complete your registration fee payment (GH₵100.00) to start submitting work</li>
               )}
             </ul>
           </motion.div>

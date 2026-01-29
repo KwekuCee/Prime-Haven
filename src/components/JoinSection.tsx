@@ -66,7 +66,7 @@ const JoinSection = () => {
           >
             <Link to="/register">
               <Button variant="primary" size="lg" className="group animate-pulse-glow">
-                Join Prime Haven — GH₵50
+                Join Prime Haven — GH₵100
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

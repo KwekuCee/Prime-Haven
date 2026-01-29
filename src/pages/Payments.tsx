@@ -422,7 +422,7 @@ const Payments = () => {
                       <li>• Payment details are encrypted and stored securely</li>
                       <li>• Only you and administrators can view these details</li>
                       <li>• Payments are processed on the 1st and 15th of each month</li>
-                      <li>• Minimum payout: GH₵50.00</li>
+                      <li>• Minimum payout: GH₵100.00</li>
                     </ul>
                   </div>
                 </div>
@@ -544,7 +544,7 @@ const Payments = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Minimum Payout:</span>
-                      <span>GH₵50.00</span>
+                      <span>GH₵100.00</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Processing Time:</span>
