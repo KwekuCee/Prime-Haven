@@ -90,14 +90,15 @@ const Dashboard = () => {
         setLoading(true);
 
         // Load all data in parallel
-        const [profileResult, designerResult, submissionsResult, leaderboardResult, settingsResult] = await Promise.all([
+        const [profileResult, designerResult, submissionsResult, designersResult, profilesResult, settingsResult] = await Promise.all([
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
           supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title').eq('user_id', user.id).maybeSingle(),
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10),
           supabase.from('designer_details')
-            .select('user_id, total_points, monthly_points, professional_title, profiles!designer_details_user_id_fkey(full_name)')
+            .select('user_id, total_points, monthly_points, professional_title')
             .order('total_points', { ascending: false })
             .limit(10),
+          supabase.from('profiles').select('id, full_name'),
           supabase.from('system_settings').select('key, value')
         ]);
 
@@ -113,11 +114,13 @@ const Dashboard = () => {
           setSubmissions(submissionsResult.data);
         }
 
-        // Process leaderboard
-        if (leaderboardResult.data) {
-          const processedLeaderboard: LeaderboardEntry[] = leaderboardResult.data.map((entry: any) => ({
+        // Process leaderboard - create a map of user_id to full_name from profiles
+        const profilesMap = new Map((profilesResult.data || []).map((p: any) => [p.id, p.full_name]));
+        
+        if (designersResult.data && designersResult.data.length > 0) {
+          const processedLeaderboard: LeaderboardEntry[] = designersResult.data.map((entry: any) => ({
             user_id: entry.user_id,
-            full_name: entry.profiles?.full_name || 'Anonymous',
+            full_name: profilesMap.get(entry.user_id) || 'Anonymous',
             total_points: entry.total_points || 0,
             monthly_points: entry.monthly_points || 0,
             professional_title: entry.professional_title || 'Designer'
