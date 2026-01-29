@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -13,7 +13,9 @@ import {
   Award,
   Save,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +58,8 @@ const EditProfile = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     full_name: '',
@@ -67,6 +71,7 @@ const EditProfile = () => {
     available_hours: '',
     portfolio_url: '',
     skills: [] as string[],
+    profile_photo_url: '',
   });
 
   const [newSkill, setNewSkill] = useState('');
@@ -98,6 +103,7 @@ const EditProfile = () => {
             available_hours: designer?.available_hours?.toString() || '',
             portfolio_url: designer?.portfolio_url || '',
             skills: designer?.skills || [],
+            profile_photo_url: (designer as any)?.profile_photo_url || '',
           });
         }
       } catch (error) {
@@ -139,6 +145,74 @@ const EditProfile = () => {
       ...prev,
       skills: prev.skills.filter(skill => skill !== skillToRemove)
     }));
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingPhoto(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/profile.${fileExt}`;
+
+      // Upload the file
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(fileName);
+
+      // Update the form state
+      setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
+
+      // Update the database
+      await supabase
+        .from('designer_details')
+        .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
+      toast({
+        title: "Photo uploaded!",
+        description: "Your profile picture has been updated.",
+      });
+
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Could not upload photo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSave = async () => {
@@ -479,9 +553,40 @@ const EditProfile = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center mb-6">
-                  <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold mx-auto mb-4">
-                    {formData.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'PH'}
+                  {/* Profile Photo Upload */}
+                  <div className="relative w-24 h-24 mx-auto mb-4">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handlePhotoUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    {formData.profile_photo_url ? (
+                      <img
+                        src={formData.profile_photo_url}
+                        alt="Profile"
+                        className="w-24 h-24 rounded-full object-cover border-4 border-primary/20"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold">
+                        {formData.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'PH'}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingPhoto ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Camera className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-4">Click the camera icon to upload</p>
                   <h3 className="font-heading font-bold text-lg">
                     {formData.full_name || 'Your Name'}
                   </h3>
