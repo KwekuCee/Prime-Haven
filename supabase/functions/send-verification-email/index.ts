@@ -23,17 +23,69 @@ const generateToken = (): string => {
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
 };
 
+// Allowed redirect domains for security
+const ALLOWED_REDIRECT_DOMAINS = [
+  "localhost",
+  "127.0.0.1",
+  "lovable.app",
+  "lovable.dev",
+  "youthquake-forge.lovable.app",
+];
+
+const isAllowedRedirectUrl = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+    return ALLOWED_REDIRECT_DOMAINS.some(
+      (domain) =>
+        parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
+    );
+  } catch {
+    return false;
+  }
+};
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { email, fullName, userId, redirectUrl }: EmailRequest = await req.json();
+    const body = await req.json();
+    const email = body?.email;
+    const fullName = body?.fullName;
+    const userId = body?.userId;
+    const redirectUrl = body?.redirectUrl;
 
-    if (!email || !userId) {
-      throw new Error("Email and userId are required");
+    // Input validation - email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || email.length > 255 || !emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
+
+    // Validate userId format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate redirectUrl - must be from allowed domains
+    if (!redirectUrl || typeof redirectUrl !== 'string' || !isAllowedRedirectUrl(redirectUrl)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Sanitize fullName - limit length and remove potential script tags
+    const sanitizedName = typeof fullName === 'string' 
+      ? fullName.slice(0, 100).replace(/<[^>]*>/g, '').trim() 
+      : "Designer";
 
     // Generate verification token
     const token = generateToken();
@@ -71,7 +123,7 @@ serve(async (req: Request): Promise<Response> => {
           {
             to: [{ email }],
             dynamic_template_data: {
-              name: fullName || "Designer",
+              name: sanitizedName,
               verification_link: verificationLink,
             },
           },
@@ -101,7 +153,7 @@ serve(async (req: Request): Promise<Response> => {
                   <div class="logo">
                     <h1>🚀 Prime Haven</h1>
                   </div>
-                  <h2>Welcome to the Team, ${fullName || "Designer"}!</h2>
+                  <h2>Welcome to the Team, ${sanitizedName}!</h2>
                   <p>Thank you for joining Prime Haven. We're excited to have you as part of our creative community.</p>
                   <p>Please verify your email address to complete your registration and access your dashboard:</p>
                   <p style="text-align: center;">
@@ -138,9 +190,9 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: unknown) {
     console.error("Error in send-verification-email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    // Return generic error - don't expose internal details
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: "email_send_failed" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

@@ -101,7 +101,9 @@ const SubmitWork = () => {
       // Upload to Supabase Storage
       try {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        // Use cryptographically random filename for security
+        const randomId = crypto.randomUUID();
+        const fileName = `${randomId}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
@@ -110,11 +112,7 @@ const SubmitWork = () => {
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('submissions')
-          .getPublicUrl(filePath);
-
+        // Store the file path (not public URL) - we'll use signed URLs for access
         setUploadedFiles(prev => 
           prev.map(f => 
             f.file === file 

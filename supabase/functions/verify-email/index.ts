@@ -19,10 +19,23 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { token }: VerifyRequest = await req.json();
+    const body = await req.json();
+    const token = body?.token;
 
-    if (!token) {
-      throw new Error("Token is required");
+    // Input validation - token format check
+    if (!token || typeof token !== 'string' || token.length < 32 || token.length > 128) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_token" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate token contains only valid hex characters
+    if (!/^[a-f0-9]+$/i.test(token)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_token" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
@@ -92,9 +105,9 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: unknown) {
     console.error("Error in verify-email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    // Return generic error - don't expose internal details
     return new Response(
-      JSON.stringify({ success: false, error: "server_error", message: errorMessage }),
+      JSON.stringify({ success: false, error: "server_error" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

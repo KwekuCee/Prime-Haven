@@ -21,10 +21,33 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { reference, userId }: VerifyPaymentRequest = await req.json();
+    const body = await req.json();
+    const reference = body?.reference;
+    const userId = body?.userId;
 
-    if (!reference || !userId) {
-      throw new Error("Reference and userId are required");
+    // Input validation
+    if (!reference || typeof reference !== 'string' || reference.length > 100) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate reference format (alphanumeric and common special chars)
+    if (!/^[a-zA-Z0-9_-]+$/.test(reference)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate userId format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Verify payment with Paystack
@@ -108,9 +131,9 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: unknown) {
     console.error("Error in verify-payment:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    // Return generic error - don't expose internal details
     return new Response(
-      JSON.stringify({ success: false, error: "server_error", message: errorMessage }),
+      JSON.stringify({ success: false, error: "server_error" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
