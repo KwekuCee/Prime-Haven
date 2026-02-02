@@ -125,7 +125,7 @@ serve(async (req: Request): Promise<Response> => {
             to: [{ email }],
           },
         ],
-        from: { email: "noreply@primehaven.com", name: "Prime Haven" },
+        from: { email: "primehaven26@gmail.com", name: "Prime Haven" },
         subject: "Welcome to Prime Haven - Verify Your Email",
         content: [
           {
