@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
+import ResendVerificationEmail from '@/components/auth/ResendVerificationEmail';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -228,7 +229,11 @@ const Login = () => {
               </Button>
             </form>
 
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
+              <ResendVerificationEmail />
+            </div>
+
+            <div className="mt-4 text-center">
               <p className="text-muted-foreground">
                 Not a member yet?{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
