@@ -24,7 +24,9 @@ import {
   Star,
   ThumbsUp,
   Save,
-  ImageIcon
+  ImageIcon,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -180,6 +183,8 @@ const SuperAdminDashboard = () => {
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const [revenueInput, setRevenueInput] = useState('');
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
@@ -381,7 +386,7 @@ const SuperAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast, loadSystemSettings, systemSettings.monthly_revenue?.amount]);
+  }, [toast, loadSystemSettings]);
 
   // Check admin access - wait for auth to finish loading first
   useEffect(() => {
@@ -762,6 +767,80 @@ const SuperAdminDashboard = () => {
     } catch (error: any) {
       console.error('User action error:', error);
       toast({ title: 'Action failed', description: error.message || 'Please try again.', variant: 'destructive' });
+    }
+  };
+
+  // Handle delete designer
+  const handleDeleteDesigner = async (targetUser: User) => {
+    try {
+      setIsDeleting(true);
+      
+      // Delete in order: submissions, designer_details, user_roles, payments, then profile
+      // Delete submissions
+      await supabase
+        .from('submissions')
+        .delete()
+        .eq('designer_id', targetUser.id);
+      
+      // Delete designer_details
+      await supabase
+        .from('designer_details')
+        .delete()
+        .eq('user_id', targetUser.id);
+      
+      // Delete user_roles
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', targetUser.id);
+      
+      // Delete payments
+      await supabase
+        .from('payments')
+        .delete()
+        .eq('user_id', targetUser.id);
+      
+      // Delete email verification tokens
+      await supabase
+        .from('email_verification_tokens')
+        .delete()
+        .eq('user_id', targetUser.id);
+      
+      // Delete profile last
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', targetUser.id);
+      
+      if (profileError) throw profileError;
+      
+      // Log the action
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'user_deleted',
+          admin_id: user.id,
+          description: `Deleted designer: ${targetUser.full_name || targetUser.email}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      toast({
+        title: 'Designer Deleted',
+        description: `${targetUser.full_name || targetUser.email} has been permanently removed.`,
+      });
+
+      setDeleteConfirmUser(null);
+      await loadDashboardDataSafe();
+
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Could not delete designer.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1418,6 +1497,18 @@ const SuperAdminDashboard = () => {
                                       Demote to Designer
                                     </DropdownMenuItem>
                                   )}
+                                  {userItem.user_roles?.[0]?.role === 'designer' && userItem.id !== user?.id && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        onClick={() => setDeleteConfirmUser(userItem)}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete Designer
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -1578,6 +1669,48 @@ const SuperAdminDashboard = () => {
         onOpenChange={(open) => !open && setViewFilesSubmission(null)}
         submission={viewFilesSubmission}
       />
+
+      {/* Delete Designer Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmUser} onOpenChange={(open) => !open && setDeleteConfirmUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 font-bold text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Designer Permanently?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>You are about to permanently delete <strong>{deleteConfirmUser?.full_name || deleteConfirmUser?.email}</strong>.</p>
+              <p className="text-destructive font-medium">This action cannot be undone. All associated data will be removed:</p>
+              <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
+                <li>Profile information</li>
+                <li>Designer details and points</li>
+                <li>All work submissions</li>
+                <li>Payment records</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmUser && handleDeleteDesigner(deleteConfirmUser)}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
