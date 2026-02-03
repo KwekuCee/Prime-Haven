@@ -18,10 +18,41 @@ serve(async (req: Request): Promise<Response> => {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Admin credentials
-    const adminEmail = "ceo@PH";
-    const adminPassword = "PH2026@";
-    const adminName = "CEO Admin";
+    // Get admin credentials from request body (required for security)
+    const { email, password, name } = await req.json();
+
+    // Validate required fields
+    if (!email || !password) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Email and password are required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate password strength (minimum 12 characters, mixed case, numbers, symbols)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
+    if (!passwordRegex.test(password)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Password must be at least 12 characters with uppercase, lowercase, number, and special character" 
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const adminEmail = email;
+    const adminPassword = password;
+    const adminName = name || "Admin";
 
     // Check if admin already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
