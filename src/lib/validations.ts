@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Calculate minimum date (18 years ago)
-const getMinimumAge = () => {
+export const getMinimumAgeDate = () => {
   const date = new Date();
   date.setFullYear(date.getFullYear() - 18);
   return date;
@@ -39,13 +39,11 @@ export const registerPersonalSchema = z.object({
     .min(1, 'Phone number is required')
     .regex(/^[\d\s\+\-\(\)]+$/, 'Please enter a valid phone number')
     .max(20, 'Phone number must be less than 20 characters'),
-  dob: z
-    .string()
-    .min(1, 'Date of birth is required')
-    .refine((date) => {
-      const inputDate = new Date(date);
-      return inputDate <= getMinimumAge();
-    }, 'You must be at least 18 years old'),
+  dob: z.date({
+    required_error: 'Date of birth is required',
+  }).refine((date) => {
+    return date <= getMinimumAgeDate();
+  }, 'You must be at least 18 years old'),
   portfolioUrl: z
     .string()
     .url('Please enter a valid URL')

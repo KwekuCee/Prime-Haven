@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -9,10 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { usePaystackPayment } from 'react-paystack';
+import { cn } from '@/lib/utils';
 import { 
   registerPersonalSchema, 
   registerSkillsSchema, 
@@ -20,6 +24,7 @@ import {
   RegisterPersonalData,
   RegisterSkillsData,
   RegisterAccountData,
+  getMinimumAgeDate,
 } from '@/lib/validations';
 
 const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb";
@@ -36,11 +41,12 @@ const Register = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [dobOpen, setDobOpen] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    dob: '',
+    dob: undefined as Date | undefined,
     portfolioUrl: '',
     professionalTitle: '',
     experience: '',
@@ -171,7 +177,7 @@ const Register = () => {
         .from('profiles')
         .update({
           phone: formData.phone,
-          dob: formData.dob || null,
+          dob: formData.dob ? format(formData.dob, 'yyyy-MM-dd') : null,
         })
         .eq('id', userId);
 
@@ -384,12 +390,41 @@ const Register = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dob">Date of Birth *</Label>
-                      <Input
-                        id="dob"
-                        type="date"
-                        {...personalForm.register('dob')}
-                        className={personalForm.formState.errors.dob ? 'border-destructive' : ''}
-                      />
+                      <Popover open={dobOpen} onOpenChange={setDobOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="dob"
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !personalForm.watch('dob') && "text-muted-foreground",
+                              personalForm.formState.errors.dob && "border-destructive"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {personalForm.watch('dob') ? (
+                              format(personalForm.watch('dob'), "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={personalForm.watch('dob')}
+                            onSelect={(date) => {
+                              personalForm.setValue('dob', date as Date, { shouldValidate: true });
+                              setDobOpen(false);
+                            }}
+                            disabled={(date) =>
+                              date > getMinimumAgeDate() || date < new Date("1900-01-01")
+                            }
+                            defaultMonth={getMinimumAgeDate()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                       {personalForm.formState.errors.dob && (
                         <p className="text-sm text-destructive">{personalForm.formState.errors.dob.message}</p>
                       )}
