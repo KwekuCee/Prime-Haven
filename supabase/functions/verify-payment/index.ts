@@ -102,6 +102,17 @@ serve(async (req: Request): Promise<Response> => {
       // Don't fail the request, payment was successful
     }
 
+    // Get user profile for Discord invite
+    const { data: profile, error: profileFetchError } = await supabase
+      .from("profiles")
+      .select("email, full_name, discord_invite_sent")
+      .eq("id", userId)
+      .single();
+
+    if (profileFetchError) {
+      console.error("Failed to fetch profile:", profileFetchError);
+    }
+
     // Update profile to mark registration fee as paid
     const { error: profileError } = await supabase
       .from("profiles")
@@ -113,6 +124,37 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     console.log("Payment verified and recorded for user:", userId);
+
+    // Send Discord invite if not already sent
+    if (profile && !profile.discord_invite_sent) {
+      try {
+        const discordInviteResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/create-discord-invite`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              userId,
+              email: profile.email,
+              fullName: profile.full_name || "Designer",
+            }),
+          }
+        );
+
+        if (discordInviteResponse.ok) {
+          console.log("Discord invite sent successfully for user:", userId);
+        } else {
+          const errorData = await discordInviteResponse.json();
+          console.error("Failed to send Discord invite:", errorData);
+        }
+      } catch (discordError) {
+        console.error("Error sending Discord invite:", discordError);
+        // Don't fail the payment verification for Discord invite errors
+      }
+    }
 
     return new Response(
       JSON.stringify({ 

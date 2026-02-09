@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.get-signed-url]
 verify_jwt = false
+
+[functions.create-discord-invite]
+verify_jwt = false
