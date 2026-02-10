@@ -210,16 +210,7 @@ const Register = () => {
         // Payment was successful with Paystack, so continue anyway
       }
 
-      // Send verification email
-      const redirectUrl = window.location.origin;
-      await supabase.functions.invoke('send-verification-email', {
-        body: {
-          email: formData.email,
-          fullName: formData.fullName,
-          userId,
-          redirectUrl,
-        },
-      });
+      // Verification email is now sent automatically by verify-payment edge function
 
       toast({
         title: 'Registration Successful!',

@@ -125,35 +125,79 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Payment verified and recorded for user:", userId);
 
-    // Send Discord invite if not already sent
-    if (profile && !profile.discord_invite_sent) {
-      try {
-        const discordInviteResponse = await fetch(
-          `${SUPABASE_URL}/functions/v1/create-discord-invite`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-            body: JSON.stringify({
-              userId,
-              email: profile.email,
-              fullName: profile.full_name || "Designer",
-            }),
-          }
-        );
+    // Send verification email and Discord invite in parallel
+    if (profile) {
+      const promises: Promise<void>[] = [];
 
-        if (discordInviteResponse.ok) {
-          console.log("Discord invite sent successfully for user:", userId);
-        } else {
-          const errorData = await discordInviteResponse.json();
-          console.error("Failed to send Discord invite:", errorData);
-        }
-      } catch (discordError) {
-        console.error("Error sending Discord invite:", discordError);
-        // Don't fail the payment verification for Discord invite errors
+      // Send verification email
+      promises.push(
+        (async () => {
+          try {
+            const verificationResponse = await fetch(
+              `${SUPABASE_URL}/functions/v1/send-verification-email`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  email: profile.email,
+                  fullName: profile.full_name || "Designer",
+                  userId,
+                  redirectUrl: req.headers.get("origin") || "https://primehaven.lovable.app",
+                }),
+              }
+            );
+
+            if (verificationResponse.ok) {
+              console.log("Verification email sent for user:", userId);
+            } else {
+              const errorData = await verificationResponse.json();
+              console.error("Failed to send verification email:", errorData);
+            }
+          } catch (verifyError) {
+            console.error("Error sending verification email:", verifyError);
+          }
+        })()
+      );
+
+      // Send Discord invite if not already sent
+      if (!profile.discord_invite_sent) {
+        promises.push(
+          (async () => {
+            try {
+              const discordInviteResponse = await fetch(
+                `${SUPABASE_URL}/functions/v1/create-discord-invite`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                  },
+                  body: JSON.stringify({
+                    userId,
+                    email: profile.email,
+                    fullName: profile.full_name || "Designer",
+                  }),
+                }
+              );
+
+              if (discordInviteResponse.ok) {
+                console.log("Discord invite sent successfully for user:", userId);
+              } else {
+                const errorData = await discordInviteResponse.json();
+                console.error("Failed to send Discord invite:", errorData);
+              }
+            } catch (discordError) {
+              console.error("Error sending Discord invite:", discordError);
+            }
+          })()
+        );
       }
+
+      // Wait for both to complete (don't block payment success)
+      await Promise.allSettled(promises);
     }
 
     return new Response(
