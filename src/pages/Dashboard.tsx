@@ -43,6 +43,7 @@ interface Submission {
   ph_approved: boolean;
   client_accepted: boolean;
   created_at: string;
+  rejection_reason?: string;
 }
 
 interface LeaderboardEntry {
@@ -351,31 +352,39 @@ const Dashboard = () => {
                 {submissions.slice(0, 5).map((submission) => {
                   const activityType = getActivityType(submission);
                   return (
-                    <div key={submission.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          activityType === 'client_accepted' ? 'bg-primary' :
-                          activityType === 'ph_approved' ? 'bg-green-500' :
-                          activityType === 'approved' ? 'bg-green-500' :
-                          activityType === 'preference' ? 'bg-primary' :
-                          activityType === 'revision' ? 'bg-yellow-500' :
-                          activityType === 'rejected' ? 'bg-red-500' :
-                          'bg-muted-foreground'
-                        }`} />
-                        <div>
-                          <p className="font-semibold text-sm">{submission.project_name}</p>
-                          <p className="text-xs text-muted-foreground font-medium">{getActivityLabel(activityType)}</p>
+                    <div key={submission.id} className="py-3 border-b border-border last:border-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            activityType === 'client_accepted' ? 'bg-primary' :
+                            activityType === 'ph_approved' ? 'bg-green-500' :
+                            activityType === 'approved' ? 'bg-green-500' :
+                            activityType === 'preference' ? 'bg-primary' :
+                            activityType === 'revision' ? 'bg-yellow-500' :
+                            activityType === 'rejected' ? 'bg-red-500' :
+                            'bg-muted-foreground'
+                          }`} />
+                          <div>
+                            <p className="font-semibold text-sm">{submission.project_name}</p>
+                            <p className="text-xs text-muted-foreground font-medium">{getActivityLabel(activityType)}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {submission.points_awarded > 0 && (
+                            <p className="text-sm text-primary font-bold">+{submission.points_awarded} pts</p>
+                          )}
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                            <Clock className="w-3 h-3" />
+                            {getTimeAgo(submission.created_at)}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        {submission.points_awarded > 0 && (
-                          <p className="text-sm text-primary font-bold">+{submission.points_awarded} pts</p>
-                        )}
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
-                          <Clock className="w-3 h-3" />
-                          {getTimeAgo(submission.created_at)}
-                        </p>
-                      </div>
+                      {activityType === 'rejected' && submission.rejection_reason && (
+                        <div className="mt-2 ml-5 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                          <p className="text-xs font-semibold text-red-400 mb-0.5">Admin Feedback:</p>
+                          <p className="text-xs text-muted-foreground">{submission.rejection_reason}</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

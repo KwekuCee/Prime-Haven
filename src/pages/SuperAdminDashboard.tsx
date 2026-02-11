@@ -45,6 +45,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
+import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
 // Types
@@ -185,6 +186,8 @@ const SuperAdminDashboard = () => {
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [rejectSubmission, setRejectSubmission] = useState<Submission | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
@@ -602,19 +605,22 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Handle rejection
-  const handleRejectSubmission = async (submissionId: string) => {
+  // Handle rejection with reason
+  const handleRejectSubmission = async () => {
+    if (!rejectSubmission) return;
+    if (!rejectionReason.trim()) {
+      toast({ title: 'Reason Required', description: 'Please provide a reason for rejection.', variant: 'destructive' });
+      return;
+    }
     try {
-      const submission = submissions.find(s => s.id === submissionId);
-      if (!submission) throw new Error('Submission not found');
-
       const { error: updateError } = await supabase
         .from('submissions')
         .update({
           status: 'rejected',
+          rejection_reason: rejectionReason.trim(),
           updated_at: new Date().toISOString()
-        })
-        .eq('id', submissionId);
+        } as any)
+        .eq('id', rejectSubmission.id);
 
       if (updateError) throw updateError;
 
@@ -622,25 +628,19 @@ const SuperAdminDashboard = () => {
         await supabase.from('system_logs').insert({
           action_type: 'submission_rejected',
           admin_id: user.id,
-          description: `Rejected submission: ${submission.project_name}`,
+          description: `Rejected submission: ${rejectSubmission.project_name} — Reason: ${rejectionReason.trim()}`,
           timestamp: new Date().toISOString(),
         });
       }
 
-      toast({
-        title: 'Submission Rejected',
-        description: 'The submission has been rejected.',
-      });
-
+      toast({ title: 'Submission Rejected', description: 'The submission has been rejected with your feedback.' });
+      setRejectSubmission(null);
+      setRejectionReason('');
       await loadDashboardDataSafe();
 
     } catch (error: any) {
       console.error('Rejection error:', error);
-      toast({
-        title: 'Rejection Failed',
-        description: error.message || 'Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Rejection Failed', description: error.message || 'Please try again.', variant: 'destructive' });
     }
   };
 
@@ -1292,7 +1292,7 @@ const SuperAdminDashboard = () => {
                                             size="sm"
                                             variant="outline"
                                             className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                            onClick={() => handleRejectSubmission(submission.id)}
+                                            onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}
                                           >
                                             <XCircle className="w-3 h-3" />
                                           </Button>
@@ -1711,6 +1711,37 @@ const SuperAdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rejection Reason Dialog */}
+      <Dialog open={!!rejectSubmission} onOpenChange={(open) => { if (!open) { setRejectSubmission(null); setRejectionReason(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Submission</DialogTitle>
+            <DialogDescription>
+              Provide a reason for rejecting "{rejectSubmission?.project_name}". This will be visible to the designer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="rejection-reason">Rejection Reason</Label>
+            <Textarea
+              id="rejection-reason"
+              placeholder="Explain why this submission is being rejected..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="mt-2 min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectSubmission(null); setRejectionReason(''); }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleRejectSubmission} disabled={!rejectionReason.trim()}>
+              <XCircle className="w-4 h-4 mr-2" />
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
