@@ -232,6 +232,7 @@ export type Database = {
           ph_approved_by: string | null
           points_awarded: number | null
           project_name: string
+          rejection_reason: string | null
           reviewer_id: string | null
           revisions_count: number | null
           service_type: string
@@ -255,6 +256,7 @@ export type Database = {
           ph_approved_by?: string | null
           points_awarded?: number | null
           project_name: string
+          rejection_reason?: string | null
           reviewer_id?: string | null
           revisions_count?: number | null
           service_type: string
@@ -278,6 +280,7 @@ export type Database = {
           ph_approved_by?: string | null
           points_awarded?: number | null
           project_name?: string
+          rejection_reason?: string | null
           reviewer_id?: string | null
           revisions_count?: number | null
           service_type?: string
