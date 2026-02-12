@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.create-discord-invite]
 verify_jwt = false
+
+[functions.notify-designer]
+verify_jwt = false

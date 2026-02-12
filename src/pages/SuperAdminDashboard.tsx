@@ -188,6 +188,9 @@ const SuperAdminDashboard = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [rejectSubmission, setRejectSubmission] = useState<Submission | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [giftPointsUser, setGiftPointsUser] = useState<User | null>(null);
+  const [giftPointsAmount, setGiftPointsAmount] = useState('');
+  const [giftPointsReason, setGiftPointsReason] = useState('');
 
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
@@ -240,7 +243,8 @@ const SuperAdminDashboard = () => {
         supabase
           .from('submissions')
           .select('*')
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(10),
 
         supabase
           .from('payments')
@@ -250,8 +254,8 @@ const SuperAdminDashboard = () => {
         supabase
           .from('system_logs')
           .select('*')
-          .order('timestamp', { ascending: false })
-          .limit(50)
+        .order('timestamp', { ascending: false })
+          .limit(10)
       ]);
 
       if (profilesError) throw profilesError;
@@ -516,6 +520,20 @@ const SuperAdminDashboard = () => {
         });
       }
 
+      // Send notification email to designer
+      try {
+        await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: submission.designer_id,
+            projectName: submission.project_name,
+            notificationType: 'ph_approved',
+            pointsAwarded: phPoints,
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send PH approval email:', emailErr);
+      }
+
       toast({
         title: 'PH Approved',
         description: `Submission approved with ${phPoints} points.`,
@@ -586,6 +604,20 @@ const SuperAdminDashboard = () => {
           description: `Client accepted: ${submission.project_name} (+${clientPoints} points)`,
           timestamp: new Date().toISOString(),
         });
+      }
+
+      // Send notification email to designer
+      try {
+        await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: submission.designer_id,
+            projectName: submission.project_name,
+            notificationType: 'client_accepted',
+            pointsAwarded: clientPoints,
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send client acceptance email:', emailErr);
       }
 
       toast({
@@ -841,6 +873,67 @@ const SuperAdminDashboard = () => {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Handle gift points
+  const handleGiftPoints = async () => {
+    if (!giftPointsUser) return;
+    const points = parseInt(giftPointsAmount);
+    if (isNaN(points) || points <= 0) {
+      toast({ title: 'Invalid Points', description: 'Please enter a valid positive number.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { data: designerData } = await supabase
+        .from('designer_details')
+        .select('total_points, monthly_points')
+        .eq('user_id', giftPointsUser.id)
+        .maybeSingle();
+
+      if (designerData) {
+        await supabase
+          .from('designer_details')
+          .update({
+            total_points: (designerData.total_points || 0) + points,
+            monthly_points: (designerData.monthly_points || 0) + points,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', giftPointsUser.id);
+      }
+
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'gift_points',
+          admin_id: user.id,
+          description: `Gifted ${points} points to ${giftPointsUser.full_name || giftPointsUser.email}${giftPointsReason ? ': ' + giftPointsReason : ''}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Send notification email
+      try {
+        await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: giftPointsUser.id,
+            projectName: '',
+            notificationType: 'gift_points',
+            pointsAwarded: points,
+            giftReason: giftPointsReason,
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send gift points email:', emailErr);
+      }
+
+      toast({ title: 'Points Gifted', description: `${points} points awarded to ${giftPointsUser.full_name || giftPointsUser.email}.` });
+      setGiftPointsUser(null);
+      setGiftPointsAmount('');
+      setGiftPointsReason('');
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      console.error('Gift points error:', error);
+      toast({ title: 'Gift Failed', description: error.message || 'Please try again.', variant: 'destructive' });
     }
   };
 
@@ -1497,6 +1590,11 @@ const SuperAdminDashboard = () => {
                                       Demote to Designer
                                     </DropdownMenuItem>
                                   )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }}>
+                                    <Award className="w-4 h-4 mr-2" />
+                                    Gift Points
+                                  </DropdownMenuItem>
                                   {userItem.user_roles?.[0]?.role === 'designer' && userItem.id !== user?.id && (
                                     <>
                                       <DropdownMenuSeparator />
@@ -1738,6 +1836,50 @@ const SuperAdminDashboard = () => {
             <Button variant="destructive" onClick={handleRejectSubmission} disabled={!rejectionReason.trim()}>
               <XCircle className="w-4 h-4 mr-2" />
               Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gift Points Dialog */}
+      <Dialog open={!!giftPointsUser} onOpenChange={(open) => { if (!open) { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-bold">Gift Points</DialogTitle>
+            <DialogDescription className="font-medium">
+              Award bonus points to {giftPointsUser?.full_name || giftPointsUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="gift-points" className="font-semibold">Points Amount</Label>
+              <Input
+                id="gift-points"
+                type="number"
+                placeholder="Enter points to gift"
+                value={giftPointsAmount}
+                onChange={(e) => setGiftPointsAmount(e.target.value)}
+                min="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gift-reason" className="font-semibold">Reason (optional)</Label>
+              <Textarea
+                id="gift-reason"
+                placeholder="e.g. Excellent performance, bonus for extra work..."
+                value={giftPointsReason}
+                onChange={(e) => setGiftPointsReason(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleGiftPoints} disabled={!giftPointsAmount || parseInt(giftPointsAmount) <= 0}>
+              <Award className="w-4 h-4 mr-2" />
+              Gift Points
             </Button>
           </DialogFooter>
         </DialogContent>
