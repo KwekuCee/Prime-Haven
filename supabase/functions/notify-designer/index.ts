@@ -13,7 +13,7 @@ const corsHeaders = {
 interface NotifyRequest {
   designerId: string;
   projectName: string;
-  notificationType: "ph_approved" | "client_accepted" | "gift_points";
+  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission";
   pointsAwarded?: number;
   giftReason?: string;
 }
@@ -37,6 +37,89 @@ serve(async (req: Request): Promise<Response> => {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // For new_submission, send email to admin instead of designer
+    if (notificationType === "new_submission") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", designerId)
+        .single();
+
+      const designerName = (profile?.full_name || "A designer").slice(0, 100).replace(/<[^>]*>/g, "").trim();
+      const sanitizedProject = (projectName || "Untitled").slice(0, 200).replace(/<[^>]*>/g, "").trim();
+
+      const subject = `📋 New Submission: "${sanitizedProject}" by ${designerName}`;
+      const emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #000 0%, #0a0a0a 50%, #111 100%); color: #fff; margin: 0; padding: 40px 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, rgba(20,20,20,0.95), rgba(10,10,10,0.98)); border-radius: 24px; padding: 48px 40px; border: 1px solid rgba(254,76,24,0.2); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); position: relative; overflow: hidden; }
+    .container::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #fe4c18, #ff7a45, #fe4c18); }
+    .badge { display: inline-block; background: rgba(254,76,24,0.2); border: 1px solid rgba(254,76,24,0.3); color: #fe4c18; padding: 8px 20px; border-radius: 50px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+    h1 { color: #fff; font-size: 28px; font-weight: 800; margin: 0 0 8px; }
+    .name { color: #fe4c18; }
+    p { color: #b0b0b0; line-height: 1.7; font-size: 15px; }
+    .highlight-box { background: rgba(254,76,24,0.1); border: 1px solid rgba(254,76,24,0.2); border-radius: 16px; padding: 24px; margin: 30px 0; text-align: center; }
+    .cta { display: inline-block; background: linear-gradient(135deg, #fe4c18, #ff6b35); color: #000 !important; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 15px; margin-top: 16px; }
+    .footer { margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; }
+    .footer p { color: #555; font-size: 12px; }
+    .footer a { color: #fe4c18; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="text-align:center; margin-bottom:30px;">
+      <img src="https://kbxijzsrywcwnyvtbruh.supabase.co/storage/v1/object/public/email-assets/prime-haven-logo.png?v=1" alt="Prime Haven" style="max-width:140px;height:auto;" />
+    </div>
+    <div style="text-align:center;">
+      <span class="badge">📋 NEW SUBMISSION</span>
+      <h1>New Work Submitted!</h1>
+    </div>
+    <div class="highlight-box">
+      <p style="margin:0 0 10px;color:#ccc;"><strong>${designerName}</strong> has submitted <strong>"${sanitizedProject}"</strong> for your review.</p>
+      <a href="https://primehaven.lovable.app/superadmin" class="cta">Review Now</a>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Prime Haven. All rights reserved.</p>
+      <p><a href="https://primehaven.lovable.app">primehaven.lovable.app</a></p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SENDGRID_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: "primehaven26@gmail.com" }] }],
+          from: { email: "primehaven26@gmail.com", name: "Prime Haven" },
+          subject,
+          content: [{ type: "text/html", value: emailHtml }],
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error("SendGrid error:", errorText);
+        return new Response(JSON.stringify({ success: false, error: "email_send_failed" }), {
+          status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      console.log(`Admin notification sent for new submission: ${sanitizedProject}`);
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Designer notifications (ph_approved, client_accepted, gift_points)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("email, full_name")

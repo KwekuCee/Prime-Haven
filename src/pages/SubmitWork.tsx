@@ -230,6 +230,19 @@ const SubmitWork = () => {
 
       if (error) throw error;
 
+      // Notify admin of new submission
+      try {
+        await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: user.id,
+            projectName: formData.projectName.trim(),
+            notificationType: 'new_submission',
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send admin notification:', emailErr);
+      }
+
       toast({
         title: "Submission successful!",
         description: "Your work has been submitted for review.",
