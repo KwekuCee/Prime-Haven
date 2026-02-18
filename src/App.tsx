@@ -19,6 +19,8 @@ import EditProfile from "./pages/EditProfile";
 import ServiceDetail from "./pages/ServiceDetail";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import UIUXAdminDashboard from "./pages/UIUXAdminDashboard";
+import WebDevAdminDashboard from "./pages/WebDevAdminDashboard";
 import ManagePortfolio from "./pages/ManagePortfolio";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +49,8 @@ const App = () => (
             <Route path="/services/:serviceId" element={<ServiceDetail />} />
             <Route path="/superadmin-login" element={<SuperAdminLogin />} />
             <Route path="/superadmin" element={<SuperAdminDashboard />} />
+            <Route path="/superadmin/uiux" element={<UIUXAdminDashboard />} />
+            <Route path="/superadmin/web" element={<WebDevAdminDashboard />} />
             <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

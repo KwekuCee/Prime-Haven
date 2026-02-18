@@ -44,6 +44,9 @@ interface Submission {
   client_accepted: boolean;
   created_at: string;
   rejection_reason?: string;
+  parent_submission_id?: string;
+  client_ref?: string;
+  service_type?: string;
 }
 
 interface LeaderboardEntry {
@@ -181,6 +184,8 @@ const Dashboard = () => {
 
   const getActivityType = (submission: Submission) => {
     if (submission.client_accepted) return 'client_accepted';
+    if (submission.status === 'correction_requested') return 'correction_requested';
+    if (submission.status === 'client_rejected') return 'client_rejected';
     if (submission.ph_approved) return 'ph_approved';
     if (submission.client_preference) return 'preference';
     if (submission.status === 'approved') return 'approved';
@@ -197,6 +202,8 @@ const Dashboard = () => {
       case 'approved': return 'Approved';
       case 'revision': return 'Needs Revision';
       case 'rejected': return 'Rejected';
+      case 'correction_requested': return 'Correction Requested';
+      case 'client_rejected': return 'Client Rejected';
       default: return 'Submitted';
     }
   };
@@ -379,10 +386,22 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      {activityType === 'rejected' && submission.rejection_reason && (
+                      {(activityType === 'rejected' || activityType === 'client_rejected') && submission.rejection_reason && (
                         <div className="mt-2 ml-5 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
                           <p className="text-xs font-semibold text-red-400 mb-0.5">Admin Feedback:</p>
                           <p className="text-xs text-muted-foreground">{submission.rejection_reason}</p>
+                        </div>
+                      )}
+                      {activityType === 'correction_requested' && (
+                        <div className="mt-2 ml-5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white text-xs"
+                            onClick={() => navigate(`/submit-work?correction=${submission.id}&project=${encodeURIComponent(submission.project_name)}&client=${encodeURIComponent(submission.client_ref || '')}&service=${submission.service_type || 'logo'}`)}
+                          >
+                            Submit Correction
+                          </Button>
                         </div>
                       )}
                     </div>
