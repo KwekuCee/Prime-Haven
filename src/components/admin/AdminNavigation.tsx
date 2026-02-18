@@ -14,7 +14,7 @@ export const AdminNavigation = () => {
   ];
 
   return (
-    <div className="flex items-center gap-2 mt-3">
+    <div className="flex items-center gap-1.5 sm:gap-2 pb-1">
       {links.map(link => {
         const isActive = location.pathname === link.path;
         return (
@@ -23,10 +23,10 @@ export const AdminNavigation = () => {
             variant={isActive ? 'default' : 'outline'}
             size="sm"
             onClick={() => navigate(link.path)}
-            className="font-semibold"
+            className="font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0"
           >
-            <link.icon className="w-4 h-4 mr-1.5" />
-            {link.label}
+            <link.icon className="w-4 h-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">{link.label}</span>
           </Button>
         );
       })}

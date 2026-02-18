@@ -1206,27 +1206,25 @@ const SuperAdminDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <Crown className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
-                    Prime Haven
-                    <Badge variant="secondary" className="text-xs font-semibold">
-                      <Shield className="w-3 h-3 mr-1" />
-                      Super Admin
-                    </Badge>
-                  </h1>
-                  <p className="text-sm text-muted-foreground font-medium">Complete platform administration</p>
-                </div>
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          {/* Top row: Logo + Actions */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shrink-0">
+                <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
               </div>
-              <AdminNavigation />
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-heading font-bold flex items-center gap-2">
+                  <span className="truncate">Prime Haven</span>
+                  <Badge variant="secondary" className="text-xs font-semibold shrink-0 hidden sm:inline-flex">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Super Admin
+                  </Badge>
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground font-medium hidden sm:block">Complete platform administration</p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <AlertDialog>
                 <TooltipProvider>
                   <Tooltip>
@@ -1234,7 +1232,7 @@ const SuperAdminDashboard = () => {
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm" disabled={isResettingPoints} className="text-amber-500 border-amber-500 hover:bg-amber-500 hover:text-white">
                           {isResettingPoints ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                          <span className="ml-1 hidden md:inline">Reset Points</span>
+                          <span className="ml-1 hidden lg:inline">Reset Points</span>
                         </Button>
                       </AlertDialogTrigger>
                     </TooltipTrigger>
@@ -1269,15 +1267,15 @@ const SuperAdminDashboard = () => {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Button variant="ghost" className="gap-1 sm:gap-2 px-2 sm:px-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                       <span className="text-sm font-bold text-primary">{(adminDisplayName.charAt(0) || 'A').toUpperCase()}</span>
                     </div>
-                    <div className="text-left hidden md:block">
+                    <div className="text-left hidden lg:block">
                       <p className="text-sm font-semibold">Super Admin</p>
                       <p className="text-xs text-muted-foreground truncate max-w-[120px]">{adminDisplayName}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                    <ChevronRight className="w-4 h-4 hidden sm:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -1295,6 +1293,10 @@ const SuperAdminDashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+          </div>
+          {/* Navigation row */}
+          <div className="mt-3 -mb-1 overflow-x-auto">
+            <AdminNavigation />
           </div>
         </div>
       </div>
