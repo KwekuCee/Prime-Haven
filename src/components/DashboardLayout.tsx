@@ -8,7 +8,8 @@ import {
   LogOut, 
   Menu,
   X,
-  User
+  User,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +22,7 @@ interface DashboardLayoutProps {
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Submit Work', icon: Upload, path: '/submit-work' },
+  { label: 'Messages', icon: MessageSquare, path: '/messages' },
   { label: 'Payments', icon: Wallet, path: '/payments' },
   { label: 'Settings', icon: Settings, path: '/settings' },
 ];

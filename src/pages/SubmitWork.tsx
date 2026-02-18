@@ -297,29 +297,29 @@ const SubmitWork = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-heading font-bold mb-2">
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">
                 {correctionId ? 'Submit Correction' : 'Submit Work'}
               </h1>
               <p className="text-muted-foreground">
                 {correctionId ? 'Submit your corrected work for review' : 'Submit your completed work for review and points'}
               </p>
             </div>
-            <Badge variant="outline" className="gap-2">
+            <Badge variant="outline" className="gap-2 self-start sm:self-auto">
               <CheckCircle className="w-3 h-3" />
               Points Available: {getSelectedService()?.points || 15}
             </Badge>
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Left Column - Form */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}

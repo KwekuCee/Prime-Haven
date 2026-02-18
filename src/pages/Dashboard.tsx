@@ -274,7 +274,7 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         {/* Welcome */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
