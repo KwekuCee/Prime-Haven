@@ -18,19 +18,19 @@ serve(async (req: Request): Promise<Response> => {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Count active designers (profiles with registration_fee_paid and is_active)
+    // Count active members
     const { count: totalMembers } = await supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true);
 
-    // Count total completed submissions (client_accepted = true)
+    // Count completed projects (client_accepted)
     const { count: projectsDelivered } = await supabase
       .from("submissions")
       .select("*", { count: "exact", head: true })
       .eq("client_accepted", true);
 
-    // Count PH approved submissions
+    // Count PH approved
     const { count: phApproved } = await supabase
       .from("submissions")
       .select("*", { count: "exact", head: true })
@@ -41,16 +41,46 @@ serve(async (req: Request): Promise<Response> => {
       .from("submissions")
       .select("*", { count: "exact", head: true });
 
-    // Calculate satisfaction rate based on approval ratio
+    // Satisfaction rate
     const satisfactionRate = totalSubmissions && totalSubmissions > 0
       ? Math.round(((phApproved || 0) / totalSubmissions) * 100)
       : 98;
 
+    // Category breakdowns for drill-downs
+    const { data: allSubmissions } = await supabase
+      .from("submissions")
+      .select("service_type, client_accepted, ph_approved, status");
+
+    const categoryBreakdown: Record<string, { total: number; delivered: number; pending: number }> = {};
+    (allSubmissions || []).forEach((s: any) => {
+      const cat = s.service_type || "Other";
+      if (!categoryBreakdown[cat]) {
+        categoryBreakdown[cat] = { total: 0, delivered: 0, pending: 0 };
+      }
+      categoryBreakdown[cat].total++;
+      if (s.client_accepted) categoryBreakdown[cat].delivered++;
+      if (s.status === "pending" || (!s.ph_approved && s.status !== "rejected")) {
+        categoryBreakdown[cat].pending++;
+      }
+    });
+
+    // Member breakdown
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("role");
+
+    const roleBreakdown: Record<string, number> = {};
+    (rolesData || []).forEach((r: any) => {
+      roleBreakdown[r.role] = (roleBreakdown[r.role] || 0) + 1;
+    });
+
     const stats = {
       totalMembers: totalMembers || 0,
       projectsDelivered: projectsDelivered || 0,
-      satisfactionRate: Math.max(satisfactionRate, 90), // Floor at 90%
+      satisfactionRate: Math.max(satisfactionRate, 90),
       totalSubmissions: totalSubmissions || 0,
+      categoryBreakdown,
+      roleBreakdown,
     };
 
     return new Response(JSON.stringify({ success: true, stats }), {
