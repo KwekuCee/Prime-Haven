@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY");
+const SMTP_HOST = Deno.env.get("SMTP_HOST");
+const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
+const SMTP_USER = Deno.env.get("SMTP_USER");
+const SMTP_PASS = Deno.env.get("SMTP_PASS");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -16,6 +20,27 @@ interface NotifyRequest {
   notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission";
   pointsAwarded?: number;
   giftReason?: string;
+}
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const client = new SMTPClient({
+    connection: {
+      hostname: SMTP_HOST!,
+      port: SMTP_PORT,
+      tls: true,
+      auth: { username: SMTP_USER!, password: SMTP_PASS! },
+    },
+  });
+
+  await client.send({
+    from: { address: SMTP_USER!, name: "Prime Haven" },
+    to: to,
+    subject,
+    content: "auto",
+    html,
+  });
+
+  await client.close();
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -91,27 +116,7 @@ serve(async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-      const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${SENDGRID_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: "team@primehaven.tech" }] }],
-          from: { email: "team@primehaven.tech", name: "Prime Haven" },
-          subject,
-          content: [{ type: "text/html", value: emailHtml }],
-        }),
-      });
-
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error("SendGrid error:", errorText);
-        return new Response(JSON.stringify({ success: false, error: "email_send_failed" }), {
-          status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
+      await sendEmail("team@primehaven.tech", subject, emailHtml);
 
       console.log(`Admin notification sent for new submission: ${sanitizedProject}`);
       return new Response(JSON.stringify({ success: true }), {
@@ -211,27 +216,7 @@ serve(async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email: profile.email }] }],
-        from: { email: "team@primehaven.tech", name: "Prime Haven" },
-        subject,
-        content: [{ type: "text/html", value: emailHtml }],
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error("SendGrid error:", errorText);
-      return new Response(JSON.stringify({ success: false, error: "email_send_failed" }), {
-        status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+    await sendEmail(profile.email, subject, emailHtml);
 
     console.log(`Notification email sent to ${profile.email} for ${notificationType}`);
 
