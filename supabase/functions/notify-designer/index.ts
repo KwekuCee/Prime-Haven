@@ -23,6 +23,15 @@ interface NotifyRequest {
   giftReason?: string;
 }
 
+function encodeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   const fromAddress = (SMTP_USER || "").trim();
 
@@ -72,8 +81,8 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", designerId)
         .single();
 
-      const designerName = (profile?.full_name || "A designer").slice(0, 100).replace(/<[^>]*>/g, "").trim();
-      const sanitizedProject = (projectName || "Untitled").slice(0, 200).replace(/<[^>]*>/g, "").trim();
+      const designerName = encodeHtml((profile?.full_name || "A designer").slice(0, 100).trim());
+      const sanitizedProject = encodeHtml((projectName || "Untitled").slice(0, 200).trim());
 
       const subject = `📋 New Submission: "${sanitizedProject}" by ${designerName}`;
       const emailHtml = `<!DOCTYPE html>
@@ -140,8 +149,8 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const sanitizedName = (profile.full_name || "Designer").slice(0, 100).replace(/<[^>]*>/g, "").trim();
-    const sanitizedProject = (projectName || "Your Project").slice(0, 200).replace(/<[^>]*>/g, "").trim();
+    const sanitizedName = encodeHtml((profile.full_name || "Designer").slice(0, 100).trim());
+    const sanitizedProject = encodeHtml((projectName || "Your Project").slice(0, 200).trim());
 
     let subject = "";
     let heading = "";
@@ -167,7 +176,7 @@ serve(async (req: Request): Promise<Response> => {
       case "gift_points":
         subject = `🎁 You received ${pointsAwarded} bonus points!`;
         heading = "You Received Bonus Points!";
-        message = `You've been awarded <strong>+${pointsAwarded} bonus points</strong>${giftReason ? ` for: <strong>${giftReason.slice(0, 200).replace(/<[^>]*>/g, "")}</strong>` : ""}. Keep doing great work!`;
+        message = `You've been awarded <strong>+${pointsAwarded} bonus points</strong>${giftReason ? ` for: <strong>${encodeHtml(giftReason.slice(0, 200).trim())}</strong>` : ""}. Keep doing great work!`;
         badgeText = "BONUS POINTS";
         emoji = "🎁";
         break;

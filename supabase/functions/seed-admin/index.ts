@@ -18,6 +18,40 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Verify the caller is an authenticated admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Only existing masteradmins can create new admin accounts
+    const { data: callerRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!callerRole || callerRole.role !== "masteradmin") {
+      return new Response(
+        JSON.stringify({ success: false, error: "access_denied" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Get admin credentials from request body (required for security)
     const { email, password, name } = await req.json();
 

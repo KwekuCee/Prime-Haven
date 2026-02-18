@@ -311,7 +311,9 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const sanitizedName = typeof fullName === 'string'
-      ? fullName.slice(0, 100).replace(/<[^>]*>/g, '').trim()
+      ? fullName.slice(0, 100).trim()
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
       : "Designer";
 
     const token = generateToken();
