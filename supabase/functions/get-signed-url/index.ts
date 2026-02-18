@@ -30,7 +30,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const { createClient } = await import("npm:@supabase/supabase-js@2");
     
     // Create client with user's token for auth verification
     const supabaseAuth = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {

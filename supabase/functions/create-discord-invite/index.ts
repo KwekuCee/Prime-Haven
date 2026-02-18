@@ -105,7 +105,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log("Discord invite created:", inviteData.code);
 
     // Get logo URL
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const { createClient } = await import("npm:@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     
     const { data: logoData } = supabase.storage
