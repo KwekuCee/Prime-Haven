@@ -1,48 +1,38 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
-const projects = [
-  {
-    title: 'TechFlow Dashboard',
-    client: 'TechFlow Inc.',
-    category: 'UI/UX Design',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Artisan Brand Identity',
-    client: 'Artisan Collective',
-    category: 'Graphic Design',
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'CloudSync Platform',
-    client: 'CloudSync',
-    category: 'Web Development',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Nexus Mobile App',
-    client: 'Nexus Labs',
-    category: 'App Development',
-    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Quantum Website',
-    client: 'Quantum Dynamics',
-    category: 'Web Development',
-    image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Nova Campaign',
-    client: 'Nova Media',
-    category: 'Graphic Design',
-    image: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&h=400&fit=crop',
-  },
+interface PortfolioItem {
+  id: string;
+  title: string;
+  client: string;
+  category: string;
+  image_url: string;
+}
+
+const fallbackProjects: PortfolioItem[] = [
+  { id: '1', title: 'TechFlow Dashboard', client: 'TechFlow Inc.', category: 'UI/UX Design', image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop' },
+  { id: '2', title: 'Artisan Brand Identity', client: 'Artisan Collective', category: 'Graphic Design', image_url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop' },
+  { id: '3', title: 'CloudSync Platform', client: 'CloudSync', category: 'Web Development', image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop' },
 ];
 
 const PortfolioSection = () => {
+  const [projects, setProjects] = useState<PortfolioItem[]>(fallbackProjects);
+
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      const { data } = await supabase
+        .from('portfolio_items')
+        .select('id, title, client, category, image_url')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (data && data.length > 0) setProjects(data);
+    };
+    fetchPortfolio();
+  }, []);
   return (
     <section id="portfolio" className="py-24 relative bg-secondary/30">
       <div className="container mx-auto px-6">
@@ -80,7 +70,7 @@ const PortfolioSection = () => {
                 {/* Image */}
                 <div className="aspect-[4/3] overflow-hidden">
                   <img
-                    src={project.image}
+                    src={project.image_url}
                     alt={project.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
