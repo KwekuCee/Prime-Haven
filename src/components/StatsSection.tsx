@@ -1,13 +1,21 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
-import { Users, Briefcase, Star, Award } from 'lucide-react';
+import { Users, Briefcase, Star, TrendingUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-const stats = [
-  { icon: Users, value: 47, suffix: '+', label: 'Prime Members' },
-  { icon: Briefcase, value: 124, suffix: '+', label: 'Projects Delivered' },
-  { icon: Star, value: 98, suffix: '%', label: 'Client Satisfaction' },
-  { icon: Award, value: 15, suffix: '+', label: 'Awards Won' },
-];
+interface StatsData {
+  totalMembers: number;
+  projectsDelivered: number;
+  satisfactionRate: number;
+  totalSubmissions: number;
+}
+
+const fallbackStats: StatsData = {
+  totalMembers: 47,
+  projectsDelivered: 124,
+  satisfactionRate: 98,
+  totalSubmissions: 200,
+};
 
 const AnimatedCounter = ({ value, suffix }: { value: number; suffix: string }) => {
   const [count, setCount] = useState(0);
@@ -42,6 +50,36 @@ const AnimatedCounter = ({ value, suffix }: { value: number; suffix: string }) =
 };
 
 const StatsSection = () => {
+  const [stats, setStats] = useState<StatsData>(fallbackStats);
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('public-stats');
+        if (!error && data?.success && data?.stats) {
+          setStats({
+            totalMembers: Math.max(data.stats.totalMembers, 1),
+            projectsDelivered: Math.max(data.stats.projectsDelivered, 0),
+            satisfactionRate: data.stats.satisfactionRate,
+            totalSubmissions: Math.max(data.stats.totalSubmissions, 0),
+          });
+          setIsLive(true);
+        }
+      } catch {
+        // Keep fallback stats
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const statItems = [
+    { icon: Users, value: stats.totalMembers, suffix: '+', label: 'Prime Members' },
+    { icon: Briefcase, value: stats.projectsDelivered, suffix: '+', label: 'Projects Delivered' },
+    { icon: Star, value: stats.satisfactionRate, suffix: '%', label: 'Client Satisfaction' },
+    { icon: TrendingUp, value: stats.totalSubmissions, suffix: '+', label: 'Total Submissions' },
+  ];
+
   return (
     <section id="about" className="py-24 relative">
       <div className="container mx-auto px-6">
@@ -53,7 +91,15 @@ const StatsSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="text-primary font-medium uppercase tracking-wider text-sm">Our Impact</span>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <span className="text-primary font-medium uppercase tracking-wider text-sm">Our Impact</span>
+            {isLive && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
           <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6">
             Numbers That <span className="text-gradient">Speak</span>
           </h2>
@@ -64,7 +110,7 @@ const StatsSection = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
+          {statItems.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 30 }}
@@ -73,17 +119,12 @@ const StatsSection = () => {
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
               <div className="glass rounded-2xl p-8 text-center group hover:glow-primary transition-shadow">
-                {/* Icon */}
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
                   <stat.icon className="w-8 h-8 text-primary" />
                 </div>
-
-                {/* Number */}
                 <div className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">
                   <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                 </div>
-
-                {/* Label */}
                 <p className="text-muted-foreground font-medium">{stat.label}</p>
               </div>
             </motion.div>
