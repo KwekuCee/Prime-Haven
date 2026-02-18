@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Upload, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload, ExternalLink, Image as ImageIcon, Pencil, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,6 +40,9 @@ const ManagePortfolio = () => {
     category: '',
     image_url: '',
   });
+  const [editItem, setEditItem] = useState<PortfolioItem | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', client: '', category: '', image_url: '' });
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -135,7 +139,6 @@ const ManagePortfolio = () => {
 
   const handleDeleteItem = async (id: string) => {
     try {
-      // Using 'any' cast since portfolio_items table is newly created
       const { error } = await (supabase as any)
         .from('portfolio_items')
         .delete()
@@ -144,17 +147,42 @@ const ManagePortfolio = () => {
       if (error) throw error;
 
       setPortfolioItems(portfolioItems.filter(item => item.id !== id));
-      toast({
-        title: 'Deleted',
-        description: 'Portfolio item removed.',
-      });
+      toast({ title: 'Deleted', description: 'Portfolio item removed.' });
     } catch (error: any) {
       console.error('Error deleting item:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to delete item.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to delete item.' });
+    }
+  };
+
+  const openEditDialog = (item: PortfolioItem) => {
+    setEditItem(item);
+    setEditForm({ title: item.title, client: item.client, category: item.category, image_url: item.image_url });
+  };
+
+  const handleUpdateItem = async () => {
+    if (!editItem || !editForm.title || !editForm.client || !editForm.category || !editForm.image_url) {
+      toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill in all fields.' });
+      return;
+    }
+    try {
+      setIsEditing(true);
+      const { error } = await (supabase as any)
+        .from('portfolio_items')
+        .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: editForm.image_url })
+        .eq('id', editItem.id);
+
+      if (error) throw error;
+
+      setPortfolioItems(portfolioItems.map(item =>
+        item.id === editItem.id ? { ...item, ...editForm } : item
+      ));
+      setEditItem(null);
+      toast({ title: 'Updated', description: 'Portfolio item updated successfully.' });
+    } catch (error: any) {
+      console.error('Error updating item:', error);
+      toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to update item.' });
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -291,19 +319,13 @@ const ManagePortfolio = () => {
                     Added {new Date(item.created_at).toLocaleDateString()}
                   </span>
                   <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => window.open(item.image_url, '_blank')}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => window.open(item.image_url, '_blank')}>
                       <ExternalLink className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteItem(item.id)}
-                    >
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteItem(item.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -312,6 +334,48 @@ const ManagePortfolio = () => {
             ))}
           </div>
         )}
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Portfolio Item</DialogTitle>
+              <DialogDescription>Update the details for this work</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Project Title</Label>
+                <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Client Name</Label>
+                <Input value={editForm.client} onChange={(e) => setEditForm({ ...editForm, client: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={editForm.category} onValueChange={(v) => setEditForm({ ...editForm, category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Image URL</Label>
+                <Input value={editForm.image_url} onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+              <Button onClick={handleUpdateItem} disabled={isEditing}>
+                {isEditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
