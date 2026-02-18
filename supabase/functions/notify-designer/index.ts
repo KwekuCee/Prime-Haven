@@ -98,8 +98,8 @@ serve(async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          personalizations: [{ to: [{ email: "primehaven26@gmail.com" }] }],
-          from: { email: "primehaven26@gmail.com", name: "Prime Haven" },
+          personalizations: [{ to: [{ email: "team@primehaven.tech" }] }],
+          from: { email: "team@primehaven.tech", name: "Prime Haven" },
           subject,
           content: [{ type: "text/html", value: emailHtml }],
         }),
@@ -219,7 +219,7 @@ serve(async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         personalizations: [{ to: [{ email: profile.email }] }],
-        from: { email: "primehaven26@gmail.com", name: "Prime Haven" },
+        from: { email: "team@primehaven.tech", name: "Prime Haven" },
         subject,
         content: [{ type: "text/html", value: emailHtml }],
       }),
