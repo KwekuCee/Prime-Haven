@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SMTP_HOST = Deno.env.get("SMTP_HOST");
@@ -34,25 +34,18 @@ function encodeHtml(str: string): string {
 
 async function sendEmail(to: string, subject: string, html: string) {
   const fromAddress = (SMTP_USER || "").trim();
-
-  const client = new SMTPClient({
-    connection: {
-      hostname: SMTP_HOST!,
-      port: SMTP_PORT,
-      tls: true,
-      auth: { username: fromAddress, password: SMTP_PASS! },
-    },
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: fromAddress, pass: SMTP_PASS },
   });
-
-  await client.send({
+  await transporter.sendMail({
     from: `Prime Haven <${fromAddress}>`,
-    to: to,
+    to,
     subject,
-    content: "auto",
     html,
   });
-
-  await client.close();
 }
 
 serve(async (req: Request): Promise<Response> => {
