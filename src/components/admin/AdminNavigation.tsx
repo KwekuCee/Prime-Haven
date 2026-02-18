@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Palette, Layout, Globe } from 'lucide-react';
+import { Palette, Layout, Globe, Image } from 'lucide-react';
 
 export const AdminNavigation = () => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export const AdminNavigation = () => {
     { path: '/superadmin', label: 'Graphic Design', icon: Palette },
     { path: '/superadmin/uiux', label: 'UI/UX Design', icon: Layout },
     { path: '/superadmin/web', label: 'Web Development', icon: Globe },
+    { path: '/superadmin/portfolio', label: 'Portfolio', icon: Image },
   ];
 
   return (
