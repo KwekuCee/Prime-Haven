@@ -1,5 +1,6 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 const DISCORD_CHANNEL_ID = Deno.env.get("DISCORD_CHANNEL_ID");
@@ -105,7 +106,6 @@ serve(async (req: Request): Promise<Response> => {
     console.log("Discord invite created:", inviteData.code);
 
     // Get logo URL
-    const { createClient } = await import("npm:@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     
     const { data: logoData } = supabase.storage
