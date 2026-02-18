@@ -1,83 +1,45 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, ExternalLink, Calendar, User } from 'lucide-react';
+import { Search, Filter, ExternalLink, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { supabase } from '@/integrations/supabase/client';
 
-// This will be replaced with data from your database
-const allProjects = [
-  {
-    id: 1,
-    title: 'TechFlow Dashboard',
-    client: 'TechFlow Inc.',
-    category: 'UI/UX Design',
-    description: 'A comprehensive analytics dashboard for tech startups.',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
-    year: '2024',
-    tags: ['Dashboard', 'Analytics', 'Startup'],
-  },
-  {
-    id: 2,
-    title: 'Artisan Brand Identity',
-    client: 'Artisan Collective',
-    category: 'Graphic Design',
-    description: 'Complete brand identity for a local artisan cooperative.',
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop',
-    year: '2023',
-    tags: ['Branding', 'Logo', 'Packaging'],
-  },
-  {
-    id: 3,
-    title: 'CloudSync Platform',
-    client: 'CloudSync',
-    category: 'Web Development',
-    description: 'Cloud storage platform with real-time collaboration.',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop',
-    year: '2024',
-    tags: ['Cloud', 'SaaS', 'Web App'],
-  },
-  {
-    id: 4,
-    title: 'Nexus Mobile App',
-    client: 'Nexus Labs',
-    category: 'App Development',
-    description: 'Social networking app for creative professionals.',
-    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=400&fit=crop',
-    year: '2023',
-    tags: ['Mobile', 'Social', 'iOS/Android'],
-  },
-  {
-    id: 5,
-    title: 'Quantum Website',
-    client: 'Quantum Dynamics',
-    category: 'Web Development',
-    description: 'Corporate website for a quantum computing company.',
-    image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600&h=400&fit=crop',
-    year: '2024',
-    tags: ['Corporate', 'CMS', 'Responsive'],
-  },
-  {
-    id: 6,
-    title: 'Nova Campaign',
-    client: 'Nova Media',
-    category: 'Graphic Design',
-    description: 'Marketing campaign materials for media company.',
-    image: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&h=400&fit=crop',
-    year: '2023',
-    tags: ['Marketing', 'Print', 'Digital Ads'],
-  },
-];
+interface PortfolioItem {
+  id: string;
+  title: string;
+  client: string;
+  category: string;
+  image_url: string;
+}
 
 const categories = ['All', 'UI/UX Design', 'Graphic Design', 'Web Development', 'App Development', 'IT Solutions'];
 
 const Portfolio = () => {
-  const [projects, setProjects] = useState(allProjects);
+  const [allProjects, setAllProjects] = useState<PortfolioItem[]>([]);
+  const [projects, setProjects] = useState<PortfolioItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const filterProjects = () => {
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      const { data } = await supabase
+        .from('portfolio_items')
+        .select('id, title, client, category, image_url')
+        .order('created_at', { ascending: false });
+      if (data) {
+        setAllProjects(data);
+        setProjects(data);
+      }
+      setLoading(false);
+    };
+    fetchPortfolio();
+  }, []);
+
+  useEffect(() => {
     let filtered = allProjects;
 
     if (selectedCategory !== 'All') {
@@ -87,18 +49,12 @@ const Portfolio = () => {
     if (searchTerm) {
       filtered = filtered.filter(project =>
         project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        project.client.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     setProjects(filtered);
-  };
-
-  useEffect(() => {
-    filterProjects();
-  }, [selectedCategory, searchTerm]);
+  }, [selectedCategory, searchTerm, allProjects]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,7 +83,6 @@ const Portfolio = () => {
         <section className="container mx-auto px-6 mb-12">
           <div className="glass rounded-2xl p-6">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-              {/* Search */}
               <div className="w-full md:w-1/3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -141,7 +96,6 @@ const Portfolio = () => {
                 </div>
               </div>
 
-              {/* Category Filter */}
               <div className="flex flex-wrap gap-2">
                 {categories.map((category) => (
                   <Button
@@ -162,7 +116,11 @@ const Portfolio = () => {
 
         {/* Projects Grid */}
         <section className="container mx-auto px-6 mb-12">
-          {projects.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">Loading projects...</p>
+            </div>
+          ) : projects.length === 0 ? (
             <div className="text-center py-16 glass rounded-2xl">
               <h3 className="text-2xl font-heading font-bold mb-4">No projects found</h3>
               <p className="text-muted-foreground mb-6">Try adjusting your filters or search term</p>
@@ -190,55 +148,29 @@ const Portfolio = () => {
                     whileHover={{ y: -8 }}
                     className="group relative overflow-hidden rounded-2xl glass cursor-pointer h-full"
                   >
-                    {/* Image */}
                     <div className="aspect-[4/3] overflow-hidden">
                       <img
-                        src={project.image}
+                        src={project.image_url}
                         alt={project.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
                     </div>
 
-                    {/* Content */}
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="text-primary text-sm font-medium">{project.category}</span>
-                        <span className="text-muted-foreground text-sm flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {project.year}
-                        </span>
-                      </div>
-                      
-                      <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-primary transition-colors">
+                    <div className="absolute bottom-0 left-0 right-0 p-6">
+                      <span className="text-primary text-sm font-medium">{project.category}</span>
+                      <h3 className="text-xl font-heading font-bold mt-1 mb-1 group-hover:text-primary transition-colors">
                         {project.title}
                       </h3>
-                      
-                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                        {project.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                          <User className="w-4 h-4" />
-                          {project.client}
-                        </div>
-                        
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ExternalLink className="w-5 h-5 text-primary" />
-                        </div>
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <User className="w-4 h-4" />
+                        {project.client}
                       </div>
+                    </div>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1 mt-4">
-                        {project.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-1 text-xs bg-secondary rounded-full text-muted-foreground"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <ExternalLink className="w-5 h-5 text-primary-foreground" />
                       </div>
                     </div>
                   </motion.div>
