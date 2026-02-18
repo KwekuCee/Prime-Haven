@@ -17,6 +17,7 @@ interface PortfolioItem {
   client: string;
   category: string;
   image_url: string;
+  project_url: string | null;
   created_at: string;
 }
 
@@ -39,11 +40,12 @@ const ManagePortfolio = () => {
     client: '',
     category: '',
     image_url: '',
+    project_url: '',
   });
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<PortfolioItem | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', client: '', category: '', image_url: '' });
+  const [editForm, setEditForm] = useState({ title: '', client: '', category: '', image_url: '', project_url: '' });
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -159,7 +161,7 @@ const ManagePortfolio = () => {
       if (error) throw error;
 
       setPortfolioItems([data as PortfolioItem, ...portfolioItems]);
-      setNewItem({ title: '', client: '', category: '', image_url: '' });
+      setNewItem({ title: '', client: '', category: '', image_url: '', project_url: '' });
       setNewImageFile(null);
       setNewImagePreview(null);
       setShowForm(false);
@@ -198,7 +200,7 @@ const ManagePortfolio = () => {
 
   const openEditDialog = (item: PortfolioItem) => {
     setEditItem(item);
-    setEditForm({ title: item.title, client: item.client, category: item.category, image_url: item.image_url });
+    setEditForm({ title: item.title, client: item.client, category: item.category, image_url: item.image_url, project_url: item.project_url || '' });
     setEditImageFile(null);
     setEditImagePreview(null);
   };
@@ -216,7 +218,7 @@ const ManagePortfolio = () => {
       }
       const { error } = await (supabase as any)
         .from('portfolio_items')
-        .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: imageUrl })
+        .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: imageUrl, project_url: editForm.project_url || null })
         .eq('id', editItem.id);
 
       if (error) throw error;
@@ -323,6 +325,15 @@ const ManagePortfolio = () => {
                   {newImagePreview && (
                     <img src={newImagePreview} alt="Preview" className="w-full h-32 object-cover rounded-md mt-2" />
                   )}
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="project_url">Project Link (Figma, website URL, etc.)</Label>
+                  <Input
+                    id="project_url"
+                    placeholder="e.g., https://www.figma.com/... or https://example.com"
+                    value={newItem.project_url}
+                    onChange={(e) => setNewItem({ ...newItem, project_url: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="flex gap-2 mt-6">
@@ -445,6 +456,14 @@ const ManagePortfolio = () => {
                     className="w-full h-32 object-cover rounded-md mt-2"
                   />
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label>Project Link (Figma, website URL, etc.)</Label>
+                <Input
+                  placeholder="e.g., https://www.figma.com/... or https://example.com"
+                  value={editForm.project_url}
+                  onChange={(e) => setEditForm({ ...editForm, project_url: e.target.value })}
+                />
               </div>
             </div>
             <DialogFooter>
