@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
@@ -30,7 +31,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { createClient } = await import("npm:@supabase/supabase-js@2");
+    
     
     // Create client with user's token for auth verification
     const supabaseAuth = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
