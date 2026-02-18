@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SMTP_HOST = Deno.env.get("SMTP_HOST");
@@ -59,13 +59,9 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     ' cellspacing="0" style="max-width:600px;width:100%;',
     'background-color:#141414;border-radius:16px;',
     'border:1px solid #2a2a2a;overflow:hidden;">',
-
-    // Orange top bar
     '<tr><td style="height:4px;',
     'background:linear-gradient(90deg,#fe4c18,#ff7a45,#fe4c18);">',
     '</td></tr>',
-
-    // Logo
     '<tr><td align="center" style="padding:40px 40px 20px;">',
     '<img src="https://kbxijzsrywcwnyvtbruh.supabase.co',
     '/storage/v1/object/public/email-assets/',
@@ -73,8 +69,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     ' alt="Prime Haven" width="140"',
     ' style="display:block;max-width:140px;height:auto;" />',
     '</td></tr>',
-
-    // Badge
     '<tr><td align="center" style="padding:0 40px;">',
     '<span style="display:inline-block;',
     'background-color:rgba(254,76,24,0.15);',
@@ -84,8 +78,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     'font-weight:700;letter-spacing:2px;',
     'text-transform:uppercase;">NEW MEMBER</span>',
     '</td></tr>',
-
-    // Heading
     '<tr><td align="center" style="padding:16px 40px 4px;">',
     '<h1 style="margin:0;font-size:28px;',
     'font-weight:800;color:#ffffff;">',
@@ -93,14 +85,10 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     name,
     '</span>!</h1>',
     '</td></tr>',
-
-    // Subtitle
     '<tr><td align="center" style="padding:0 40px 24px;">',
     '<p style="margin:0;font-size:15px;color:#888888;">',
     "You're one step away from joining our creative community",
     '</p></td></tr>',
-
-    // CTA box
     '<tr><td style="padding:0 40px;">',
     '<table role="presentation" width="100%" cellpadding="0"',
     ' cellspacing="0" style="background-color:rgba(254,76,24,0.08);',
@@ -110,8 +98,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     '<p style="margin:0 0 20px;font-size:15px;',
     'color:#cccccc;">Click below to verify your email',
     ' and unlock your dashboard:</p>',
-
-    // Button
     '<a href="', verificationLink, '"',
     ' target="_blank"',
     ' style="display:inline-block;',
@@ -120,8 +106,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     'border-radius:10px;font-weight:700;',
     'font-size:16px;letter-spacing:0.5px;">',
     'Verify My Email</a>',
-
-    // Expiry notice
     '<p style="margin:16px 0 0;font-size:13px;',
     'color:#888888;background-color:rgba(255,255,255,0.05);',
     'padding:8px 14px;border-radius:6px;',
@@ -130,8 +114,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     'font-weight:700;">24 hours</span></p>',
     '</td></tr></table>',
     '</td></tr>',
-
-    // Features
     '<tr><td style="padding:28px 40px 0;">',
     '<table role="presentation" width="100%"',
     ' cellpadding="0" cellspacing="0">',
@@ -164,14 +146,10 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     '</td>',
     '</tr></table>',
     '</td></tr>',
-
-    // Divider
     '<tr><td style="padding:28px 40px;">',
     '<hr style="border:none;height:1px;',
     'background-color:#2a2a2a;margin:0;" />',
     '</td></tr>',
-
-    // Community
     '<tr><td align="center" style="padding:0 40px;">',
     '<p style="margin:0 0 16px;font-size:12px;',
     'color:#666666;font-weight:600;',
@@ -199,8 +177,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     '</td>',
     '</tr></table>',
     '</td></tr>',
-
-    // Footer
     '<tr><td align="center" style="padding:32px 40px 40px;">',
     '<p style="margin:0 0 8px;font-size:12px;',
     'color:#555555;">If you didn\'t create an account,',
@@ -219,7 +195,6 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     '&copy; 2026 Prime Haven. Youth-driven design',
     ' &amp; IT solutions.</p>',
     '</td></tr>',
-
     '</table></td></tr></table>',
     '</body></html>',
   ].join('');
@@ -254,25 +229,19 @@ async function sendEmail(
   text: string,
 ) {
   const fromAddress = (SMTP_USER || "").trim();
-
-  const client = new SMTPClient({
-    connection: {
-      hostname: SMTP_HOST!,
-      port: SMTP_PORT,
-      tls: true,
-      auth: { username: fromAddress, password: SMTP_PASS! },
-    },
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: fromAddress, pass: SMTP_PASS },
   });
-
-  await client.send({
+  await transporter.sendMail({
     from: `Prime Haven <${fromAddress}>`,
-    to: to,
+    to,
     subject,
-    content: text,
     html,
+    text,
   });
-
-  await client.close();
 }
 
 serve(async (req: Request): Promise<Response> => {
