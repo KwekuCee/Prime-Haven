@@ -155,9 +155,11 @@ const ServiceDetail = () => {
                   {service.description}
                 </p>
                 
-                <Button variant="primary" size="lg" className="glow-primary">
-                  Get This Service
-                </Button>
+                <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20inquire%20about%20your%20services" target="_blank" rel="noopener noreferrer">
+                  <Button variant="primary" size="lg" className="glow-primary">
+                    Get This Service
+                  </Button>
+                </a>
               </div>
               
               <div className="rounded-2xl overflow-hidden">
@@ -219,9 +221,11 @@ const ServiceDetail = () => {
                   <p className="text-muted-foreground mb-6">
                     Let's discuss how our {service.title} service can help your business.
                   </p>
-                  <Button variant="primary" className="w-full glow-primary" size="lg">
-                    Contact Us Today
-                  </Button>
+                  <a href="mailto:contact@primehaven.tech" className="w-full">
+                    <Button variant="primary" className="w-full glow-primary" size="lg">
+                      Contact Us Today
+                    </Button>
+                  </a>
                 </div>
               </div>
             </div>

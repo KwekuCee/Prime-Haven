@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/prime-haven-logo.png';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,6 +52,7 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             <Link to="/login">
               <Button variant="ghost" className="text-foreground hover:text-primary">
                 Login
@@ -94,6 +96,10 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-muted-foreground text-sm">Theme</span>
+                  <ThemeToggle />
+                </div>
                 <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="ghost" className="w-full">Login</Button>
                 </Link>

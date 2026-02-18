@@ -13,14 +13,10 @@ interface PortfolioItem {
   image_url: string;
 }
 
-const fallbackProjects: PortfolioItem[] = [
-  { id: '1', title: 'TechFlow Dashboard', client: 'TechFlow Inc.', category: 'UI/UX Design', image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop' },
-  { id: '2', title: 'Artisan Brand Identity', client: 'Artisan Collective', category: 'Graphic Design', image_url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop' },
-  { id: '3', title: 'CloudSync Platform', client: 'CloudSync', category: 'Web Development', image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop' },
-];
 
 const PortfolioSection = () => {
-  const [projects, setProjects] = useState<PortfolioItem[]>(fallbackProjects);
+  const [projects, setProjects] = useState<PortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -29,7 +25,8 @@ const PortfolioSection = () => {
         .select('id, title, client, category, image_url')
         .order('created_at', { ascending: false })
         .limit(6);
-      if (data && data.length > 0) setProjects(data);
+      if (data) setProjects(data);
+      setLoading(false);
     };
     fetchPortfolio();
   }, []);
