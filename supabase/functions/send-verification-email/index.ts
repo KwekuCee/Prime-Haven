@@ -50,17 +50,19 @@ const isAllowedRedirectUrl = (url: string): boolean => {
 };
 
 async function sendEmail(to: string, subject: string, html: string) {
+  const fromAddress = (SMTP_USER || "").trim();
+  
   const client = new SMTPClient({
     connection: {
       hostname: SMTP_HOST!,
       port: SMTP_PORT,
       tls: true,
-      auth: { username: SMTP_USER!, password: SMTP_PASS! },
+      auth: { username: fromAddress, password: SMTP_PASS! },
     },
   });
 
   await client.send({
-    from: { address: SMTP_USER!, name: "Prime Haven" },
+    from: `Prime Haven <${fromAddress}>`,
     to: to,
     subject,
     content: "auto",
