@@ -114,6 +114,7 @@ interface Submission {
   client_accepted: boolean;
   ph_approved_at: string | null;
   client_accepted_at: string | null;
+  parent_submission_id?: string | null;
   profiles?: {
     full_name: string;
     email: string;
@@ -252,8 +253,7 @@ const SuperAdminDashboard = () => {
         supabase
           .from('submissions')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10),
+          .order('created_at', { ascending: false }),
 
         supabase
           .from('payments')
@@ -322,7 +322,8 @@ const SuperAdminDashboard = () => {
           ph_approved: s.ph_approved || false,
           client_accepted: s.client_accepted || false,
           ph_approved_at: s.ph_approved_at,
-          client_accepted_at: s.client_accepted_at
+          client_accepted_at: s.client_accepted_at,
+          parent_submission_id: s.parent_submission_id || null
         };
       });
 
@@ -475,13 +476,15 @@ const SuperAdminDashboard = () => {
     checkAdminAccess();
   }, [user, authLoading, navigate, toast, loadDashboardDataSafe]);
 
-  // Handle PH approval (15 points)
+  // Handle PH approval (15 points, or correction_points if correction)
   const handlePHApproval = async (submissionId: string) => {
     try {
       const submission = submissions.find(s => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
 
-      const phPoints = systemSettings.ph_approval_points?.value || 15;
+      const isCorrection = !!submission.parent_submission_id;
+      const correctionPts = typeof systemSettings.correction_points === 'number' ? systemSettings.correction_points : (systemSettings.correction_points as any)?.value || 4;
+      const phPoints = isCorrection ? correctionPts : (systemSettings.ph_approval_points?.value || 15);
 
       // Update submission
       const { error: updateError } = await supabase
@@ -1430,6 +1433,8 @@ const SuperAdminDashboard = () => {
                         <SelectItem value="ph_approved">Awaiting Client</SelectItem>
                         <SelectItem value="approved">Fully Approved</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="client_rejected">Client Rejected</SelectItem>
+                        <SelectItem value="correction_requested">Correction Requested</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button variant="outline" onClick={() => exportData('submissions')}>
@@ -1458,7 +1463,12 @@ const SuperAdminDashboard = () => {
                       <TableBody>
                         {filteredSubmissions.map((submission) => (
                           <TableRow key={submission.id}>
-                            <TableCell className="font-semibold">{submission.project_name}</TableCell>
+                            <TableCell className="font-semibold">
+                              {submission.project_name}
+                              {submission.parent_submission_id && (
+                                <Badge variant="outline" className="ml-2 text-xs text-amber-500 border-amber-500">Correction</Badge>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <div>
                                 <p className="font-semibold">{submission.designer_name}</p>

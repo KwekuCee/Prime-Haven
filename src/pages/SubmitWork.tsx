@@ -305,9 +305,11 @@ const SubmitWork = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-heading font-bold mb-2">Submit Work</h1>
+              <h1 className="text-3xl font-heading font-bold mb-2">
+                {correctionId ? 'Submit Correction' : 'Submit Work'}
+              </h1>
               <p className="text-muted-foreground">
-                Submit your completed work for review and points
+                {correctionId ? 'Submit your corrected work for review' : 'Submit your completed work for review and points'}
               </p>
             </div>
             <Badge variant="outline" className="gap-2">
