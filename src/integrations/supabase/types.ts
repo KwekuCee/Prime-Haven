@@ -92,6 +92,30 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_records: {
+        Row: {
+          created_at: string
+          id: string
+          month: number
+          record_data: Json
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: number
+          record_data?: Json
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number
+          record_data?: Json
+          year?: number
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -227,6 +251,7 @@ export type Database = {
           files_urls: string[] | null
           final_approval_date: string | null
           id: string
+          parent_submission_id: string | null
           ph_approved: boolean | null
           ph_approved_at: string | null
           ph_approved_by: string | null
@@ -251,6 +276,7 @@ export type Database = {
           files_urls?: string[] | null
           final_approval_date?: string | null
           id?: string
+          parent_submission_id?: string | null
           ph_approved?: boolean | null
           ph_approved_at?: string | null
           ph_approved_by?: string | null
@@ -275,6 +301,7 @@ export type Database = {
           files_urls?: string[] | null
           final_approval_date?: string | null
           id?: string
+          parent_submission_id?: string | null
           ph_approved?: boolean | null
           ph_approved_at?: string | null
           ph_approved_by?: string | null
@@ -288,7 +315,15 @@ export type Database = {
           submission_date?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "submissions_parent_submission_id_fkey"
+            columns: ["parent_submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_logs: {
         Row: {
