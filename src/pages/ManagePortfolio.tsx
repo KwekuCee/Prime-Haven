@@ -49,10 +49,12 @@ const ManagePortfolio = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   // Check if user is admin
   useEffect(() => {
+    if (authLoading) return;
+
     const checkAuth = async () => {
       if (!user) {
         navigate('/superadmin-login', { replace: true });
@@ -79,7 +81,7 @@ const ManagePortfolio = () => {
     };
 
     checkAuth();
-  }, [user, navigate, toast]);
+  }, [user, authLoading, navigate, toast]);
 
   const fetchPortfolioItems = async () => {
     try {
