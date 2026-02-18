@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   User,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Submit Work', icon: Upload, path: '/submit-work' },
   { label: 'Messages', icon: MessageSquare, path: '/messages' },
+  { label: 'AI Onboarding', icon: Sparkles, path: '/smart-onboarding' },
   { label: 'Payments', icon: Wallet, path: '/payments' },
   { label: 'Settings', icon: Settings, path: '/settings' },
 ];

@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.calculate-talent-score]
 verify_jwt = false
+
+[functions.smart-onboarding]
+verify_jwt = false
