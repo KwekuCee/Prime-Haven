@@ -48,6 +48,8 @@ import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog'
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import { AdminNavigation } from '@/components/admin/AdminNavigation';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
+import { RecentActivity } from '@/components/admin/RecentActivity';
+import { TopDesigners } from '@/components/admin/TopDesigners';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -1303,80 +1305,107 @@ const SuperAdminDashboard = () => {
       <div className="container mx-auto px-6 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="glass border-l-4 border-l-primary">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs font-medium">{stats.totalDesigners} designers</Badge>
-                <Badge variant="outline" className="text-xs font-medium">{stats.totalAdmins} admins</Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Pending Work</CardTitle>
-                <FileCheck className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingSubmissions}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs font-medium">{stats.activeProjects} active projects</Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass border-l-4 border-l-green-500 cursor-pointer hover:border-green-400 transition-colors" onClick={() => {
-            const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
-            setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
-            setIsRevenueModalOpen(true);
-          }}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Monthly Revenue</CardTitle>
-                <div className="flex items-center gap-1">
-                  <Edit className="h-3 w-3 text-muted-foreground" />
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+          {[
+            {
+              title: 'Total Users',
+              icon: Users,
+              value: stats.totalUsers,
+              borderColor: 'border-l-primary',
+              extra: (
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs font-medium">{stats.totalDesigners} designers</Badge>
+                  <Badge variant="outline" className="text-xs font-medium">{stats.totalAdmins} admins</Badge>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">GH₵{(systemSettings.monthly_revenue?.amount || 0).toFixed(2)}</div>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {systemSettings.monthly_revenue_by_category && (
-                  <>
-                    <Badge variant="outline" className="text-xs font-medium">G: GH₵{(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)}</Badge>
-                    <Badge variant="outline" className="text-xs font-medium">UI: GH₵{(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)}</Badge>
-                    <Badge variant="outline" className="text-xs font-medium">W: GH₵{(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}</Badge>
-                  </>
-                )}
-                {!systemSettings.monthly_revenue_by_category && <Badge variant="outline" className="text-xs font-medium">Click to edit</Badge>}
-              </div>
-            </CardContent>
-          </Card>
+              ),
+            },
+            {
+              title: 'Pending Work',
+              icon: FileCheck,
+              value: stats.pendingSubmissions,
+              borderColor: 'border-l-blue-500',
+              extra: (
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs font-medium">{stats.activeProjects} active projects</Badge>
+                </div>
+              ),
+            },
+            {
+              title: 'Monthly Revenue',
+              icon: DollarSign,
+              value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(2)}`,
+              borderColor: 'border-l-green-500',
+              onClick: () => {
+                const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
+                setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
+                setIsRevenueModalOpen(true);
+              },
+              extra: (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {systemSettings.monthly_revenue_by_category ? (
+                    <>
+                      <Badge variant="outline" className="text-xs font-medium">G: GH₵{(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)}</Badge>
+                      <Badge variant="outline" className="text-xs font-medium">UI: GH₵{(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)}</Badge>
+                      <Badge variant="outline" className="text-xs font-medium">W: GH₵{(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}</Badge>
+                    </>
+                  ) : (
+                    <Badge variant="outline" className="text-xs font-medium">Click to edit</Badge>
+                  )}
+                </div>
+              ),
+            },
+            {
+              title: 'Approval Time',
+              icon: Activity,
+              value: stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A',
+              borderColor: 'border-l-amber-500',
+              extra: (
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs font-medium">Avg. approval time</Badge>
+                </div>
+              ),
+            },
+          ].map((card, index) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+            >
+              <Card
+                className={`glass border-l-4 ${card.borderColor} ${card.onClick ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''}`}
+                onClick={card.onClick}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold">{card.title}</CardTitle>
+                    <card.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{card.value}</div>
+                  {card.extra}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
 
-          <Card className="glass border-l-4 border-l-amber-500">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Approval Time</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A'}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs font-medium">Avg. approval time</Badge>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Activity & Leaderboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <RecentActivity submissions={submissions} payments={payments} users={users} />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <TopDesigners users={users} />
+          </motion.div>
         </div>
 
         {/* Main Tabs */}
