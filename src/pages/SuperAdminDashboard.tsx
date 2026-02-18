@@ -48,8 +48,6 @@ import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog'
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import { AdminNavigation } from '@/components/admin/AdminNavigation';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
-import { RecentActivity } from '@/components/admin/RecentActivity';
-import { TopDesigners } from '@/components/admin/TopDesigners';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -1390,23 +1388,6 @@ const SuperAdminDashboard = () => {
           ))}
         </div>
 
-        {/* Activity & Leaderboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <RecentActivity submissions={submissions} payments={payments} users={users} />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <TopDesigners users={users} />
-          </motion.div>
-        </div>
 
         {/* Main Tabs */}
         <Tabs defaultValue="submissions" className="space-y-6">
