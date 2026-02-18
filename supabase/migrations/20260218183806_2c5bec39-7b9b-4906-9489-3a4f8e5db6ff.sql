@@ -1,0 +1,1 @@
+ALTER TABLE public.portfolio_items ADD COLUMN project_url text;

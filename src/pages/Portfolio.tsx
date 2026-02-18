@@ -13,6 +13,7 @@ interface PortfolioItem {
   client: string;
   category: string;
   image_url: string;
+  project_url: string | null;
 }
 
 const categories = ['All', 'UI/UX Design', 'Graphic Design', 'Web Development', 'App Development', 'IT Solutions'];
@@ -28,7 +29,7 @@ const Portfolio = () => {
     const fetchPortfolio = async () => {
       const { data } = await supabase
         .from('portfolio_items')
-        .select('id, title, client, category, image_url')
+        .select('id, title, client, category, image_url, project_url')
         .order('created_at', { ascending: false });
       if (data) {
         setAllProjects(data);
@@ -144,36 +145,43 @@ const Portfolio = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6 }}
                 >
-                  <motion.div
-                    whileHover={{ y: -8 }}
-                    className="group relative overflow-hidden rounded-2xl glass cursor-pointer h-full"
+                  <a
+                    href={project.project_url || project.image_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-full"
                   >
-                    <div className="aspect-[4/3] overflow-hidden">
-                      <img
-                        src={project.image_url}
-                        alt={project.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
-                    </div>
-
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <span className="text-primary text-sm font-medium">{project.category}</span>
-                      <h3 className="text-xl font-heading font-bold mt-1 mb-1 group-hover:text-primary transition-colors">
-                        {project.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <User className="w-4 h-4" />
-                        {project.client}
+                    <motion.div
+                      whileHover={{ y: -8 }}
+                      className="group relative overflow-hidden rounded-2xl glass cursor-pointer h-full"
+                    >
+                      <div className="aspect-[4/3] overflow-hidden">
+                        <img
+                          src={project.image_url}
+                          alt={project.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
                       </div>
-                    </div>
 
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                        <ExternalLink className="w-5 h-5 text-primary-foreground" />
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <span className="text-primary text-sm font-medium">{project.category}</span>
+                        <h3 className="text-xl font-heading font-bold mt-1 mb-1 group-hover:text-primary transition-colors">
+                          {project.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                          <User className="w-4 h-4" />
+                          {project.client}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
+
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                          <ExternalLink className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  </a>
                 </motion.div>
               ))}
             </div>
