@@ -40,8 +40,12 @@ const ManagePortfolio = () => {
     category: '',
     image_url: '',
   });
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<PortfolioItem | null>(null);
   const [editForm, setEditForm] = useState({ title: '', client: '', category: '', image_url: '' });
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -97,22 +101,56 @@ const ManagePortfolio = () => {
     }
   };
 
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('portfolio-images')
+      .upload(fileName, file);
+    if (error) throw error;
+    const { data: urlData } = supabase.storage
+      .from('portfolio-images')
+      .getPublicUrl(fileName);
+    return urlData.publicUrl;
+  };
+
+  const handleNewImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewImageFile(file);
+      setNewImagePreview(URL.createObjectURL(file));
+      setNewItem(prev => ({ ...prev, image_url: '' }));
+    }
+  };
+
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditImageFile(file);
+      setEditImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleAddItem = async () => {
-    if (!newItem.title || !newItem.client || !newItem.category || !newItem.image_url) {
+    if (!newItem.title || !newItem.client || !newItem.category || (!newItem.image_url && !newImageFile)) {
       toast({
         variant: 'destructive',
         title: 'Missing Fields',
-        description: 'Please fill in all fields.',
+        description: 'Please fill in all fields and provide an image.',
       });
       return;
     }
 
     try {
       setIsSaving(true);
-      // Using 'any' cast since portfolio_items table is newly created
+      let imageUrl = newItem.image_url;
+      if (newImageFile) {
+        imageUrl = await uploadImage(newImageFile);
+      }
+
       const { data, error } = await (supabase as any)
         .from('portfolio_items')
-        .insert([newItem])
+        .insert([{ ...newItem, image_url: imageUrl }])
         .select()
         .single();
 
@@ -120,6 +158,8 @@ const ManagePortfolio = () => {
 
       setPortfolioItems([data as PortfolioItem, ...portfolioItems]);
       setNewItem({ title: '', client: '', category: '', image_url: '' });
+      setNewImageFile(null);
+      setNewImagePreview(null);
       setShowForm(false);
       toast({
         title: 'Success',
@@ -157,26 +197,34 @@ const ManagePortfolio = () => {
   const openEditDialog = (item: PortfolioItem) => {
     setEditItem(item);
     setEditForm({ title: item.title, client: item.client, category: item.category, image_url: item.image_url });
+    setEditImageFile(null);
+    setEditImagePreview(null);
   };
 
   const handleUpdateItem = async () => {
-    if (!editItem || !editForm.title || !editForm.client || !editForm.category || !editForm.image_url) {
+    if (!editItem || !editForm.title || !editForm.client || !editForm.category || (!editForm.image_url && !editImageFile)) {
       toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill in all fields.' });
       return;
     }
     try {
       setIsEditing(true);
+      let imageUrl = editForm.image_url;
+      if (editImageFile) {
+        imageUrl = await uploadImage(editImageFile);
+      }
       const { error } = await (supabase as any)
         .from('portfolio_items')
-        .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: editForm.image_url })
+        .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: imageUrl })
         .eq('id', editItem.id);
 
       if (error) throw error;
 
       setPortfolioItems(portfolioItems.map(item =>
-        item.id === editItem.id ? { ...item, ...editForm } : item
+        item.id === editItem.id ? { ...item, ...editForm, image_url: imageUrl } : item
       ));
       setEditItem(null);
+      setEditImageFile(null);
+      setEditImagePreview(null);
       toast({ title: 'Updated', description: 'Portfolio item updated successfully.' });
     } catch (error: any) {
       console.error('Error updating item:', error);
@@ -254,13 +302,25 @@ const ManagePortfolio = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="image_url">Image URL</Label>
-                  <Input
-                    id="image_url"
-                    placeholder="https://example.com/image.jpg"
-                    value={newItem.image_url}
-                    onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
-                  />
+                  <Label>Image</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleNewImageSelect}
+                      className="flex-1"
+                    />
+                  </div>
+                  {!newImageFile && (
+                    <Input
+                      placeholder="Or paste image URL"
+                      value={newItem.image_url}
+                      onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+                    />
+                  )}
+                  {newImagePreview && (
+                    <img src={newImagePreview} alt="Preview" className="w-full h-32 object-cover rounded-md mt-2" />
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 mt-6">
@@ -363,8 +423,26 @@ const ManagePortfolio = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Image URL</Label>
-                <Input value={editForm.image_url} onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} />
+                <Label>Image</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditImageSelect}
+                />
+                {!editImageFile && (
+                  <Input
+                    placeholder="Or paste image URL"
+                    value={editForm.image_url}
+                    onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })}
+                  />
+                )}
+                {(editImagePreview || editForm.image_url) && (
+                  <img
+                    src={editImagePreview || editForm.image_url}
+                    alt="Preview"
+                    className="w-full h-32 object-cover rounded-md mt-2"
+                  />
+                )}
               </div>
             </div>
             <DialogFooter>
