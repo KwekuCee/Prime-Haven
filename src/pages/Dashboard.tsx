@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,13 @@ interface SystemSettings {
   revenue_share_percentage?: { value: number };
 }
 
+const normalizeCategory = (title: string | null): string => {
+  const t = (title || '').toLowerCase();
+  if (t.includes('ui') || t.includes('ux')) return 'UI/UX Designer';
+  if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  return 'Graphic Designer';
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -103,8 +111,7 @@ const Dashboard = () => {
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10),
           supabase.from('designer_details')
             .select('user_id, total_points, monthly_points, professional_title')
-            .order('total_points', { ascending: false })
-            .limit(10),
+            .order('total_points', { ascending: false }),
           supabase.from('profiles').select('id, full_name'),
           supabase.from('system_settings').select('key, value')
         ]);
@@ -134,8 +141,12 @@ const Dashboard = () => {
           }));
           setLeaderboard(processedLeaderboard);
 
-          // Calculate user's rank
-          const userRank = processedLeaderboard.findIndex(e => e.user_id === user.id) + 1;
+          // Calculate user's rank within their profession category
+          const userCategory = normalizeCategory(designerResult.data?.professional_title || null);
+          const categoryLeaderboard = processedLeaderboard
+            .filter(e => normalizeCategory(e.professional_title) === userCategory)
+            .sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+          const userRank = categoryLeaderboard.findIndex(e => e.user_id === user.id) + 1;
           
           // Get system settings
           let monthlyRevenue = 0;
@@ -162,7 +173,7 @@ const Dashboard = () => {
           setStats({
             totalPoints: designerResult.data?.total_points || 0,
             monthlyRank: userRank || 0,
-            totalDesigners: processedLeaderboard.length,
+            totalDesigners: categoryLeaderboard.length,
             estSalary: estSalary,
             totalSubmissions: submissionsResult.data?.length || 0,
             approvedSubmissions: approvedCount,
@@ -422,7 +433,7 @@ const Dashboard = () => {
             )}
           </motion.div>
 
-          {/* Leaderboard */}
+          {/* Leaderboard by Profession */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -430,38 +441,65 @@ const Dashboard = () => {
             className="glass rounded-2xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-heading font-bold">Top Designers</h2>
+              <h2 className="text-xl font-heading font-bold">Leaderboard</h2>
               <Trophy className="w-5 h-5 text-primary" />
             </div>
             {leaderboard.length > 0 ? (
-              <div className="space-y-3">
-                {leaderboard.slice(0, 5).map((entry, index) => {
-                  const isCurrentUser = entry.user_id === user?.id;
+              <Tabs defaultValue={designer?.professional_title || 'Graphic Designer'} className="w-full">
+                <TabsList className="w-full mb-3 flex-wrap h-auto gap-1">
+                  {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((category) => {
+                    const count = leaderboard.filter(e => normalizeCategory(e.professional_title) === category).length;
+                    return (
+                      <TabsTrigger key={category} value={category} className="text-xs flex-1 min-w-0">
+                        {category.replace('Designer', '').replace('Developer', 'Dev').trim()} ({count})
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+                {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((category) => {
+                  const filtered = leaderboard
+                    .filter(e => normalizeCategory(e.professional_title) === category)
+                    .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
+                    .slice(0, 10);
                   return (
-                    <div 
-                      key={entry.user_id} 
-                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                        isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-muted/30 hover:bg-muted/50'
-                      }`}
-                    >
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        {getRankIcon(index + 1)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-sm truncate ${isCurrentUser ? 'text-primary' : ''}`}>
-                          {entry.full_name}
-                          {isCurrentUser && <span className="text-xs ml-1">(You)</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-medium truncate">{entry.professional_title}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">{entry.total_points}</p>
-                        <p className="text-xs text-muted-foreground font-medium">points</p>
-                      </div>
-                    </div>
+                    <TabsContent key={category} value={category}>
+                      {filtered.length > 0 ? (
+                        <div className="space-y-3">
+                          {filtered.map((entry, index) => {
+                            const isCurrentUser = entry.user_id === user?.id;
+                            return (
+                              <div 
+                                key={entry.user_id} 
+                                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                                  isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-muted/30 hover:bg-muted/50'
+                                }`}
+                              >
+                                <div className="w-8 h-8 flex items-center justify-center">
+                                  {getRankIcon(index + 1)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-semibold text-sm truncate ${isCurrentUser ? 'text-primary' : ''}`}>
+                                    {entry.full_name}
+                                    {isCurrentUser && <span className="text-xs ml-1">(You)</span>}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-sm">{entry.total_points}</p>
+                                  <p className="text-xs text-muted-foreground font-medium">points</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-muted-foreground font-medium">No {category}s yet</p>
+                        </div>
+                      )}
+                    </TabsContent>
                   );
                 })}
-              </div>
+              </Tabs>
             ) : (
               <div className="text-center py-8">
                 <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
