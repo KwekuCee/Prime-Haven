@@ -25,7 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-
+import { useUserSettings } from '@/contexts/UserSettingsContext';
 // Ghana-specific payment methods
 const paymentMethods = [
   { value: 'mtn_momo', label: 'MTN Mobile Money', icon: Smartphone, color: 'text-yellow-500' },
@@ -41,6 +41,7 @@ const Payments = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { settings, formatCurrency } = useUserSettings();
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
@@ -288,7 +289,7 @@ const Payments = () => {
             </div>
             <Badge variant="outline" className="gap-2">
               <DollarSign className="w-3 h-3" />
-              GH₵{paymentStats.totalEarned.toFixed(2)} Earned
+              {settings.show_earnings ? formatCurrency(paymentStats.totalEarned) : '••••••'} Earned
             </Badge>
           </div>
         </motion.div>
@@ -467,7 +468,7 @@ const Payments = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              GH₵{(payment.amount / 100).toFixed(2)}
+                              {settings.show_earnings ? formatCurrency(payment.amount / 100) : '••••••'}
                             </TableCell>
                             <TableCell>
                               <Badge variant={
@@ -516,14 +517,14 @@ const Payments = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total Earned:</span>
                     <span className="text-lg font-bold text-primary">
-                      GH₵{paymentStats.totalEarned.toFixed(2)}
+                      {settings.show_earnings ? formatCurrency(paymentStats.totalEarned) : '••••••'}
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Next Payment:</span>
                     <span className="font-medium">
-                      GH₵{paymentStats.nextPayment.toFixed(2)}
+                      {settings.show_earnings ? formatCurrency(paymentStats.nextPayment) : '••••••'}
                     </span>
                   </div>
                   
@@ -622,7 +623,7 @@ const Payments = () => {
 
                   <div className="pt-3 border-t border-border">
                     <p className="text-xs text-muted-foreground">
-                      Need help? Contact support at payments@primehaven.com
+                      Need help? Contact support at transactions@primehaven.tech
                     </p>
                   </div>
                 </div>

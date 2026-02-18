@@ -409,6 +409,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          allow_messages: boolean | null
+          created_at: string
+          currency: string | null
+          data_sharing: boolean | null
+          email_notifications: boolean | null
+          id: string
+          marketing_emails: boolean | null
+          payment_alerts: boolean | null
+          profile_visibility: string | null
+          project_updates: boolean | null
+          push_notifications: boolean | null
+          show_earnings: boolean | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_messages?: boolean | null
+          created_at?: string
+          currency?: string | null
+          data_sharing?: boolean | null
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          payment_alerts?: boolean | null
+          profile_visibility?: string | null
+          project_updates?: boolean | null
+          push_notifications?: boolean | null
+          show_earnings?: boolean | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_messages?: boolean | null
+          created_at?: string
+          currency?: string | null
+          data_sharing?: boolean | null
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          payment_alerts?: boolean | null
+          profile_visibility?: string | null
+          project_updates?: boolean | null
+          push_notifications?: boolean | null
+          show_earnings?: boolean | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -27,37 +27,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useUserSettings } from '@/contexts/UserSettingsContext';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [theme, setTheme] = useState('dark');
+  const [saving, setSaving] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-
-  // Notification settings
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    projectUpdates: true,
-    paymentAlerts: true,
-    marketingEmails: false,
-    pushNotifications: true,
-  });
-
-  // Privacy settings
-  const [privacy, setPrivacy] = useState({
-    profileVisibility: 'public',
-    showEarnings: false,
-    allowMessages: true,
-    dataSharing: false,
-  });
+  const { settings, updateSetting, saveSettings } = useUserSettings();
 
   // Load user data
   useEffect(() => {
     const loadUserData = async () => {
       if (!user) return;
-
       try {
         const { data: profileData } = await supabase
           .from('profiles')
@@ -76,34 +59,15 @@ const Settings = () => {
     loadUserData();
   }, [user]);
 
-  const handleNotificationChange = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const handlePrivacyChange = (key: keyof typeof privacy, value: any) => {
-    setPrivacy(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
   const handleSaveSettings = async () => {
     if (!user) return;
-
-    setLoading(true);
+    setSaving(true);
     try {
-      // In a real app, you would save these to your database
-      // For now, we'll just simulate saving
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      await saveSettings();
       toast({
         title: "Settings saved!",
         description: "Your preferences have been updated.",
       });
-
     } catch (error) {
       toast({
         title: "Save failed",
@@ -111,13 +75,12 @@ const Settings = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   const handleExportData = async () => {
     try {
-      // Fetch all user data
       const [profileData, designerData, submissionsData, paymentsData] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user?.id).maybeSingle(),
         supabase.from('designer_details').select('*').eq('user_id', user?.id).maybeSingle(),
@@ -133,11 +96,10 @@ const Settings = () => {
         exported_at: new Date().toISOString(),
       };
 
-      // Create and download JSON file
       const dataStr = JSON.stringify(exportData, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
       const exportFileName = `primehaven-data-${new Date().getTime()}.json`;
-      
+
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileName);
@@ -147,7 +109,6 @@ const Settings = () => {
         title: "Data exported!",
         description: "Your data has been downloaded as JSON.",
       });
-
     } catch (error) {
       console.error('Error exporting data:', error);
       toast({
@@ -174,16 +135,16 @@ const Settings = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-heading font-bold mb-2">Settings</h1>
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">Settings</h1>
               <p className="text-muted-foreground">
                 Manage your account preferences and privacy
               </p>
@@ -194,7 +155,7 @@ const Settings = () => {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Left Column - Main Settings */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -208,56 +169,41 @@ const Settings = () => {
                   <User className="w-5 h-5 text-primary" />
                   <div>
                     <CardTitle>Account Settings</CardTitle>
-                    <CardDescription>
-                      Manage your account information
-                    </CardDescription>
+                    <CardDescription>Manage your account information</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label>Email Address</Label>
                     <div className="p-3 rounded-lg bg-card border border-border">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{user?.email || 'Not set'}</span>
+                        <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm truncate">{user?.email || 'Not set'}</span>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Contact support to change email
-                    </p>
+                    <p className="text-xs text-muted-foreground">Contact support to change email</p>
                   </div>
-
                   <div className="space-y-2">
                     <Label>Phone Number</Label>
                     <div className="p-3 rounded-lg bg-card border border-border">
                       <div className="flex items-center gap-2">
-                        <Smartphone className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{userProfile?.phone || 'Not set'}</span>
+                        <Smartphone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm truncate">{userProfile?.phone || 'Not set'}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Two-Factor Authentication</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Add an extra layer of security
-                      </p>
+                      <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
                     </div>
-                    <Badge variant="outline" className="text-amber-500">
-                      Coming Soon
-                    </Badge>
+                    <Badge variant="outline" className="text-amber-500">Coming Soon</Badge>
                   </div>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={handleChangePassword}
-                  >
+                  <Button variant="outline" className="w-full justify-start" onClick={handleChangePassword}>
                     <Lock className="w-4 h-4 mr-2" />
                     Change Password
                   </Button>
@@ -272,45 +218,29 @@ const Settings = () => {
                   <Bell className="w-5 h-5 text-primary" />
                   <div>
                     <CardTitle>Notification Settings</CardTitle>
-                    <CardDescription>
-                      Choose what notifications you receive
-                    </CardDescription>
+                    <CardDescription>Choose what notifications you receive</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {Object.entries(notifications).map(([key, value]) => {
-                  const labelMap: Record<string, string> = {
-                    emailNotifications: 'Email Notifications',
-                    projectUpdates: 'Project Updates',
-                    paymentAlerts: 'Payment Alerts',
-                    marketingEmails: 'Marketing Emails',
-                    pushNotifications: 'Push Notifications',
-                  };
-
-                  const descriptionMap: Record<string, string> = {
-                    emailNotifications: 'Receive updates via email',
-                    projectUpdates: 'Get notified about new projects',
-                    paymentAlerts: 'Alerts for payments and earnings',
-                    marketingEmails: 'Promotional emails and offers',
-                    pushNotifications: 'Browser notifications',
-                  };
-
-                  return (
-                    <div key={key} className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="cursor-pointer">{labelMap[key]}</Label>
-                        <p className="text-sm text-muted-foreground">
-                          {descriptionMap[key]}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={value}
-                        onCheckedChange={() => handleNotificationChange(key as keyof typeof notifications)}
-                      />
+                {([
+                  { key: 'email_notifications' as const, label: 'Email Notifications', desc: 'Receive updates via email' },
+                  { key: 'project_updates' as const, label: 'Project Updates', desc: 'Get notified about new projects' },
+                  { key: 'payment_alerts' as const, label: 'Payment Alerts', desc: 'Alerts for payments and earnings' },
+                  { key: 'marketing_emails' as const, label: 'Marketing Emails', desc: 'Promotional emails and offers' },
+                  { key: 'push_notifications' as const, label: 'Push Notifications', desc: 'Browser notifications' },
+                ]).map((item) => (
+                  <div key={item.key} className="flex items-center justify-between gap-4">
+                    <div className="space-y-0.5 min-w-0">
+                      <Label className="cursor-pointer">{item.label}</Label>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </div>
-                  );
-                })}
+                    <Switch
+                      checked={settings[item.key]}
+                      onCheckedChange={(checked) => updateSetting(item.key, checked)}
+                    />
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
@@ -321,9 +251,7 @@ const Settings = () => {
                   <Shield className="w-5 h-5 text-primary" />
                   <div>
                     <CardTitle>Privacy Settings</CardTitle>
-                    <CardDescription>
-                      Control your privacy and data
-                    </CardDescription>
+                    <CardDescription>Control your privacy and data</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -331,8 +259,8 @@ const Settings = () => {
                 <div className="space-y-2">
                   <Label>Profile Visibility</Label>
                   <Select
-                    value={privacy.profileVisibility}
-                    onValueChange={(value) => handlePrivacyChange('profileVisibility', value)}
+                    value={settings.profile_visibility}
+                    onValueChange={(value) => updateSetting('profile_visibility', value)}
                   >
                     <SelectTrigger className="bg-card border-border">
                       <SelectValue />
@@ -343,54 +271,46 @@ const Settings = () => {
                       <SelectItem value="private">Private (Only Me)</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Controls who can see your profile and portfolio
-                  </p>
+                  <p className="text-xs text-muted-foreground">Controls who can see your profile and portfolio</p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-0.5 min-w-0">
                     <Label>Show Earnings</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Display your earnings on profile
-                    </p>
+                    <p className="text-sm text-muted-foreground">Display your earnings on dashboard</p>
                   </div>
                   <Switch
-                    checked={privacy.showEarnings}
-                    onCheckedChange={(checked) => handlePrivacyChange('showEarnings', checked)}
+                    checked={settings.show_earnings}
+                    onCheckedChange={(checked) => updateSetting('show_earnings', checked)}
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-0.5 min-w-0">
                     <Label>Allow Messages</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Let other designers message you
-                    </p>
+                    <p className="text-sm text-muted-foreground">Let other designers message you</p>
                   </div>
                   <Switch
-                    checked={privacy.allowMessages}
-                    onCheckedChange={(checked) => handlePrivacyChange('allowMessages', checked)}
+                    checked={settings.allow_messages}
+                    onCheckedChange={(checked) => updateSetting('allow_messages', checked)}
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-0.5 min-w-0">
                     <Label>Data Sharing</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Share anonymous usage data to improve service
-                    </p>
+                    <p className="text-sm text-muted-foreground">Share anonymous usage data to improve service</p>
                   </div>
                   <Switch
-                    checked={privacy.dataSharing}
-                    onCheckedChange={(checked) => handlePrivacyChange('dataSharing', checked)}
+                    checked={settings.data_sharing}
+                    onCheckedChange={(checked) => updateSetting('data_sharing', checked)}
                   />
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Right Column - Additional Settings */}
+          {/* Right Column */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -400,24 +320,22 @@ const Settings = () => {
             <Card className="glass">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  {theme === 'dark' ? (
+                  {settings.theme === 'dark' ? (
                     <Moon className="w-5 h-5 text-primary" />
                   ) : (
                     <Sun className="w-5 h-5 text-primary" />
                   )}
                   <div>
                     <CardTitle>Theme</CardTitle>
-                    <CardDescription>
-                      Choose your interface theme
-                    </CardDescription>
+                    <CardDescription>Choose your interface theme</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <Select
-                    value={theme}
-                    onValueChange={setTheme}
+                    value={settings.theme}
+                    onValueChange={(value) => updateSetting('theme', value)}
                   >
                     <SelectTrigger className="bg-card border-border">
                       <SelectValue />
@@ -447,10 +365,18 @@ const Settings = () => {
                   <div className="p-4 rounded-lg bg-card border border-border">
                     <p className="text-sm font-medium mb-2">Preview:</p>
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-lg ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} border ${theme === 'dark' ? 'border-gray-800' : 'border-gray-300'}`} />
+                      <div className={`w-12 h-12 rounded-lg border ${
+                        settings.theme === 'light' 
+                          ? 'bg-white border-gray-300' 
+                          : 'bg-gray-900 border-gray-800'
+                      }`} />
                       <div className="flex-1">
-                        <div className={`h-3 rounded-full mb-2 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-300'}`} />
-                        <div className={`h-2 rounded-full w-2/3 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-400'}`} />
+                        <div className={`h-3 rounded-full mb-2 ${
+                          settings.theme === 'light' ? 'bg-gray-300' : 'bg-gray-800'
+                        }`} />
+                        <div className={`h-2 rounded-full w-2/3 ${
+                          settings.theme === 'light' ? 'bg-gray-400' : 'bg-gray-700'
+                        }`} />
                       </div>
                     </div>
                   </div>
@@ -487,15 +413,16 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <Label>Currency</Label>
-                    <Select defaultValue="ghs">
+                    <Select
+                      value={settings.currency}
+                      onValueChange={(value) => updateSetting('currency', value)}
+                    >
                       <SelectTrigger className="bg-card border-border">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ghs">GH₵ - Ghanaian Cedi</SelectItem>
                         <SelectItem value="usd">$ - US Dollar</SelectItem>
-                        <SelectItem value="eur">€ - Euro</SelectItem>
-                        <SelectItem value="gbp">£ - British Pound</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -507,20 +434,13 @@ const Settings = () => {
             <Card className="glass">
               <CardHeader>
                 <CardTitle>Data Management</CardTitle>
-                <CardDescription>
-                  Control your data and account
-                </CardDescription>
+                <CardDescription>Control your data and account</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={handleExportData}
-                >
+                <Button variant="outline" className="w-full justify-start" onClick={handleExportData}>
                   <Download className="w-4 h-4 mr-2" />
                   Export All Data
                 </Button>
-
                 <Button
                   variant="outline"
                   className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -529,23 +449,17 @@ const Settings = () => {
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Account
                 </Button>
-
                 <div className="pt-4 border-t border-border">
                   <p className="text-xs text-muted-foreground">
-                    Account deletion is permanent and cannot be undone.
-                    All your data will be permanently removed.
+                    Account deletion is permanent and cannot be undone. All your data will be permanently removed.
                   </p>
                 </div>
               </CardContent>
             </Card>
 
             {/* Save Button */}
-            <Button
-              onClick={handleSaveSettings}
-              disabled={loading}
-              className="w-full gap-2"
-            >
-              {loading ? (
+            <Button onClick={handleSaveSettings} disabled={saving} className="w-full gap-2">
+              {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Saving...

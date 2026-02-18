@@ -13,13 +13,15 @@ import {
   Trophy,
   Medal,
   Star,
-  DollarSign
+  DollarSign,
+  EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserSettings } from '@/contexts/UserSettingsContext';
 
 interface ProfileData {
   full_name: string;
@@ -65,6 +67,7 @@ interface SystemSettings {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { settings, formatCurrency } = useUserSettings();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [designer, setDesigner] = useState<DesignerData | null>(null);
@@ -227,6 +230,8 @@ const Dashboard = () => {
     return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>;
   };
 
+  const showEarnings = settings.show_earnings;
+
   const statsData = [
     { 
       label: 'Total Points', 
@@ -242,9 +247,9 @@ const Dashboard = () => {
     },
     { 
       label: 'Est. Salary', 
-      value: `GH₵${stats.estSalary.toFixed(2)}`, 
-      icon: Wallet, 
-      trend: 'Based on current points' 
+      value: showEarnings ? formatCurrency(stats.estSalary) : '••••••', 
+      icon: showEarnings ? Wallet : EyeOff, 
+      trend: showEarnings ? 'Based on current points' : 'Hidden — enable in Settings'
     },
     { 
       label: 'Submissions', 
@@ -297,7 +302,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-muted-foreground">This Month's Revenue Pool</p>
-                <p className="text-xl font-bold text-primary">GH₵{stats.monthlyRevenue.toFixed(2)}</p>
+                <p className="text-xl font-bold text-primary">{formatCurrency(stats.monthlyRevenue)}</p>
               </div>
             </div>
           </motion.div>
