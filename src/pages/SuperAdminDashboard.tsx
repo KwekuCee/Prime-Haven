@@ -38,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -191,6 +191,9 @@ const SuperAdminDashboard = () => {
   const [giftPointsUser, setGiftPointsUser] = useState<User | null>(null);
   const [giftPointsAmount, setGiftPointsAmount] = useState('');
   const [giftPointsReason, setGiftPointsReason] = useState('');
+  const [isResettingPoints, setIsResettingPoints] = useState(false);
+  const [clientRejectSubmission, setClientRejectSubmission] = useState<Submission | null>(null);
+  const [clientRejectionReason, setClientRejectionReason] = useState('');
 
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
@@ -723,9 +726,28 @@ const SuperAdminDashboard = () => {
         monthly_revenue: revenueData
       }));
 
+      // Recalculate and update all designer salaries
+      const revenueShare = systemSettings.revenue_share_percentage?.value || 50;
+      const { data: allDesigners } = await supabase
+        .from('designer_details')
+        .select('user_id, monthly_points');
+      
+      if (allDesigners && allDesigners.length > 0) {
+        const totalAllPoints = allDesigners.reduce((sum, d) => sum + (d.monthly_points || 0), 0);
+        for (const designer of allDesigners) {
+          const estSalary = totalAllPoints > 0
+            ? ((designer.monthly_points || 0) / totalAllPoints) * (amount * (revenueShare / 100))
+            : 0;
+          await supabase
+            .from('designer_details')
+            .update({ salary_estimated: estSalary, updated_at: new Date().toISOString() })
+            .eq('user_id', designer.user_id);
+        }
+      }
+
       toast({
         title: 'Revenue Updated',
-        description: `Monthly revenue set to GH₵${amount.toFixed(2)}`,
+        description: `Monthly revenue set to GH₵${amount.toFixed(2)}. Designer salaries recalculated.`,
       });
 
       setIsRevenueModalOpen(false);
@@ -937,6 +959,74 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  // Handle client rejection (after PH approval, no points rollback)
+  const handleClientRejection = async () => {
+    if (!clientRejectSubmission) return;
+    if (!clientRejectionReason.trim()) {
+      toast({ title: 'Reason Required', description: 'Please provide a reason for client rejection.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { error: updateError } = await supabase
+        .from('submissions')
+        .update({
+          status: 'client_rejected',
+          rejection_reason: clientRejectionReason.trim(),
+          updated_at: new Date().toISOString()
+        } as any)
+        .eq('id', clientRejectSubmission.id);
+
+      if (updateError) throw updateError;
+
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'client_rejected',
+          admin_id: user.id,
+          description: `Client rejected: ${clientRejectSubmission.project_name} — Reason: ${clientRejectionReason.trim()} (PH points retained)`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      toast({ title: 'Client Rejected', description: 'Submission rejected by client. PH approval points retained.' });
+      setClientRejectSubmission(null);
+      setClientRejectionReason('');
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      console.error('Client rejection error:', error);
+      toast({ title: 'Rejection Failed', description: error.message || 'Please try again.', variant: 'destructive' });
+    }
+  };
+
+  // Handle reset all points
+  const handleResetAllPoints = async () => {
+    try {
+      setIsResettingPoints(true);
+      const { error } = await supabase
+        .from('designer_details')
+        .update({ monthly_points: 0, total_points: 0, salary_estimated: 0, updated_at: new Date().toISOString() })
+        .neq('user_id', '00000000-0000-0000-0000-000000000000'); // update all
+
+      if (error) throw error;
+
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'points_reset',
+          admin_id: user.id,
+          description: 'All designer points reset to zero',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      toast({ title: 'Points Reset', description: 'All designer points have been reset to zero.' });
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      console.error('Reset points error:', error);
+      toast({ title: 'Reset Failed', description: error.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setIsResettingPoints(false);
+    }
+  };
+
   // Export data
   const exportData = (type: 'users' | 'submissions' | 'payments') => {
     let data: any[] = [];
@@ -1100,6 +1190,35 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <AlertDialog>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={isResettingPoints} className="text-amber-500 border-amber-500 hover:bg-amber-500 hover:text-white">
+                          {isResettingPoints ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          <span className="ml-1 hidden md:inline">Reset Points</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Reset all designer points to zero</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-bold text-amber-500">Reset All Designer Points?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will set all designer total points, monthly points, and estimated salaries to zero. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600">
+                      Reset All Points
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1395,29 +1514,52 @@ const SuperAdminDashboard = () => {
                                     </TooltipProvider>
                                   </>
                                 )}
-                                {submission.ph_approved && !submission.client_accepted && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          className="bg-primary hover:bg-primary/90"
-                                          onClick={() => handleClientAcceptance(submission.id)}
-                                        >
-                                          <ThumbsUp className="w-3 h-3 mr-1" />
-                                          Client Accept
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Mark as client accepted (+{systemSettings.client_acceptance_points?.value || 40} pts)</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                  <>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            className="bg-primary hover:bg-primary/90"
+                                            onClick={() => handleClientAcceptance(submission.id)}
+                                          >
+                                            <ThumbsUp className="w-3 h-3 mr-1" />
+                                            Client Accept
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Mark as client accepted (+{systemSettings.client_acceptance_points?.value || 40} pts)</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                            onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }}
+                                          >
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                            Client Reject
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent><p>Client rejected (PH points kept)</p></TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </>
                                 )}
                                 {submission.client_accepted && (
                                   <Badge className="bg-green-500 text-white font-semibold">
                                     <Award className="w-3 h-3 mr-1" />
                                     Complete
+                                  </Badge>
+                                )}
+                                {submission.status === 'client_rejected' && (
+                                  <Badge variant="destructive" className="font-medium">
+                                    Client Rejected
                                   </Badge>
                                 )}
                               </div>
@@ -1836,6 +1978,37 @@ const SuperAdminDashboard = () => {
             <Button variant="destructive" onClick={handleRejectSubmission} disabled={!rejectionReason.trim()}>
               <XCircle className="w-4 h-4 mr-2" />
               Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Rejection Reason Dialog */}
+      <Dialog open={!!clientRejectSubmission} onOpenChange={(open) => { if (!open) { setClientRejectSubmission(null); setClientRejectionReason(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Client Rejection</DialogTitle>
+            <DialogDescription>
+              Provide a reason for the client rejecting "{clientRejectSubmission?.project_name}". PH approval points will be retained.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="client-rejection-reason">Rejection Reason</Label>
+            <Textarea
+              id="client-rejection-reason"
+              placeholder="Explain why the client rejected this submission..."
+              value={clientRejectionReason}
+              onChange={(e) => setClientRejectionReason(e.target.value)}
+              className="mt-2 min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setClientRejectSubmission(null); setClientRejectionReason(''); }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleClientRejection} disabled={!clientRejectionReason.trim()}>
+              <XCircle className="w-4 h-4 mr-2" />
+              Client Reject
             </Button>
           </DialogFooter>
         </DialogContent>
