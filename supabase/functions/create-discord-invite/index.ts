@@ -199,7 +199,7 @@ serve(async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         personalizations: [{ to: [{ email }] }],
-        from: { email: "primehaven26@gmail.com", name: "Prime Haven" },
+        from: { email: "team@primehaven.tech", name: "Prime Haven" },
         subject: "🎮 Your Exclusive Discord Invite - Welcome to Prime Haven!",
         content: [{ type: "text/html", value: emailHtml }],
       }),

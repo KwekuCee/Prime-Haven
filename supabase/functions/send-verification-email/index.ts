@@ -125,7 +125,7 @@ serve(async (req: Request): Promise<Response> => {
             to: [{ email }],
           },
         ],
-        from: { email: "primehaven26@gmail.com", name: "Prime Haven" },
+        from: { email: "team@primehaven.tech", name: "Prime Haven" },
         subject: "🚀 Welcome to Prime Haven - Verify Your Email",
         content: [
           {
@@ -452,7 +452,7 @@ serve(async (req: Request): Promise<Response> => {
                     
                     <div class="footer">
                       <p>If you didn't create an account, you can safely ignore this email.</p>
-                      <p>Questions? Contact us at <a href="mailto:primehaven26@gmail.com">primehaven26@gmail.com</a></p>
+                      <p>Questions? Contact us at <a href="mailto:team@primehaven.tech">team@primehaven.tech</a></p>
                       <p class="tagline">Making IT Dreams a Reality</p>
                       <p>© 2026 Prime Haven. Youth-driven design & IT solutions.</p>
                     </div>

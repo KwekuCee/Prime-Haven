@@ -146,8 +146,8 @@ const AuthConfirm = () => {
         {/* Footer */}
         <p className="text-center text-muted-foreground text-sm mt-6">
           Need help? Contact us at{' '}
-          <a href="mailto:primehaven26@gmail.com" className="text-primary hover:underline">
-            primehaven26@gmail.com
+          <a href="mailto:team@primehaven.tech" className="text-primary hover:underline">
+            team@primehaven.tech
           </a>
         </p>
       </motion.div>
