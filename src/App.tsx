@@ -24,7 +24,6 @@ import UIUXAdminDashboard from "./pages/UIUXAdminDashboard";
 import WebDevAdminDashboard from "./pages/WebDevAdminDashboard";
 import ManagePortfolio from "./pages/ManagePortfolio";
 import Messages from "./pages/Messages";
-import SmartOnboarding from "./pages/SmartOnboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,7 +56,7 @@ const App = () => (
             <Route path="/superadmin/web" element={<WebDevAdminDashboard />} />
             <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
             <Route path="/messages" element={<Messages />} />
-            <Route path="/smart-onboarding" element={<SmartOnboarding />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
