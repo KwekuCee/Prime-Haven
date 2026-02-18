@@ -50,7 +50,7 @@ const ContactSection = () => {
               Chat on WhatsApp
             </Button>
           </a>
-          <a href="mailto:team@primehaven.tech">
+          <a href="mailto:info@primehaven.tech">
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <Mail className="mr-2 w-5 h-5" />
               Email Us
