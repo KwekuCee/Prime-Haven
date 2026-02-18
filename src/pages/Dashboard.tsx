@@ -14,7 +14,10 @@ import {
   Medal,
   Star,
   DollarSign,
-  EyeOff
+  EyeOff,
+  Zap,
+  Brain,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +38,9 @@ interface DesignerData {
   monthly_points: number;
   salary_estimated: number;
   professional_title: string;
+  talent_score: number;
+  talent_score_breakdown: any;
+  talent_score_updated_at: string;
 }
 
 interface Submission {
@@ -58,6 +64,7 @@ interface LeaderboardEntry {
   total_points: number;
   monthly_points: number;
   professional_title: string;
+  talent_score: number;
 }
 
 interface SystemSettings {
@@ -91,6 +98,29 @@ const Dashboard = () => {
     approvedSubmissions: 0,
     monthlyRevenue: 0,
   });
+  const [recalculating, setRecalculating] = useState(false);
+
+  const recalculateTalentScore = async () => {
+    if (!user) return;
+    setRecalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('calculate-talent-score', {
+        body: { designer_id: user.id },
+      });
+      if (error) throw error;
+      // Refresh designer data
+      const { data: updated } = await supabase
+        .from('designer_details')
+        .select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (updated) setDesigner(updated);
+    } catch (err) {
+      console.error('Error recalculating talent score:', err);
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -107,10 +137,10 @@ const Dashboard = () => {
         // Load all data in parallel
         const [profileResult, designerResult, submissionsResult, designersResult, profilesResult, settingsResult] = await Promise.all([
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
-          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title').eq('user_id', user.id).maybeSingle(),
+          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at').eq('user_id', user.id).maybeSingle(),
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10),
           supabase.from('designer_details')
-            .select('user_id, total_points, monthly_points, professional_title')
+            .select('user_id, total_points, monthly_points, professional_title, talent_score')
             .order('total_points', { ascending: false }),
           supabase.from('profiles').select('id, full_name'),
           supabase.from('system_settings').select('key, value')
@@ -137,7 +167,8 @@ const Dashboard = () => {
             full_name: profilesMap.get(entry.user_id) || 'Anonymous',
             total_points: entry.total_points || 0,
             monthly_points: entry.monthly_points || 0,
-            professional_title: entry.professional_title || 'Designer'
+            professional_title: entry.professional_title || 'Designer',
+            talent_score: entry.talent_score || 0,
           }));
           setLeaderboard(processedLeaderboard);
 
@@ -360,7 +391,99 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Three Column Layout */}
+        {/* AI Talent Score */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mb-8 glass rounded-2xl p-6"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-heading font-bold">AI Talent Score</h2>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {designer?.talent_score_updated_at 
+                    ? `Updated ${new Date(designer.talent_score_updated_at).toLocaleDateString()}`
+                    : 'Not yet calculated'}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={recalculateTalentScore}
+              disabled={recalculating}
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${recalculating ? 'animate-spin' : ''}`} />
+              {recalculating ? 'Calculating...' : 'Recalculate'}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Score Circle */}
+            <div className="flex items-center gap-6">
+              <div className="relative w-24 h-24 flex-shrink-0">
+                <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+                  <circle
+                    cx="50" cy="50" r="42" fill="none"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(designer?.talent_score || 0) * 2.64} 264`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-heading font-bold">{designer?.talent_score || 0}</span>
+                </div>
+              </div>
+              <div className="space-y-2 flex-1">
+                {designer?.talent_score_breakdown && Object.entries(designer.talent_score_breakdown)
+                  .filter(([key]) => !['ai_insight', 'total_submissions'].includes(key))
+                  .map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium capitalize w-28">{key.replace(/_/g, ' ')}</span>
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${Math.min(100, Number(value))}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold w-8 text-right">{Number(value)}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            {/* AI Insight */}
+            <div className="flex flex-col justify-center">
+              {designer?.talent_score_breakdown?.ai_insight ? (
+                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">AI Insight</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {designer.talent_score_breakdown.ai_insight}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center p-4">
+                  <Brain className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Click "Recalculate" to get your AI-powered talent score and personalized insights.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Activity */}
           <motion.div
@@ -483,9 +606,13 @@ const Dashboard = () => {
                                     {isCurrentUser && <span className="text-xs ml-1">(You)</span>}
                                   </p>
                                 </div>
-                                <div className="text-right">
-                                  <p className="font-bold text-sm">{entry.total_points}</p>
-                                  <p className="text-xs text-muted-foreground font-medium">points</p>
+                                <div className="text-right flex flex-col items-end gap-0.5">
+                                  <p className="font-bold text-sm">{entry.total_points} pts</p>
+                                  {entry.talent_score > 0 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+                                      ⚡ {entry.talent_score}
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
                             );

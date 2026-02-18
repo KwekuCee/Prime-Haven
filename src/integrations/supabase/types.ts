@@ -28,6 +28,9 @@ export type Database = {
           profile_photo_url: string | null
           salary_estimated: number | null
           skills: string[] | null
+          talent_score: number | null
+          talent_score_breakdown: Json | null
+          talent_score_updated_at: string | null
           total_points: number | null
           updated_at: string
           user_id: string
@@ -45,6 +48,9 @@ export type Database = {
           profile_photo_url?: string | null
           salary_estimated?: number | null
           skills?: string[] | null
+          talent_score?: number | null
+          talent_score_breakdown?: Json | null
+          talent_score_updated_at?: string | null
           total_points?: number | null
           updated_at?: string
           user_id: string
@@ -62,6 +68,9 @@ export type Database = {
           profile_photo_url?: string | null
           salary_estimated?: number | null
           skills?: string[] | null
+          talent_score?: number | null
+          talent_score_breakdown?: Json | null
+          talent_score_updated_at?: string | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
