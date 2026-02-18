@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Upload, 
@@ -42,12 +42,18 @@ interface UploadedFile {
 
 const SubmitWork = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadError, setUploadError] = useState<string>('');
   
+  const correctionId = searchParams.get('correction');
+  const correctionProject = searchParams.get('project');
+  const correctionClient = searchParams.get('client');
+  const correctionService = searchParams.get('service');
+
   const [formData, setFormData] = useState({
     projectName: '',
     serviceType: 'logo',
@@ -55,6 +61,17 @@ const SubmitWork = () => {
     description: '',
     deadline: '',
   });
+
+  useEffect(() => {
+    if (correctionId) {
+      setFormData(prev => ({
+        ...prev,
+        projectName: correctionProject ? `${decodeURIComponent(correctionProject)} (Correction)` : prev.projectName,
+        clientReference: correctionClient ? decodeURIComponent(correctionClient) : prev.clientReference,
+        serviceType: correctionService || prev.serviceType,
+      }));
+    }
+  }, [correctionId, correctionProject, correctionClient, correctionService]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -211,7 +228,7 @@ const SubmitWork = () => {
     try {
       const fileUrls = successfulUploads.map(f => f.url!);
 
-      const submissionData = {
+      const submissionData: any = {
         designer_id: user.id,
         project_name: formData.projectName.trim(),
         service_type: formData.serviceType,
@@ -223,6 +240,10 @@ const SubmitWork = () => {
         revisions_count: 0,
         client_preference: false,
       };
+
+      if (correctionId) {
+        submissionData.parent_submission_id = correctionId;
+      }
 
       const { error } = await supabase
         .from('submissions')

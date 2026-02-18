@@ -45,6 +45,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
+import { EditUserDialog } from '@/components/admin/EditUserDialog';
+import { AdminNavigation } from '@/components/admin/AdminNavigation';
+import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -151,6 +154,8 @@ interface SystemSettings {
   ph_approval_points: { value: number };
   client_acceptance_points: { value: number };
   revenue_share_percentage: { value: number };
+  monthly_revenue_by_category?: { graphic: number; uiux: number; web: number };
+  correction_points?: { value: number } | number;
 }
 
 const SuperAdminDashboard = () => {
@@ -183,6 +188,7 @@ const SuperAdminDashboard = () => {
   });
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const [revenueInput, setRevenueInput] = useState('');
+  const [revenueByCategory, setRevenueByCategory] = useState({ graphic: '', uiux: '', web: '' });
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -194,7 +200,7 @@ const SuperAdminDashboard = () => {
   const [isResettingPoints, setIsResettingPoints] = useState(false);
   const [clientRejectSubmission, setClientRejectSubmission] = useState<Submission | null>(null);
   const [clientRejectionReason, setClientRejectionReason] = useState('');
-
+  const [editUser, setEditUser] = useState<User | null>(null);
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
     try {
@@ -679,88 +685,115 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Update monthly revenue
+  // Update monthly revenue by category
   const handleUpdateRevenue = async () => {
     try {
-      const amount = parseFloat(revenueInput);
-      if (isNaN(amount) || amount < 0) {
-        toast({
-          title: 'Invalid Amount',
-          description: 'Please enter a valid revenue amount.',
-          variant: 'destructive',
-        });
+      const graphicAmt = parseFloat(revenueByCategory.graphic) || 0;
+      const uiuxAmt = parseFloat(revenueByCategory.uiux) || 0;
+      const webAmt = parseFloat(revenueByCategory.web) || 0;
+      const totalAmount = graphicAmt + uiuxAmt + webAmt;
+
+      if (totalAmount < 0) {
+        toast({ title: 'Invalid Amount', description: 'Revenue amounts must be positive.', variant: 'destructive' });
         return;
       }
 
       const currentDate = new Date();
-      const revenueData = {
-        amount,
-        currency: 'GHS',
-        month: currentDate.getMonth() + 1,
-        year: currentDate.getFullYear()
-      };
+      const revenueData = { amount: totalAmount, currency: 'GHS', month: currentDate.getMonth() + 1, year: currentDate.getFullYear() };
+      const categoryData = { graphic: graphicAmt, uiux: uiuxAmt, web: webAmt };
 
-      const { error } = await supabase
-        .from('system_settings')
-        .upsert({
-          key: 'monthly_revenue',
-          value: revenueData,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id
-        }, { onConflict: 'key' });
+      // Upsert both settings
+      await Promise.all([
+        supabase.from('system_settings').upsert({ key: 'monthly_revenue', value: revenueData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
+        supabase.from('system_settings').upsert({ key: 'monthly_revenue_by_category', value: categoryData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
+      ]);
 
-      if (error) throw error;
-
-      // Log the action
       if (user) {
         await supabase.from('system_logs').insert({
           action_type: 'revenue_updated',
           admin_id: user.id,
-          description: `Updated monthly revenue to GH₵${amount.toFixed(2)}`,
+          description: `Revenue updated — Graphic: GH₵${graphicAmt.toFixed(2)}, UI/UX: GH₵${uiuxAmt.toFixed(2)}, Web: GH₵${webAmt.toFixed(2)}, Total: GH₵${totalAmount.toFixed(2)}`,
           timestamp: new Date().toISOString(),
         });
       }
 
-      setSystemSettings(prev => ({
-        ...prev,
-        monthly_revenue: revenueData
-      }));
+      setSystemSettings(prev => ({ ...prev, monthly_revenue: revenueData, monthly_revenue_by_category: categoryData }));
 
-      // Recalculate and update all designer salaries
+      // Recalculate salaries by category
       const revenueShare = systemSettings.revenue_share_percentage?.value || 50;
-      const { data: allDesigners } = await supabase
-        .from('designer_details')
-        .select('user_id, monthly_points');
-      
-      if (allDesigners && allDesigners.length > 0) {
-        const totalAllPoints = allDesigners.reduce((sum, d) => sum + (d.monthly_points || 0), 0);
+      const { data: allDesigners } = await supabase.from('designer_details').select('user_id, monthly_points');
+      const { data: allSubmissions } = await supabase.from('submissions').select('designer_id, service_type, points_awarded').in('status', ['ph_approved', 'approved']);
+
+      if (allDesigners && allSubmissions) {
+        const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
+        
+        // Calculate points per category per designer
+        const designerCategoryPoints: Record<string, { graphic: number; uiux: number; web: number }> = {};
+        allDesigners.forEach(d => { designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0, web: 0 }; });
+        
+        allSubmissions.forEach((s: any) => {
+          if (!designerCategoryPoints[s.designer_id]) return;
+          const pts = s.points_awarded || 0;
+          if (graphicTypes.includes(s.service_type)) designerCategoryPoints[s.designer_id].graphic += pts;
+          else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
+          else if (s.service_type === 'web') designerCategoryPoints[s.designer_id].web += pts;
+        });
+
+        const totalGraphicPts = Object.values(designerCategoryPoints).reduce((s, d) => s + d.graphic, 0);
+        const totalUiuxPts = Object.values(designerCategoryPoints).reduce((s, d) => s + d.uiux, 0);
+        const totalWebPts = Object.values(designerCategoryPoints).reduce((s, d) => s + d.web, 0);
+
         for (const designer of allDesigners) {
-          const estSalary = totalAllPoints > 0
-            ? ((designer.monthly_points || 0) / totalAllPoints) * (amount * (revenueShare / 100))
-            : 0;
-          await supabase
-            .from('designer_details')
-            .update({ salary_estimated: estSalary, updated_at: new Date().toISOString() })
-            .eq('user_id', designer.user_id);
+          const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0, web: 0 };
+          const graphicSalary = totalGraphicPts > 0 ? (dp.graphic / totalGraphicPts) * (graphicAmt * revenueShare / 100) : 0;
+          const uiuxSalary = totalUiuxPts > 0 ? (dp.uiux / totalUiuxPts) * (uiuxAmt * revenueShare / 100) : 0;
+          const webSalary = totalWebPts > 0 ? (dp.web / totalWebPts) * (webAmt * revenueShare / 100) : 0;
+          const totalSalary = graphicSalary + uiuxSalary + webSalary;
+
+          await supabase.from('designer_details').update({ salary_estimated: totalSalary, updated_at: new Date().toISOString() }).eq('user_id', designer.user_id);
         }
       }
 
-      toast({
-        title: 'Revenue Updated',
-        description: `Monthly revenue set to GH₵${amount.toFixed(2)}. Designer salaries recalculated.`,
-      });
-
+      toast({ title: 'Revenue Updated', description: `Total: GH₵${totalAmount.toFixed(2)}. Salaries recalculated by category.` });
       setIsRevenueModalOpen(false);
-      setRevenueInput('');
+      setRevenueByCategory({ graphic: '', uiux: '', web: '' });
       await loadDashboardDataSafe();
-
     } catch (error: any) {
       console.error('Revenue update error:', error);
-      toast({
-        title: 'Update Failed',
-        description: error.message || 'Please try again.',
-        variant: 'destructive',
+      toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // Handle correction request
+  const handleRequestCorrection = async (submission: Submission) => {
+    try {
+      await supabase.from('submissions').update({ status: 'correction_requested', updated_at: new Date().toISOString() } as any).eq('id', submission.id);
+      if (user) {
+        await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${submission.project_name}`, timestamp: new Date().toISOString() });
+      }
+      toast({ title: 'Correction Requested', description: 'The designer will be notified to submit corrections.' });
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // Handle snapshot and generate monthly report
+  const handleGenerateSnapshot = async () => {
+    try {
+      const currentDate = new Date();
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+      
+      const { error } = await supabase.functions.invoke('generate-monthly-report', {
+        body: { month, year },
       });
+      if (error) throw error;
+      
+      toast({ title: 'Snapshot Generated', description: `Monthly report for ${format(currentDate, 'MMMM yyyy')} created.` });
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -1188,6 +1221,7 @@ const SuperAdminDashboard = () => {
                   <p className="text-sm text-muted-foreground font-medium">Complete platform administration</p>
                 </div>
               </div>
+              <AdminNavigation />
             </div>
             <div className="flex items-center gap-3">
               <AlertDialog>
@@ -1297,7 +1331,11 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="glass border-l-4 border-l-green-500 cursor-pointer hover:border-green-400 transition-colors" onClick={() => setIsRevenueModalOpen(true)}>
+          <Card className="glass border-l-4 border-l-green-500 cursor-pointer hover:border-green-400 transition-colors" onClick={() => {
+            const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
+            setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
+            setIsRevenueModalOpen(true);
+          }}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold">Monthly Revenue</CardTitle>
@@ -1309,8 +1347,15 @@ const SuperAdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">GH₵{(systemSettings.monthly_revenue?.amount || 0).toFixed(2)}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs font-medium">Click to edit</Badge>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {systemSettings.monthly_revenue_by_category && (
+                  <>
+                    <Badge variant="outline" className="text-xs font-medium">G: GH₵{(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)}</Badge>
+                    <Badge variant="outline" className="text-xs font-medium">UI: GH₵{(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)}</Badge>
+                    <Badge variant="outline" className="text-xs font-medium">W: GH₵{(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}</Badge>
+                  </>
+                )}
+                {!systemSettings.monthly_revenue_by_category && <Badge variant="outline" className="text-xs font-medium">Click to edit</Badge>}
               </div>
             </CardContent>
           </Card>
@@ -1333,7 +1378,7 @@ const SuperAdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="submissions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="submissions" className="font-semibold">
               <FileCheck className="w-4 h-4 mr-2" />
               Submissions
@@ -1345,6 +1390,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="payments" className="font-semibold">
               <DollarSign className="w-4 h-4 mr-2" />
               Payments
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="font-semibold">
+              <Download className="w-4 h-4 mr-2" />
+              Reports
             </TabsTrigger>
             <TabsTrigger value="logs" className="font-semibold">
               <Activity className="w-4 h-4 mr-2" />
@@ -1558,9 +1607,15 @@ const SuperAdminDashboard = () => {
                                   </Badge>
                                 )}
                                 {submission.status === 'client_rejected' && (
-                                  <Badge variant="destructive" className="font-medium">
-                                    Client Rejected
-                                  </Badge>
+                                  <div className="flex gap-1">
+                                    <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
+                                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => handleRequestCorrection(submission)}>
+                                      <Edit className="w-3 h-3 mr-1" />Correction
+                                    </Button>
+                                  </div>
+                                )}
+                                {submission.status === 'correction_requested' && (
+                                  <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
                                 )}
                               </div>
                             </TableCell>
@@ -1733,6 +1788,10 @@ const SuperAdminDashboard = () => {
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setEditUser(userItem)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit All Details
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }}>
                                     <Award className="w-4 h-4 mr-2" />
                                     Gift Points
@@ -1825,6 +1884,17 @@ const SuperAdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* Monthly Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            <div className="flex justify-end mb-4">
+              <Button onClick={handleGenerateSnapshot} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Generate Current Month Snapshot
+              </Button>
+            </div>
+            <MonthlyReports />
+          </TabsContent>
+
           {/* Logs Tab */}
           <TabsContent value="logs" className="space-y-6">
             <Card>
@@ -1862,34 +1932,34 @@ const SuperAdminDashboard = () => {
         </Tabs>
       </div>
 
-      {/* Revenue Edit Modal */}
+      {/* Revenue Edit Modal - By Category */}
       <Dialog open={isRevenueModalOpen} onOpenChange={setIsRevenueModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-bold">Update Monthly Revenue</DialogTitle>
             <DialogDescription className="font-medium">
-              Set the total revenue for this month. This will be used to calculate designer salaries.
+              Set revenue by category. Salaries are calculated from each designer's category-specific points.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="revenue" className="font-semibold">Revenue Amount (GH₵)</Label>
-              <Input
-                id="revenue"
-                type="number"
-                placeholder="Enter revenue amount"
-                value={revenueInput}
-                onChange={(e) => setRevenueInput(e.target.value)}
-                step="0.01"
-                min="0"
-              />
+              <Label className="font-semibold">Graphic Design Revenue (GH₵)</Label>
+              <Input type="number" placeholder="0.00" value={revenueByCategory.graphic} onChange={e => setRevenueByCategory(p => ({ ...p, graphic: e.target.value }))} step="0.01" min="0" />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-semibold">UI/UX Design Revenue (GH₵)</Label>
+              <Input type="number" placeholder="0.00" value={revenueByCategory.uiux} onChange={e => setRevenueByCategory(p => ({ ...p, uiux: e.target.value }))} step="0.01" min="0" />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-semibold">Web Development Revenue (GH₵)</Label>
+              <Input type="number" placeholder="0.00" value={revenueByCategory.web} onChange={e => setRevenueByCategory(p => ({ ...p, web: e.target.value }))} step="0.01" min="0" />
             </div>
             <div className="p-3 rounded-lg bg-muted/50">
               <p className="text-sm font-medium text-muted-foreground">
-                Current revenue: <span className="text-foreground font-bold">GH₵{(systemSettings.monthly_revenue?.amount || 0).toFixed(2)}</span>
+                Total: <span className="text-foreground font-bold">GH₵{((parseFloat(revenueByCategory.graphic) || 0) + (parseFloat(revenueByCategory.uiux) || 0) + (parseFloat(revenueByCategory.web) || 0)).toFixed(2)}</span>
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Designer share: {systemSettings.revenue_share_percentage?.value || 50}% of revenue
+                Current: GH₵{(systemSettings.monthly_revenue?.amount || 0).toFixed(2)} · Share: {systemSettings.revenue_share_percentage?.value || 50}%
               </p>
             </div>
           </div>
@@ -2057,6 +2127,15 @@ const SuperAdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        open={!!editUser}
+        onOpenChange={(open) => !open && setEditUser(null)}
+        user={editUser}
+        currentAdminId={user?.id}
+        onSaved={() => loadDashboardDataSafe()}
+      />
     </div>
   );
 };
