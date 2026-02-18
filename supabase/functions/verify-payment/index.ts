@@ -77,7 +77,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const { createClient } = await import("npm:@supabase/supabase-js@2");
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // Record payment in database
