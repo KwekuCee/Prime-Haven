@@ -7,6 +7,7 @@ import StatsSection from '@/components/StatsSection';
 import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
+import VisitorChatbot from '@/components/VisitorChatbot';
 
 const Index = () => {
   return (
@@ -22,6 +23,7 @@ const Index = () => {
         <ContactSection />
       </main>
       <Footer />
+      <VisitorChatbot />
     </div>
   );
 };
