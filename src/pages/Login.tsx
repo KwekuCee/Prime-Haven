@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import logo from '@/assets/prime-haven-logo.png';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -124,9 +125,8 @@ const Login = () => {
           transition={{ duration: 0.8 }}
           className="text-center relative z-10"
         >
-          <Link to="/" className="text-4xl font-heading font-bold inline-block mb-8">
-            <span className="text-foreground">PRIME</span>
-            <span className="text-gradient">HAVEN</span>
+          <Link to="/" className="inline-block mb-8">
+            <img src={logo} alt="Prime Haven" className="h-12 w-auto" />
           </Link>
           <h2 className="text-3xl font-heading font-bold mb-4">
             Welcome <span className="text-gradient">Back</span>
@@ -156,9 +156,8 @@ const Login = () => {
           >
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-8">
-              <Link to="/" className="text-3xl font-heading font-bold inline-block">
-                <span className="text-foreground">PRIME</span>
-                <span className="text-gradient">HAVEN</span>
+              <Link to="/" className="inline-block">
+                <img src={logo} alt="Prime Haven" className="h-10 w-auto mx-auto" />
               </Link>
             </div>
 
