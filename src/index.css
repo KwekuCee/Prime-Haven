@@ -41,6 +41,7 @@
     --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(0, 0%, 96%) 100%);
     --glow-primary: 0 0 40px hsla(16, 99%, 55%, 0.2);
     --glow-strong: 0 0 80px hsla(16, 99%, 55%, 0.3);
+    --glow-xl: 0 0 120px hsla(16, 99%, 55%, 0.4);
 
     --sidebar-background: 0 0% 97%;
     --sidebar-foreground: 0 0% 5%;
@@ -85,6 +86,7 @@
     --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 0%) 0%, hsl(0, 0%, 8%) 100%);
     --glow-primary: 0 0 40px hsla(16, 99%, 55%, 0.4);
     --glow-strong: 0 0 80px hsla(16, 99%, 55%, 0.6);
+    --glow-xl: 0 0 140px hsla(16, 99%, 55%, 0.5);
 
     --sidebar-background: 0 0% 4%;
     --sidebar-foreground: 0 0% 100%;
@@ -141,6 +143,10 @@
     box-shadow: var(--glow-strong);
   }
 
+  .glow-xl {
+    box-shadow: var(--glow-xl);
+  }
+
   .glass {
     @apply bg-card/60 backdrop-blur-xl border border-border/50;
   }
@@ -148,11 +154,59 @@
   .glass-hover {
     @apply transition-all duration-300 hover:bg-card/80 hover:border-primary/30 hover:glow-primary;
   }
+
+  /* Noise texture overlay */
+  .noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.04;
+  }
+
+  /* Diagonal stripe accent */
+  .stripe-bg {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      hsla(16, 99%, 55%, 0.04) 8px,
+      hsla(16, 99%, 55%, 0.04) 9px
+    );
+  }
+
+  /* Grid overlay */
+  .grid-overlay {
+    background-image:
+      linear-gradient(hsla(var(--border), 0.4) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(var(--border), 0.4) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Marquee scrolling text */
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 30s linear infinite;
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Animated border gradient */
+  .border-gradient {
+    background: linear-gradient(var(--background), var(--background)) padding-box,
+                linear-gradient(135deg, hsl(16, 99%, 55%), hsl(30, 100%, 60%), transparent) border-box;
+    border: 1px solid transparent;
+  }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -160,8 +214,8 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: hsl(var(--primary) / 0.4);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
