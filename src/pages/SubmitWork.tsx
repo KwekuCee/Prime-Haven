@@ -55,6 +55,7 @@ const SubmitWork = () => {
     clientReference: '',
     description: '',
     deadline: '',
+    designLink: '',
   });
 
   useEffect(() => {
@@ -230,10 +231,13 @@ const SubmitWork = () => {
         client_ref: formData.clientReference.trim(),
         files_urls: fileUrls,
         submission_date: new Date().toISOString(),
-        status: 'pending',
+        status: correctionId ? 'ph_approved' : 'pending',
+        ph_approved: correctionId ? true : false,
+        ph_approved_at: correctionId ? new Date().toISOString() : null,
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
+        ...(formData.serviceType === 'uiux' && formData.designLink.trim() ? { design_link: formData.designLink.trim() } : {}),
       };
 
       if (correctionId) {
@@ -436,7 +440,15 @@ const SubmitWork = () => {
                     <Upload className="w-5 h-5 text-primary" />
                     <div>
                       <CardTitle>File Upload</CardTitle>
-                      <CardDescription>Upload your design files (JPG, PNG, GIF, SVG, PDF - Max 50MB)</CardDescription>
+                      <CardDescription>
+                        {formData.serviceType === 'logo' && 'Upload pictures of the logo design'}
+                        {formData.serviceType === 'branding' && 'Upload pictures of the brand identity'}
+                        {formData.serviceType === 'uiux' && 'Upload the homepage/first screen design for approval'}
+                        {formData.serviceType === 'web' && 'Upload your web design files'}
+                        {formData.serviceType === 'print' && 'Upload pictures of the print design'}
+                        {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
+                        {' '}(JPG, PNG, GIF, SVG, PDF - Max 50MB)
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -544,6 +556,33 @@ const SubmitWork = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Design Link (App Design only) */}
+              {formData.serviceType === 'uiux' && (
+                <Card className="glass">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <ImageIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <CardTitle>Design Tool Link</CardTitle>
+                        <CardDescription>Provide a link to your Figma, Framer, or Adobe XD project</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Input
+                      name="designLink"
+                      value={formData.designLink}
+                      onChange={handleInputChange}
+                      placeholder="https://www.figma.com/file/..."
+                      className="bg-card border-border"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Upload screenshots above for initial approval, then include the full design link here.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Submit Button */}
               <Button

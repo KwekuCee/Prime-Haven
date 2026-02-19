@@ -76,7 +76,7 @@ serve(async (req) => {
       const avgRevisions = totalSubs > 0 ? totalRevisions / totalSubs : 0;
 
       // Quality (0-100): based on points earned relative to max possible
-      const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 30 };
+      const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 40 };
       const totalPoints = subs.reduce((sum: number, s: any) => sum + (s.points_awarded || 0), 0);
       const maxPossiblePoints = subs.reduce((sum: number, s: any) => sum + 15 + (servicePointsMap[s.service_type] || 40), 0);
       const quality = maxPossiblePoints > 0 ? Math.min(100, (totalPoints / maxPossiblePoints) * 100) : 0;
