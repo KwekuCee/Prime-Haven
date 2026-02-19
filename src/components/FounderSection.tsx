@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Quote, Upload, User } from 'lucide-react';
+import { Quote } from 'lucide-react';
+import ceoPhoto from '@/assets/ceo-founder.jpg';
 
 const STORY_PARAGRAPHS = [
   "Before Prime Haven existed, Michael Kweku Essilfie saw something that troubled him deeply — a generation of brilliantly creative people with no real stage. Graphic designers, UI/UX artists, web developers, and digital creatives across Ghana were producing world-class work, yet struggling to connect with the clients who needed them most. The talent was there. The opportunity was not.",
@@ -10,8 +10,6 @@ const STORY_PARAGRAPHS = [
 ];
 
 const FounderSection = () => {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
   return (
     <section className="py-24 relative overflow-hidden bg-background" id="founder">
       {/* Background decoration */}
@@ -50,22 +48,12 @@ const FounderSection = () => {
             <div className="relative group">
               {/* Decorative ring */}
               <div className="absolute -inset-3 rounded-2xl bg-gradient-to-br from-primary via-primary/50 to-transparent opacity-60 blur-sm group-hover:opacity-80 transition-opacity duration-500" />
-              <div className="relative w-72 h-80 sm:w-80 sm:h-96 rounded-2xl overflow-hidden border-2 border-primary/30 bg-card flex items-center justify-center">
-                {photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    alt="Michael Kweku Essilfie - CEO & Founder, Prime Haven"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-                      <User className="w-10 h-10" />
-                    </div>
-                    <p className="text-sm font-medium">CEO Photo</p>
-                    <p className="text-xs text-center px-4 opacity-60">Upload from superadmin settings</p>
-                  </div>
-                )}
+              <div className="relative w-72 h-80 sm:w-80 sm:h-96 rounded-2xl overflow-hidden border-2 border-primary/30 bg-card">
+                <img
+                  src={ceoPhoto}
+                  alt="Michael Kweku Essilfie - CEO & Founder, Prime Haven"
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
             </div>
 
