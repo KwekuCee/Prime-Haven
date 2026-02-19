@@ -26,6 +26,12 @@ const Footer = () => {
             <a href="#portfolio" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
               Portfolio
             </a>
+            <a href="#founder" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              Our Story
+            </a>
+            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              Reviews
+            </a>
             <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
               About
             </a>
