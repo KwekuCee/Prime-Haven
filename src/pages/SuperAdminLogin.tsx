@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import logo from '@/assets/prime-haven-logo.png';
+import BrandLogo from '@/components/BrandLogo';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Shield, Crown, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -118,7 +118,7 @@ const SuperAdminLogin = () => {
           </Link>
           
           <div className="flex flex-col items-center gap-2 mb-4">
-            <img src={logo} alt="Prime Haven" className="h-10 w-auto" />
+            <BrandLogo className="h-10 w-auto" />
             <p className="text-sm text-muted-foreground font-medium">Admin Portal</p>
           </div>
         </div>

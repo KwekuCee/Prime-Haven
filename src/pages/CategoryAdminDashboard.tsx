@@ -151,7 +151,9 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     try {
       const submission = submissions.find((s: any) => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
-      const clientPoints = systemSettings.client_acceptance_points?.value || 40;
+      // Use service-type-specific points
+      const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 30 };
+      const clientPoints = servicePointsMap[submission.service_type] || systemSettings.client_acceptance_points?.value || 40;
 
       await supabase.from('submissions').update({
         client_accepted: true, client_accepted_at: new Date().toISOString(), client_accepted_by: user?.id,

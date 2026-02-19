@@ -241,7 +241,7 @@ const Dashboard = () => {
 
   const getActivityLabel = (type: string) => {
     switch (type) {
-      case 'client_accepted': return 'Client Accepted (+40 pts)';
+      case 'client_accepted': return 'Client Accepted';
       case 'ph_approved': return 'PH Approved (+15 pts)';
       case 'preference': return 'Client Preference';
       case 'approved': return 'Approved';

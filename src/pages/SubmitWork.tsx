@@ -23,14 +23,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 
-const serviceTypes = [
-  { id: 'logo', label: 'Logo Design', points: 45 },
-  { id: 'branding', label: 'Brand Identity', points: 50 },
-  { id: 'uiux', label: 'UI/UX Design', points: 65 },
-  { id: 'web', label: 'Web Design', points: 65 },
-  { id: 'print', label: 'Print Design', points: 20 },
-  { id: 'flyer', label: 'Flyer Design', points: 30 },
-];
+import { SERVICE_TYPES } from '@/lib/serviceTypes';
+
+const serviceTypes = SERVICE_TYPES;
 
 interface UploadedFile {
   file: File;

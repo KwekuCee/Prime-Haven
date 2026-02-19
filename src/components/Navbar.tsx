@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from '@/assets/prime-haven-logo.png';
+import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const Navbar = () => {
@@ -28,12 +28,9 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <motion.img
-              src={logo}
-              alt="Prime Haven"
-              whileHover={{ scale: 1.05 }}
-              className="h-10 w-auto"
-            />
+            <motion.div whileHover={{ scale: 1.05 }}>
+              <BrandLogo className="h-10 w-auto" />
+            </motion.div>
           </Link>
 
           {/* Desktop Navigation */}
