@@ -286,6 +286,7 @@ export type Database = {
           client_preference: boolean | null
           client_ref: string | null
           created_at: string
+          design_link: string | null
           designer_id: string
           files_urls: string[] | null
           final_approval_date: string | null
@@ -311,6 +312,7 @@ export type Database = {
           client_preference?: boolean | null
           client_ref?: string | null
           created_at?: string
+          design_link?: string | null
           designer_id: string
           files_urls?: string[] | null
           final_approval_date?: string | null
@@ -336,6 +338,7 @@ export type Database = {
           client_preference?: boolean | null
           client_ref?: string | null
           created_at?: string
+          design_link?: string | null
           designer_id?: string
           files_urls?: string[] | null
           final_approval_date?: string | null
