@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logo from '@/assets/prime-haven-logo.png';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Shield, Crown, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -116,14 +117,9 @@ const SuperAdminLogin = () => {
             Back
           </Link>
           
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-              <Crown className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-heading font-bold">Prime Haven</h1>
-              <p className="text-sm text-muted-foreground font-medium">Admin Portal</p>
-            </div>
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <img src={logo} alt="Prime Haven" className="h-10 w-auto" />
+            <p className="text-sm text-muted-foreground font-medium">Admin Portal</p>
           </div>
         </div>
 
