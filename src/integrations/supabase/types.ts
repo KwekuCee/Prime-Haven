@@ -101,6 +101,63 @@ export type Database = {
         }
         Relationships: []
       }
+      job_contracts: {
+        Row: {
+          budget: string | null
+          category: string
+          client_name: string | null
+          created_at: string
+          deadline: string | null
+          description: string
+          discord_channel_id: string | null
+          discord_message_id: string | null
+          id: string
+          posted_by: string | null
+          reference_files: string[] | null
+          requirements: string | null
+          special_instructions: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          budget?: string | null
+          category: string
+          client_name?: string | null
+          created_at?: string
+          deadline?: string | null
+          description: string
+          discord_channel_id?: string | null
+          discord_message_id?: string | null
+          id?: string
+          posted_by?: string | null
+          reference_files?: string[] | null
+          requirements?: string | null
+          special_instructions?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: string | null
+          category?: string
+          client_name?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          discord_channel_id?: string | null
+          discord_message_id?: string | null
+          id?: string
+          posted_by?: string | null
+          reference_files?: string[] | null
+          requirements?: string | null
+          special_instructions?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

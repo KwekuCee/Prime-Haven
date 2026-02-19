@@ -23,6 +23,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import UIUXAdminDashboard from "./pages/UIUXAdminDashboard";
 import WebDevAdminDashboard from "./pages/WebDevAdminDashboard";
 import ManagePortfolio from "./pages/ManagePortfolio";
+import JobContracts from "./pages/JobContracts";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/superadmin/uiux" element={<UIUXAdminDashboard />} />
             <Route path="/superadmin/web" element={<WebDevAdminDashboard />} />
             <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
+            <Route path="/superadmin/contracts" element={<JobContracts />} />
             <Route path="/messages" element={<Messages />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
