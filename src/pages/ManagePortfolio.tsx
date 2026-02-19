@@ -327,7 +327,7 @@ const ManagePortfolio = () => {
                   )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="project_url">Project Link (Figma, website URL, etc.)</Label>
+                  <Label htmlFor="project_url">Project Link (Optional)</Label>
                   <Input
                     id="project_url"
                     placeholder="e.g., https://www.figma.com/... or https://example.com"
@@ -458,7 +458,7 @@ const ManagePortfolio = () => {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Project Link (Figma, website URL, etc.)</Label>
+                <Label>Project Link (Optional)</Label>
                 <Input
                   placeholder="e.g., https://www.figma.com/... or https://example.com"
                   value={editForm.project_url}
