@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import logo from '@/assets/prime-haven-logo.png';
+import BrandLogo from '@/components/BrandLogo';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff, CalendarIcon } from 'lucide-react';
@@ -296,7 +296,7 @@ const Register = () => {
               animate={{ opacity: 1, y: 0 }}
               className="text-center mb-8"
             >
-              <img src={logo} alt="Prime Haven" className="h-10 w-auto mx-auto mb-2" />
+              <BrandLogo className="h-10 w-auto mx-auto" />
               <h1 className="text-3xl font-heading font-bold mb-2">
                 Join <span className="text-gradient">Us</span>
               </h1>

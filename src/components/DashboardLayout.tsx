@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import BrandLogo from '@/components/BrandLogo';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -82,9 +83,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-border flex items-center justify-between">
-            <Link to="/" className="text-xl font-heading font-bold">
-              <span className="text-foreground">PRIME</span>
-              <span className="text-gradient">HAVEN</span>
+            <Link to="/">
+              <BrandLogo className="h-8 w-auto" />
             </Link>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
               <X className="w-5 h-5" />

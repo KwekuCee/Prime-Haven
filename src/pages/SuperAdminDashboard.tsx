@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import logo from '@/assets/prime-haven-logo.png';
+import BrandLogo from '@/components/BrandLogo';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -570,7 +570,9 @@ const SuperAdminDashboard = () => {
       const submission = submissions.find(s => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
 
-      const clientPoints = systemSettings.client_acceptance_points?.value || 40;
+      // Use service-type-specific points instead of static value
+      const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 30 };
+      const clientPoints = servicePointsMap[submission.service_type] || systemSettings.client_acceptance_points?.value || 40;
 
       // Update submission
       const { error: updateError } = await supabase
@@ -1211,7 +1213,7 @@ const SuperAdminDashboard = () => {
           {/* Top row: Logo + Actions */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <img src={logo} alt="Prime Haven" className="h-8 sm:h-10 w-auto shrink-0" />
+              <BrandLogo className="h-8 sm:h-10 w-auto shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs font-semibold shrink-0">
@@ -1421,7 +1423,7 @@ const SuperAdminDashboard = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-bold">Work Submissions ({submissions.length})</CardTitle>
-                    <CardDescription className="font-medium">Two-level approval: PH Check (+{systemSettings.ph_approval_points?.value || 15} pts) → Client Acceptance (+{systemSettings.client_acceptance_points?.value || 40} pts)</CardDescription>
+                    <CardDescription className="font-medium">Two-level approval: PH Check (+{systemSettings.ph_approval_points?.value || 15} pts) → Client Acceptance (points vary by service type)</CardDescription>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative">
@@ -1598,7 +1600,7 @@ const SuperAdminDashboard = () => {
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                          <p>Mark as client accepted (+{systemSettings.client_acceptance_points?.value || 40} pts)</p>
+                                          <p>Mark as client accepted (+{({logo:45,branding:50,uiux:65,web:65,print:20,flyer:30} as Record<string,number>)[submission.service_type] || 40} pts)</p>
                                         </TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
