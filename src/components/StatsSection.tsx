@@ -1,6 +1,6 @@
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
-import { Users, Briefcase, Star, TrendingUp, X, Sparkles, ChevronRight } from 'lucide-react';
+import { Users, Briefcase, Star, TrendingUp, X, ChevronRight, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
@@ -33,6 +33,7 @@ const AnimatedCounter = ({ value, suffix }: { value: number; suffix: string }) =
       let start = 0;
       const duration = 2000;
       const increment = value / (duration / 16);
+
       const timer = setInterval(() => {
         start += increment;
         if (start >= value) {
@@ -42,11 +43,16 @@ const AnimatedCounter = ({ value, suffix }: { value: number; suffix: string }) =
           setCount(Math.floor(start));
         }
       }, 16);
+
       return () => clearInterval(timer);
     }
   }, [isInView, value]);
 
-  return <span ref={ref} className="tabular-nums">{count}{suffix}</span>;
+  return (
+    <span ref={ref} className="tabular-nums">
+      {count}{suffix}
+    </span>
+  );
 };
 
 const categoryLabels: Record<string, string> = {
@@ -128,7 +134,12 @@ const DrillDownContent = ({ stat, stats }: { stat: string; stats: StatsData }) =
         <div className="flex items-center justify-center py-4">
           <div className="relative w-32 h-32">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" fill="none" className="stroke-secondary" strokeWidth="8" />
+              <circle
+                cx="50" cy="50" r="42"
+                fill="none"
+                className="stroke-secondary"
+                strokeWidth="8"
+              />
               <motion.circle
                 cx="50" cy="50" r="42"
                 fill="none"
@@ -183,7 +194,9 @@ const StatsSection = () => {
           });
           setIsLive(true);
         }
-      } catch { /* keep fallback */ }
+      } catch {
+        // Keep fallback stats
+      }
     };
     fetchStats();
   }, []);
@@ -198,91 +211,68 @@ const StatsSection = () => {
   const activeDrill = statItems.find(s => s.key === drillDown);
 
   return (
-    <section id="about" className="py-28 relative overflow-hidden">
-      {/* Background treatments */}
-      <div className="absolute inset-0 grid-overlay opacity-10 pointer-events-none" />
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary/8 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute right-0 bottom-0 w-[300px] h-[300px] bg-primary/6 rounded-full blur-[80px] pointer-events-none" />
-
+    <section id="about" className="py-24 relative">
       <div className="container mx-auto px-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end gap-8 mb-20">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="flex-1"
-          >
-            <div className="flex items-center gap-3 mb-5">
-              <span className="inline-flex items-center gap-2 text-primary font-bold uppercase tracking-[0.2em] text-xs">
-                <span className="w-8 h-px bg-primary" />
-                Our Impact
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <span className="text-primary font-medium uppercase tracking-wider text-sm">Our Impact</span>
+            {isLive && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                Live
               </span>
-              {isLive && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  Live Data
-                </span>
-              )}
-            </div>
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-none">
-              Numbers That<br />
-              <span className="text-gradient">Speak</span>
-            </h2>
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-muted-foreground max-w-xs text-base leading-relaxed md:text-right"
-          >
+            )}
+          </div>
+          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6">
+            Numbers That <span className="text-gradient">Speak</span>
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Our growing community of talented designers and developers continue to deliver exceptional results.
-          </motion.p>
-        </div>
+          </p>
+        </motion.div>
 
-        {/* Stats — large horizontal cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {statItems.map((stat, index) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
               <motion.div
                 whileHover={{ y: -6, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setDrillDown(stat.key)}
-                className="relative group cursor-pointer rounded-2xl border border-border/40 bg-card/60 hover:border-primary/40 hover:bg-card backdrop-blur-sm p-8 transition-all duration-300 overflow-hidden"
+                className="glass rounded-2xl p-8 text-center group hover:glow-primary transition-all cursor-pointer relative overflow-hidden"
               >
-                {/* Glow on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" style={{ boxShadow: 'inset 0 0 30px hsla(16,99%,55%,0.06)' }} />
+                {/* Subtle shimmer effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                </div>
 
-                {/* Top row */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 group-hover:bg-primary/20 border border-primary/20 flex items-center justify-center transition-all duration-300">
-                    <stat.icon className="w-5 h-5 text-primary" />
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
+                    <stat.icon className="w-8 h-8 text-primary" />
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 text-xs text-primary font-bold">
+                  <div className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">
+                    <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                  </div>
+                  <p className="text-muted-foreground font-medium mb-3">{stat.label}</p>
+                  <div className="flex items-center justify-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                     <Sparkles className="w-3 h-3" />
-                    <span>Details</span>
+                    <span>Click to explore</span>
                     <ChevronRight className="w-3 h-3" />
                   </div>
                 </div>
-
-                {/* Number */}
-                <div className="text-4xl sm:text-5xl font-heading font-bold text-gradient mb-2 leading-none">
-                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-                </div>
-
-                {/* Label */}
-                <p className="text-muted-foreground text-sm font-semibold">{stat.label}</p>
-
-                {/* Bottom accent line */}
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </motion.div>
             </motion.div>
           ))}

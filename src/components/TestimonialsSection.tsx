@@ -15,11 +15,11 @@ interface Testimonial {
 }
 
 const StarRating = ({ rating }: { rating: number }) => (
-  <div className="flex gap-1">
+  <div className="flex gap-0.5">
     {Array.from({ length: 5 }).map((_, i) => (
       <Star
         key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-primary fill-primary' : 'text-muted-foreground/20'}`}
+        className={`w-4 h-4 ${i < rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`}
       />
     ))}
   </div>
@@ -49,6 +49,7 @@ const TestimonialsSection = () => {
     setCurrent((prev) => (prev + dir + testimonials.length) % testimonials.length);
   }, [testimonials.length]);
 
+  // Auto-advance
   useEffect(() => {
     if (testimonials.length <= 1) return;
     const timer = setInterval(() => go(1), 6000);
@@ -60,112 +61,97 @@ const TestimonialsSection = () => {
   const t = testimonials[current];
 
   const variants = {
-    enter: (d: number) => ({ opacity: 0, x: d > 0 ? 60 : -60, filter: 'blur(4px)' }),
-    center: { opacity: 1, x: 0, filter: 'blur(0px)' },
-    exit: (d: number) => ({ opacity: 0, x: d > 0 ? -60 : 60, filter: 'blur(4px)' }),
+    enter: (d: number) => ({ opacity: 0, x: d > 0 ? 80 : -80 }),
+    center: { opacity: 1, x: 0 },
+    exit: (d: number) => ({ opacity: 0, x: d > 0 ? -80 : 80 }),
   };
 
   return (
-    <section className="py-28 relative overflow-hidden" id="testimonials">
+    <section className="py-24 relative overflow-hidden bg-background" id="testimonials">
       {/* Background */}
-      <div className="absolute inset-0 grid-overlay opacity-10 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-primary/6 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
+      </div>
 
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-20">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <span className="inline-flex items-center gap-2 text-primary font-bold uppercase tracking-[0.2em] text-xs mb-5">
-              <span className="w-8 h-px bg-primary" />
-              Client Stories
-            </span>
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-none">
-              What Clients<br />
-              <span className="text-gradient">Say</span>
-            </h2>
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-muted-foreground max-w-xs text-base leading-relaxed md:text-right"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/20 mb-4">
+            Client Stories
+          </span>
+          <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
+            What Our <span className="text-primary">Clients Say</span>
+          </h2>
+          <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
             Real words from the businesses we've helped transform digitally.
-          </motion.p>
-        </div>
+          </p>
+        </motion.div>
 
         {/* Carousel */}
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="relative"
-          >
-            {/* Large decorative quote */}
-            <Quote className="absolute -top-8 -left-4 w-20 h-20 text-primary/8 rotate-180 select-none" />
-            <Quote className="absolute -bottom-8 -right-4 w-20 h-20 text-primary/8 select-none" />
+        <div className="max-w-3xl mx-auto">
+          <div className="relative">
+            {/* Large quote icon */}
+            <Quote className="absolute -top-6 -left-4 w-16 h-16 text-primary/10 rotate-180" />
 
-            <div className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/60 backdrop-blur-sm min-h-[280px]">
-              {/* Top accent */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+            <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-8 sm:p-12 min-h-[260px] flex flex-col justify-between">
+              <AnimatePresence custom={direction} mode="wait">
+                <motion.div
+                  key={t.id}
+                  custom={direction}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                  className="flex flex-col gap-6"
+                >
+                  {/* Stars */}
+                  <StarRating rating={t.rating} />
 
-              <div className="p-10 sm:p-14">
-                <AnimatePresence custom={direction} mode="wait">
-                  <motion.div
-                    key={t.id}
-                    custom={direction}
-                    variants={variants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex flex-col gap-7"
-                  >
-                    <StarRating rating={t.rating} />
+                  {/* Review text */}
+                  <blockquote className="text-lg sm:text-xl text-foreground leading-relaxed font-medium">
+                    "{t.review_text}"
+                  </blockquote>
 
-                    <blockquote className="text-xl sm:text-2xl md:text-3xl font-heading font-bold text-foreground leading-tight">
-                      "{t.review_text}"
-                    </blockquote>
-
-                    <div className="flex items-center gap-4 pt-2 border-t border-border/40">
-                      <div className="w-11 h-11 rounded-full bg-gradient-primary flex items-center justify-center shrink-0 shadow-[0_0_20px_hsla(16,99%,55%,0.3)]">
-                        <span className="text-primary-foreground font-bold text-base">
-                          {t.client_name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground">{t.client_name}</p>
-                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                          {t.company_role && (
-                            <span className="text-sm text-muted-foreground">{t.company_role}</span>
-                          )}
-                          {t.company_role && t.service_used && (
-                            <span className="text-muted-foreground/40">·</span>
-                          )}
-                          {t.service_used && (
-                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold border border-primary/20">
-                              {t.service_used}
-                            </span>
-                          )}
-                        </div>
+                  {/* Client info */}
+                  <div className="flex items-center gap-4">
+                    {/* Avatar placeholder */}
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      <span className="text-primary font-bold text-lg">
+                        {t.client_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{t.client_name}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                        {t.company_role && (
+                          <span className="text-sm text-muted-foreground">{t.company_role}</span>
+                        )}
+                        {t.company_role && t.service_used && (
+                          <span className="text-muted-foreground/40">·</span>
+                        )}
+                        {t.service_used && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium border border-primary/20">
+                            {t.service_used}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
-          </motion.div>
+          </div>
 
           {/* Controls */}
           <div className="flex items-center justify-between mt-8">
+            {/* Dots */}
             <div className="flex gap-2">
               {testimonials.map((_, i) => (
                 <button
@@ -174,20 +160,21 @@ const TestimonialsSection = () => {
                     setDirection(i > current ? 1 : -1);
                     setCurrent(i);
                   }}
-                  className={`h-1.5 rounded-full transition-all duration-400 ${
-                    i === current ? 'w-10 bg-primary shadow-[0_0_10px_hsla(16,99%,55%,0.6)]' : 'w-1.5 bg-muted-foreground/25 hover:bg-muted-foreground/50'
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i === current ? 'w-8 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60'
                   }`}
                   aria-label={`Go to review ${i + 1}`}
                 />
               ))}
             </div>
 
+            {/* Arrows */}
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => go(-1)}
-                className="h-10 w-10 rounded-full border-border/60 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                className="h-10 w-10 rounded-full border-border hover:border-primary hover:text-primary transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -195,7 +182,7 @@ const TestimonialsSection = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => go(1)}
-                className="h-10 w-10 rounded-full border-border/60 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                className="h-10 w-10 rounded-full border-border hover:border-primary hover:text-primary transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
