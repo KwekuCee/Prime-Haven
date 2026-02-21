@@ -11,7 +11,14 @@ const BrandLogo = ({ className = 'h-10 w-auto', alt = 'Prime Haven' }: BrandLogo
   const { resolvedTheme } = useTheme();
   const src = resolvedTheme === 'light' ? logoLight : logoDark;
 
-  return <img src={src} alt={alt} className={className} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      style={{ height: 'inherit', width: 'auto', maxHeight: '100%' }}
+    />
+  );
 };
 
 export default BrandLogo;

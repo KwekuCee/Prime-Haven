@@ -27,7 +27,8 @@ import {
   Save,
   ImageIcon,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,6 +88,8 @@ interface User {
     skills: string[];
     payment_method: string;
     payment_details: any;
+    salary_payment_status: string;
+    salary_paid_at: string | null;
     created_at?: string;
     updated_at?: string;
   };
@@ -999,6 +1002,89 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  // Handle marking salary as paid
+  const handleMarkSalaryPaid = async (userItem: User) => {
+    try {
+      const salaryAmount = userItem.designer_details?.salary_estimated || 0;
+      const paymentMethod = userItem.designer_details?.payment_method || '';
+      const paymentDetails = userItem.designer_details?.payment_details;
+      const paymentAccount = typeof paymentDetails === 'object' && paymentDetails
+        ? (paymentDetails.account || paymentDetails.email || '')
+        : (typeof paymentDetails === 'string' ? paymentDetails : '');
+
+      // Update salary payment status
+      const { error } = await supabase
+        .from('designer_details')
+        .update({
+          salary_payment_status: 'paid',
+          salary_paid_at: new Date().toISOString(),
+          salary_paid_by: user?.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userItem.id);
+
+      if (error) throw error;
+
+      // Log the action
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'salary_paid',
+          admin_id: user.id,
+          description: `Marked salary as paid for ${userItem.full_name || userItem.email} — GH₵${salaryAmount.toFixed(2)}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Send notification email
+      const methodLabels: Record<string, string> = {
+        'mtn_momo': 'MTN MoMo', 'vodafone_cash': 'Vodafone Cash',
+        'airteltigo_money': 'AirtelTigo Money', 'bank_transfer': 'Bank Transfer',
+        'crypto': 'Crypto', 'paypal': 'PayPal', 'wise': 'Wise'
+      };
+      try {
+        await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: userItem.id,
+            projectName: '',
+            notificationType: 'salary_paid',
+            salaryAmount,
+            paymentMethod: methodLabels[paymentMethod] || paymentMethod || 'your account',
+            paymentAccount: String(paymentAccount || ''),
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send salary paid email:', emailErr);
+      }
+
+      toast({ title: '💰 Salary Marked as Paid', description: `${userItem.full_name || userItem.email} has been notified via email.` });
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      console.error('Mark salary paid error:', error);
+      toast({ title: 'Failed', description: error.message || 'Could not update payment status.', variant: 'destructive' });
+    }
+  };
+
+  // Handle resetting salary payment status to unpaid
+  const handleResetSalaryStatus = async (userItem: User) => {
+    try {
+      const { error } = await supabase
+        .from('designer_details')
+        .update({
+          salary_payment_status: 'unpaid',
+          salary_paid_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userItem.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Status Reset', description: `Payment status reset to unpaid for ${userItem.full_name || userItem.email}.` });
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
   // Handle client rejection (after PH approval, no points rollback)
   const handleClientRejection = async () => {
     if (!clientRejectSubmission) return;
@@ -1699,6 +1785,8 @@ const SuperAdminDashboard = () => {
                           <TableHead className="font-semibold">Role</TableHead>
                           <TableHead className="font-semibold">Status</TableHead>
                           <TableHead className="font-semibold">Points</TableHead>
+                          <TableHead className="font-semibold">Est. Salary</TableHead>
+                          <TableHead className="font-semibold">Salary Status</TableHead>
                           <TableHead className="font-semibold">Payment Info</TableHead>
                           <TableHead className="font-semibold">Joined</TableHead>
                           <TableHead className="text-right font-semibold">Actions</TableHead>
@@ -1773,6 +1861,43 @@ const SuperAdminDashboard = () => {
                             </TableCell>
                             <TableCell>
                               <span className="font-bold text-primary">{userItem.designer_details?.total_points || 0}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold">GH₵{(userItem.designer_details?.salary_estimated || 0).toFixed(2)}</span>
+                            </TableCell>
+                            <TableCell>
+                              {(() => {
+                                const status = userItem.designer_details?.salary_payment_status || 'unpaid';
+                                const isPaid = status === 'paid';
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={isPaid ? 'default' : 'outline'} className={`font-medium ${isPaid ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}>
+                                      {isPaid ? '✓ Paid' : 'Unpaid'}
+                                    </Badge>
+                                    {!isPaid && (userItem.designer_details?.salary_estimated || 0) > 0 && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+                                        onClick={() => handleMarkSalaryPaid(userItem)}
+                                      >
+                                        <Banknote className="w-3 h-3 mr-1" />
+                                        Pay
+                                      </Button>
+                                    )}
+                                    {isPaid && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 text-xs text-muted-foreground"
+                                        onClick={() => handleResetSalaryStatus(userItem)}
+                                      >
+                                        Reset
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
