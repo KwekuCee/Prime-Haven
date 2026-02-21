@@ -27,6 +27,9 @@ export type Database = {
           professional_title: string | null
           profile_photo_url: string | null
           salary_estimated: number | null
+          salary_paid_at: string | null
+          salary_paid_by: string | null
+          salary_payment_status: string | null
           skills: string[] | null
           talent_score: number | null
           talent_score_breakdown: Json | null
@@ -47,6 +50,9 @@ export type Database = {
           professional_title?: string | null
           profile_photo_url?: string | null
           salary_estimated?: number | null
+          salary_paid_at?: string | null
+          salary_paid_by?: string | null
+          salary_payment_status?: string | null
           skills?: string[] | null
           talent_score?: number | null
           talent_score_breakdown?: Json | null
@@ -67,6 +73,9 @@ export type Database = {
           professional_title?: string | null
           profile_photo_url?: string | null
           salary_estimated?: number | null
+          salary_paid_at?: string | null
+          salary_paid_by?: string | null
+          salary_payment_status?: string | null
           skills?: string[] | null
           talent_score?: number | null
           talent_score_breakdown?: Json | null

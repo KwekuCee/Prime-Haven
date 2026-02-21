@@ -18,9 +18,12 @@ const corsHeaders = {
 interface NotifyRequest {
   designerId: string;
   projectName: string;
-  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission";
+  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid";
   pointsAwarded?: number;
   giftReason?: string;
+  salaryAmount?: number;
+  paymentMethod?: string;
+  paymentAccount?: string;
 }
 
 function encodeHtml(str: string): string {
@@ -55,7 +58,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body: NotifyRequest = await req.json();
-    const { designerId, projectName, notificationType, pointsAwarded, giftReason } = body;
+    const { designerId, projectName, notificationType, pointsAwarded, giftReason, salaryAmount, paymentMethod, paymentAccount } = body;
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!designerId || !uuidRegex.test(designerId)) {
@@ -172,6 +175,13 @@ serve(async (req: Request): Promise<Response> => {
         message = `You've been awarded <strong>+${pointsAwarded} bonus points</strong>${giftReason ? ` for: <strong>${encodeHtml(giftReason.slice(0, 200).trim())}</strong>` : ""}. Keep doing great work!`;
         badgeText = "BONUS POINTS";
         emoji = "🎁";
+        break;
+      case "salary_paid":
+        subject = `💰 Your salary of GH₵${(salaryAmount || 0).toFixed(2)} has been sent!`;
+        heading = "You've Been Paid!";
+        message = `Great news! Your salary of <strong>GH₵${(salaryAmount || 0).toFixed(2)}</strong> has been sent to your <strong>${encodeHtml((paymentMethod || "account").slice(0, 50))}</strong>${paymentAccount ? ` ending in <strong>...${encodeHtml(paymentAccount.slice(-4))}</strong>` : ""}. Please allow some time for the funds to reflect in your account.`;
+        badgeText = "SALARY PAID";
+        emoji = "💰";
         break;
     }
 
