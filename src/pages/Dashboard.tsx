@@ -192,12 +192,8 @@ const Dashboard = () => {
             revenueShare = settings.revenue_share_percentage?.value || 50;
           }
 
-          // Calculate estimated salary based on points share
-          const totalAllPoints = processedLeaderboard.reduce((sum, e) => sum + (e.monthly_points || 0), 0);
-          const userMonthlyPoints = designerResult.data?.monthly_points || 0;
-          const estSalary = totalAllPoints > 0 
-            ? ((userMonthlyPoints / totalAllPoints) * (monthlyRevenue * (revenueShare / 100)))
-            : 0;
+          // Use the pre-calculated salary from the database (category-based: points ÷ category total × 50% of category revenue)
+          const estSalary = designerResult.data?.salary_estimated || 0;
 
           const approvedCount = submissionsResult.data?.filter((s: any) => s.status === 'approved' || s.client_accepted).length || 0;
           
