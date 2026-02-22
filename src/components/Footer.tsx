@@ -11,7 +11,7 @@ const Footer = () => {
           {/* Logo & Tagline */}
           <div className="text-center md:text-left">
             <Link to="/">
-              <BrandLogo className="h-10 w-auto" />
+              <BrandLogo height={40} />
             </Link>
             <p className="text-muted-foreground text-sm mt-2">
               Making IT Dreams a Reality

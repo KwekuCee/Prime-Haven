@@ -126,7 +126,7 @@ const Login = () => {
           className="text-center relative z-10"
         >
           <Link to="/" className="inline-block mb-8">
-            <BrandLogo className="h-12 w-auto" />
+            <BrandLogo height={48} />
           </Link>
           <h2 className="text-3xl font-heading font-bold mb-4">
             Welcome <span className="text-gradient">Back</span>
@@ -157,7 +157,7 @@ const Login = () => {
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-8">
               <Link to="/" className="inline-block">
-                <BrandLogo className="h-10 w-auto mx-auto" />
+                <BrandLogo height={40} className="mx-auto" />
               </Link>
             </div>
 
