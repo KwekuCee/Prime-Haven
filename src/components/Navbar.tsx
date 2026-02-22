@@ -29,9 +29,9 @@ const Navbar = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <motion.div whileHover={{ scale: 1.05 }}>
-              <BrandLogo height={40} />
+          <Link to="/" className="flex items-center shrink-0">
+            <motion.div whileHover={{ scale: 1.05 }} className="shrink-0">
+              <BrandLogo height={40} className="shrink-0" />
             </motion.div>
           </Link>
 
