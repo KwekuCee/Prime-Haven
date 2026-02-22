@@ -84,7 +84,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="p-6 border-b border-border flex items-center justify-between">
             <Link to="/">
-              <BrandLogo className="h-8 w-auto" />
+              <BrandLogo height={32} />
             </Link>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
               <X className="w-5 h-5" />

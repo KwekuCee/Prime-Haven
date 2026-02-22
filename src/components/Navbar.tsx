@@ -31,7 +31,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <motion.div whileHover={{ scale: 1.05 }}>
-              <BrandLogo className="h-10 w-auto" />
+              <BrandLogo height={40} />
             </motion.div>
           </Link>
 

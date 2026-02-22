@@ -296,7 +296,7 @@ const Register = () => {
               animate={{ opacity: 1, y: 0 }}
               className="text-center mb-8"
             >
-              <BrandLogo className="h-10 w-auto mx-auto" />
+              <BrandLogo height={40} className="mx-auto" />
               <h1 className="text-3xl font-heading font-bold mb-2">
                 Join <span className="text-gradient">Us</span>
               </h1>

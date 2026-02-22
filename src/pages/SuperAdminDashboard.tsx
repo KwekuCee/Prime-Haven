@@ -1300,7 +1300,7 @@ const SuperAdminDashboard = () => {
           {/* Top row: Logo + Actions */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <BrandLogo className="h-8 sm:h-10 w-auto shrink-0" />
+              <BrandLogo height={36} className="shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs font-semibold shrink-0">
