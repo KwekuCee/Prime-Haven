@@ -13,9 +13,11 @@ import {
   Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import BrandLogo from '@/components/BrandLogo';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -36,6 +38,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string; professional_title: string } | null>(null);
+  const unreadMessages = useUnreadMessages();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -97,6 +100,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <nav className="flex-1 p-4 space-y-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
+              const showBadge = item.path === '/messages' && unreadMessages > 0;
               return (
                 <Link
                   key={item.path}
@@ -109,7 +113,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {showBadge && (
+                    <Badge variant="default" className="h-5 min-w-[20px] px-1.5 text-[10px] font-bold rounded-full">
+                      {unreadMessages}
+                    </Badge>
+                  )}
                 </Link>
               );
             })}

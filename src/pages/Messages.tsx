@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
-  MessageSquare,
-  Send,
-  Search,
-  Loader2,
-  User,
-  Circle,
-  ArrowLeft
+  MessageSquare, Send, Loader2, ArrowLeft, Hash, Users, Circle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,12 +13,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 
 interface Designer {
   user_id: string;
   full_name: string;
   professional_title: string;
   profile_photo_url: string | null;
+  is_online?: boolean;
 }
 
 interface Message {
@@ -36,9 +32,9 @@ interface Message {
   created_at: string;
 }
 
-interface Conversation {
-  designer: Designer;
-  lastMessage: Message;
+interface ConversationMeta {
+  partnerId: string;
+  lastMessage: Message | null;
   unreadCount: number;
 }
 
@@ -46,15 +42,15 @@ const Messages = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { settings } = useUserSettings();
+  const playSound = useNotificationSound();
   const [loading, setLoading] = useState(true);
-  const [designers, setDesigners] = useState<Designer[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [peers, setPeers] = useState<Designer[]>([]);
+  const [conversationMeta, setConversationMeta] = useState<Map<string, ConversationMeta>>(new Map());
   const [selectedDesigner, setSelectedDesigner] = useState<Designer | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showDesignerList, setShowDesignerList] = useState(false);
+  const [myTitle, setMyTitle] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,83 +58,92 @@ const Messages = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Load conversations
+  // Load same-profession peers + conversation metadata
   useEffect(() => {
     if (!user) return;
 
-    const loadConversations = async () => {
+    const load = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
+        // Get my professional title
+        const { data: myDetails } = await supabase
+          .from('designer_details')
+          .select('professional_title')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        // Get all messages involving current user
-        const { data: allMessages } = await supabase
-          .from('messages')
-          .select('*')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .order('created_at', { ascending: false });
+        const title = myDetails?.professional_title || '';
+        setMyTitle(title);
 
-        if (!allMessages || allMessages.length === 0) {
-          setLoading(false);
-          return;
-        }
-
-        // Group by conversation partner
-        const partnerIds = new Set<string>();
-        allMessages.forEach(msg => {
-          const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-          partnerIds.add(partnerId);
-        });
-
-        // Load designer profiles
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', Array.from(partnerIds));
-
-        const { data: designerDetails } = await supabase
+        // Get all designers (same profession first, then others)
+        const { data: allDetails } = await supabase
           .from('designer_details')
           .select('user_id, professional_title, profile_photo_url')
-          .in('user_id', Array.from(partnerIds));
+          .neq('user_id', user.id);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-        const detailsMap = new Map(designerDetails?.map(d => [d.user_id, d]) || []);
+        if (!allDetails) { setLoading(false); return; }
 
-        const convs: Conversation[] = Array.from(partnerIds).map(partnerId => {
-          const profile = profileMap.get(partnerId);
-          const details = detailsMap.get(partnerId);
-          const partnerMessages = allMessages.filter(
-            m => m.sender_id === partnerId || m.receiver_id === partnerId
+        const userIds = allDetails.map(d => d.user_id);
+
+        // Get profiles and settings in parallel
+        const [profilesRes, settingsRes, messagesRes] = await Promise.all([
+          supabase.from('profiles').select('id, full_name').in('id', userIds),
+          supabase.from('user_settings').select('user_id, allow_messages').in('user_id', userIds),
+          supabase.from('messages').select('*')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .order('created_at', { ascending: false }),
+        ]);
+
+        const profileMap = new Map(profilesRes.data?.map(p => [p.id, p]) || []);
+        const settingsMap = new Map(settingsRes.data?.map(s => [s.user_id, s.allow_messages]) || []);
+
+        // Build peer list - filter out those who disabled messaging
+        const peerList: Designer[] = allDetails
+          .filter(d => settingsMap.get(d.user_id) !== false)
+          .map(d => ({
+            user_id: d.user_id,
+            full_name: profileMap.get(d.user_id)?.full_name || 'Unknown',
+            professional_title: d.professional_title || 'Designer',
+            profile_photo_url: d.profile_photo_url || null,
+          }))
+          .sort((a, b) => {
+            // Same profession first
+            const aMatch = title && a.professional_title?.toLowerCase() === title.toLowerCase();
+            const bMatch = title && b.professional_title?.toLowerCase() === title.toLowerCase();
+            if (aMatch && !bMatch) return -1;
+            if (!aMatch && bMatch) return 1;
+            return a.full_name.localeCompare(b.full_name);
+          });
+
+        setPeers(peerList);
+
+        // Build conversation metadata
+        const allMsgs = messagesRes.data || [];
+        const metaMap = new Map<string, ConversationMeta>();
+        
+        for (const peer of peerList) {
+          const peerMsgs = allMsgs.filter(
+            m => m.sender_id === peer.user_id || m.receiver_id === peer.user_id
           );
-          const unread = partnerMessages.filter(
-            m => m.receiver_id === user.id && !m.read
-          ).length;
-
-          return {
-            designer: {
-              user_id: partnerId,
-              full_name: profile?.full_name || 'Unknown',
-              professional_title: details?.professional_title || 'Designer',
-              profile_photo_url: details?.profile_photo_url || null,
-            },
-            lastMessage: partnerMessages[0],
+          const unread = peerMsgs.filter(m => m.receiver_id === user.id && !m.read).length;
+          metaMap.set(peer.user_id, {
+            partnerId: peer.user_id,
+            lastMessage: peerMsgs[0] || null,
             unreadCount: unread,
-          };
-        }).sort((a, b) =>
-          new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
-        );
-
-        setConversations(convs);
+          });
+        }
+        setConversationMeta(metaMap);
       } catch (error) {
-        console.error('Error loading conversations:', error);
+        console.error('Error loading peers:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadConversations();
+    load();
   }, [user]);
 
-  // Load messages for selected designer
+  // Load messages for selected designer + realtime
   useEffect(() => {
     if (!user || !selectedDesigner) return;
 
@@ -153,103 +158,88 @@ const Messages = () => {
 
       if (data) {
         setMessages(data);
-        // Mark unread messages as read
         const unreadIds = data
           .filter(m => m.receiver_id === user.id && !m.read)
           .map(m => m.id);
         if (unreadIds.length > 0) {
-          await supabase
-            .from('messages')
-            .update({ read: true })
-            .in('id', unreadIds);
+          await supabase.from('messages').update({ read: true }).in('id', unreadIds);
+          // Update local meta
+          setConversationMeta(prev => {
+            const next = new Map(prev);
+            const meta = next.get(selectedDesigner.user_id);
+            if (meta) next.set(selectedDesigner.user_id, { ...meta, unreadCount: 0 });
+            return next;
+          });
         }
       }
     };
 
     loadMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`messages-${selectedDesigner.user_id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-          const msg = payload.new as Message;
-          if (
-            (msg.sender_id === user.id && msg.receiver_id === selectedDesigner.user_id) ||
-            (msg.sender_id === selectedDesigner.user_id && msg.receiver_id === user.id)
-          ) {
-            setMessages(prev => [...prev, msg]);
-            // Mark as read if we're the receiver
-            if (msg.receiver_id === user.id) {
-              supabase.from('messages').update({ read: true }).eq('id', msg.id);
-            }
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      }, (payload) => {
+        const msg = payload.new as Message;
+        if (
+          (msg.sender_id === user.id && msg.receiver_id === selectedDesigner.user_id) ||
+          (msg.sender_id === selectedDesigner.user_id && msg.receiver_id === user.id)
+        ) {
+          setMessages(prev => [...prev, msg]);
+          if (msg.receiver_id === user.id) {
+            supabase.from('messages').update({ read: true }).eq('id', msg.id);
+          }
+          if (msg.sender_id !== user.id) {
+            playSound();
           }
         }
-      )
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, selectedDesigner]);
+    return () => { supabase.removeChannel(channel); };
+  }, [user, selectedDesigner, playSound]);
 
+  // Global notification sound for messages from non-selected conversations
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    if (!user) return;
 
-  // Search designers
-  const handleSearchDesigners = async () => {
-    if (!searchQuery.trim() || !user) return;
+    const channel = supabase
+      .channel('global-msg-notify')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.receiver_id === user.id && msg.sender_id !== selectedDesigner?.user_id) {
+          playSound();
+          // Update unread count in meta
+          setConversationMeta(prev => {
+            const next = new Map(prev);
+            const meta = next.get(msg.sender_id);
+            if (meta) {
+              next.set(msg.sender_id, {
+                ...meta,
+                lastMessage: msg,
+                unreadCount: meta.unreadCount + 1,
+              });
+            }
+            return next;
+          });
+        }
+      })
+      .subscribe();
 
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name')
-      .neq('id', user.id)
-      .ilike('full_name', `%${searchQuery}%`)
-      .limit(10);
+    return () => { supabase.removeChannel(channel); };
+  }, [user, selectedDesigner, playSound]);
 
-    if (profiles && profiles.length > 0) {
-      const userIds = profiles.map(p => p.id);
-      const { data: details } = await supabase
-        .from('designer_details')
-        .select('user_id, professional_title, profile_photo_url')
-        .in('user_id', userIds);
-
-      // Check allow_messages settings for found designers
-      const { data: settingsData } = await supabase
-        .from('user_settings')
-        .select('user_id, allow_messages')
-        .in('user_id', userIds);
-
-      const settingsMap = new Map(settingsData?.map(s => [s.user_id, s.allow_messages]) || []);
-      const detailsMap = new Map(details?.map(d => [d.user_id, d]) || []);
-
-      const results: Designer[] = profiles
-        .filter(p => settingsMap.get(p.id) !== false) // Filter out designers who disabled messaging
-        .map(p => ({
-          user_id: p.id,
-          full_name: p.full_name || 'Unknown',
-          professional_title: detailsMap.get(p.id)?.professional_title || 'Designer',
-          profile_photo_url: detailsMap.get(p.id)?.profile_photo_url || null,
-        }));
-
-      setDesigners(results);
-      setShowDesignerList(true);
-    } else {
-      setDesigners([]);
-      setShowDesignerList(true);
-    }
-  };
+  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !selectedDesigner || sending) return;
-
     setSending(true);
     try {
       const { error } = await supabase.from('messages').insert({
@@ -257,16 +247,11 @@ const Messages = () => {
         receiver_id: selectedDesigner.user_id,
         content: newMessage.trim(),
       });
-
       if (error) throw error;
       setNewMessage('');
       inputRef.current?.focus();
     } catch (error: any) {
-      toast({
-        title: 'Failed to send',
-        description: error.message || 'Could not send message.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Failed to send', description: error.message, variant: 'destructive' });
     } finally {
       setSending(false);
     }
@@ -280,12 +265,50 @@ const Messages = () => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / 86400000);
-
     if (diffDays === 0) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return date.toLocaleDateString([], { weekday: 'short' });
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
+
+  const formatMessageDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  // Group messages by date
+  const groupedMessages = messages.reduce<{ date: string; msgs: Message[] }[]>((acc, msg) => {
+    const dateKey = new Date(msg.created_at).toDateString();
+    const last = acc[acc.length - 1];
+    if (last && last.date === dateKey) {
+      last.msgs.push(msg);
+    } else {
+      acc.push({ date: dateKey, msgs: [msg] });
+    }
+    return acc;
+  }, []);
+
+  // Sort peers: those with conversations first (by recency), then same profession, then others
+  const sortedPeers = [...peers].sort((a, b) => {
+    const metaA = conversationMeta.get(a.user_id);
+    const metaB = conversationMeta.get(b.user_id);
+    const hasConvA = !!metaA?.lastMessage;
+    const hasConvB = !!metaB?.lastMessage;
+    // Conversations first
+    if (hasConvA && !hasConvB) return -1;
+    if (!hasConvA && hasConvB) return 1;
+    if (hasConvA && hasConvB) {
+      return new Date(metaB!.lastMessage!.created_at).getTime() - new Date(metaA!.lastMessage!.created_at).getTime();
+    }
+    return 0;
+  });
+
+  const sameProfessionPeers = sortedPeers.filter(
+    p => myTitle && p.professional_title?.toLowerCase() === myTitle.toLowerCase()
+  );
+  const otherPeers = sortedPeers.filter(
+    p => !myTitle || p.professional_title?.toLowerCase() !== myTitle.toLowerCase()
+  );
 
   if (!settings.allow_messages) {
     return (
@@ -295,218 +318,250 @@ const Messages = () => {
             <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-heading font-bold mb-2">Messaging Disabled</h2>
             <p className="text-muted-foreground mb-4">
-              You've turned off messaging. Enable it in Settings → Privacy to start chatting with other designers.
+              Enable messaging in Settings → Privacy to start chatting.
             </p>
-            <Button onClick={() => window.location.href = '/settings'}>
-              Go to Settings
-            </Button>
+            <Button onClick={() => window.location.href = '/settings'}>Go to Settings</Button>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
+  const renderPeerItem = (peer: Designer) => {
+    const meta = conversationMeta.get(peer.user_id);
+    const isSelected = selectedDesigner?.user_id === peer.user_id;
+    return (
+      <button
+        key={peer.user_id}
+        className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded transition-colors text-left group ${
+          isSelected
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+        }`}
+        onClick={() => setSelectedDesigner(peer)}
+      >
+        <div className="relative flex-shrink-0">
+          {peer.profile_photo_url ? (
+            <img src={peer.profile_photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+              {getInitials(peer.full_name)}
+            </div>
+          )}
+        </div>
+        <span className="text-sm truncate flex-1">{peer.full_name}</span>
+        {(meta?.unreadCount ?? 0) > 0 && (
+          <Badge variant="default" className="h-5 min-w-[20px] px-1.5 text-[10px] font-bold rounded-full">
+            {meta!.unreadCount}
+          </Badge>
+        )}
+      </button>
+    );
+  };
+
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 lg:p-8 h-[calc(100vh-4rem)] lg:h-[calc(100vh-2rem)] flex flex-col">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-4"
-        >
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold">Messages</h1>
-          <p className="text-muted-foreground text-sm">Chat with other designers</p>
-        </motion.div>
+      <div className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-2rem)] flex overflow-hidden">
+        {/* Discord-style Channel/User sidebar */}
+        <div className={`w-60 bg-card/80 border-r border-border flex flex-col flex-shrink-0 ${selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
+          {/* Header */}
+          <div className="p-3 border-b border-border flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            <h2 className="font-heading font-bold text-sm">Direct Messages</h2>
+          </div>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
-          {/* Conversations List */}
-          <Card className={`glass flex flex-col overflow-hidden ${selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
-            <div className="p-3 border-b border-border space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Search designers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearchDesigners()}
-                  className="bg-card border-border text-sm"
-                />
-                <Button size="icon" variant="outline" onClick={handleSearchDesigners}>
-                  <Search className="w-4 h-4" />
-                </Button>
+          <ScrollArea className="flex-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
-            </div>
-
-            <ScrollArea className="flex-1">
-              {/* Search Results */}
-              {showDesignerList && (
-                <div className="p-2 border-b border-border">
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <span className="text-xs font-semibold text-muted-foreground">Search Results</span>
-                    <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setShowDesignerList(false)}>
-                      Close
-                    </Button>
-                  </div>
-                  {designers.length > 0 ? (
-                    designers.map(d => (
-                      <button
-                        key={d.user_id}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors text-left"
-                        onClick={() => {
-                          setSelectedDesigner(d);
-                          setShowDesignerList(false);
-                          setSearchQuery('');
-                        }}
-                      >
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                          {getInitials(d.full_name)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm truncate">{d.full_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{d.professional_title}</p>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground p-3">No designers found</p>
-                  )}
-                </div>
-              )}
-
-              {/* Existing Conversations */}
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              ) : conversations.length > 0 ? (
-                <div className="p-2 space-y-1">
-                  {conversations.map(conv => (
-                    <button
-                      key={conv.designer.user_id}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${
-                        selectedDesigner?.user_id === conv.designer.user_id
-                          ? 'bg-primary/10 border border-primary/30'
-                          : 'hover:bg-secondary/50'
-                      }`}
-                      onClick={() => setSelectedDesigner(conv.designer)}
-                    >
-                      <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                          {getInitials(conv.designer.full_name)}
-                        </div>
-                        {conv.unreadCount > 0 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                            <span className="text-[10px] font-bold text-primary-foreground">{conv.unreadCount}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-sm truncate">{conv.designer.full_name}</p>
-                          <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-2">
-                            {formatTime(conv.lastMessage.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {conv.lastMessage.sender_id === user?.id ? 'You: ' : ''}
-                          {conv.lastMessage.content}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <MessageSquare className="w-10 h-10 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">No conversations yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Search for a designer to start chatting</p>
-                </div>
-              )}
-            </ScrollArea>
-          </Card>
-
-          {/* Chat Area */}
-          <Card className={`glass md:col-span-2 flex flex-col overflow-hidden ${!selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
-            {selectedDesigner ? (
-              <>
-                {/* Chat Header */}
-                <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="md:hidden flex-shrink-0"
-                    onClick={() => setSelectedDesigner(null)}
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                    {getInitials(selectedDesigner.full_name)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{selectedDesigner.full_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{selectedDesigner.professional_title}</p>
-                  </div>
-                </div>
-
-                {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-3">
-                    {messages.map(msg => {
-                      const isOwn = msg.sender_id === user?.id;
-                      return (
-                        <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                          <div
-                            className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 ${
-                              isOwn
-                                ? 'bg-primary text-primary-foreground rounded-br-md'
-                                : 'bg-secondary text-secondary-foreground rounded-bl-md'
-                            }`}
-                          >
-                            <p className="text-sm break-words">{msg.content}</p>
-                            <p className={`text-[10px] mt-1 ${isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
-                              {formatTime(msg.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-
-                {/* Input */}
-                <div className="p-3 sm:p-4 border-t border-border">
-                  <div className="flex gap-2">
-                    <Input
-                      ref={inputRef}
-                      placeholder="Type a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                      className="bg-card border-border"
-                      disabled={sending}
-                    />
-                    <Button
-                      size="icon"
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim() || sending}
-                    >
-                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-heading font-bold text-lg mb-1">Select a conversation</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Choose a designer or search for one to start chatting
-                  </p>
-                </div>
+              <div className="p-2 space-y-3">
+                {/* Same profession section */}
+                {sameProfessionPeers.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 px-2 mb-1">
+                      <Users className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {myTitle || 'Your Team'}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground ml-auto">{sameProfessionPeers.length}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {sameProfessionPeers.map(renderPeerItem)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Other designers */}
+                {otherPeers.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 px-2 mb-1">
+                      <Hash className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Other Designers
+                      </span>
+                      <span className="text-[10px] text-muted-foreground ml-auto">{otherPeers.length}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {otherPeers.map(renderPeerItem)}
+                    </div>
+                  </div>
+                )}
+
+                {peers.length === 0 && (
+                  <div className="text-center py-8 px-4">
+                    <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No designers available</p>
+                  </div>
+                )}
               </div>
             )}
-          </Card>
+          </ScrollArea>
+        </div>
+
+        {/* Chat area */}
+        <div className={`flex-1 flex flex-col min-w-0 ${!selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
+          {selectedDesigner ? (
+            <>
+              {/* Chat header */}
+              <div className="h-12 border-b border-border flex items-center gap-3 px-4 bg-card/40 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden flex-shrink-0 h-8 w-8"
+                  onClick={() => setSelectedDesigner(null)}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {selectedDesigner.profile_photo_url ? (
+                    <img src={selectedDesigner.profile_photo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                      {getInitials(selectedDesigner.full_name)}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate">{selectedDesigner.full_name}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{selectedDesigner.professional_title}</span>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-4">
+                  {/* Welcome block */}
+                  <div className="pb-4 border-b border-border mb-4">
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xl font-bold mx-auto mb-3">
+                      {getInitials(selectedDesigner.full_name)}
+                    </div>
+                    <h3 className="font-heading font-bold text-lg text-center">{selectedDesigner.full_name}</h3>
+                    <p className="text-sm text-muted-foreground text-center">
+                      This is the beginning of your conversation with <strong>{selectedDesigner.full_name}</strong>.
+                    </p>
+                  </div>
+
+                  {groupedMessages.map(group => (
+                    <div key={group.date}>
+                      <div className="flex items-center gap-2 my-3">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-[11px] text-muted-foreground font-semibold px-2">
+                          {formatMessageDate(group.msgs[0].created_at)}
+                        </span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                      {group.msgs.map((msg, idx) => {
+                        const isOwn = msg.sender_id === user?.id;
+                        const senderName = isOwn ? 'You' : selectedDesigner.full_name;
+                        // Show avatar/name if first msg or different sender from previous
+                        const prevMsg = idx > 0 ? group.msgs[idx - 1] : null;
+                        const showHeader = !prevMsg || prevMsg.sender_id !== msg.sender_id;
+                        
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`group flex gap-3 px-2 py-0.5 hover:bg-muted/30 rounded ${showHeader ? 'mt-3' : ''}`}
+                          >
+                            {showHeader ? (
+                              <div className="w-10 flex-shrink-0 pt-0.5">
+                                {isOwn ? (
+                                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                                    You
+                                  </div>
+                                ) : selectedDesigner.profile_photo_url ? (
+                                  <img src={selectedDesigner.profile_photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                                    {getInitials(selectedDesigner.full_name)}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                                <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              {showHeader && (
+                                <div className="flex items-baseline gap-2 mb-0.5">
+                                  <span className={`text-sm font-bold ${isOwn ? 'text-primary' : 'text-foreground'}`}>
+                                    {senderName}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {formatTime(msg.created_at)}
+                                  </span>
+                                </div>
+                              )}
+                              <p className="text-sm break-words text-foreground/90">{msg.content}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Input */}
+              <div className="p-3 border-t border-border bg-card/40">
+                <div className="flex gap-2 items-center bg-muted/50 rounded-lg px-3 py-1">
+                  <Input
+                    ref={inputRef}
+                    placeholder={`Message ${selectedDesigner.full_name}`}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-0"
+                    disabled={sending}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim() || sending}
+                    className="h-8 w-8 flex-shrink-0"
+                  >
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="font-heading font-bold text-lg mb-1">No conversation selected</h3>
+                <p className="text-sm text-muted-foreground">Pick a designer from the list to start chatting</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
