@@ -25,6 +25,7 @@ import WebDevAdminDashboard from "./pages/WebDevAdminDashboard";
 import ManagePortfolio from "./pages/ManagePortfolio";
 import JobContracts from "./pages/JobContracts";
 import Messages from "./pages/Messages";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
             <Route path="/superadmin/contracts" element={<JobContracts />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -564,7 +564,7 @@ const Dashboard = () => {
               <Trophy className="w-5 h-5 text-primary" />
             </div>
             {leaderboard.length > 0 ? (
-              <Tabs defaultValue={designer?.professional_title || 'Graphic Designer'} className="w-full">
+              <Tabs defaultValue={normalizeCategory(designer?.professional_title || null)} className="w-full">
                 <TabsList className="w-full mb-3 flex-wrap h-auto gap-1">
                 {['Graphic Designer', 'App Designer', 'Web Developer'].map((category) => {
                     const count = leaderboard.filter(e => normalizeCategory(e.professional_title) === category).length;
