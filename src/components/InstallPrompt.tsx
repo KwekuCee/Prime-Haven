@@ -42,11 +42,15 @@ const InstallPrompt = () => {
   }, []);
 
   const handleInstall = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setShow(false);
-      setDeferredPrompt(null);
+    try {
+      if (deferredPrompt) {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') setShow(false);
+        setDeferredPrompt(null);
+      }
+    } catch (error) {
+      console.error("Install prompt error:", error);
     }
   };
 
