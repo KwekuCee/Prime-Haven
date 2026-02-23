@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   User,
-  MessageSquare
+  MessageSquare,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,7 @@ const navItems = [
   { label: 'Messages', icon: MessageSquare, path: '/messages' },
   { label: 'Payments', icon: Wallet, path: '/payments' },
   { label: 'Settings', icon: Settings, path: '/settings' },
+  { label: 'Install App', icon: Download, path: '/install' },
 ];
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
