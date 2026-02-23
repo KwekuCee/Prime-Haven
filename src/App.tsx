@@ -26,6 +26,7 @@ import ManagePortfolio from "./pages/ManagePortfolio";
 import JobContracts from "./pages/JobContracts";
 import Messages from "./pages/Messages";
 import Install from "./pages/Install";
+import InstallPrompt from "./components/InstallPrompt";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <InstallPrompt />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
