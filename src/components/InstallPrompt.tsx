@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X } from 'lucide-react';
+import { Download, X, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -12,14 +12,16 @@ interface BeforeInstallPromptEvent extends Event {
 const InstallPrompt = () => {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Don't show if already dismissed recently or app is installed
     const dismissed = sessionStorage.getItem('install-prompt-dismissed');
     if (dismissed) return;
-
-    // Check if running as standalone (already installed)
     if (window.matchMedia('(display-mode: standalone)').matches) return;
+    // @ts-ignore - navigator.standalone is iOS Safari specific
+    if ((navigator as any).standalone === true) return;
+
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -29,7 +31,6 @@ const InstallPrompt = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    // For iOS / browsers that don't fire beforeinstallprompt, show after a delay
     const timer = setTimeout(() => {
       if (!deferredPrompt) setShow(true);
     }, 3000);
@@ -44,9 +45,7 @@ const InstallPrompt = () => {
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShow(false);
-      }
+      if (outcome === 'accepted') setShow(false);
       setDeferredPrompt(null);
     }
   };
@@ -80,9 +79,19 @@ const InstallPrompt = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-heading font-bold text-sm">Install Prime Haven</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Add to your home screen for a faster, app-like experience.
-                </p>
+                {isIOS ? (
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <span>Tap</span>
+                      <Share className="w-3.5 h-3.5 text-primary inline" />
+                      <span>then <strong>"Add to Home Screen"</strong></span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add to your home screen for a faster, app-like experience.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -95,8 +104,8 @@ const InstallPrompt = () => {
               ) : (
                 <Link to="/install" className="flex-1" onClick={handleDismiss}>
                   <Button size="sm" className="w-full gap-1.5">
-                    <Download className="w-4 h-4" />
-                    Install
+                    {isIOS ? <Share className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                    {isIOS ? 'How to Install' : 'Install'}
                   </Button>
                 </Link>
               )}
