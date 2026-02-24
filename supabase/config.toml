@@ -32,3 +32,12 @@ verify_jwt = false
 
 [functions.post-job-contract]
 verify_jwt = false
+
+[functions.send-blog-newsletter]
+verify_jwt = false
+
+[functions.public-stats]
+verify_jwt = false
+
+[functions.seed-admin]
+verify_jwt = false

@@ -28,7 +28,8 @@ import {
   ImageIcon,
   Trash2,
   AlertTriangle,
-  Banknote
+  Banknote,
+  Newspaper
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog'
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import { AdminNavigation } from '@/components/admin/AdminNavigation';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
+import ManageBlog from '@/components/admin/ManageBlog';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -1480,7 +1482,7 @@ const SuperAdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="submissions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="submissions" className="font-semibold">
               <FileCheck className="w-4 h-4 mr-2" />
               Submissions
@@ -1500,6 +1502,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="testimonials" className="font-semibold">
               <Star className="w-4 h-4 mr-2" />
               Reviews
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="font-semibold">
+              <Newspaper className="w-4 h-4 mr-2" />
+              Blog
             </TabsTrigger>
             <TabsTrigger value="logs" className="font-semibold">
               <Activity className="w-4 h-4 mr-2" />
@@ -2050,6 +2056,11 @@ const SuperAdminDashboard = () => {
           {/* Testimonials Tab */}
           <TabsContent value="testimonials" className="space-y-6">
             <ManageTestimonials />
+          </TabsContent>
+
+          {/* Blog Tab */}
+          <TabsContent value="blog" className="space-y-6">
+            <ManageBlog />
           </TabsContent>
 
           {/* Logs Tab */}
