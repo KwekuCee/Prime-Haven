@@ -27,6 +27,8 @@ import ManagePortfolio from "./pages/ManagePortfolio";
 import JobContracts from "./pages/JobContracts";
 import Messages from "./pages/Messages";
 import Install from "./pages/Install";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import InstallPrompt from "./components/InstallPrompt";
 import NotFound from "./pages/NotFound";
 
@@ -73,6 +75,8 @@ const App = () => {
             <Route path="/superadmin/contracts" element={<JobContracts />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
