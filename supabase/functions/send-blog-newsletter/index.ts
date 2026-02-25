@@ -14,7 +14,6 @@ serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
@@ -27,7 +26,6 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Unauthorized");
 
-    // Verify admin role
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -46,7 +44,6 @@ serve(async (req) => {
     const { postId } = await req.json();
     if (!postId) throw new Error("postId is required");
 
-    // Get the blog post
     const { data: post, error: postError } = await adminClient
       .from("blog_posts")
       .select("*")
@@ -56,7 +53,6 @@ serve(async (req) => {
     if (postError || !post) throw new Error("Blog post not found");
     if (!post.is_published) throw new Error("Post must be published first");
 
-    // Get active subscribers
     const { data: subscribers } = await adminClient
       .from("newsletter_subscribers")
       .select("email")
@@ -74,6 +70,7 @@ serve(async (req) => {
     const encodeHtml = (str: string) =>
       str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+    // The content is now rich HTML from the WYSIWYG editor - embed it directly
     const emailHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -88,8 +85,10 @@ serve(async (req) => {
     ${post.cover_image_url ? `<img src="${encodeHtml(post.cover_image_url)}" alt="${encodeHtml(post.title)}" style="width:100%;border-radius:8px;margin-bottom:20px;" />` : ""}
     <h2 style="color:#fff;margin:0 0 12px;font-size:22px;">${encodeHtml(post.title)}</h2>
     <p style="color:#999;font-size:12px;margin:0 0 16px;">Category: ${encodeHtml(post.category)} | ${new Date(post.published_at).toLocaleDateString()}</p>
-    <p style="color:#ccc;font-size:15px;line-height:1.6;margin:0 0 24px;">${encodeHtml(post.excerpt)}</p>
-    <a href="${siteUrl}/blog/${encodeHtml(post.slug)}" style="display:inline-block;background:linear-gradient(135deg,#e8530e,#f59e0b);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">Read Full Post</a>
+    <div style="color:#ccc;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      ${post.content}
+    </div>
+    <a href="${siteUrl}/blog/${encodeHtml(post.slug)}" style="display:inline-block;background:linear-gradient(135deg,#e8530e,#f59e0b);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">View on Website</a>
   </td></tr>
   <tr><td style="padding:20px 30px;border-top:1px solid #222;text-align:center;">
     <p style="color:#666;font-size:12px;margin:0;">You're receiving this because you subscribed to the Prime Haven newsletter.</p>
@@ -98,7 +97,6 @@ serve(async (req) => {
 </td></tr></table>
 </body></html>`;
 
-    // Send via SMTP
     const client = new SMTPClient({
       connection: {
         hostname: Deno.env.get("SMTP_HOST")!,

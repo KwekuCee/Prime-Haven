@@ -10,7 +10,7 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 
 interface BlogPostData {
   id: string;
@@ -140,9 +140,10 @@ const BlogPost = () => {
               </div>
             )}
 
-            <div className="prose prose-invert prose-orange max-w-none [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_p]:text-muted-foreground [&_li]:text-muted-foreground [&_a]:text-primary [&_strong]:text-foreground">
-              <ReactMarkdown>{post.content}</ReactMarkdown>
-            </div>
+            <div
+              className="prose prose-invert prose-orange max-w-none [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_p]:text-muted-foreground [&_li]:text-muted-foreground [&_a]:text-primary [&_strong]:text-foreground [&_img]:rounded-lg [&_img]:max-w-full"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+            />
           </motion.div>
 
           {/* Subscribe CTA */}
