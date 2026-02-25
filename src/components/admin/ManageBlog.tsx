@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff, Send } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Send, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import RichTextEditor from './RichTextEditor';
+import { Textarea } from '@/components/ui/textarea';
 
 interface BlogPost {
   id: string;
@@ -48,9 +49,12 @@ const ManageBlog = () => {
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
-  const [coverUrl, setCoverUrl] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState('');
   const [category, setCategory] = useState('news');
   const [isPublished, setIsPublished] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -75,7 +79,8 @@ const ManageBlog = () => {
       setSlug(post.slug);
       setExcerpt(post.excerpt);
       setContent(post.content);
-      setCoverUrl(post.cover_image_url || '');
+      setCoverPreview(post.cover_image_url || '');
+      setCoverFile(null);
       setCategory(post.category);
       setIsPublished(post.is_published);
     } else {
@@ -84,11 +89,35 @@ const ManageBlog = () => {
       setSlug('');
       setExcerpt('');
       setContent('');
-      setCoverUrl('');
+      setCoverPreview('');
+      setCoverFile(null);
       setCategory('news');
       setIsPublished(false);
     }
     setIsEditorOpen(true);
+  };
+
+  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
+  const uploadCoverImage = async (): Promise<string | null> => {
+    if (!coverFile) return coverPreview || null;
+
+    const ext = coverFile.name.split('.').pop();
+    const path = `covers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from('blog-images')
+      .upload(path, coverFile, { contentType: coverFile.type });
+
+    if (error) throw new Error(`Cover upload failed: ${error.message}`);
+
+    const { data } = supabase.storage.from('blog-images').getPublicUrl(path);
+    return data.publicUrl;
   };
 
   const handleSave = async () => {
@@ -97,19 +126,21 @@ const ManageBlog = () => {
       return;
     }
 
-    const finalSlug = slug.trim() || generateSlug(title);
-    const postData = {
-      title: title.trim(),
-      slug: finalSlug,
-      excerpt: excerpt.trim(),
-      content: content.trim(),
-      cover_image_url: coverUrl.trim() || null,
-      category,
-      is_published: isPublished,
-      published_at: isPublished ? (editingPost?.published_at || new Date().toISOString()) : null,
-    };
-
+    setUploading(true);
     try {
+      const coverUrl = await uploadCoverImage();
+      const finalSlug = slug.trim() || generateSlug(title);
+      const postData = {
+        title: title.trim(),
+        slug: finalSlug,
+        excerpt: excerpt.trim(),
+        content: content.trim(),
+        cover_image_url: coverUrl,
+        category,
+        is_published: isPublished,
+        published_at: isPublished ? (editingPost?.published_at || new Date().toISOString()) : null,
+      };
+
       if (editingPost) {
         const { error } = await supabase.from('blog_posts').update(postData).eq('id', editingPost.id);
         if (error) throw error;
@@ -123,6 +154,8 @@ const ManageBlog = () => {
       fetchPosts();
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -252,7 +285,7 @@ const ManageBlog = () => {
 
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPost ? 'Edit Post' : 'New Blog Post'}</DialogTitle>
           </DialogHeader>
@@ -275,16 +308,29 @@ const ManageBlog = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="font-semibold">Cover Image URL</Label>
-              <Input value={coverUrl} onChange={e => setCoverUrl(e.target.value)} placeholder="https://..." />
+              <Label className="font-semibold">Cover Image</Label>
+              <div className="flex items-center gap-4">
+                <Button type="button" variant="outline" onClick={() => coverInputRef.current?.click()}>
+                  <Upload className="w-4 h-4 mr-2" /> Upload Image
+                </Button>
+                {coverPreview && (
+                  <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => { setCoverFile(null); setCoverPreview(''); }}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {coverPreview && (
+                <img src={coverPreview} alt="Cover preview" className="mt-2 rounded-lg max-h-48 object-cover" />
+              )}
+              <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverSelect} />
             </div>
             <div className="space-y-2">
               <Label className="font-semibold">Excerpt</Label>
               <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Brief summary..." className="min-h-[80px]" />
             </div>
             <div className="space-y-2">
-              <Label className="font-semibold">Content (Markdown supported)</Label>
-              <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Write your blog post..." className="min-h-[200px] font-mono text-sm" />
+              <Label className="font-semibold">Content</Label>
+              <RichTextEditor content={content} onChange={setContent} />
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={isPublished} onCheckedChange={setIsPublished} />
@@ -293,8 +339,8 @@ const ManageBlog = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="glow-primary">
-              {editingPost ? 'Update' : 'Create'} Post
+            <Button onClick={handleSave} disabled={uploading} className="glow-primary">
+              {uploading ? 'Saving...' : editingPost ? 'Update' : 'Create'} {!uploading && 'Post'}
             </Button>
           </DialogFooter>
         </DialogContent>
