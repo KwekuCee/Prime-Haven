@@ -1,9 +1,7 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Rocket } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import heroBg from '@/assets/hero-bg.jpg';
-import StartProjectDialog from '@/components/StartProjectDialog';
 
 const HeroSection = () => {
   return (
@@ -63,13 +61,12 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <StartProjectDialog trigger={
+            <a href="#contact">
               <Button variant="primary" size="lg" className="group glow-primary">
-                <Rocket className="mr-2 w-5 h-5" />
-                Start a Project with Us
+                Let's Connect
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-            } />
+            </a>
             <a href="#portfolio">
               <Button variant="outline" size="lg">
                 View Our Work
