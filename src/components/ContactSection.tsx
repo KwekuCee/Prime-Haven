@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { MessageCircle, Mail, Instagram, Linkedin, Github } from 'lucide-react';
+import { MessageCircle, Mail, Instagram, Linkedin, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import StartProjectDialog from '@/components/StartProjectDialog';
 
 // Discord icon component since lucide doesn't have it
 const DiscordIcon = ({ className }: { className?: string }) => (
@@ -44,8 +45,14 @@ const ContactSection = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="flex flex-col sm:flex-row justify-center gap-6 mb-16"
         >
+          <StartProjectDialog trigger={
+            <Button variant="primary" size="lg" className="w-full sm:w-auto group glow-primary">
+              <Rocket className="mr-2 w-5 h-5" />
+              Start a Project with Us
+            </Button>
+          } />
           <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20start%20a%20project" target="_blank" rel="noopener noreferrer">
-            <Button variant="primary" size="lg" className="w-full sm:w-auto group">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <MessageCircle className="mr-2 w-5 h-5" />
               Chat on WhatsApp
             </Button>
