@@ -31,9 +31,12 @@ const InstallPrompt = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
+    // Show fallback prompt after 5 seconds for browsers that don't fire beforeinstallprompt
     const timer = setTimeout(() => {
-      if (!deferredPrompt) setShow(true);
-    }, 3000);
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        setShow(true);
+      }
+    }, 5000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
