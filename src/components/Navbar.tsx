@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
+import StartProjectDialog from '@/components/StartProjectDialog';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,6 +54,7 @@ const Navbar = () => {
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
+            <StartProjectDialog />
             <Link to="/login">
               <Button variant="ghost" className="text-foreground hover:text-primary">
                 Login
@@ -100,6 +102,7 @@ const Navbar = () => {
                   <span className="text-muted-foreground text-sm">Theme</span>
                   <ThemeToggle />
                 </div>
+                <StartProjectDialog trigger={<Button variant="outline" className="w-full">Start a Project</Button>} />
                 <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="ghost" className="w-full">Login</Button>
                 </Link>
