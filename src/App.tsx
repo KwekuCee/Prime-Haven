@@ -31,6 +31,8 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import InstallPrompt from "./components/InstallPrompt";
 import NotFound from "./pages/NotFound";
+import TrackProject from "./pages/TrackProject";
+import ManageClientProjects from "./pages/ManageClientProjects";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,8 @@ const App = () => {
             <Route path="/install" element={<Install />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/track/:token" element={<TrackProject />} />
+            <Route path="/superadmin/projects" element={<ManageClientProjects />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />

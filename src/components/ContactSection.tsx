@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { MessageCircle, Mail, Instagram, Linkedin, Rocket } from 'lucide-react';
+import { MessageCircle, Mail, Instagram, Linkedin, Rocket, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StartProjectDialog from '@/components/StartProjectDialog';
+import { useTranslation } from 'react-i18next';
 
 // Discord icon component since lucide doesn't have it
 const DiscordIcon = ({ className }: { className?: string }) => (
@@ -17,6 +18,8 @@ const socials = [
 ];
 
 const ContactSection = () => {
+  const { t } = useTranslation();
+
   return (
     <section id="contact" className="py-24 relative bg-secondary/30">
       <div className="container mx-auto px-6">
@@ -28,12 +31,12 @@ const ContactSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="text-primary font-medium uppercase tracking-wider text-sm">Get In Touch</span>
+          <span className="text-primary font-medium uppercase tracking-wider text-sm">{t('contact.tag')}</span>
           <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6">
-            Let's <span className="text-gradient">Connect</span>
+            {t('contact.title1')} <span className="text-gradient">{t('contact.title2')}</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-            Have a project in mind? We'd love to hear from you. Reach out and let's create something incredible together.
+            {t('contact.description')}
           </p>
         </motion.div>
 
@@ -43,24 +46,30 @@ const ContactSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-col sm:flex-row justify-center gap-6 mb-16"
+          className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 mb-16"
         >
           <StartProjectDialog trigger={
             <Button variant="primary" size="lg" className="w-full sm:w-auto group glow-primary">
               <Rocket className="mr-2 w-5 h-5" />
-              Start a Project with Us
+              {t('contact.startProject')}
             </Button>
           } />
+          <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20book%20a%20free%20consultation%20call" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto group">
+              <Calendar className="mr-2 w-5 h-5" />
+              {t('contact.bookConsultation')}
+            </Button>
+          </a>
           <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20start%20a%20project" target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <MessageCircle className="mr-2 w-5 h-5" />
-              Chat on WhatsApp
+              {t('contact.whatsapp')}
             </Button>
           </a>
           <a href="mailto:info@primehaven.tech">
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <Mail className="mr-2 w-5 h-5" />
-              Email Us
+              {t('contact.email')}
             </Button>
           </a>
         </motion.div>

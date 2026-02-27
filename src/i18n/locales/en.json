@@ -1,0 +1,74 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "portfolio": "Portfolio",
+    "story": "Our Story",
+    "reviews": "Reviews",
+    "about": "About",
+    "blog": "Blog",
+    "contact": "Contact",
+    "login": "Login",
+    "join": "Join Prime Haven"
+  },
+  "hero": {
+    "badge": "Est. 2026 • Youth-Driven Innovation",
+    "headline1": "Making",
+    "headline2": "IT Dreams",
+    "headline3": "a Reality",
+    "subheadline": "Youth-driven design & technology solutions that transform digital landscapes and empower organizations to thrive.",
+    "cta1": "Let's Connect",
+    "cta2": "View Our Work"
+  },
+  "services": {
+    "tag": "What We Do",
+    "title1": "Our",
+    "title2": "Services",
+    "description": "From stunning visuals to cutting-edge web experiences, we deliver comprehensive digital solutions."
+  },
+  "portfolio": {
+    "tag": "Our Work",
+    "title1": "Featured",
+    "title2": "Projects",
+    "description": "Explore our portfolio of innovative digital solutions crafted for clients worldwide.",
+    "viewAll": "View All Projects"
+  },
+  "contact": {
+    "tag": "Get In Touch",
+    "title1": "Let's",
+    "title2": "Connect",
+    "description": "Have a project in mind? We'd love to hear from you. Reach out and let's create something incredible together.",
+    "startProject": "Start a Project with Us",
+    "whatsapp": "Chat on WhatsApp",
+    "email": "Email Us",
+    "bookConsultation": "Book a Free Consultation"
+  },
+  "faq": {
+    "tag": "FAQ",
+    "title1": "Frequently Asked",
+    "title2": "Questions"
+  },
+  "testimonials": {
+    "tag": "Client Love",
+    "title1": "What Our",
+    "title2": "Clients Say"
+  },
+  "join": {
+    "tag": "Join Us",
+    "title1": "Become a",
+    "title2": "Creator"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "track": {
+    "title": "Project Tracker",
+    "milestones": "Milestones",
+    "deliverables": "Deliverables",
+    "feedback": "Leave Feedback",
+    "status": "Status",
+    "progress": "Progress",
+    "notFound": "Project not found. Please check your tracking link.",
+    "loading": "Loading project details..."
+  }
+}

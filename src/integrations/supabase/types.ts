@@ -59,6 +59,60 @@ export type Database = {
         }
         Relationships: []
       }
+      client_projects: {
+        Row: {
+          budget: string | null
+          category: string
+          client_email: string | null
+          client_name: string
+          client_whatsapp: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          description: string | null
+          id: string
+          progress_percentage: number
+          status: string
+          title: string
+          tracking_token: string
+          updated_at: string
+        }
+        Insert: {
+          budget?: string | null
+          category?: string
+          client_email?: string | null
+          client_name: string
+          client_whatsapp?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          progress_percentage?: number
+          status?: string
+          title: string
+          tracking_token?: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: string | null
+          category?: string
+          client_email?: string | null
+          client_name?: string
+          client_whatsapp?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          progress_percentage?: number
+          status?: string
+          title?: string
+          tracking_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       designer_details: {
         Row: {
           available_hours: number | null
@@ -412,6 +466,114 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      project_deliverables: {
+        Row: {
+          description: string | null
+          file_url: string
+          id: string
+          project_id: string
+          title: string
+          uploaded_at: string
+        }
+        Insert: {
+          description?: string | null
+          file_url: string
+          id?: string
+          project_id: string
+          title: string
+          uploaded_at?: string
+        }
+        Update: {
+          description?: string | null
+          file_url?: string
+          id?: string
+          project_id?: string
+          title?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_deliverables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_feedback: {
+        Row: {
+          client_name: string
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          client_name: string
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          client_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_feedback_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_milestones: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          project_id: string
+          sort_order: number
+          status: string
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          project_id: string
+          sort_order?: number
+          status?: string
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          project_id?: string
+          sort_order?: number
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       submissions: {
         Row: {
