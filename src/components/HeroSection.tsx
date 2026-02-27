@@ -2,8 +2,11 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroBg from '@/assets/hero-bg.jpg';
+import { useTranslation } from 'react-i18next';
 
 const HeroSection = () => {
+  const { t } = useTranslation();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -27,7 +30,7 @@ const HeroSection = () => {
             className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full mb-8"
           >
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Est. 2026 • Youth-Driven Innovation</span>
+            <span className="text-sm text-muted-foreground">{t('hero.badge')}</span>
           </motion.div>
 
           {/* Headline */}
@@ -37,10 +40,10 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
           >
-            Making{' '}
-            <span className="text-gradient">IT Dreams</span>
+            {t('hero.headline1')}{' '}
+            <span className="text-gradient">{t('hero.headline2')}</span>
             <br />
-            a Reality
+            {t('hero.headline3')}
           </motion.h1>
 
           {/* Subheadline */}
@@ -50,8 +53,7 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto"
           >
-            Youth-driven design & technology solutions that transform digital 
-            landscapes and empower organizations to thrive.
+            {t('hero.subheadline')}
           </motion.p>
 
           {/* CTAs */}
@@ -63,13 +65,13 @@ const HeroSection = () => {
           >
             <a href="#contact">
               <Button variant="primary" size="lg" className="group glow-primary">
-                Let's Connect
+                {t('hero.cta1')}
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </a>
             <a href="#portfolio">
               <Button variant="outline" size="lg">
-                View Our Work
+                {t('hero.cta2')}
               </Button>
             </a>
           </motion.div>

@@ -5,19 +5,22 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   const navItems = [
-    { name: 'Home', href: '/' },
-    { name: 'Services', href: '/#services' },
-    { name: 'Portfolio', href: '/#portfolio' },
-    { name: 'Our Story', href: '/#founder' },
-    { name: 'Reviews', href: '/#testimonials' },
-    { name: 'About', href: '/#about' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Contact', href: '/#contact' },
+    { name: t('nav.home'), href: '/' },
+    { name: t('nav.services'), href: '/#services' },
+    { name: t('nav.portfolio'), href: '/#portfolio' },
+    { name: t('nav.story'), href: '/#founder' },
+    { name: t('nav.reviews'), href: '/#testimonials' },
+    { name: t('nav.about'), href: '/#about' },
+    { name: t('nav.blog'), href: '/blog' },
+    { name: t('nav.contact'), href: '/#contact' },
   ];
 
   return (
@@ -52,15 +55,16 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
+            <LanguageSwitcher />
             <ThemeToggle />
             <Link to="/login">
               <Button variant="ghost" className="text-foreground hover:text-primary">
-                Login
+                {t('nav.login')}
               </Button>
             </Link>
             <Link to="/register">
               <Button variant="primary" className="glow-primary">
-                Join Prime Haven
+                {t('nav.join')}
               </Button>
             </Link>
           </div>
@@ -100,11 +104,15 @@ const Navbar = () => {
                   <span className="text-muted-foreground text-sm">Theme</span>
                   <ThemeToggle />
                 </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-muted-foreground text-sm">Language</span>
+                  <LanguageSwitcher />
+                </div>
                 <Link to="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" className="w-full">Login</Button>
+                  <Button variant="ghost" className="w-full">{t('nav.login')}</Button>
                 </Link>
                 <Link to="/register" onClick={() => setIsOpen(false)}>
-                  <Button variant="primary" className="w-full">Join Prime Haven</Button>
+                  <Button variant="primary" className="w-full">{t('nav.join')}</Button>
                 </Link>
               </div>
             </div>
