@@ -43,10 +43,10 @@ const ResendVerificationEmail = () => {
     setIsLoading(true);
 
     try {
-      // First, check if the user exists and is not verified
+      // First, check if the user exists, is not verified, and has paid
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, email_verified')
+        .select('id, full_name, email_verified, registration_fee_paid')
         .eq('email', email.toLowerCase())
         .single();
 
@@ -66,6 +66,16 @@ const ResendVerificationEmail = () => {
         toast({
           title: 'Already Verified',
           description: 'This email is already verified. You can sign in directly.',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!profile.registration_fee_paid) {
+        toast({
+          variant: 'destructive',
+          title: 'Registration Fee Required',
+          description: 'You must complete the registration fee payment before verifying your email. Please register again.',
         });
         setIsLoading(false);
         return;
