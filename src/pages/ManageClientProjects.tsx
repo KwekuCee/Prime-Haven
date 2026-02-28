@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Copy, ExternalLink, Trash2, Edit, CheckCircle, Clock, Circle, Save, Loader2 } from 'lucide-react';
+import { Plus, Copy, ExternalLink, Trash2, Edit, CheckCircle, Clock, Circle, Save, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -132,6 +132,23 @@ const ManageClientProjects = () => {
 
   const resetForm = () => setForm({ title: '', client_name: '', client_email: '', client_whatsapp: '', description: '', category: 'web-development', budget: '', status: 'pending', progress_percentage: 0 });
 
+  const sendStatusEmail = async (project: ClientProject) => {
+    if (!project.client_email) {
+      toast({ title: 'No Email', description: 'This project has no client email configured.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('notify-project-status', {
+        body: { projectId: project.id },
+      });
+      if (error) throw error;
+      toast({ title: 'Email Sent!', description: `Status update sent to ${project.client_email}` });
+    } catch (err) {
+      console.error('Failed to send status email:', err);
+      toast({ title: 'Failed', description: 'Could not send status email. Try again later.', variant: 'destructive' });
+    }
+  };
+
   const copyTrackingLink = (token: string) => {
     const url = `${window.location.origin}/track/${token}`;
     navigator.clipboard.writeText(url);
@@ -239,6 +256,7 @@ const ManageClientProjects = () => {
                         <Button size="sm" variant="ghost" onClick={() => copyTrackingLink(p.tracking_token)} title="Copy tracking link"><Copy className="w-4 h-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => window.open(`/track/${p.tracking_token}`, '_blank')} title="Preview"><ExternalLink className="w-4 h-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => openMilestones(p.id)} title="Milestones"><CheckCircle className="w-4 h-4" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => sendStatusEmail(p)} title="Send status email" className="text-primary"><Mail className="w-4 h-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(p)} title="Edit"><Edit className="w-4 h-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(p.id)} title="Delete" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
                       </div>
