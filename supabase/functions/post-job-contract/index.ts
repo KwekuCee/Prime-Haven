@@ -79,7 +79,39 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body = await req.json();
-    const { title, description, category, deadline, budget, requirements, clientName, specialInstructions, contractId } = body;
+
+    // Handle status update action
+    if (body.action === "update_status") {
+      const { discordMessageId, discordChannelId, title, newStatus, contractId } = body;
+
+      if (discordMessageId && discordChannelId && DISCORD_BOT_TOKEN) {
+        const statusEmoji: Record<string, string> = {
+          active: "🟢",
+          in_progress: "🔵",
+          completed: "✅",
+          cancelled: "❌",
+        };
+        const emoji = statusEmoji[newStatus] || "🔄";
+
+        // Post a follow-up message about the status change
+        const embed = {
+          title: `${emoji} Status Update: ${(title || "").slice(0, 200)}`,
+          description: `This job has been updated to **${newStatus.replace(/_/g, " ").toUpperCase()}**`,
+          color: newStatus === "completed" ? 0x22c55e : newStatus === "cancelled" ? 0xef4444 : newStatus === "in_progress" ? 0x3b82f6 : 0xfe4c18,
+          footer: { text: "Prime Haven • Job Contracts" },
+          timestamp: new Date().toISOString(),
+        };
+
+        await postToDiscord(discordChannelId, embed);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Original create flow
+    const { title, description, category, deadline, budget, requirements, clientName, specialInstructions, contractId, referenceFiles } = body;
 
     if (!title || !description || !category) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
@@ -104,7 +136,7 @@ serve(async (req: Request): Promise<Response> => {
       if (requirements) fields.push({ name: "📋 Requirements", value: requirements.slice(0, 1024) });
       if (specialInstructions) fields.push({ name: "⚠️ Special Instructions", value: specialInstructions.slice(0, 1024) });
 
-      const embed = {
+      const embed: any = {
         title: `🎨 New Job: ${safeTitle}`,
         description: safeDesc,
         color: 0xfe4c18,
@@ -112,6 +144,14 @@ serve(async (req: Request): Promise<Response> => {
         footer: { text: "Prime Haven • Job Contracts" },
         timestamp: new Date().toISOString(),
       };
+
+      // Add first reference image to Discord embed
+      if (referenceFiles && referenceFiles.length > 0) {
+        embed.image = { url: referenceFiles[0] };
+        if (referenceFiles.length > 1) {
+          fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        }
+      }
 
       discordMessageId = await postToDiscord(channelId, embed);
     }
@@ -127,20 +167,17 @@ serve(async (req: Request): Promise<Response> => {
     // 3. Send emails to relevant designers
     const skills = CATEGORY_SKILLS[category] || [];
     
-    // Get all active designers
     const { data: allDesigners } = await supabase
       .from("profiles")
       .select("id, email, full_name, is_active")
       .eq("is_active", true);
 
-    // Get designer details to check skills
     const { data: allDetails } = await supabase
       .from("designer_details")
       .select("user_id, skills, professional_title");
 
     const detailsMap = new Map((allDetails || []).map((d: any) => [d.user_id, d]));
 
-    // Filter designers whose skills match this category
     const targetDesigners = (allDesigners || []).filter((d: any) => {
       const detail = detailsMap.get(d.id);
       if (!detail) return false;
@@ -154,7 +191,6 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`Found ${targetDesigners.length} designers for category ${category}`);
 
-    // Send emails (batch, max 20 to avoid timeout)
     const emailTargets = targetDesigners.slice(0, 20);
     const safeTitle = encodeHtml((title || "").slice(0, 200));
     const safeDesc = encodeHtml((description || "").slice(0, 500));
@@ -204,6 +240,7 @@ serve(async (req: Request): Promise<Response> => {
       ${clientName ? `<div class="detail-row"><span class="detail-label">Client</span><span class="detail-value">${encodeHtml(clientName)}</span></div>` : ""}
       ${requirements ? `<div class="detail-row"><span class="detail-label">Requirements</span><span class="detail-value">${encodeHtml(requirements.slice(0, 200))}</span></div>` : ""}
     </div>
+    ${referenceFiles && referenceFiles.length > 0 ? `<div style="text-align:center;margin:20px 0;"><img src="${referenceFiles[0]}" alt="Reference" style="max-width:100%;border-radius:12px;border:1px solid rgba(254,76,24,0.2);" /></div>` : ""}
     <div style="text-align:center;">
       <a href="https://primehaven.lovable.app/dashboard" class="cta">View Dashboard</a>
     </div>
