@@ -164,6 +164,29 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", contractId);
     }
 
+    // 3. Auto-create a client project entry for tracking
+    const categoryMap: Record<string, string> = {
+      "graphic-design": "graphic-design",
+      "app-design": "ui-ux",
+      "web-dev": "web-development",
+    };
+    const { data: clientProject } = await supabase
+      .from("client_projects")
+      .insert({
+        title: title,
+        client_name: clientName || "TBD",
+        client_email: null,
+        description: description,
+        category: categoryMap[category] || "web-development",
+        status: "pending",
+        budget: budget || null,
+        deadline: deadline || null,
+      })
+      .select("tracking_token")
+      .single();
+
+    console.log("Auto-created client project:", clientProject?.tracking_token);
+
     // 3. Send emails to relevant designers
     const skills = CATEGORY_SKILLS[category] || [];
     

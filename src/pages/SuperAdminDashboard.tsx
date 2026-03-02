@@ -376,7 +376,7 @@ const SuperAdminDashboard = () => {
       const approvedSubmissions = processedSubmissions.filter(s => s.status === 'approved' || s.ph_approved).length;
       const totalSubmissions = processedSubmissions.length;
       const completedPayments = processedPayments.filter(p => p.status === 'completed');
-      const totalRevenue = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0) / 100;
+      const totalRevenue = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
       const conversionRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
 
       // average approval time
@@ -757,6 +757,14 @@ const SuperAdminDashboard = () => {
 
         for (const designer of allDesigners) {
           const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0, web: 0 };
+          const hasAnyPoints = dp.graphic > 0 || dp.uiux > 0 || dp.web > 0;
+          
+          // Designers with zero points across all categories get zero salary
+          if (!hasAnyPoints) {
+            await supabase.from('designer_details').update({ salary_estimated: 0, updated_at: new Date().toISOString() }).eq('user_id', designer.user_id);
+            continue;
+          }
+          
           const graphicSalary = totalGraphicPts > 0 ? (dp.graphic / totalGraphicPts) * (graphicAmt * revenueShare / 100) : 0;
           const uiuxSalary = totalUiuxPts > 0 ? (dp.uiux / totalUiuxPts) * (uiuxAmt * revenueShare / 100) : 0;
           const webSalary = totalWebPts > 0 ? (dp.web / totalWebPts) * (webAmt * revenueShare / 100) : 0;
@@ -1195,7 +1203,7 @@ const SuperAdminDashboard = () => {
         data = payments.map(p => ({
           ID: p.id,
           User: p.user_name,
-          Amount: `GH₵${(p.amount / 100).toFixed(2)}`,
+          Amount: `GH₵${p.amount.toFixed(2)}`,
           Type: p.type,
           Status: p.status,
           'Transaction ID': p.transaction_id || 'N/A',
@@ -2018,7 +2026,7 @@ const SuperAdminDashboard = () => {
                         {payments.map((payment) => (
                           <TableRow key={payment.id}>
                             <TableCell className="font-semibold">{payment.user_name}</TableCell>
-                            <TableCell className="font-bold">GH₵{(payment.amount / 100).toFixed(2)}</TableCell>
+                            <TableCell className="font-bold">GH₵{payment.amount.toFixed(2)}</TableCell>
                             <TableCell><Badge variant="outline" className="font-medium">{payment.type}</Badge></TableCell>
                             <TableCell>
                               <Badge variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'outline' : 'destructive'} className="font-medium">

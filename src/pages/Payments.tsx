@@ -100,7 +100,7 @@ const Payments = () => {
             .filter(p => p.status === 'pending').length;
 
           setPaymentStats({
-            totalEarned: totalEarned / 100, // Convert from pesewas to GH₵
+            totalEarned,
             pendingPayments,
             nextPayment: designerData?.salary_estimated || 0,
           });
@@ -468,7 +468,7 @@ const Payments = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {settings.show_earnings ? formatCurrency(payment.amount / 100) : '••••••'}
+                              {settings.show_earnings ? formatCurrency(payment.amount) : '••••••'}
                             </TableCell>
                             <TableCell>
                               <Badge variant={
