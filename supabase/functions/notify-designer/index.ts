@@ -18,7 +18,7 @@ const corsHeaders = {
 interface NotifyRequest {
   designerId: string;
   projectName: string;
-  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid";
+  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid" | "start_working";
   pointsAwarded?: number;
   giftReason?: string;
   salaryAmount?: number;
@@ -69,8 +69,8 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // For new_submission, send email to admin instead of designer
-    if (notificationType === "new_submission") {
+    // For admin-targeted notifications
+    if (notificationType === "new_submission" || notificationType === "start_working") {
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name")
@@ -80,7 +80,17 @@ serve(async (req: Request): Promise<Response> => {
       const designerName = encodeHtml((profile?.full_name || "A designer").slice(0, 100).trim());
       const sanitizedProject = encodeHtml((projectName || "Untitled").slice(0, 200).trim());
 
-      const subject = `📋 New Submission: "${sanitizedProject}" by ${designerName}`;
+      const isStartWorking = notificationType === "start_working";
+      const subject = isStartWorking
+        ? `🚀 ${designerName} has started working on "${sanitizedProject}"`
+        : `📋 New Submission: "${sanitizedProject}" by ${designerName}`;
+      const badgeLabel = isStartWorking ? "🚀 STARTED WORKING" : "📋 NEW SUBMISSION";
+      const headingText = isStartWorking ? "Designer Started Working!" : "New Work Submitted!";
+      const bodyText = isStartWorking
+        ? `<strong>${designerName}</strong> has started working on <strong>"${sanitizedProject}"</strong>.`
+        : `<strong>${designerName}</strong> has submitted <strong>"${sanitizedProject}"</strong> for your review.`;
+      const ctaText = isStartWorking ? "View Dashboard" : "Review Now";
+
       const emailHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -108,12 +118,12 @@ serve(async (req: Request): Promise<Response> => {
       <img src="https://kbxijzsrywcwnyvtbruh.supabase.co/storage/v1/object/public/email-assets/prime-haven-logo.png?v=1" alt="Prime Haven" style="max-width:140px;height:auto;" />
     </div>
     <div style="text-align:center;">
-      <span class="badge">📋 NEW SUBMISSION</span>
-      <h1>New Work Submitted!</h1>
+      <span class="badge">${badgeLabel}</span>
+      <h1>${headingText}</h1>
     </div>
     <div class="highlight-box">
-      <p style="margin:0 0 10px;color:#ccc;"><strong>${designerName}</strong> has submitted <strong>"${sanitizedProject}"</strong> for your review.</p>
-      <a href="https://primehaven.lovable.app/superadmin" class="cta">Review Now</a>
+      <p style="margin:0 0 10px;color:#ccc;">${bodyText}</p>
+      <a href="https://primehaven.lovable.app/superadmin" class="cta">${ctaText}</a>
     </div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} Prime Haven. All rights reserved.</p>
@@ -125,7 +135,7 @@ serve(async (req: Request): Promise<Response> => {
 
       await sendEmail("team@primehaven.tech", subject, emailHtml);
 
-      console.log(`Admin notification sent for new submission: ${sanitizedProject}`);
+      console.log(`Admin notification sent for ${notificationType}: ${sanitizedProject}`);
       return new Response(JSON.stringify({ success: true }), {
         status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
       });

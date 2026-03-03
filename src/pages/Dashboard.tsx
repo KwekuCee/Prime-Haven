@@ -17,15 +17,20 @@ import {
   EyeOff,
   Zap,
   Brain,
-  RefreshCw
+  RefreshCw,
+  PlayCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileData {
   full_name: string;
@@ -83,6 +88,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { settings, formatCurrency } = useUserSettings();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [designer, setDesigner] = useState<DesignerData | null>(null);
@@ -99,6 +105,9 @@ const Dashboard = () => {
     monthlyRevenue: 0,
   });
   const [recalculating, setRecalculating] = useState(false);
+  const [startWorkingOpen, setStartWorkingOpen] = useState(false);
+  const [startWorkingProject, setStartWorkingProject] = useState('');
+  const [startWorkingSending, setStartWorkingSending] = useState(false);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
@@ -119,6 +128,29 @@ const Dashboard = () => {
       console.error('Error recalculating talent score:', err);
     } finally {
       setRecalculating(false);
+    }
+  };
+
+  const handleStartWorking = async () => {
+    if (!user || !startWorkingProject.trim()) return;
+    setStartWorkingSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('notify-designer', {
+        body: {
+          designerId: user.id,
+          projectName: startWorkingProject.trim(),
+          notificationType: 'start_working',
+        },
+      });
+      if (error) throw error;
+      toast({ title: 'Notification sent!', description: 'Admin has been notified that you started working.' });
+      setStartWorkingOpen(false);
+      setStartWorkingProject('');
+    } catch (err) {
+      console.error('Error sending start working notification:', err);
+      toast({ title: 'Error', description: 'Failed to send notification. Please try again.', variant: 'destructive' });
+    } finally {
+      setStartWorkingSending(false);
     }
   };
 
@@ -643,6 +675,14 @@ const Dashboard = () => {
               <Button 
                 variant="primary" 
                 className="w-full justify-start font-semibold"
+                onClick={() => setStartWorkingOpen(true)}
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Start Working on a Job
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start font-semibold"
                 onClick={() => navigate('/submit-work')}
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -683,6 +723,39 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Start Working Dialog */}
+      <Dialog open={startWorkingOpen} onOpenChange={setStartWorkingOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start Working on a Job</DialogTitle>
+            <DialogDescription>
+              Enter the project name you're starting to work on. The admin will be notified via email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="project-name">Project Name</Label>
+              <Input
+                id="project-name"
+                placeholder="e.g. ABC Company Logo Design"
+                value={startWorkingProject}
+                onChange={(e) => setStartWorkingProject(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStartWorkingOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleStartWorking}
+              disabled={!startWorkingProject.trim() || startWorkingSending}
+            >
+              {startWorkingSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <PlayCircle className="w-4 h-4 mr-2" />}
+              {startWorkingSending ? 'Sending...' : 'Notify Admin'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
