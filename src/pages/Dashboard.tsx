@@ -678,7 +678,7 @@ const Dashboard = () => {
                 onClick={() => setStartWorkingOpen(true)}
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
-                Start Working on a Job
+                Start Work
               </Button>
               <Button 
                 variant="outline" 
@@ -728,7 +728,7 @@ const Dashboard = () => {
       <Dialog open={startWorkingOpen} onOpenChange={setStartWorkingOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Start Working on a Job</DialogTitle>
+            <DialogTitle>Start Work</DialogTitle>
             <DialogDescription>
               Enter the project name you're starting to work on. The admin will be notified via email.
             </DialogDescription>
