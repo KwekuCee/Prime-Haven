@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Save, X, Users } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Edit, Trash2, Save, Users, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,11 +61,14 @@ const LEVEL_LABELS: Record<number, string> = {
 
 const ManageTeam = () => {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [useCustomTitle, setUseCustomTitle] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: '',
     role_title: '',
@@ -92,6 +95,7 @@ const ManageTeam = () => {
   const openNew = () => {
     setEditingMember(null);
     setUseCustomTitle(false);
+    setPhotoPreview(null);
     setForm({ full_name: '', role_title: '', bio: '', photo_url: '', display_order: members.length, is_visible: true, position_level: 1 });
     setDialogOpen(true);
   };
@@ -100,6 +104,7 @@ const ManageTeam = () => {
     setEditingMember(m);
     const isPreset = EXECUTIVE_POSITIONS.some(p => p.value === m.role_title);
     setUseCustomTitle(!isPreset);
+    setPhotoPreview(m.photo_url || null);
     setForm({
       full_name: m.full_name,
       role_title: m.role_title,
@@ -121,6 +126,47 @@ const ManageTeam = () => {
     const pos = EXECUTIVE_POSITIONS.find(p => p.value === value);
     setUseCustomTitle(false);
     setForm(f => ({ ...f, role_title: value, position_level: pos?.level ?? 99 }));
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please select an image file.', variant: 'destructive' });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('team-photos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('team-photos')
+        .getPublicUrl(fileName);
+
+      setForm(f => ({ ...f, photo_url: publicUrl }));
+      setPhotoPreview(publicUrl);
+      toast({ title: 'Photo uploaded', description: 'Image uploaded successfully.' });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async () => {
@@ -259,7 +305,7 @@ const ManageTeam = () => {
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-bold">{editingMember ? 'Edit' : 'Add'} Team Member</DialogTitle>
             <DialogDescription className="font-medium">
@@ -326,13 +372,59 @@ const ManageTeam = () => {
               </div>
             )}
 
+            {/* Photo Upload */}
+            <div className="space-y-2">
+              <Label className="font-semibold">Photo</Label>
+              <div className="flex items-start gap-4">
+                {/* Preview */}
+                <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-dashed border-border bg-muted/50 flex-shrink-0 flex items-center justify-center">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <Users className="w-8 h-8 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full"
+                  >
+                    {uploading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</>
+                    ) : (
+                      <><Upload className="w-4 h-4 mr-2" /> Upload Photo</>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">JPG, PNG or WebP. Max 5MB.</p>
+                  {form.photo_url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive text-xs h-7 px-2"
+                      onClick={() => { setForm(f => ({ ...f, photo_url: '' })); setPhotoPreview(null); }}
+                    >
+                      Remove photo
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label className="font-semibold">Bio *</Label>
               <Textarea value={form.bio} onChange={(e) => setForm(f => ({ ...f, bio: e.target.value }))} placeholder="A short backstory..." className="min-h-[100px]" />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Photo URL</Label>
-              <Input value={form.photo_url} onChange={(e) => setForm(f => ({ ...f, photo_url: e.target.value }))} placeholder="https://..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -349,7 +441,7 @@ const ManageTeam = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={uploading}>
               <Save className="w-4 h-4 mr-2" />
               {editingMember ? 'Update' : 'Add'} Member
             </Button>
