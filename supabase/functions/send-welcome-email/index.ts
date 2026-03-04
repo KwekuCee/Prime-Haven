@@ -229,7 +229,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     await transporter.sendMail({
-      from: \`Prime Haven <\${fromAddress}>\`,
+      from: "Prime Haven <" + fromAddress + ">",
       to: email,
       subject: "🚀 Welcome to Prime Haven - Your Getting Started Guide",
       html: buildWelcomeHtml(sanitizedName),
