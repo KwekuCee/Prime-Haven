@@ -125,7 +125,7 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Payment verified and recorded for user:", userId);
 
-    // Send verification email and Discord invite in parallel
+    // Send verification email, welcome guide email, and Discord invite in parallel
     if (profile) {
       const promises: Promise<void>[] = [];
 
@@ -158,6 +158,37 @@ serve(async (req: Request): Promise<Response> => {
             }
           } catch (verifyError) {
             console.error("Error sending verification email:", verifyError);
+          }
+        })()
+      );
+
+      // Send welcome/guide email
+      promises.push(
+        (async () => {
+          try {
+            const welcomeResponse = await fetch(
+              `${SUPABASE_URL}/functions/v1/send-welcome-email`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  email: profile.email,
+                  fullName: profile.full_name || "Designer",
+                }),
+              }
+            );
+
+            if (welcomeResponse.ok) {
+              console.log("Welcome email sent for user:", userId);
+            } else {
+              const errorData = await welcomeResponse.json();
+              console.error("Failed to send welcome email:", errorData);
+            }
+          } catch (welcomeError) {
+            console.error("Error sending welcome email:", welcomeError);
           }
         })()
       );
@@ -196,7 +227,7 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
 
-      // Wait for both to complete (don't block payment success)
+      // Wait for all to complete (don't block payment success)
       await Promise.allSettled(promises);
     }
 

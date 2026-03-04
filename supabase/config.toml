@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.notify-project-status]
 verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false

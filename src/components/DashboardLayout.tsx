@@ -10,7 +10,8 @@ import {
   X,
   User,
   MessageSquare,
-  Download
+  Download,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,15 +39,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string; professional_title: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const unreadMessages = useUnreadMessages();
 
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
       
-      const [profileResult, designerResult] = await Promise.all([
+      const [profileResult, designerResult, roleResult] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
-        supabase.from('designer_details').select('professional_title').eq('user_id', user.id).maybeSingle()
+        supabase.from('designer_details').select('professional_title').eq('user_id', user.id).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle()
       ]);
 
       if (profileResult.data || designerResult.data) {
@@ -54,6 +57,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           full_name: profileResult.data?.full_name || user.email?.split('@')[0] || 'Designer',
           professional_title: designerResult.data?.professional_title || 'Designer'
         });
+      }
+
+      if (roleResult.data && (roleResult.data.role === 'superadmin' || roleResult.data.role === 'masteradmin')) {
+        setIsAdmin(true);
       }
     };
 
@@ -139,6 +146,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
               <User className="w-4 h-4 text-muted-foreground" />
             </Link>
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                className="w-full justify-start mb-2 text-primary border-primary/30 hover:bg-primary/10"
+                onClick={() => navigate('/superadmin')}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Back to Superadmin
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               className="w-full justify-start text-muted-foreground"

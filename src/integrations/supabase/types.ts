@@ -724,6 +724,42 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          bio: string
+          created_at: string
+          display_order: number
+          full_name: string
+          id: string
+          is_visible: boolean
+          photo_url: string | null
+          role_title: string
+          updated_at: string
+        }
+        Insert: {
+          bio: string
+          created_at?: string
+          display_order?: number
+          full_name: string
+          id?: string
+          is_visible?: boolean
+          photo_url?: string | null
+          role_title: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string
+          display_order?: number
+          full_name?: string
+          id?: string
+          is_visible?: boolean
+          photo_url?: string | null
+          role_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       testimonials: {
         Row: {
           client_name: string
