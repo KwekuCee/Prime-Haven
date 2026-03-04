@@ -52,6 +52,7 @@ import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import { AdminNavigation } from '@/components/admin/AdminNavigation';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
+import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -1490,7 +1491,7 @@ const SuperAdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="submissions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="submissions" className="font-semibold">
               <FileCheck className="w-4 h-4 mr-2" />
               Submissions
@@ -1514,6 +1515,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="blog" className="font-semibold">
               <Newspaper className="w-4 h-4 mr-2" />
               Blog
+            </TabsTrigger>
+            <TabsTrigger value="team" className="font-semibold">
+              <UserCheck className="w-4 h-4 mr-2" />
+              Team
             </TabsTrigger>
             <TabsTrigger value="logs" className="font-semibold">
               <Activity className="w-4 h-4 mr-2" />
@@ -2069,6 +2074,11 @@ const SuperAdminDashboard = () => {
           {/* Blog Tab */}
           <TabsContent value="blog" className="space-y-6">
             <ManageBlog />
+          </TabsContent>
+
+          {/* Team Tab */}
+          <TabsContent value="team" className="space-y-6">
+            <ManageTeam />
           </TabsContent>
 
           {/* Logs Tab */}
