@@ -733,6 +733,7 @@ export type Database = {
           id: string
           is_visible: boolean
           photo_url: string | null
+          position_level: number
           role_title: string
           updated_at: string
         }
@@ -744,6 +745,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           photo_url?: string | null
+          position_level?: number
           role_title: string
           updated_at?: string
         }
@@ -755,6 +757,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           photo_url?: string | null
+          position_level?: number
           role_title?: string
           updated_at?: string
         }
