@@ -349,7 +349,10 @@ const Messages = () => {
             </div>
           )}
         </div>
-        <span className="text-sm truncate flex-1">{peer.full_name}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm truncate block">{peer.full_name}</span>
+          <span className="text-[10px] text-muted-foreground truncate block leading-tight">{peer.professional_title || 'Designer'}</span>
+        </div>
         {(meta?.unreadCount ?? 0) > 0 && (
           <Badge variant="default" className="h-5 min-w-[20px] px-1.5 text-[10px] font-bold rounded-full">
             {meta!.unreadCount}
@@ -376,40 +379,10 @@ const Messages = () => {
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="p-2 space-y-3">
-                {/* Same profession section */}
-                {sameProfessionPeers.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-1.5 px-2 mb-1">
-                      <Users className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {myTitle || 'Your Team'}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground ml-auto">{sameProfessionPeers.length}</span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {sameProfessionPeers.map(renderPeerItem)}
-                    </div>
-                  </div>
-                )}
-
-                {/* Other designers */}
-                {otherPeers.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-1.5 px-2 mb-1">
-                      <Hash className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Other Designers
-                      </span>
-                      <span className="text-[10px] text-muted-foreground ml-auto">{otherPeers.length}</span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {otherPeers.map(renderPeerItem)}
-                    </div>
-                  </div>
-                )}
-
-                {peers.length === 0 && (
+              <div className="p-2 space-y-0.5">
+                {sortedPeers.length > 0 ? (
+                  sortedPeers.map(renderPeerItem)
+                ) : (
                   <div className="text-center py-8 px-4">
                     <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-xs text-muted-foreground">No designers available</p>

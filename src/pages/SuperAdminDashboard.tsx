@@ -1402,7 +1402,7 @@ const SuperAdminDashboard = () => {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {[
             {
               title: 'Total Users',
@@ -1413,6 +1413,17 @@ const SuperAdminDashboard = () => {
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="text-xs font-medium">{stats.totalDesigners} designers</Badge>
                   <Badge variant="outline" className="text-xs font-medium">{stats.totalAdmins} admins</Badge>
+                </div>
+              ),
+            },
+            {
+              title: 'Total Points',
+              icon: Award,
+              value: users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString(),
+              borderColor: 'border-l-purple-500',
+              extra: (
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs font-medium">{users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month</Badge>
                 </div>
               ),
             },
