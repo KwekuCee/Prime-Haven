@@ -766,9 +766,9 @@ const SuperAdminDashboard = () => {
             continue;
           }
           
-          const graphicSalary = totalGraphicPts > 0 ? (dp.graphic / totalGraphicPts) * graphicAmt : 0;
-          const uiuxSalary = totalUiuxPts > 0 ? (dp.uiux / totalUiuxPts) * uiuxAmt : 0;
-          const webSalary = totalWebPts > 0 ? (dp.web / totalWebPts) * webAmt : 0;
+          const graphicSalary = totalGraphicPts > 0 ? (dp.graphic / totalGraphicPts) * (graphicAmt * 0.5) : 0;
+          const uiuxSalary = totalUiuxPts > 0 ? (dp.uiux / totalUiuxPts) * (uiuxAmt * 0.5) : 0;
+          const webSalary = totalWebPts > 0 ? (dp.web / totalWebPts) * (webAmt * 0.5) : 0;
           const totalSalary = graphicSalary + uiuxSalary + webSalary;
 
           await supabase.from('designer_details').update({ salary_estimated: totalSalary, updated_at: new Date().toISOString() }).eq('user_id', designer.user_id);
