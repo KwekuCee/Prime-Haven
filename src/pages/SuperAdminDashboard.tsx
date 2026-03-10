@@ -1941,7 +1941,7 @@ const SuperAdminDashboard = () => {
                     <CardTitle className="font-bold">User Management ({users.length})</CardTitle>
                     <CardDescription className="font-medium">Manage all platform users</CardDescription>
                   </div>
-                  <div className="flex gap-3">
+                   <div className="flex flex-wrap gap-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
@@ -1951,6 +1951,15 @@ const SuperAdminDashboard = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleRecalculateSalaries}
+                      disabled={isRecalculatingSalaries}
+                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      {isRecalculatingSalaries ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <DollarSign className="w-4 h-4 mr-2" />}
+                      {isRecalculatingSalaries ? 'Recalculating...' : 'Recalculate Salaries'}
+                    </Button>
                     <Button variant="outline" onClick={() => exportData('users')}>
                       <Download className="w-4 h-4 mr-2" />
                       Export
