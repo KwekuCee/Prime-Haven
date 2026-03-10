@@ -210,6 +210,112 @@ const SuperAdminDashboard = () => {
   const [clientRejectSubmission, setClientRejectSubmission] = useState<Submission | null>(null);
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [editUser, setEditUser] = useState<User | null>(null);
+  const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
+
+  // Recalculate salaries standalone (without re-saving revenue)
+  const handleRecalculateSalaries = async () => {
+    try {
+      setIsRecalculatingSalaries(true);
+
+      // Load current revenue settings
+      const { data: settingsData } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['monthly_revenue_by_category', 'revenue_share_percentage']);
+
+      const settings: any = {};
+      (settingsData || []).forEach((s: any) => { settings[s.key] = s.value; });
+
+      const categoryRevenue = settings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
+      const graphicAmt = Number(categoryRevenue.graphic || 0);
+      const uiuxAmt = Number(categoryRevenue.uiux || 0);
+      const webAmt = Number(categoryRevenue.web || 0);
+      const revenueShare = settings.revenue_share_percentage?.value || 50;
+      const shareRatio = revenueShare / 100;
+      const nowIso = new Date().toISOString();
+
+      const { data: allDesigners } = await supabase
+        .from('designer_details')
+        .select('user_id, monthly_points');
+
+      const { data: allSubmissions } = await supabase
+        .from('submissions')
+        .select('designer_id, service_type, points_awarded')
+        .in('status', ['ph_approved', 'approved']);
+
+      if (allDesigners && allSubmissions) {
+        const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
+        const eligibleDesignerIds = new Set(
+          allDesigners.filter((d: any) => Number(d.monthly_points || 0) > 0).map((d: any) => d.user_id)
+        );
+
+        const designerCategoryPoints: Record<string, { graphic: number; uiux: number; web: number }> = {};
+        allDesigners.forEach((d: any) => {
+          designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0, web: 0 };
+        });
+
+        allSubmissions.forEach((s: any) => {
+          if (!eligibleDesignerIds.has(s.designer_id)) return;
+          const pts = Number(s.points_awarded || 0);
+          if (pts <= 0) return;
+          if (graphicTypes.includes(s.service_type)) designerCategoryPoints[s.designer_id].graphic += pts;
+          else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
+          else if (s.service_type === 'web') designerCategoryPoints[s.designer_id].web += pts;
+        });
+
+        const totals = Object.entries(designerCategoryPoints).reduce(
+          (acc, [designerId, points]) => {
+            if (!eligibleDesignerIds.has(designerId)) return acc;
+            acc.graphic += points.graphic;
+            acc.uiux += points.uiux;
+            acc.web += points.web;
+            return acc;
+          },
+          { graphic: 0, uiux: 0, web: 0 }
+        );
+
+        await Promise.all(
+          allDesigners.map((designer: any) => {
+            const monthlyPts = Number(designer.monthly_points || 0);
+            if (monthlyPts <= 0) {
+              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
+            }
+            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0, web: 0 };
+            if (dp.graphic <= 0 && dp.uiux <= 0 && dp.web <= 0) {
+              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
+            }
+            const graphicSalary = totals.graphic > 0 ? (dp.graphic / totals.graphic) * (graphicAmt * shareRatio) : 0;
+            const uiuxSalary = totals.uiux > 0 ? (dp.uiux / totals.uiux) * (uiuxAmt * shareRatio) : 0;
+            const webSalary = totals.web > 0 ? (dp.web / totals.web) * (webAmt * shareRatio) : 0;
+            const totalSalary = graphicSalary + uiuxSalary + webSalary;
+            const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
+            return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
+          })
+        );
+
+        // Hard guard
+        await supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
+      }
+
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'salary_recalculated',
+          admin_id: user.id,
+          description: 'Salaries recalculated from existing revenue data',
+          timestamp: nowIso,
+        });
+      }
+
+      toast({ title: 'Salaries Recalculated', description: 'All estimated salaries have been updated based on current revenue and points.' });
+      await loadDashboardDataSafe();
+    } catch (error: any) {
+      console.error('Recalculate salaries error:', error);
+      toast({ title: 'Recalculation Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsRecalculatingSalaries(false);
+    }
+  };
+
   // Load system settings
   const loadSystemSettings = useCallback(async () => {
     try {
