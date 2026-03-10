@@ -1,27 +1,30 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Search, Briefcase, Users, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import heroBg from '@/assets/hero-bg.jpg';
 import { useTranslation } from 'react-i18next';
 
 const HeroSection = () => {
   const { t } = useTranslation();
 
+  const quickStats = [
+    { icon: Users, label: 'Active Designers', value: '50+' },
+    { icon: Briefcase, label: 'Projects Delivered', value: '200+' },
+    { icon: Star, label: 'Client Satisfaction', value: '98%' },
+  ];
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={heroBg}
-          alt="Digital technology background"
-          className="w-full h-full object-cover opacity-40"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        <img src={heroBg} alt="Digital technology background" className="w-full h-full object-cover opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
       </div>
 
       {/* Content */}
       <div className="container mx-auto px-6 relative z-10 pt-20">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -30,7 +33,7 @@ const HeroSection = () => {
             className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full mb-8"
           >
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">{t('hero.badge')}</span>
+            <span className="text-sm text-muted-foreground font-medium">Ghana's Premier Freelance Design & Tech Hub</span>
           </motion.div>
 
           {/* Headline */}
@@ -40,10 +43,10 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
           >
-            {t('hero.headline1')}{' '}
-            <span className="text-gradient">{t('hero.headline2')}</span>
+            Find Top{' '}
+            <span className="text-gradient">Creative Talent</span>
             <br />
-            {t('hero.headline3')}
+            or Get Hired
           </motion.h1>
 
           {/* Subheadline */}
@@ -51,29 +54,51 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto"
+            className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto"
           >
-            {t('hero.subheadline')}
+            Post your project and get matched with skilled designers & developers, or join as a freelancer and start earning.
           </motion.p>
 
-          {/* CTAs */}
+          {/* Dual CTA */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
           >
             <a href="#contact">
-              <Button variant="primary" size="lg" className="group glow-primary">
-                {t('hero.cta1')}
+              <Button variant="primary" size="lg" className="group glow-primary text-base px-8">
+                <Briefcase className="w-5 h-5 mr-2" />
+                Post a Job
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </a>
-            <a href="#portfolio">
-              <Button variant="outline" size="lg">
-                {t('hero.cta2')}
+            <Link to="/register">
+              <Button variant="outline" size="lg" className="text-base px-8">
+                <Users className="w-5 h-5 mr-2" />
+                Join as a Freelancer
               </Button>
-            </a>
+            </Link>
+          </motion.div>
+
+          {/* Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
+          >
+            {quickStats.map((stat) => (
+              <div key={stat.label} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <stat.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-lg font-bold">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                </div>
+              </div>
+            ))}
           </motion.div>
         </div>
 
