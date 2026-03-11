@@ -54,7 +54,7 @@ const Navbar = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3">
             <LanguageSwitcher />
             <ThemeToggle />
             <Link to="/login">
