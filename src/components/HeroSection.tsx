@@ -41,7 +41,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
+            className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
           >
             Find Top{' '}
             <span className="text-gradient">Creative Talent</span>
