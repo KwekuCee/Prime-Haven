@@ -41,7 +41,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
+            className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
           >
             Find Top{' '}
             <span className="text-gradient">Creative Talent</span>
@@ -54,7 +54,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto"
+            className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto px-2"
           >
             Post your project and get matched with skilled designers & developers, or join as a freelancer and start earning.
           </motion.p>
@@ -86,7 +86,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
+            className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 md:gap-12"
           >
             {quickStats.map((stat) => (
               <div key={stat.label} className="flex items-center gap-3">

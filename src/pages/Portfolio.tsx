@@ -97,14 +97,14 @@ const Portfolio = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 justify-center md:justify-end">
                 {categories.map((category) => (
                   <Button
                     key={category}
                     variant={selectedCategory === category ? "primary" : "outline"}
                     size="sm"
                     onClick={() => setSelectedCategory(category)}
-                    className="gap-2"
+                    className="gap-2 text-xs sm:text-sm"
                   >
                     {selectedCategory === category && <Filter className="w-4 h-4" />}
                     {category}

@@ -108,10 +108,10 @@ const Blog = () => {
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
-            <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-              <TabsList>
+            <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
+              <TabsList className="flex flex-wrap h-auto gap-1">
                 {categories.map(cat => (
-                  <TabsTrigger key={cat} value={cat} className="capitalize font-semibold">
+                  <TabsTrigger key={cat} value={cat} className="capitalize font-semibold text-xs sm:text-sm">
                     {cat}
                   </TabsTrigger>
                 ))}
@@ -205,14 +205,14 @@ const Blog = () => {
                 Subscribe and get new articles, opportunities, and updates delivered to your inbox.
               </p>
             </div>
-            <form onSubmit={handleSubscribe} className="flex gap-3 w-full md:w-auto">
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="min-w-[250px]"
+                className="w-full sm:min-w-[250px]"
               />
               <Button type="submit" disabled={subscribing} className="glow-primary shrink-0">
                 {subscribing ? 'Subscribing...' : 'Subscribe'}
