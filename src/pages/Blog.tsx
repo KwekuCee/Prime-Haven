@@ -108,10 +108,10 @@ const Blog = () => {
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
-            <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-              <TabsList>
+            <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
+              <TabsList className="flex flex-wrap h-auto gap-1">
                 {categories.map(cat => (
-                  <TabsTrigger key={cat} value={cat} className="capitalize font-semibold">
+                  <TabsTrigger key={cat} value={cat} className="capitalize font-semibold text-xs sm:text-sm">
                     {cat}
                   </TabsTrigger>
                 ))}

@@ -86,7 +86,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
+            className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 md:gap-12"
           >
             {quickStats.map((stat) => (
               <div key={stat.label} className="flex items-center gap-3">
