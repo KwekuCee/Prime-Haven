@@ -54,7 +54,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto"
+            className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto px-2"
           >
             Post your project and get matched with skilled designers & developers, or join as a freelancer and start earning.
           </motion.p>
