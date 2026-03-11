@@ -205,14 +205,14 @@ const Blog = () => {
                 Subscribe and get new articles, opportunities, and updates delivered to your inbox.
               </p>
             </div>
-            <form onSubmit={handleSubscribe} className="flex gap-3 w-full md:w-auto">
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="min-w-[250px]"
+                className="w-full sm:min-w-[250px]"
               />
               <Button type="submit" disabled={subscribing} className="glow-primary shrink-0">
                 {subscribing ? 'Subscribing...' : 'Subscribe'}
