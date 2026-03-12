@@ -1924,13 +1924,22 @@ const SuperAdminDashboard = () => {
                                 {submission.status === 'client_rejected' && (
                                   <div className="flex gap-1">
                                     <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
-                                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => handleRequestCorrection(submission)}>
+                                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }}>
                                       <Edit className="w-3 h-3 mr-1" />Correction
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}>
+                                      <XCircle className="w-3 h-3" />
                                     </Button>
                                   </div>
                                 )}
                                 {submission.status === 'correction_requested' && (
-                                  <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
+                                  <div className="flex gap-1">
+                                    <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
+                                    <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}>
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </TableCell>
