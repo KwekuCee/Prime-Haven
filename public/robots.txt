@@ -43,4 +43,4 @@ Disallow: /auth/confirm
 Disallow: /forgot-password
 Disallow: /reset-password
 
-Sitemap: https://primehaven.lovable.app/sitemap.xml
+Sitemap: https://primehaven.tech/sitemap.xml
