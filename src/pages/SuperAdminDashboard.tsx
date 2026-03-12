@@ -594,15 +594,15 @@ const SuperAdminDashboard = () => {
     checkAdminAccess();
   }, [user, authLoading, navigate, toast, loadDashboardDataSafe]);
 
-  // Handle PH approval (15 points, or correction_points if correction)
+  // Handle PH approval (NO points for corrections, normal points for regular submissions)
   const handlePHApproval = async (submissionId: string) => {
     try {
       const submission = submissions.find(s => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
 
       const isCorrection = !!submission.parent_submission_id;
-      const correctionPts = typeof systemSettings.correction_points === 'number' ? systemSettings.correction_points : (systemSettings.correction_points as any)?.value || 4;
-      const phPoints = isCorrection ? correctionPts : (systemSettings.ph_approval_points?.value || 15);
+      // Corrections get 0 PH points - only client acceptance awards points
+      const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
 
       // Update submission
       const { error: updateError } = await supabase
