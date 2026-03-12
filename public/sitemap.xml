@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://primehaven.lovable.app/</loc>
+    <loc>https://primehaven.tech/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/blog</loc>
+    <loc>https://primehaven.tech/blog</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/portfolio</loc>
+    <loc>https://primehaven.tech/portfolio</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/services/graphic-design</loc>
+    <loc>https://primehaven.tech/services/graphic-design</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/services/ui-ux-design</loc>
+    <loc>https://primehaven.tech/services/ui-ux-design</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/services/web-development</loc>
+    <loc>https://primehaven.tech/services/web-development</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/services/it-solutions</loc>
+    <loc>https://primehaven.tech/services/it-solutions</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/register</loc>
+    <loc>https://primehaven.tech/register</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://primehaven.lovable.app/login</loc>
+    <loc>https://primehaven.tech/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
