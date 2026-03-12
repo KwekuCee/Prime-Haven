@@ -440,7 +440,8 @@ const SuperAdminDashboard = () => {
           client_accepted: s.client_accepted || false,
           ph_approved_at: s.ph_approved_at,
           client_accepted_at: s.client_accepted_at,
-          parent_submission_id: s.parent_submission_id || null
+          parent_submission_id: s.parent_submission_id || null,
+          rejection_reason: s.rejection_reason || null
         };
       });
 
