@@ -420,9 +420,22 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                               </>
                             )}
                             {s.status === 'client_rejected' && (
-                              <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => handleRequestCorrection(s)}>
-                                <Edit className="w-3 h-3 mr-1" />Request Correction
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}>
+                                  <Edit className="w-3 h-3 mr-1" />Request Correction
+                                </Button>
+                                <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                  <XCircle className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
+                            {s.status === 'correction_requested' && (
+                              <div className="flex gap-1">
+                                <Badge className="bg-amber-500/20 text-amber-500">Correction Requested</Badge>
+                                <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                  <XCircle className="w-3 h-3 mr-1" />Reject
+                                </Button>
+                              </div>
                             )}
                           </div>
                         </TableCell>
