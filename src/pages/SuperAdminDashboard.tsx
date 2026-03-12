@@ -2471,6 +2471,37 @@ const SuperAdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Correction Request Dialog */}
+      <Dialog open={!!correctionRequestSubmission} onOpenChange={(open) => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Correction</DialogTitle>
+            <DialogDescription>
+              Provide correction instructions for "{correctionRequestSubmission?.project_name}". This note will be visible to the designer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="correction-note">Correction Note</Label>
+            <Textarea
+              id="correction-note"
+              placeholder="Describe what needs to be corrected..."
+              value={correctionNote}
+              onChange={(e) => setCorrectionNote(e.target.value)}
+              className="mt-2 min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCorrectionRequestSubmission(null); setCorrectionNote(''); }}>
+              Cancel
+            </Button>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
+              <Edit className="w-4 h-4 mr-2" />
+              Request Correction
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Gift Points Dialog */}
       <Dialog open={!!giftPointsUser} onOpenChange={(open) => { if (!open) { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); } }}>
         <DialogContent>
