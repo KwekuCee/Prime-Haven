@@ -204,6 +204,8 @@ const SuperAdminDashboard = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [rejectSubmission, setRejectSubmission] = useState<Submission | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<Submission | null>(null);
+  const [correctionNote, setCorrectionNote] = useState('');
   const [giftPointsUser, setGiftPointsUser] = useState<User | null>(null);
   const [giftPointsAmount, setGiftPointsAmount] = useState('');
   const [giftPointsReason, setGiftPointsReason] = useState('');
