@@ -946,14 +946,25 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Handle correction request
-  const handleRequestCorrection = async (submission: Submission) => {
+  // Handle correction request with note
+  const handleRequestCorrectionWithNote = async () => {
+    if (!correctionRequestSubmission) return;
+    if (!correctionNote.trim()) {
+      toast({ title: 'Note Required', description: 'Please provide a correction note for the designer.', variant: 'destructive' });
+      return;
+    }
     try {
-      await supabase.from('submissions').update({ status: 'correction_requested', updated_at: new Date().toISOString() } as any).eq('id', submission.id);
+      await supabase.from('submissions').update({ 
+        status: 'correction_requested', 
+        rejection_reason: correctionNote.trim(),
+        updated_at: new Date().toISOString() 
+      } as any).eq('id', correctionRequestSubmission.id);
       if (user) {
-        await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${submission.project_name}`, timestamp: new Date().toISOString() });
+        await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() });
       }
       toast({ title: 'Correction Requested', description: 'The designer will be notified to submit corrections.' });
+      setCorrectionRequestSubmission(null);
+      setCorrectionNote('');
       await loadDashboardDataSafe();
     } catch (error: any) {
       toast({ title: 'Failed', description: error.message, variant: 'destructive' });
