@@ -271,7 +271,7 @@ const ManageClientProjects = () => {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Create New Project</DialogTitle></DialogHeader><ProjectForm onSubmit={handleCreate} submitLabel="Create Project" /></DialogContent>
+        <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Create New Project</DialogTitle></DialogHeader>{renderProjectForm(handleCreate, "Create Project")}</DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
