@@ -45,6 +45,8 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
   const [rejectionReason, setRejectionReason] = useState('');
   const [clientRejectSubmission, setClientRejectSubmission] = useState<any>(null);
   const [clientRejectionReason, setClientRejectionReason] = useState('');
+  const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<any>(null);
+  const [correctionNote, setCorrectionNote] = useState('');
   const [systemSettings, setSystemSettings] = useState<any>({
     ph_approval_points: { value: 15 },
     client_acceptance_points: { value: 40 },
@@ -121,7 +123,8 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     try {
       const submission = submissions.find((s: any) => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
-      const phPoints = systemSettings.ph_approval_points?.value || 15;
+      const isCorrection = !!submission.parent_submission_id;
+      const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
 
       await supabase.from('submissions').update({
         ph_approved: true, ph_approved_at: new Date().toISOString(), ph_approved_by: user?.id,
@@ -129,13 +132,15 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
         updated_at: new Date().toISOString()
       }).eq('id', submissionId);
 
-      const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-      if (designerData) {
-        await supabase.from('designer_details').update({
-          total_points: (designerData.total_points || 0) + phPoints,
-          monthly_points: (designerData.monthly_points || 0) + phPoints,
-          updated_at: new Date().toISOString()
-        }).eq('user_id', submission.designer_id);
+      if (phPoints > 0) {
+        const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
+        if (designerData) {
+          await supabase.from('designer_details').update({
+            total_points: (designerData.total_points || 0) + phPoints,
+            monthly_points: (designerData.monthly_points || 0) + phPoints,
+            updated_at: new Date().toISOString()
+          }).eq('user_id', submission.designer_id);
+        }
       }
 
       if (user) {
@@ -201,11 +206,17 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
 
-  const handleRequestCorrection = async (submission: any) => {
+  const handleRequestCorrectionWithNote = async () => {
+    if (!correctionRequestSubmission) return;
+    if (!correctionNote.trim()) {
+      toast({ title: 'Note Required', description: 'Please provide a correction note.', variant: 'destructive' });
+      return;
+    }
     try {
-      await supabase.from('submissions').update({ status: 'correction_requested', updated_at: new Date().toISOString() } as any).eq('id', submission.id);
-      if (user) { await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `[${categoryLabel}] Requested correction: ${submission.project_name}`, timestamp: new Date().toISOString() }); }
+      await supabase.from('submissions').update({ status: 'correction_requested', rejection_reason: correctionNote.trim(), updated_at: new Date().toISOString() } as any).eq('id', correctionRequestSubmission.id);
+      if (user) { await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `[${categoryLabel}] Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() }); }
       toast({ title: 'Correction Requested', description: 'Designer will be notified.' });
+      setCorrectionRequestSubmission(null); setCorrectionNote('');
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
@@ -409,9 +420,22 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                               </>
                             )}
                             {s.status === 'client_rejected' && (
-                              <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => handleRequestCorrection(s)}>
-                                <Edit className="w-3 h-3 mr-1" />Request Correction
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}>
+                                  <Edit className="w-3 h-3 mr-1" />Request Correction
+                                </Button>
+                                <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                  <XCircle className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
+                            {s.status === 'correction_requested' && (
+                              <div className="flex gap-1">
+                                <Badge className="bg-amber-500/20 text-amber-500">Correction Requested</Badge>
+                                <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                  <XCircle className="w-3 h-3 mr-1" />Reject
+                                </Button>
+                              </div>
                             )}
                           </div>
                         </TableCell>
@@ -452,6 +476,19 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
           <DialogFooter>
             <Button variant="outline" onClick={() => setClientRejectSubmission(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleClientRejection} disabled={!clientRejectionReason.trim()}>Client Reject</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Correction Request Dialog */}
+      <Dialog open={!!correctionRequestSubmission} onOpenChange={open => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Request Correction</DialogTitle><DialogDescription>Provide correction instructions for "{correctionRequestSubmission?.project_name}"</DialogDescription></DialogHeader>
+          <div className="py-4"><Label>Correction Note</Label><Textarea value={correctionNote} onChange={e => setCorrectionNote(e.target.value)} className="mt-2 min-h-[100px]" placeholder="Describe what needs to be corrected..." /></div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCorrectionRequestSubmission(null)}>Cancel</Button>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
+              <Edit className="w-4 h-4 mr-2" />Request Correction
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

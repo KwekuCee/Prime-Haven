@@ -123,6 +123,7 @@ interface Submission {
   ph_approved_at: string | null;
   client_accepted_at: string | null;
   parent_submission_id?: string | null;
+  rejection_reason?: string | null;
   profiles?: {
     full_name: string;
     email: string;
@@ -203,6 +204,8 @@ const SuperAdminDashboard = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [rejectSubmission, setRejectSubmission] = useState<Submission | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<Submission | null>(null);
+  const [correctionNote, setCorrectionNote] = useState('');
   const [giftPointsUser, setGiftPointsUser] = useState<User | null>(null);
   const [giftPointsAmount, setGiftPointsAmount] = useState('');
   const [giftPointsReason, setGiftPointsReason] = useState('');
@@ -437,7 +440,8 @@ const SuperAdminDashboard = () => {
           client_accepted: s.client_accepted || false,
           ph_approved_at: s.ph_approved_at,
           client_accepted_at: s.client_accepted_at,
-          parent_submission_id: s.parent_submission_id || null
+          parent_submission_id: s.parent_submission_id || null,
+          rejection_reason: s.rejection_reason || null
         };
       });
 
@@ -590,15 +594,15 @@ const SuperAdminDashboard = () => {
     checkAdminAccess();
   }, [user, authLoading, navigate, toast, loadDashboardDataSafe]);
 
-  // Handle PH approval (15 points, or correction_points if correction)
+  // Handle PH approval (NO points for corrections, normal points for regular submissions)
   const handlePHApproval = async (submissionId: string) => {
     try {
       const submission = submissions.find(s => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
 
       const isCorrection = !!submission.parent_submission_id;
-      const correctionPts = typeof systemSettings.correction_points === 'number' ? systemSettings.correction_points : (systemSettings.correction_points as any)?.value || 4;
-      const phPoints = isCorrection ? correctionPts : (systemSettings.ph_approval_points?.value || 15);
+      // Corrections get 0 PH points - only client acceptance awards points
+      const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
 
       // Update submission
       const { error: updateError } = await supabase
@@ -622,18 +626,21 @@ const SuperAdminDashboard = () => {
         .eq('user_id', submission.designer_id)
         .maybeSingle();
 
-      if (designerData) {
-        const newTotalPoints = (designerData.total_points || 0) + phPoints;
-        const newMonthlyPoints = (designerData.monthly_points || 0) + phPoints;
-        
-        await supabase
-          .from('designer_details')
-          .update({
-            total_points: newTotalPoints,
-            monthly_points: newMonthlyPoints,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', submission.designer_id);
+      // Update designer's points (skip if 0 points for corrections)
+      if (phPoints > 0) {
+        if (designerData) {
+          const newTotalPoints = (designerData.total_points || 0) + phPoints;
+          const newMonthlyPoints = (designerData.monthly_points || 0) + phPoints;
+          
+          await supabase
+            .from('designer_details')
+            .update({
+              total_points: newTotalPoints,
+              monthly_points: newMonthlyPoints,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', submission.designer_id);
+        }
       }
 
       // Log the action
@@ -939,14 +946,25 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Handle correction request
-  const handleRequestCorrection = async (submission: Submission) => {
+  // Handle correction request with note
+  const handleRequestCorrectionWithNote = async () => {
+    if (!correctionRequestSubmission) return;
+    if (!correctionNote.trim()) {
+      toast({ title: 'Note Required', description: 'Please provide a correction note for the designer.', variant: 'destructive' });
+      return;
+    }
     try {
-      await supabase.from('submissions').update({ status: 'correction_requested', updated_at: new Date().toISOString() } as any).eq('id', submission.id);
+      await supabase.from('submissions').update({ 
+        status: 'correction_requested', 
+        rejection_reason: correctionNote.trim(),
+        updated_at: new Date().toISOString() 
+      } as any).eq('id', correctionRequestSubmission.id);
       if (user) {
-        await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${submission.project_name}`, timestamp: new Date().toISOString() });
+        await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() });
       }
       toast({ title: 'Correction Requested', description: 'The designer will be notified to submit corrections.' });
+      setCorrectionRequestSubmission(null);
+      setCorrectionNote('');
       await loadDashboardDataSafe();
     } catch (error: any) {
       toast({ title: 'Failed', description: error.message, variant: 'destructive' });
@@ -1906,13 +1924,22 @@ const SuperAdminDashboard = () => {
                                 {submission.status === 'client_rejected' && (
                                   <div className="flex gap-1">
                                     <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
-                                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => handleRequestCorrection(submission)}>
+                                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }}>
                                       <Edit className="w-3 h-3 mr-1" />Correction
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}>
+                                      <XCircle className="w-3 h-3" />
                                     </Button>
                                   </div>
                                 )}
                                 {submission.status === 'correction_requested' && (
-                                  <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
+                                  <div className="flex gap-1">
+                                    <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
+                                    <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}>
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </TableCell>
@@ -2439,6 +2466,37 @@ const SuperAdminDashboard = () => {
             <Button variant="destructive" onClick={handleClientRejection} disabled={!clientRejectionReason.trim()}>
               <XCircle className="w-4 h-4 mr-2" />
               Client Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Correction Request Dialog */}
+      <Dialog open={!!correctionRequestSubmission} onOpenChange={(open) => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Correction</DialogTitle>
+            <DialogDescription>
+              Provide correction instructions for "{correctionRequestSubmission?.project_name}". This note will be visible to the designer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="correction-note">Correction Note</Label>
+            <Textarea
+              id="correction-note"
+              placeholder="Describe what needs to be corrected..."
+              value={correctionNote}
+              onChange={(e) => setCorrectionNote(e.target.value)}
+              className="mt-2 min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCorrectionRequestSubmission(null); setCorrectionNote(''); }}>
+              Cancel
+            </Button>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
+              <Edit className="w-4 h-4 mr-2" />
+              Request Correction
             </Button>
           </DialogFooter>
         </DialogContent>
