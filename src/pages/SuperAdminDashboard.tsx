@@ -123,6 +123,7 @@ interface Submission {
   ph_approved_at: string | null;
   client_accepted_at: string | null;
   parent_submission_id?: string | null;
+  rejection_reason?: string | null;
   profiles?: {
     full_name: string;
     email: string;
