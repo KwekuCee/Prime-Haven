@@ -276,7 +276,7 @@ const ManageClientProjects = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editProject} onOpenChange={() => setEditProject(null)}>
-        <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader><ProjectForm onSubmit={handleUpdate} submitLabel="Save Changes" /></DialogContent>
+        <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>{renderProjectForm(handleUpdate, "Save Changes")}</DialogContent>
       </Dialog>
 
       {/* Milestones Dialog */}
