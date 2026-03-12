@@ -206,11 +206,17 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
 
-  const handleRequestCorrection = async (submission: any) => {
+  const handleRequestCorrectionWithNote = async () => {
+    if (!correctionRequestSubmission) return;
+    if (!correctionNote.trim()) {
+      toast({ title: 'Note Required', description: 'Please provide a correction note.', variant: 'destructive' });
+      return;
+    }
     try {
-      await supabase.from('submissions').update({ status: 'correction_requested', updated_at: new Date().toISOString() } as any).eq('id', submission.id);
-      if (user) { await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `[${categoryLabel}] Requested correction: ${submission.project_name}`, timestamp: new Date().toISOString() }); }
+      await supabase.from('submissions').update({ status: 'correction_requested', rejection_reason: correctionNote.trim(), updated_at: new Date().toISOString() } as any).eq('id', correctionRequestSubmission.id);
+      if (user) { await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `[${categoryLabel}] Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() }); }
       toast({ title: 'Correction Requested', description: 'Designer will be notified.' });
+      setCorrectionRequestSubmission(null); setCorrectionNote('');
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
