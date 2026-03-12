@@ -170,9 +170,9 @@ const ManageClientProjects = () => {
     return <Badge className={colors[status] || 'bg-muted'}>{statusOptions.find(s => s.value === status)?.label || status}</Badge>;
   };
 
-  const ProjectForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
+  const renderProjectForm = (onSubmit: () => void, submitLabel: string) => (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div><Label>Project Title</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
         <div><Label>Client Name</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} /></div>
         <div><Label>Client Email</Label><Input value={form.client_email} onChange={e => setForm(f => ({ ...f, client_email: e.target.value }))} /></div>
