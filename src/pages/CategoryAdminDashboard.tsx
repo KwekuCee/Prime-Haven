@@ -123,7 +123,8 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     try {
       const submission = submissions.find((s: any) => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
-      const phPoints = systemSettings.ph_approval_points?.value || 15;
+      const isCorrection = !!submission.parent_submission_id;
+      const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
 
       await supabase.from('submissions').update({
         ph_approved: true, ph_approved_at: new Date().toISOString(), ph_approved_by: user?.id,
@@ -131,13 +132,15 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
         updated_at: new Date().toISOString()
       }).eq('id', submissionId);
 
-      const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-      if (designerData) {
-        await supabase.from('designer_details').update({
-          total_points: (designerData.total_points || 0) + phPoints,
-          monthly_points: (designerData.monthly_points || 0) + phPoints,
-          updated_at: new Date().toISOString()
-        }).eq('user_id', submission.designer_id);
+      if (phPoints > 0) {
+        const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
+        if (designerData) {
+          await supabase.from('designer_details').update({
+            total_points: (designerData.total_points || 0) + phPoints,
+            monthly_points: (designerData.monthly_points || 0) + phPoints,
+            updated_at: new Date().toISOString()
+          }).eq('user_id', submission.designer_id);
+        }
       }
 
       if (user) {
