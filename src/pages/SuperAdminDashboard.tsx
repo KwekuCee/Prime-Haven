@@ -626,18 +626,21 @@ const SuperAdminDashboard = () => {
         .eq('user_id', submission.designer_id)
         .maybeSingle();
 
-      if (designerData) {
-        const newTotalPoints = (designerData.total_points || 0) + phPoints;
-        const newMonthlyPoints = (designerData.monthly_points || 0) + phPoints;
-        
-        await supabase
-          .from('designer_details')
-          .update({
-            total_points: newTotalPoints,
-            monthly_points: newMonthlyPoints,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', submission.designer_id);
+      // Update designer's points (skip if 0 points for corrections)
+      if (phPoints > 0) {
+        if (designerData) {
+          const newTotalPoints = (designerData.total_points || 0) + phPoints;
+          const newMonthlyPoints = (designerData.monthly_points || 0) + phPoints;
+          
+          await supabase
+            .from('designer_details')
+            .update({
+              total_points: newTotalPoints,
+              monthly_points: newMonthlyPoints,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', submission.designer_id);
+        }
       }
 
       // Log the action
