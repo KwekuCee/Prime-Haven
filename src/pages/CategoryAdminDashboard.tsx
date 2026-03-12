@@ -479,6 +479,19 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Correction Request Dialog */}
+      <Dialog open={!!correctionRequestSubmission} onOpenChange={open => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Request Correction</DialogTitle><DialogDescription>Provide correction instructions for "{correctionRequestSubmission?.project_name}"</DialogDescription></DialogHeader>
+          <div className="py-4"><Label>Correction Note</Label><Textarea value={correctionNote} onChange={e => setCorrectionNote(e.target.value)} className="mt-2 min-h-[100px]" placeholder="Describe what needs to be corrected..." /></div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCorrectionRequestSubmission(null)}>Cancel</Button>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
+              <Edit className="w-4 h-4 mr-2" />Request Correction
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
