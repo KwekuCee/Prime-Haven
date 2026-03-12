@@ -563,6 +563,12 @@ const Dashboard = () => {
                           <p className="text-xs text-muted-foreground">{submission.rejection_reason}</p>
                         </div>
                       )}
+                      {activityType === 'correction_requested' && submission.rejection_reason && (
+                        <div className="mt-2 ml-5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <p className="text-xs font-semibold text-amber-400 mb-0.5">Correction Note:</p>
+                          <p className="text-xs text-muted-foreground">{submission.rejection_reason}</p>
+                        </div>
+                      )}
                       {activityType === 'correction_requested' && (
                         <div className="mt-2 ml-5">
                           <Button
