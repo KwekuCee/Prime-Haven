@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Star, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Star, Plus, Pencil, Trash2, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
 
 interface Testimonial {
   id: string;
