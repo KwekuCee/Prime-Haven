@@ -383,8 +383,7 @@ const SuperAdminDashboard = () => {
         supabase
           .from('system_logs')
           .select('*')
-        .order('timestamp', { ascending: false })
-          .limit(10)
+          .order('timestamp', { ascending: false })
       ]);
 
       if (profilesError) throw profilesError;
