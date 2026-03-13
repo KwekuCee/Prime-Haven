@@ -464,17 +464,20 @@ const SuperAdminDashboard = () => {
         };
       });
 
-      // Normalize logs
-      const processedLogs: SystemLog[] = (logsData || []).map((l: any) => ({
-        id: l.id,
-        action_type: l.action_type || 'unknown',
-        admin_id: l.admin_id,
-        description: l.description || '',
-        timestamp: l.timestamp,
-        ip_address: l.ip_address || '',
-        user_agent: l.user_agent || '',
-        profiles: l.profiles || undefined
-      }));
+      // Normalize logs with actor names
+      const processedLogs: SystemLog[] = (logsData || []).map((l: any) => {
+        const actor = profilesMap.get(l.admin_id);
+        return {
+          id: l.id,
+          action_type: l.action_type || 'unknown',
+          admin_id: l.admin_id,
+          description: l.description || '',
+          timestamp: l.timestamp,
+          ip_address: l.ip_address || '',
+          user_agent: l.user_agent || '',
+          profiles: actor ? { full_name: actor.full_name } : undefined
+        };
+      });
 
       setUsers(processedUsers);
       setSubmissions(processedSubmissions);
