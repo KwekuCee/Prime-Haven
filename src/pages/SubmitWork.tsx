@@ -250,6 +250,20 @@ const SubmitWork = () => {
 
       if (error) throw error;
 
+      // Log the submission action
+      try {
+        await supabase.from('system_logs').insert({
+          action_type: correctionId ? 'correction_submitted' : 'work_submitted',
+          admin_id: user.id,
+          description: correctionId 
+            ? `Correction submitted: ${formData.projectName.trim()} (${formData.serviceType})`
+            : `New work submitted: ${formData.projectName.trim()} (${formData.serviceType})`,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (logErr) {
+        console.error('Failed to log submission:', logErr);
+      }
+
       // Notify admin of new submission
       try {
         await supabase.functions.invoke('notify-designer', {

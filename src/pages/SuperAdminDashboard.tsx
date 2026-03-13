@@ -214,6 +214,9 @@ const SuperAdminDashboard = () => {
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
+  const [submissionsPage, setSubmissionsPage] = useState(1);
+  const [logsPage, setLogsPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Recalculate salaries standalone (without re-saving revenue)
   const handleRecalculateSalaries = async () => {
@@ -380,8 +383,7 @@ const SuperAdminDashboard = () => {
         supabase
           .from('system_logs')
           .select('*')
-        .order('timestamp', { ascending: false })
-          .limit(10)
+          .order('timestamp', { ascending: false })
       ]);
 
       if (profilesError) throw profilesError;
@@ -462,17 +464,20 @@ const SuperAdminDashboard = () => {
         };
       });
 
-      // Normalize logs
-      const processedLogs: SystemLog[] = (logsData || []).map((l: any) => ({
-        id: l.id,
-        action_type: l.action_type || 'unknown',
-        admin_id: l.admin_id,
-        description: l.description || '',
-        timestamp: l.timestamp,
-        ip_address: l.ip_address || '',
-        user_agent: l.user_agent || '',
-        profiles: l.profiles || undefined
-      }));
+      // Normalize logs with actor names
+      const processedLogs: SystemLog[] = (logsData || []).map((l: any) => {
+        const actor = profilesMap.get(l.admin_id);
+        return {
+          id: l.id,
+          action_type: l.action_type || 'unknown',
+          admin_id: l.admin_id,
+          description: l.description || '',
+          timestamp: l.timestamp,
+          ip_address: l.ip_address || '',
+          user_agent: l.user_agent || '',
+          profiles: actor ? { full_name: actor.full_name } : undefined
+        };
+      });
 
       setUsers(processedUsers);
       setSubmissions(processedSubmissions);
@@ -1410,7 +1415,7 @@ const SuperAdminDashboard = () => {
     navigate('/login');
   };
 
-  // Filtered data
+  // Filtered data — reset page on filter change
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
     
@@ -1437,6 +1442,9 @@ const SuperAdminDashboard = () => {
     
     return filtered;
   }, [submissions, selectedStatus, searchQuery]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setSubmissionsPage(1); }, [selectedStatus, searchQuery]);
 
   const filteredUsers = useMemo(() => {
     let filtered = users;
@@ -1751,160 +1759,194 @@ const SuperAdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 {filteredSubmissions.length > 0 ? (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="font-semibold">Project</TableHead>
-                          <TableHead className="font-semibold">Designer</TableHead>
-                          <TableHead className="font-semibold">Service</TableHead>
-                          <TableHead className="font-semibold">PH Status</TableHead>
-                          <TableHead className="font-semibold">Client Status</TableHead>
-                          <TableHead className="font-semibold">Points</TableHead>
-                          <TableHead className="font-semibold">Submitted</TableHead>
-                          <TableHead className="text-right font-semibold">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSubmissions.map((submission) => (
-                          <TableRow key={submission.id}>
-                            <TableCell className="font-semibold">
-                              {submission.project_name}
-                              {submission.parent_submission_id && (
-                                <Badge variant="outline" className="ml-2 text-xs text-amber-500 border-amber-500">Correction</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-semibold">{submission.designer_name}</p>
-                                <p className="text-xs text-muted-foreground">{submission.designer_email}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="font-medium">{submission.service_type}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {submission.ph_approved ? (
-                                <Badge className="bg-green-500/20 text-green-500 font-medium">
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  Approved
-                                </Badge>
-                              ) : submission.status === 'rejected' ? (
-                                <Badge variant="destructive" className="font-medium">Rejected</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-amber-500 border-amber-500 font-medium">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Pending
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {submission.client_accepted ? (
-                                <Badge className="bg-primary/20 text-primary font-medium">
-                                  <Star className="w-3 h-3 mr-1" />
-                                  Accepted
-                                </Badge>
-                              ) : submission.ph_approved ? (
-                                <Badge variant="outline" className="text-blue-500 border-blue-500 font-medium">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Awaiting
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-bold text-primary">{submission.points_awarded || 0}</span>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {format(new Date(submission.created_at), 'MMM d, yyyy')}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end items-center gap-2">
-                                {/* Status badge for completed/special states */}
-                                {submission.client_accepted && (
-                                  <Badge className="bg-green-500 text-white font-semibold">
-                                    <Award className="w-3 h-3 mr-1" />
-                                    Complete
+                  <>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold">Project</TableHead>
+                            <TableHead className="font-semibold">Designer</TableHead>
+                            <TableHead className="font-semibold">Service</TableHead>
+                            <TableHead className="font-semibold">PH Status</TableHead>
+                            <TableHead className="font-semibold">Client Status</TableHead>
+                            <TableHead className="font-semibold">Points</TableHead>
+                            <TableHead className="font-semibold">Submitted</TableHead>
+                            <TableHead className="text-right font-semibold">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredSubmissions.slice((submissionsPage - 1) * ITEMS_PER_PAGE, submissionsPage * ITEMS_PER_PAGE).map((submission) => (
+                            <TableRow key={submission.id}>
+                              <TableCell className="font-semibold">
+                                {submission.project_name}
+                                {submission.parent_submission_id && (
+                                  <Badge variant="outline" className="ml-2 text-xs text-amber-500 border-amber-500">Correction</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-semibold">{submission.designer_name}</p>
+                                  <p className="text-xs text-muted-foreground">{submission.designer_email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-medium">{submission.service_type}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                {submission.ph_approved ? (
+                                  <Badge className="bg-green-500/20 text-green-500 font-medium">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Approved
+                                  </Badge>
+                                ) : submission.status === 'rejected' ? (
+                                  <Badge variant="destructive" className="font-medium">Rejected</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-amber-500 border-amber-500 font-medium">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Pending
                                   </Badge>
                                 )}
-                                {submission.status === 'client_rejected' && (
-                                  <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
+                              </TableCell>
+                              <TableCell>
+                                {submission.client_accepted ? (
+                                  <Badge className="bg-primary/20 text-primary font-medium">
+                                    <Star className="w-3 h-3 mr-1" />
+                                    Accepted
+                                  </Badge>
+                                ) : submission.ph_approved ? (
+                                  <Badge variant="outline" className="text-blue-500 border-blue-500 font-medium">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Awaiting
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">—</span>
                                 )}
-                                {submission.status === 'correction_requested' && (
-                                  <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
-                                )}
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-bold text-primary">{submission.points_awarded || 0}</span>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {format(new Date(submission.created_at), 'MMM d, yyyy')}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end items-center gap-2">
+                                  {/* Status badge for completed/special states */}
+                                  {submission.client_accepted && (
+                                    <Badge className="bg-green-500 text-white font-semibold">
+                                      <Award className="w-3 h-3 mr-1" />
+                                      Complete
+                                    </Badge>
+                                  )}
+                                  {submission.status === 'rejected' && (
+                                    <Badge variant="destructive" className="font-medium">Rejected</Badge>
+                                  )}
+                                  {submission.status === 'client_rejected' && !submission.client_accepted && (
+                                    <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
+                                  )}
+                                  {submission.status === 'correction_requested' && (
+                                    <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
+                                  )}
 
-                                {/* Actions Dropdown */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                      <Settings className="w-4 h-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-52">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
+                                  {/* Actions Dropdown - hidden for completed and fully rejected */}
+                                  {!submission.client_accepted && submission.status !== 'rejected' && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <Settings className="w-4 h-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="w-52">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
 
-                                    {/* View Files */}
-                                    {submission.files_urls && submission.files_urls.length > 0 && (
-                                      <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)}>
-                                        <ImageIcon className="w-4 h-4 mr-2" />
-                                        View Files ({submission.files_urls.length})
-                                      </DropdownMenuItem>
-                                    )}
+                                        {/* View Files */}
+                                        {submission.files_urls && submission.files_urls.length > 0 && (
+                                          <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)}>
+                                            <ImageIcon className="w-4 h-4 mr-2" />
+                                            View Files ({submission.files_urls.length})
+                                          </DropdownMenuItem>
+                                        )}
 
-                                    {/* PH Approve - pending submissions */}
-                                    {!submission.ph_approved && submission.status !== 'rejected' && (
-                                      <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-green-500 focus:text-green-500">
-                                        <CheckCircle className="w-4 h-4 mr-2" />
-                                        PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
-                                      </DropdownMenuItem>
-                                    )}
+                                        {/* PH Approve - pending submissions */}
+                                        {!submission.ph_approved && (
+                                          <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-green-500 focus:text-green-500">
+                                            <CheckCircle className="w-4 h-4 mr-2" />
+                                            PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
+                                          </DropdownMenuItem>
+                                        )}
 
-                                    {/* Client Accept - ph_approved, not yet client accepted */}
-                                    {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                      <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-primary focus:text-primary">
-                                        <ThumbsUp className="w-4 h-4 mr-2" />
-                                        Client Accept (+{({logo:45,branding:50,uiux:65,web:65,print:20,flyer:30} as Record<string,number>)[submission.service_type] || 40} pts)
-                                      </DropdownMenuItem>
-                                    )}
+                                        {/* Client Accept - ph_approved, not yet client accepted */}
+                                        {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                          <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-primary focus:text-primary">
+                                            <ThumbsUp className="w-4 h-4 mr-2" />
+                                            Client Accept (+{({logo:45,branding:50,uiux:65,web:65,print:20,flyer:30} as Record<string,number>)[submission.service_type] || 40} pts)
+                                          </DropdownMenuItem>
+                                        )}
 
-                                    {/* Request Correction - available for client_rejected, ph_approved awaiting client, or correction_requested */}
-                                    {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected') || submission.status === 'correction_requested') && (
-                                      <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-amber-500 focus:text-amber-500">
-                                        <Edit className="w-4 h-4 mr-2" />
-                                        Request Correction
-                                      </DropdownMenuItem>
-                                    )}
+                                        {/* Request Correction - for client_rejected, ph_approved awaiting client, or correction_requested */}
+                                        {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted) || submission.status === 'correction_requested') && (
+                                          <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-amber-500 focus:text-amber-500">
+                                            <Edit className="w-4 h-4 mr-2" />
+                                            Request Correction
+                                          </DropdownMenuItem>
+                                        )}
 
-                                    {/* Client Reject - ph_approved, awaiting client */}
-                                    {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                      <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-destructive focus:text-destructive">
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Client Reject
-                                      </DropdownMenuItem>
-                                    )}
+                                        {/* Client Reject - ph_approved, awaiting client */}
+                                        {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                          <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-destructive focus:text-destructive">
+                                            <XCircle className="w-4 h-4 mr-2" />
+                                            Client Reject
+                                          </DropdownMenuItem>
+                                        )}
 
-                                    {/* Full Reject - available for any non-completed, non-rejected status */}
-                                    {!submission.client_accepted && submission.status !== 'rejected' && (
-                                      <>
+                                        {/* Full Reject - always available for non-completed, non-rejected */}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-destructive focus:text-destructive">
                                           <Trash2 className="w-4 h-4 mr-2" />
                                           Reject Completely
                                         </DropdownMenuItem>
-                                      </>
-                                    )}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {/* Pagination */}
+                    {filteredSubmissions.length > ITEMS_PER_PAGE && (
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          Showing {(submissionsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(submissionsPage * ITEMS_PER_PAGE, filteredSubmissions.length)} of {filteredSubmissions.length}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setSubmissionsPage(p => Math.max(1, p - 1))} disabled={submissionsPage === 1}>
+                            Previous
+                          </Button>
+                          {Array.from({ length: Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
+                            .filter(p => p === 1 || p === Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE) || Math.abs(p - submissionsPage) <= 1)
+                            .map((page, idx, arr) => (
+                              <span key={page} className="flex items-center">
+                                {idx > 0 && arr[idx - 1] !== page - 1 && <span className="px-1 text-muted-foreground">…</span>}
+                                <Button
+                                  variant={submissionsPage === page ? 'default' : 'outline'}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => setSubmissionsPage(page)}
+                                >
+                                  {page}
+                                </Button>
+                              </span>
+                            ))}
+                          <Button variant="outline" size="sm" onClick={() => setSubmissionsPage(p => Math.min(Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE), p + 1))} disabled={submissionsPage >= Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE)}>
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileCheck className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -2243,27 +2285,79 @@ const SuperAdminDashboard = () => {
           <TabsContent value="logs" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="font-bold">System Logs</CardTitle>
-                <CardDescription className="font-medium">Recent system activity</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="font-bold">System Logs ({systemLogs.length})</CardTitle>
+                    <CardDescription className="font-medium">All actions taken by admins, users, and the system</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {systemLogs.length > 0 ? (
-                  <div className="space-y-4">
-                    {systemLogs.map((log) => (
-                      <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Activity className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">{log.action_type}</p>
-                          <p className="text-sm text-muted-foreground font-medium">{log.description}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm')}
-                          </p>
+                  <>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold">Action</TableHead>
+                            <TableHead className="font-semibold">Actor</TableHead>
+                            <TableHead className="font-semibold">Description</TableHead>
+                            <TableHead className="font-semibold">Date & Time</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {systemLogs.slice((logsPage - 1) * ITEMS_PER_PAGE, logsPage * ITEMS_PER_PAGE).map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell>
+                                <Badge variant="outline" className="font-medium text-xs">
+                                  {log.action_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {log.profiles?.full_name || 'System'}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground font-medium max-w-[400px] truncate">
+                                {log.description}
+                              </TableCell>
+                              <TableCell className="font-medium text-sm">
+                                {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm')}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {systemLogs.length > ITEMS_PER_PAGE && (
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          Showing {(logsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(logsPage * ITEMS_PER_PAGE, systemLogs.length)} of {systemLogs.length}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setLogsPage(p => Math.max(1, p - 1))} disabled={logsPage === 1}>
+                            Previous
+                          </Button>
+                          {Array.from({ length: Math.ceil(systemLogs.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
+                            .filter(p => p === 1 || p === Math.ceil(systemLogs.length / ITEMS_PER_PAGE) || Math.abs(p - logsPage) <= 1)
+                            .map((page, idx, arr) => (
+                              <span key={page} className="flex items-center">
+                                {idx > 0 && arr[idx - 1] !== page - 1 && <span className="px-1 text-muted-foreground">…</span>}
+                                <Button
+                                  variant={logsPage === page ? 'default' : 'outline'}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => setLogsPage(page)}
+                                >
+                                  {page}
+                                </Button>
+                              </span>
+                            ))}
+                          <Button variant="outline" size="sm" onClick={() => setLogsPage(p => Math.min(Math.ceil(systemLogs.length / ITEMS_PER_PAGE), p + 1))} disabled={logsPage >= Math.ceil(systemLogs.length / ITEMS_PER_PAGE)}>
+                            Next
+                          </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
