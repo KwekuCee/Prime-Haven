@@ -1445,7 +1445,6 @@ const SuperAdminDashboard = () => {
 
   // Reset pagination when filters change
   useEffect(() => { setSubmissionsPage(1); }, [selectedStatus, searchQuery]);
-  }, [submissions, selectedStatus, searchQuery]);
 
   const filteredUsers = useMemo(() => {
     let filtered = users;
