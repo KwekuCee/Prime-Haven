@@ -1820,101 +1820,8 @@ const SuperAdminDashboard = () => {
                               {format(new Date(submission.created_at), 'MMM d, yyyy')}
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                {/* View Files Button - always visible if there are files */}
-                                {submission.files_urls && submission.files_urls.length > 0 && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setViewFilesSubmission(submission)}
-                                        >
-                                          <ImageIcon className="w-3 h-3 mr-1" />
-                                          View ({submission.files_urls.length})
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>View uploaded files</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                                {!submission.ph_approved && submission.status !== 'rejected' && (
-                                  <>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-                                            onClick={() => handlePHApproval(submission.id)}
-                                          >
-                                            <CheckCircle className="w-3 h-3 mr-1" />
-                                            PH Approve
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Approve for Prime Haven (+{systemSettings.ph_approval_points?.value || 15} pts)</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                            onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}
-                                          >
-                                            <XCircle className="w-3 h-3" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent><p>Reject submission</p></TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </>
-                                )}
-                                {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                  <>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            size="sm"
-                                            className="bg-primary hover:bg-primary/90"
-                                            onClick={() => handleClientAcceptance(submission.id)}
-                                          >
-                                            <ThumbsUp className="w-3 h-3 mr-1" />
-                                            Client Accept
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Mark as client accepted (+{({logo:45,branding:50,uiux:65,web:65,print:20,flyer:30} as Record<string,number>)[submission.service_type] || 40} pts)</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                            onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }}
-                                          >
-                                            <XCircle className="w-3 h-3 mr-1" />
-                                            Client Reject
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent><p>Client rejected (PH points kept)</p></TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </>
-                                )}
+                              <div className="flex justify-end items-center gap-2">
+                                {/* Status badge for completed/special states */}
                                 {submission.client_accepted && (
                                   <Badge className="bg-green-500 text-white font-semibold">
                                     <Award className="w-3 h-3 mr-1" />
@@ -1922,25 +1829,75 @@ const SuperAdminDashboard = () => {
                                   </Badge>
                                 )}
                                 {submission.status === 'client_rejected' && (
-                                  <div className="flex gap-1">
-                                    <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
-                                    <Button size="sm" variant="outline" className="border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white" onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }}>
-                                      <Edit className="w-3 h-3 mr-1" />Correction
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}>
-                                      <XCircle className="w-3 h-3" />
-                                    </Button>
-                                  </div>
+                                  <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
                                 )}
                                 {submission.status === 'correction_requested' && (
-                                  <div className="flex gap-1">
-                                    <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
-                                    <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }}>
-                                      <XCircle className="w-3 h-3 mr-1" />
-                                      Reject
-                                    </Button>
-                                  </div>
+                                  <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
                                 )}
+
+                                {/* Actions Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <Settings className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-52">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+
+                                    {/* View Files */}
+                                    {submission.files_urls && submission.files_urls.length > 0 && (
+                                      <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)}>
+                                        <ImageIcon className="w-4 h-4 mr-2" />
+                                        View Files ({submission.files_urls.length})
+                                      </DropdownMenuItem>
+                                    )}
+
+                                    {/* PH Approve - pending submissions */}
+                                    {!submission.ph_approved && submission.status !== 'rejected' && (
+                                      <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-green-500 focus:text-green-500">
+                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                        PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
+                                      </DropdownMenuItem>
+                                    )}
+
+                                    {/* Client Accept - ph_approved, not yet client accepted */}
+                                    {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                      <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-primary focus:text-primary">
+                                        <ThumbsUp className="w-4 h-4 mr-2" />
+                                        Client Accept (+{({logo:45,branding:50,uiux:65,web:65,print:20,flyer:30} as Record<string,number>)[submission.service_type] || 40} pts)
+                                      </DropdownMenuItem>
+                                    )}
+
+                                    {/* Request Correction - available for client_rejected, ph_approved awaiting client, or correction_requested */}
+                                    {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected') || submission.status === 'correction_requested') && (
+                                      <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-amber-500 focus:text-amber-500">
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Request Correction
+                                      </DropdownMenuItem>
+                                    )}
+
+                                    {/* Client Reject - ph_approved, awaiting client */}
+                                    {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                      <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-destructive focus:text-destructive">
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                        Client Reject
+                                      </DropdownMenuItem>
+                                    )}
+
+                                    {/* Full Reject - available for any non-completed, non-rejected status */}
+                                    {!submission.client_accepted && submission.status !== 'rejected' && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-destructive focus:text-destructive">
+                                          <Trash2 className="w-4 h-4 mr-2" />
+                                          Reject Completely
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
                             </TableCell>
                           </TableRow>

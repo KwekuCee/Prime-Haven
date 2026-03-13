@@ -34,6 +34,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const TrackProject = lazy(() => import("./pages/TrackProject"));
 const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
+const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ const App = () => {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/track/:token" element={<TrackProject />} />
               <Route path="/superadmin/projects" element={<ManageClientProjects />} />
+              <Route path="/review" element={<SubmitReview />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

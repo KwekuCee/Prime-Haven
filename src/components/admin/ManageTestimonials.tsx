@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Star, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Star, Plus, Pencil, Trash2, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
 
 interface Testimonial {
   id: string;
@@ -127,16 +127,31 @@ const ManageTestimonials = () => {
     else { toast({ title: 'Deleted', description: 'Testimonial removed.' }); fetchTestimonials(); }
   };
 
+  const reviewLink = `${window.location.origin}/review`;
+
+  const copyReviewLink = () => {
+    navigator.clipboard.writeText(reviewLink);
+    toast({ title: 'Link Copied!', description: 'Share this link with clients to collect reviews.' });
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Client Testimonials</h2>
           <p className="text-muted-foreground text-sm mt-1">Manage reviews displayed on the homepage.</p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
-          <Plus className="w-4 h-4" /> Add Review
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={copyReviewLink} className="gap-2">
+            <Copy className="w-4 h-4" /> Copy Review Link
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => window.open(reviewLink, '_blank')}>
+            <ExternalLink className="w-4 h-4" />
+          </Button>
+          <Button onClick={openAdd} className="gap-2">
+            <Plus className="w-4 h-4" /> Add Review
+          </Button>
+        </div>
       </div>
 
       {loading ? (
