@@ -1415,7 +1415,7 @@ const SuperAdminDashboard = () => {
     navigate('/login');
   };
 
-  // Filtered data
+  // Filtered data — reset page on filter change
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
     
@@ -1441,6 +1441,10 @@ const SuperAdminDashboard = () => {
     }
     
     return filtered;
+  }, [submissions, selectedStatus, searchQuery]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setSubmissionsPage(1); }, [selectedStatus, searchQuery]);
   }, [submissions, selectedStatus, searchQuery]);
 
   const filteredUsers = useMemo(() => {
