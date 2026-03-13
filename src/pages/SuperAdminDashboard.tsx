@@ -214,6 +214,9 @@ const SuperAdminDashboard = () => {
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
+  const [submissionsPage, setSubmissionsPage] = useState(1);
+  const [logsPage, setLogsPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Recalculate salaries standalone (without re-saving revenue)
   const handleRecalculateSalaries = async () => {
