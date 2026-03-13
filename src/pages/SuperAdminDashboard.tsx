@@ -2282,27 +2282,79 @@ const SuperAdminDashboard = () => {
           <TabsContent value="logs" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="font-bold">System Logs</CardTitle>
-                <CardDescription className="font-medium">Recent system activity</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="font-bold">System Logs ({systemLogs.length})</CardTitle>
+                    <CardDescription className="font-medium">All actions taken by admins, users, and the system</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {systemLogs.length > 0 ? (
-                  <div className="space-y-4">
-                    {systemLogs.map((log) => (
-                      <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Activity className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">{log.action_type}</p>
-                          <p className="text-sm text-muted-foreground font-medium">{log.description}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm')}
-                          </p>
+                  <>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold">Action</TableHead>
+                            <TableHead className="font-semibold">Actor</TableHead>
+                            <TableHead className="font-semibold">Description</TableHead>
+                            <TableHead className="font-semibold">Date & Time</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {systemLogs.slice((logsPage - 1) * ITEMS_PER_PAGE, logsPage * ITEMS_PER_PAGE).map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell>
+                                <Badge variant="outline" className="font-medium text-xs">
+                                  {log.action_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {log.profiles?.full_name || 'System'}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground font-medium max-w-[400px] truncate">
+                                {log.description}
+                              </TableCell>
+                              <TableCell className="font-medium text-sm">
+                                {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm')}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {systemLogs.length > ITEMS_PER_PAGE && (
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          Showing {(logsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(logsPage * ITEMS_PER_PAGE, systemLogs.length)} of {systemLogs.length}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setLogsPage(p => Math.max(1, p - 1))} disabled={logsPage === 1}>
+                            Previous
+                          </Button>
+                          {Array.from({ length: Math.ceil(systemLogs.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
+                            .filter(p => p === 1 || p === Math.ceil(systemLogs.length / ITEMS_PER_PAGE) || Math.abs(p - logsPage) <= 1)
+                            .map((page, idx, arr) => (
+                              <span key={page} className="flex items-center">
+                                {idx > 0 && arr[idx - 1] !== page - 1 && <span className="px-1 text-muted-foreground">…</span>}
+                                <Button
+                                  variant={logsPage === page ? 'default' : 'outline'}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => setLogsPage(page)}
+                                >
+                                  {page}
+                                </Button>
+                              </span>
+                            ))}
+                          <Button variant="outline" size="sm" onClick={() => setLogsPage(p => Math.min(Math.ceil(systemLogs.length / ITEMS_PER_PAGE), p + 1))} disabled={logsPage >= Math.ceil(systemLogs.length / ITEMS_PER_PAGE)}>
+                            Next
+                          </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
