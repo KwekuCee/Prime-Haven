@@ -1837,7 +1837,7 @@ const SuperAdminDashboard = () => {
                                   {submission.status === 'rejected' && (
                                     <Badge variant="destructive" className="font-medium">Rejected</Badge>
                                   )}
-                                  {submission.status === 'client_rejected' && !submission.client_accepted && submission.status !== 'rejected' && (
+                                  {submission.status === 'client_rejected' && !submission.client_accepted && (
                                     <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
                                   )}
                                   {submission.status === 'correction_requested' && (
