@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { MessageCircle, Mail, Instagram, Linkedin, Rocket, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import StartProjectDialog from '@/components/StartProjectDialog';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 // Discord icon component since lucide doesn't have it
