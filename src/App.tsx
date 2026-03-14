@@ -35,6 +35,8 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const TrackProject = lazy(() => import("./pages/TrackProject"));
 const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
+const StartProject = lazy(() => import("./pages/StartProject"));
+const ManagePricing = lazy(() => import("./pages/ManagePricing"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
 
 const queryClient = new QueryClient();
@@ -86,6 +88,8 @@ const App = () => {
               <Route path="/track/:token" element={<TrackProject />} />
               <Route path="/superadmin/projects" element={<ManageClientProjects />} />
               <Route path="/review" element={<SubmitReview />} />
+              <Route path="/start-project" element={<StartProject />} />
+              <Route path="/superadmin/pricing" element={<ManagePricing />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { MessageCircle, Mail, Instagram, Linkedin, Rocket, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import StartProjectDialog from '@/components/StartProjectDialog';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 // Discord icon component since lucide doesn't have it
@@ -48,12 +48,12 @@ const ContactSection = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 mb-16"
         >
-          <StartProjectDialog trigger={
+          <Link to="/start-project">
             <Button variant="primary" size="lg" className="w-full sm:w-auto group glow-primary">
               <Rocket className="mr-2 w-5 h-5" />
               {t('contact.startProject')}
             </Button>
-          } />
+          </Link>
           <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20book%20a%20free%20consultation%20call" target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <Calendar className="mr-2 w-5 h-5" />
