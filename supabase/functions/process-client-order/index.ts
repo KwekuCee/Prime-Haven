@@ -1,0 +1,210 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
+const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const DISCORD_CHANNELS: Record<string, string> = {
+  "graphic-design": "1470244531680186478",
+  "app-design": "1470244675951529984",
+  "web-dev": "1470244738073497704",
+};
+
+function encodeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function postToDiscord(channelId: string, embed: any): Promise<string | null> {
+  try {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+    if (!res.ok) {
+      console.error("Discord API error:", res.status, await res.text());
+      return null;
+    }
+    const data = await res.json();
+    return data.id || null;
+  } catch (e) {
+    console.error("Discord post error:", e);
+    return null;
+  }
+}
+
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const body = await req.json();
+    const {
+      clientName, clientEmail, clientWhatsapp,
+      serviceType, serviceLabel, tier, price,
+      description, discordCategory, paymentReference
+    } = body;
+
+    if (!clientName || !clientEmail || !serviceType || !tier || !price || !paymentReference) {
+      return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Verify payment with Paystack
+    const paystackResponse = await fetch(
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
+      { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
+    );
+    const paystackData = await paystackResponse.json();
+
+    if (!paystackData.status || paystackData.data.status !== "success") {
+      return new Response(JSON.stringify({ success: false, error: "Payment verification failed" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // 1. Create client order
+    const { data: order, error: orderError } = await supabase
+      .from("client_orders")
+      .insert({
+        client_name: clientName,
+        client_email: clientEmail,
+        client_whatsapp: clientWhatsapp || null,
+        service_type: serviceType,
+        tier,
+        price,
+        description: description || null,
+        payment_status: "completed",
+        payment_reference: paymentReference,
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error("Failed to create order:", orderError);
+      throw new Error("Failed to create order");
+    }
+
+    // 2. Auto-create client project for tracking
+    const categoryMap: Record<string, string> = {
+      "graphic-design": "graphic-design",
+      "app-design": "ui-ux",
+      "web-dev": "web-development",
+    };
+
+    await supabase.from("client_projects").insert({
+      title: `${serviceLabel} (${tier.charAt(0).toUpperCase() + tier.slice(1)}) — ${clientName}`,
+      client_name: clientName,
+      client_email: clientEmail,
+      client_whatsapp: clientWhatsapp || null,
+      description,
+      category: categoryMap[discordCategory] || "web-development",
+      status: "pending",
+      budget: `GH₵${price}`,
+    });
+
+    // 3. Add revenue to the respective service category
+    const revenueCategoryKey = discordCategory === "graphic-design" ? "graphic"
+      : discordCategory === "app-design" ? "uiux"
+      : "web";
+
+    // Fetch current revenue settings
+    const { data: revenueSetting } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "monthly_revenue_by_category")
+      .single();
+
+    const currentRevenue = revenueSetting?.value as Record<string, number> || { graphic: 0, uiux: 0, web: 0 };
+    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + Number(price);
+
+    await supabase
+      .from("system_settings")
+      .upsert({
+        key: "monthly_revenue_by_category",
+        value: currentRevenue,
+        description: "Monthly revenue breakdown by service category",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+
+    // Also update the total monthly revenue
+    const { data: totalRevSetting } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "monthly_revenue")
+      .single();
+
+    const totalRev = totalRevSetting?.value as any || { amount: 0, currency: "GHS" };
+    totalRev.amount = (Number(totalRev.amount) || 0) + Number(price);
+
+    await supabase
+      .from("system_settings")
+      .upsert({
+        key: "monthly_revenue",
+        value: totalRev,
+        description: "Total monthly revenue",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+
+    // 4. Post to Discord
+    let discordMessageId: string | null = null;
+    const channelId = DISCORD_CHANNELS[discordCategory];
+
+    if (channelId && DISCORD_BOT_TOKEN) {
+      const embed = {
+        title: `🆕 New Client Order: ${encodeHtml(serviceLabel)}`,
+        description: description ? encodeHtml(description.slice(0, 2048)) : "No description provided",
+        color: 0x22c55e, // green for paid orders
+        fields: [
+          { name: "👤 Client", value: encodeHtml(clientName), inline: true },
+          { name: "📧 Email", value: encodeHtml(clientEmail), inline: true },
+          { name: "📦 Package", value: `${tier.charAt(0).toUpperCase() + tier.slice(1)}`, inline: true },
+          { name: "💰 Amount Paid", value: `GH₵${Number(price).toLocaleString()}`, inline: true },
+          ...(clientWhatsapp ? [{ name: "📱 WhatsApp", value: encodeHtml(clientWhatsapp), inline: true }] : []),
+        ],
+        footer: { text: "Prime Haven • Client Order (Paid)" },
+        timestamp: new Date().toISOString(),
+      };
+
+      discordMessageId = await postToDiscord(channelId, embed);
+
+      if (discordMessageId && order) {
+        await supabase
+          .from("client_orders")
+          .update({ discord_posted: true, discord_message_id: discordMessageId })
+          .eq("id", order.id);
+      }
+    }
+
+    // 5. Log the action
+    await supabase.from("system_logs").insert({
+      action_type: "client_order_created",
+      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${price}`,
+      new_value: { order_id: order?.id, service_type: serviceType, tier, price, payment_reference: paymentReference },
+    });
+
+    return new Response(JSON.stringify({ success: true, orderId: order?.id }), {
+      status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error: unknown) {
+    console.error("Error in process-client-order:", error);
+    return new Response(JSON.stringify({ success: false, error: "server_error" }), {
+      status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+});
