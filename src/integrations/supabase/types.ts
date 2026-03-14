@@ -59,6 +59,57 @@ export type Database = {
         }
         Relationships: []
       }
+      client_orders: {
+        Row: {
+          client_email: string
+          client_name: string
+          client_whatsapp: string | null
+          created_at: string
+          description: string | null
+          discord_message_id: string | null
+          discord_posted: boolean | null
+          id: string
+          payment_reference: string | null
+          payment_status: string
+          price: number
+          service_type: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          client_email: string
+          client_name: string
+          client_whatsapp?: string | null
+          created_at?: string
+          description?: string | null
+          discord_message_id?: string | null
+          discord_posted?: boolean | null
+          id?: string
+          payment_reference?: string | null
+          payment_status?: string
+          price: number
+          service_type: string
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          client_email?: string
+          client_name?: string
+          client_whatsapp?: string | null
+          created_at?: string
+          description?: string | null
+          discord_message_id?: string | null
+          discord_posted?: boolean | null
+          id?: string
+          payment_reference?: string | null
+          payment_status?: string
+          price?: number
+          service_type?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_projects: {
         Row: {
           budget: string | null
@@ -574,6 +625,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_pricing: {
+        Row: {
+          created_at: string
+          description: string | null
+          discord_category: string | null
+          features: string[] | null
+          id: string
+          is_active: boolean
+          price: number
+          service_label: string
+          service_type: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discord_category?: string | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          price?: number
+          service_label: string
+          service_type: string
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discord_category?: string | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          price?: number
+          service_label?: string
+          service_type?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       submissions: {
         Row: {
