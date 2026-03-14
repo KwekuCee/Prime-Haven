@@ -88,6 +88,8 @@ const App = () => {
               <Route path="/track/:token" element={<TrackProject />} />
               <Route path="/superadmin/projects" element={<ManageClientProjects />} />
               <Route path="/review" element={<SubmitReview />} />
+              <Route path="/start-project" element={<StartProject />} />
+              <Route path="/superadmin/pricing" element={<ManagePricing />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

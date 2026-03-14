@@ -13,6 +13,7 @@ export const AdminNavigation = () => {
     { path: '/superadmin/portfolio', label: 'Portfolio', icon: Image },
     { path: '/superadmin/contracts', label: 'Contracts', icon: Briefcase },
     { path: '/superadmin/projects', label: 'Projects', icon: FolderKanban },
+    { path: '/superadmin/pricing', label: 'Pricing', icon: DollarSign },
   ];
 
   return (
