@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Palette, Layout, Globe, Image, Briefcase, FolderKanban } from 'lucide-react';
+import { Palette, Layout, Globe, Image, Briefcase, FolderKanban, DollarSign } from 'lucide-react';
 
 export const AdminNavigation = () => {
   const navigate = useNavigate();
