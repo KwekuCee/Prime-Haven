@@ -244,10 +244,14 @@ const SuperAdminDashboard = () => {
         .from('designer_details')
         .select('user_id, monthly_points');
 
+      // Only fetch current month's approved submissions for salary calculation
+      const now = new Date();
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const { data: allSubmissions } = await supabase
         .from('submissions')
         .select('designer_id, service_type, points_awarded')
-        .in('status', ['ph_approved', 'approved']);
+        .in('status', ['ph_approved', 'approved'])
+        .gte('created_at', firstOfMonth);
 
       if (allDesigners && allSubmissions) {
         const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
