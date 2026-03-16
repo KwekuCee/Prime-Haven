@@ -571,15 +571,19 @@ const SubmitWork = () => {
                 </CardContent>
               </Card>
 
-              {/* Design Link (App Design only) */}
-              {formData.serviceType === 'uiux' && (
+              {/* Design Link (UI/UX Design and Web Development) */}
+              {(formData.serviceType === 'uiux' || formData.serviceType === 'web') && (
                 <Card className="glass">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <ImageIcon className="w-5 h-5 text-primary" />
                       <div>
-                        <CardTitle>Design Tool Link</CardTitle>
-                        <CardDescription>Provide a link to your Figma, Framer, or Adobe XD project</CardDescription>
+                        <CardTitle>{formData.serviceType === 'uiux' ? 'Design Tool Link' : 'Website / Project Link'}</CardTitle>
+                        <CardDescription>
+                          {formData.serviceType === 'uiux' 
+                            ? 'Provide a link to your Figma, Framer, or Adobe XD project'
+                            : 'Provide a link to the developed website or project'}
+                        </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -588,11 +592,13 @@ const SubmitWork = () => {
                       name="designLink"
                       value={formData.designLink}
                       onChange={handleInputChange}
-                      placeholder="https://www.figma.com/file/..."
+                      placeholder={formData.serviceType === 'uiux' ? 'https://www.figma.com/file/...' : 'https://example.com'}
                       className="bg-card border-border"
                     />
                     <p className="text-xs text-muted-foreground mt-2">
-                      Upload screenshots above for initial approval, then include the full design link here.
+                      {formData.serviceType === 'uiux'
+                        ? 'Upload screenshots above for initial approval, then include the full design link here.'
+                        : 'Upload screenshots above and include the live site or repository link here.'}
                     </p>
                   </CardContent>
                 </Card>
