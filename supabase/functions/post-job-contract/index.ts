@@ -26,7 +26,7 @@ const DISCORD_CHANNELS: Record<string, string> = {
 // Map service types to categories for email lookup
 const CATEGORY_SKILLS: Record<string, string[]> = {
   "graphic-design": ["logo", "branding", "print", "flyer", "Logo Design", "Brand Identity", "Print Design", "Flyer Design", "Graphic Design"],
-  "app-design": ["uiux", "App Design", "UI/UX", "UI/UX Design", "Mobile Design"],
+  "app-design": ["uiux", "UI/UX Design", "UI/UX", "App Design", "Mobile Design"],
   "web-dev": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
 };
 

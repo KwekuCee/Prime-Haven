@@ -617,7 +617,7 @@ const Dashboard = () => {
                     );
                   })}
                 </TabsList>
-                {['Graphic Designer', 'App Designer', 'Web Developer'].map((category) => {
+                {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((category) => {
                   const filtered = leaderboard
                     .filter(e => normalizeCategory(e.professional_title) === category)
                     .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
