@@ -271,6 +271,7 @@ const SubmitWork = () => {
             designerId: user.id,
             projectName: formData.projectName.trim(),
             notificationType: 'new_submission',
+            serviceType: formData.serviceType,
           },
         });
       } catch (emailErr) {
