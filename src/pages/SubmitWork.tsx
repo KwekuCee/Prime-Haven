@@ -237,7 +237,7 @@ const SubmitWork = () => {
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
-        ...(formData.serviceType === 'uiux' && formData.designLink.trim() ? { design_link: formData.designLink.trim() } : {}),
+        ...((formData.serviceType === 'uiux' || formData.serviceType === 'web') && formData.designLink.trim() ? { design_link: formData.designLink.trim() } : {}),
       };
 
       if (correctionId) {
