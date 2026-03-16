@@ -221,6 +221,53 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
 
+  // Handle revoke submission — revoke all points and mark as rejected
+  const handleRevokeSubmission = async (submissionId: string) => {
+    try {
+      const submission = submissions.find((s: any) => s.id === submissionId);
+      if (!submission) throw new Error('Submission not found');
+
+      const pointsToRevoke = submission.points_awarded || 0;
+
+      await supabase.from('submissions').update({
+        status: 'rejected',
+        points_awarded: 0,
+        rejection_reason: 'Submission revoked by admin',
+        updated_at: new Date().toISOString()
+      } as any).eq('id', submissionId);
+
+      if (pointsToRevoke > 0) {
+        const { data: designerData } = await supabase
+          .from('designer_details')
+          .select('total_points, monthly_points')
+          .eq('user_id', submission.designer_id)
+          .maybeSingle();
+
+        if (designerData) {
+          await supabase.from('designer_details').update({
+            total_points: Math.max(0, (designerData.total_points || 0) - pointsToRevoke),
+            monthly_points: Math.max(0, (designerData.monthly_points || 0) - pointsToRevoke),
+            updated_at: new Date().toISOString()
+          }).eq('user_id', submission.designer_id);
+        }
+      }
+
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'submission_revoked',
+          admin_id: user.id,
+          description: `[${categoryLabel}] Revoked submission: ${submission.project_name} (−${pointsToRevoke} pts from ${submission.designer_name})`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      toast({ title: 'Submission Revoked', description: `${pointsToRevoke} points deducted. Submission marked as rejected.` });
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Revoke Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
     if (selectedStatus !== 'all') {
