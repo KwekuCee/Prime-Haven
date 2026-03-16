@@ -448,7 +448,8 @@ const SuperAdminDashboard = () => {
           ph_approved_at: s.ph_approved_at,
           client_accepted_at: s.client_accepted_at,
           parent_submission_id: s.parent_submission_id || null,
-          rejection_reason: s.rejection_reason || null
+          rejection_reason: s.rejection_reason || null,
+          design_link: s.design_link || null
         };
       });
 
