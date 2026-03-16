@@ -80,7 +80,7 @@ interface SystemSettings {
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
-  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'App Designer';
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
   if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
   return 'Graphic Designer';
 };
