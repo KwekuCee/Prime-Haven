@@ -440,7 +440,12 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                         <TableCell><span className="font-bold text-primary">{s.points_awarded || 0}</span></TableCell>
                         <TableCell className="font-medium">{format(new Date(s.created_at), 'MMM d, yyyy')}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2 flex-wrap">
+                            {s.design_link && (
+                              <Button size="sm" variant="outline" onClick={() => window.open(s.design_link, '_blank')}>
+                                <ExternalLink className="w-3 h-3 mr-1" />Link
+                              </Button>
+                            )}
                             {s.files_urls?.length > 0 && (
                               <Button size="sm" variant="outline" onClick={() => setViewFilesSubmission(s)}>
                                 <ImageIcon className="w-3 h-3 mr-1" />View
@@ -483,6 +488,12 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                                   <XCircle className="w-3 h-3 mr-1" />Reject
                                 </Button>
                               </div>
+                            )}
+                            {/* Revoke Submission */}
+                            {s.status !== 'rejected' && (s.points_awarded || 0) > 0 && (
+                              <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => handleRevokeSubmission(s.id)}>
+                                <AlertTriangle className="w-3 h-3 mr-1" />Revoke (−{s.points_awarded})
+                              </Button>
                             )}
                           </div>
                         </TableCell>
