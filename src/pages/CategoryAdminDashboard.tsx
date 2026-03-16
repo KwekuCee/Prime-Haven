@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Users, FileCheck, DollarSign, Shield, Settings, LogOut, Search,
   CheckCircle, XCircle, Download, UserCheck, Clock, Award, ChevronRight,
-  RefreshCw, Activity, Crown, Star, ThumbsUp, ImageIcon, Edit
+  RefreshCw, Activity, Crown, Star, ThumbsUp, ImageIcon, Edit, AlertTriangle, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
