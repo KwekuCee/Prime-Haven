@@ -458,8 +458,9 @@ const SubmitWork = () => {
                         {formData.serviceType === 'logo' && 'Upload pictures of the logo design'}
                         {formData.serviceType === 'branding' && 'Upload pictures of the brand identity'}
                         {formData.serviceType === 'uiux' && 'Upload the homepage/first screen design for approval'}
-                        {formData.serviceType === 'web' && 'Upload your web design files'}
+                        {formData.serviceType === 'web' && 'Upload screenshots of the developed site'}
                         {formData.serviceType === 'print' && 'Upload pictures of the print design'}
+                        {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
                         {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
                         {' '}(JPG, PNG, GIF, SVG, PDF - Max 50MB)
                       </CardDescription>
