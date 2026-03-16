@@ -24,7 +24,7 @@ import { format } from 'date-fns';
 
 const JOB_CATEGORIES = [
   { id: 'graphic-design', label: 'Graphic Design' },
-  { id: 'app-design', label: 'App Design' },
+  { id: 'app-design', label: 'UI/UX Design' },
   { id: 'web-dev', label: 'Web Development' },
 ];
 

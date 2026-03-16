@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Users, FileCheck, DollarSign, Shield, Settings, LogOut, Search,
   CheckCircle, XCircle, Download, UserCheck, Clock, Award, ChevronRight,
-  RefreshCw, Activity, Crown, Star, ThumbsUp, ImageIcon, Edit
+  RefreshCw, Activity, Crown, Star, ThumbsUp, ImageIcon, Edit, AlertTriangle, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -221,6 +221,53 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
 
+  // Handle revoke submission — revoke all points and mark as rejected
+  const handleRevokeSubmission = async (submissionId: string) => {
+    try {
+      const submission = submissions.find((s: any) => s.id === submissionId);
+      if (!submission) throw new Error('Submission not found');
+
+      const pointsToRevoke = submission.points_awarded || 0;
+
+      await supabase.from('submissions').update({
+        status: 'rejected',
+        points_awarded: 0,
+        rejection_reason: 'Submission revoked by admin',
+        updated_at: new Date().toISOString()
+      } as any).eq('id', submissionId);
+
+      if (pointsToRevoke > 0) {
+        const { data: designerData } = await supabase
+          .from('designer_details')
+          .select('total_points, monthly_points')
+          .eq('user_id', submission.designer_id)
+          .maybeSingle();
+
+        if (designerData) {
+          await supabase.from('designer_details').update({
+            total_points: Math.max(0, (designerData.total_points || 0) - pointsToRevoke),
+            monthly_points: Math.max(0, (designerData.monthly_points || 0) - pointsToRevoke),
+            updated_at: new Date().toISOString()
+          }).eq('user_id', submission.designer_id);
+        }
+      }
+
+      if (user) {
+        await supabase.from('system_logs').insert({
+          action_type: 'submission_revoked',
+          admin_id: user.id,
+          description: `[${categoryLabel}] Revoked submission: ${submission.project_name} (−${pointsToRevoke} pts from ${submission.designer_name})`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      toast({ title: 'Submission Revoked', description: `${pointsToRevoke} points deducted. Submission marked as rejected.` });
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Revoke Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
     if (selectedStatus !== 'all') {
@@ -393,7 +440,12 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                         <TableCell><span className="font-bold text-primary">{s.points_awarded || 0}</span></TableCell>
                         <TableCell className="font-medium">{format(new Date(s.created_at), 'MMM d, yyyy')}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2 flex-wrap">
+                            {s.design_link && (
+                              <Button size="sm" variant="outline" onClick={() => window.open(s.design_link, '_blank')}>
+                                <ExternalLink className="w-3 h-3 mr-1" />Link
+                              </Button>
+                            )}
                             {s.files_urls?.length > 0 && (
                               <Button size="sm" variant="outline" onClick={() => setViewFilesSubmission(s)}>
                                 <ImageIcon className="w-3 h-3 mr-1" />View
@@ -436,6 +488,12 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                                   <XCircle className="w-3 h-3 mr-1" />Reject
                                 </Button>
                               </div>
+                            )}
+                            {/* Revoke Submission */}
+                            {s.status !== 'rejected' && (s.points_awarded || 0) > 0 && (
+                              <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => handleRevokeSubmission(s.id)}>
+                                <AlertTriangle className="w-3 h-3 mr-1" />Revoke (−{s.points_awarded})
+                              </Button>
                             )}
                           </div>
                         </TableCell>

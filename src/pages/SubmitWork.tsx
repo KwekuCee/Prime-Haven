@@ -237,7 +237,7 @@ const SubmitWork = () => {
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
-        ...(formData.serviceType === 'uiux' && formData.designLink.trim() ? { design_link: formData.designLink.trim() } : {}),
+        ...((formData.serviceType === 'uiux' || formData.serviceType === 'web') && formData.designLink.trim() ? { design_link: formData.designLink.trim() } : {}),
       };
 
       if (correctionId) {
@@ -271,6 +271,7 @@ const SubmitWork = () => {
             designerId: user.id,
             projectName: formData.projectName.trim(),
             notificationType: 'new_submission',
+            serviceType: formData.serviceType,
           },
         });
       } catch (emailErr) {
@@ -458,8 +459,9 @@ const SubmitWork = () => {
                         {formData.serviceType === 'logo' && 'Upload pictures of the logo design'}
                         {formData.serviceType === 'branding' && 'Upload pictures of the brand identity'}
                         {formData.serviceType === 'uiux' && 'Upload the homepage/first screen design for approval'}
-                        {formData.serviceType === 'web' && 'Upload your web design files'}
+                        {formData.serviceType === 'web' && 'Upload screenshots of the developed site'}
                         {formData.serviceType === 'print' && 'Upload pictures of the print design'}
+                        {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
                         {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
                         {' '}(JPG, PNG, GIF, SVG, PDF - Max 50MB)
                       </CardDescription>
@@ -571,15 +573,19 @@ const SubmitWork = () => {
                 </CardContent>
               </Card>
 
-              {/* Design Link (App Design only) */}
-              {formData.serviceType === 'uiux' && (
+              {/* Design Link (UI/UX Design and Web Development) */}
+              {(formData.serviceType === 'uiux' || formData.serviceType === 'web') && (
                 <Card className="glass">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <ImageIcon className="w-5 h-5 text-primary" />
                       <div>
-                        <CardTitle>Design Tool Link</CardTitle>
-                        <CardDescription>Provide a link to your Figma, Framer, or Adobe XD project</CardDescription>
+                        <CardTitle>{formData.serviceType === 'uiux' ? 'Design Tool Link' : 'Website / Project Link'}</CardTitle>
+                        <CardDescription>
+                          {formData.serviceType === 'uiux' 
+                            ? 'Provide a link to your Figma, Framer, or Adobe XD project'
+                            : 'Provide a link to the developed website or project'}
+                        </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -588,11 +594,13 @@ const SubmitWork = () => {
                       name="designLink"
                       value={formData.designLink}
                       onChange={handleInputChange}
-                      placeholder="https://www.figma.com/file/..."
+                      placeholder={formData.serviceType === 'uiux' ? 'https://www.figma.com/file/...' : 'https://example.com'}
                       className="bg-card border-border"
                     />
                     <p className="text-xs text-muted-foreground mt-2">
-                      Upload screenshots above for initial approval, then include the full design link here.
+                      {formData.serviceType === 'uiux'
+                        ? 'Upload screenshots above for initial approval, then include the full design link here.'
+                        : 'Upload screenshots above and include the live site or repository link here.'}
                     </p>
                   </CardContent>
                 </Card>

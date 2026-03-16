@@ -3,7 +3,7 @@ import CategoryAdminDashboard from './CategoryAdminDashboard';
 const UIUXAdminDashboard = () => (
   <CategoryAdminDashboard
     category="uiux"
-    categoryLabel="App Design"
+    categoryLabel="UI/UX Design"
     serviceTypes={['uiux']}
   />
 );

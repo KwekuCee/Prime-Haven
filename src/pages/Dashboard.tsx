@@ -80,7 +80,7 @@ interface SystemSettings {
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
-  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'App Designer';
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
   if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
   return 'Graphic Designer';
 };
@@ -608,7 +608,7 @@ const Dashboard = () => {
             {leaderboard.length > 0 ? (
               <Tabs defaultValue={normalizeCategory(designer?.professional_title || null)} className="w-full">
                 <TabsList className="w-full mb-3 flex-wrap h-auto gap-1">
-                {['Graphic Designer', 'App Designer', 'Web Developer'].map((category) => {
+                {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((category) => {
                     const count = leaderboard.filter(e => normalizeCategory(e.professional_title) === category).length;
                     return (
                       <TabsTrigger key={category} value={category} className="text-xs flex-1 min-w-0">
@@ -617,7 +617,7 @@ const Dashboard = () => {
                     );
                   })}
                 </TabsList>
-                {['Graphic Designer', 'App Designer', 'Web Developer'].map((category) => {
+                {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((category) => {
                   const filtered = leaderboard
                     .filter(e => normalizeCategory(e.professional_title) === category)
                     .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))

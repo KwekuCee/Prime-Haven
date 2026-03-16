@@ -21,7 +21,7 @@ interface JobContract {
 
 const CATEGORY_LABELS: Record<string, string> = {
   'graphic-design': 'Graphic Design',
-  'app-design': 'App Design',
+  'app-design': 'UI/UX Design',
   'web-dev': 'Web Development',
 };
 

@@ -8,7 +8,7 @@ export const AdminNavigation = () => {
 
   const links = [
     { path: '/superadmin', label: 'Graphic Design', icon: Palette },
-    { path: '/superadmin/uiux', label: 'App Design', icon: Layout },
+    { path: '/superadmin/uiux', label: 'UI/UX Design', icon: Layout },
     { path: '/superadmin/web', label: 'Web Development', icon: Globe },
     { path: '/superadmin/portfolio', label: 'Portfolio', icon: Image },
     { path: '/superadmin/contracts', label: 'Contracts', icon: Briefcase },
