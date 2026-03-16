@@ -1885,7 +1885,7 @@ const SuperAdminDashboard = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end items-center gap-2">
-                                  {/* Status badge for completed/special states */}
+                                   {/* Status badge for completed/special states */}
                                   {submission.client_accepted && (
                                     <Badge className="bg-green-500 text-white font-semibold">
                                       <Award className="w-3 h-3 mr-1" />
@@ -1902,8 +1902,15 @@ const SuperAdminDashboard = () => {
                                     <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
                                   )}
 
-                                  {/* Actions Dropdown - hidden for completed and fully rejected */}
-                                  {!submission.client_accepted && submission.status !== 'rejected' && (
+                                  {/* Design Link */}
+                                  {submission.design_link && (
+                                    <Button size="sm" variant="outline" onClick={() => window.open(submission.design_link!, '_blank')}>
+                                      <Eye className="w-3 h-3 mr-1" />Link
+                                    </Button>
+                                  )}
+
+                                  {/* Actions Dropdown */}
+                                  {submission.status !== 'rejected' && (
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -1923,7 +1930,7 @@ const SuperAdminDashboard = () => {
                                         )}
 
                                         {/* PH Approve - pending submissions */}
-                                        {!submission.ph_approved && (
+                                        {!submission.ph_approved && !submission.client_accepted && (
                                           <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-green-500 focus:text-green-500">
                                             <CheckCircle className="w-4 h-4 mr-2" />
                                             PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
@@ -1938,7 +1945,7 @@ const SuperAdminDashboard = () => {
                                           </DropdownMenuItem>
                                         )}
 
-                                        {/* Request Correction - for client_rejected, ph_approved awaiting client, or correction_requested */}
+                                        {/* Request Correction */}
                                         {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted) || submission.status === 'correction_requested') && (
                                           <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-amber-500 focus:text-amber-500">
                                             <Edit className="w-4 h-4 mr-2" />
@@ -1946,7 +1953,7 @@ const SuperAdminDashboard = () => {
                                           </DropdownMenuItem>
                                         )}
 
-                                        {/* Client Reject - ph_approved, awaiting client */}
+                                        {/* Client Reject */}
                                         {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
                                           <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-destructive focus:text-destructive">
                                             <XCircle className="w-4 h-4 mr-2" />
@@ -1954,12 +1961,27 @@ const SuperAdminDashboard = () => {
                                           </DropdownMenuItem>
                                         )}
 
-                                        {/* Full Reject - always available for non-completed, non-rejected */}
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-destructive focus:text-destructive">
-                                          <Trash2 className="w-4 h-4 mr-2" />
-                                          Reject Completely
-                                        </DropdownMenuItem>
+                                        {/* Reject Completely - for non-completed */}
+                                        {!submission.client_accepted && (
+                                          <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-destructive focus:text-destructive">
+                                              <Trash2 className="w-4 h-4 mr-2" />
+                                              Reject Completely
+                                            </DropdownMenuItem>
+                                          </>
+                                        )}
+
+                                        {/* Revoke Submission - available for any non-rejected submission with points */}
+                                        {(submission.points_awarded || 0) > 0 && (
+                                          <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleRevokeSubmission(submission.id)} className="text-destructive focus:text-destructive font-semibold">
+                                              <AlertTriangle className="w-4 h-4 mr-2" />
+                                              Revoke Submission (−{submission.points_awarded} pts)
+                                            </DropdownMenuItem>
+                                          </>
+                                        )}
                                       </DropdownMenuContent>
                                     </DropdownMenu>
                                   )}
