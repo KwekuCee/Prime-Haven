@@ -124,6 +124,7 @@ interface Submission {
   client_accepted_at: string | null;
   parent_submission_id?: string | null;
   rejection_reason?: string | null;
+  design_link?: string | null;
   profiles?: {
     full_name: string;
     email: string;
