@@ -1903,12 +1903,17 @@ const SuperAdminDashboard = () => {
                                     <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
                                   )}
 
-                                  {/* Design Link */}
-                                  {submission.design_link && (
-                                    <Button size="sm" variant="outline" onClick={() => window.open(submission.design_link!, '_blank')}>
-                                      <Eye className="w-3 h-3 mr-1" />Link
-                                    </Button>
-                                  )}
+                                   {/* Design Link */}
+                                   {submission.design_link && (
+                                     <div className="flex gap-1">
+                                       <Button size="sm" variant="outline" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
+                                         <Eye className="w-3 h-3 mr-1" />Preview
+                                       </Button>
+                                       <Button size="sm" variant="ghost" onClick={() => window.open(submission.design_link!, '_blank')}>
+                                         <ChevronRight className="w-3 h-3" />
+                                       </Button>
+                                     </div>
+                                   )}
 
                                   {/* Actions Dropdown */}
                                   {submission.status !== 'rejected' && (
