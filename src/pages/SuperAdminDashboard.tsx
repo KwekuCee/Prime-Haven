@@ -217,6 +217,7 @@ const SuperAdminDashboard = () => {
   const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
   const [submissionsPage, setSubmissionsPage] = useState(1);
   const [logsPage, setLogsPage] = useState(1);
+  const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 10;
 
   // Recalculate salaries standalone (without re-saving revenue)
