@@ -47,6 +47,7 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<any>(null);
   const [correctionNote, setCorrectionNote] = useState('');
+  const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
   const [systemSettings, setSystemSettings] = useState<any>({
     ph_approval_points: { value: 15 },
     client_acceptance_points: { value: 40 },
