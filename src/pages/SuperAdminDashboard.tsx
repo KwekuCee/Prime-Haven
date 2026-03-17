@@ -217,6 +217,7 @@ const SuperAdminDashboard = () => {
   const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
   const [submissionsPage, setSubmissionsPage] = useState(1);
   const [logsPage, setLogsPage] = useState(1);
+  const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 10;
 
   // Recalculate salaries standalone (without re-saving revenue)
@@ -1902,12 +1903,17 @@ const SuperAdminDashboard = () => {
                                     <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
                                   )}
 
-                                  {/* Design Link */}
-                                  {submission.design_link && (
-                                    <Button size="sm" variant="outline" onClick={() => window.open(submission.design_link!, '_blank')}>
-                                      <Eye className="w-3 h-3 mr-1" />Link
-                                    </Button>
-                                  )}
+                                   {/* Design Link */}
+                                   {submission.design_link && (
+                                     <div className="flex gap-1">
+                                       <Button size="sm" variant="outline" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
+                                         <Eye className="w-3 h-3 mr-1" />Preview
+                                       </Button>
+                                       <Button size="sm" variant="ghost" onClick={() => window.open(submission.design_link!, '_blank')}>
+                                         <ChevronRight className="w-3 h-3" />
+                                       </Button>
+                                     </div>
+                                   )}
 
                                   {/* Actions Dropdown */}
                                   {submission.status !== 'rejected' && (
@@ -2682,6 +2688,28 @@ const SuperAdminDashboard = () => {
         currentAdminId={user?.id}
         onSaved={() => loadDashboardDataSafe()}
       />
+
+      {/* Link Preview Dialog */}
+      <Dialog open={!!previewLinkUrl} onOpenChange={(open) => !open && setPreviewLinkUrl(null)}>
+        <DialogContent className="max-w-5xl h-[80vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-sm font-medium truncate max-w-md">{previewLinkUrl}</DialogTitle>
+              <Button size="sm" variant="outline" onClick={() => window.open(previewLinkUrl!, '_blank')} className="ml-4 shrink-0">
+                Open in New Tab
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 px-6 pb-6">
+            <iframe
+              src={previewLinkUrl || ''}
+              className="w-full h-full rounded-lg border border-border"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+              title="Link Preview"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

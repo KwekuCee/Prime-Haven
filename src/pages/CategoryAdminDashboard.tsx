@@ -47,6 +47,7 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<any>(null);
   const [correctionNote, setCorrectionNote] = useState('');
+  const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
   const [systemSettings, setSystemSettings] = useState<any>({
     ph_approval_points: { value: 15 },
     client_acceptance_points: { value: 40 },
@@ -442,9 +443,14 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2 flex-wrap">
                             {s.design_link && (
-                              <Button size="sm" variant="outline" onClick={() => window.open(s.design_link, '_blank')}>
-                                <ExternalLink className="w-3 h-3 mr-1" />Link
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button size="sm" variant="outline" onClick={() => setPreviewLinkUrl(s.design_link)}>
+                                  <ExternalLink className="w-3 h-3 mr-1" />Preview
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => window.open(s.design_link, '_blank')}>
+                                  <ChevronRight className="w-3 h-3" />
+                                </Button>
+                              </div>
                             )}
                             {s.files_urls?.length > 0 && (
                               <Button size="sm" variant="outline" onClick={() => setViewFilesSubmission(s)}>
@@ -548,6 +554,28 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
               <Edit className="w-4 h-4 mr-2" />Request Correction
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Preview Dialog */}
+      <Dialog open={!!previewLinkUrl} onOpenChange={(open) => !open && setPreviewLinkUrl(null)}>
+        <DialogContent className="max-w-5xl h-[80vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-sm font-medium truncate max-w-md">{previewLinkUrl}</DialogTitle>
+              <Button size="sm" variant="outline" onClick={() => window.open(previewLinkUrl!, '_blank')} className="ml-4 shrink-0">
+                Open in New Tab
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 px-6 pb-6">
+            <iframe
+              src={previewLinkUrl || ''}
+              className="w-full h-full rounded-lg border border-border"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+              title="Link Preview"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

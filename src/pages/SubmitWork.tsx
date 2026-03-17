@@ -9,7 +9,9 @@ import {
   XCircle,
   Loader2,
   Trash2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Archive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +38,28 @@ interface UploadedFile {
   error?: string;
 }
 
+interface JobOption {
+  id: string;
+  title: string;
+  client_name: string | null;
+  category: string;
+}
+
+const normalizeCategory = (title: string | null): string => {
+  const t = (title || '').toLowerCase();
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+  if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  return 'Graphic Designer';
+};
+
+const categoryToJobCategory = (profession: string): string[] => {
+  switch (profession) {
+    case 'UI/UX Designer': return ['app-design'];
+    case 'Web Developer': return ['web-dev'];
+    default: return ['graphic-design'];
+  }
+};
+
 const SubmitWork = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -43,6 +68,8 @@ const SubmitWork = () => {
   const [loading, setLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadError, setUploadError] = useState<string>('');
+  const [availableJobs, setAvailableJobs] = useState<JobOption[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
   
   const correctionId = searchParams.get('correction');
   const correctionProject = searchParams.get('project');
@@ -53,10 +80,45 @@ const SubmitWork = () => {
     projectName: '',
     serviceType: 'logo',
     clientReference: '',
+    selectedJobId: '',
     description: '',
     deadline: '',
     designLink: '',
   });
+
+  // Load available jobs based on user's profession
+  useEffect(() => {
+    const loadJobs = async () => {
+      if (!user) return;
+      try {
+        // Get user's professional title
+        const { data: designerData } = await supabase
+          .from('designer_details')
+          .select('professional_title')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const profession = normalizeCategory(designerData?.professional_title || null);
+        const jobCategories = categoryToJobCategory(profession);
+
+        const { data, error } = await supabase
+          .from('job_contracts')
+          .select('id, title, client_name, category')
+          .in('status', ['active', 'in_progress'])
+          .in('category', jobCategories)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          setAvailableJobs(data as JobOption[]);
+        }
+      } catch (err) {
+        console.error('Error loading jobs:', err);
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+    loadJobs();
+  }, [user]);
 
   useEffect(() => {
     if (correctionId) {
@@ -78,17 +140,38 @@ const SubmitWork = () => {
     setFormData(prev => ({ ...prev, serviceType: value }));
   };
 
+  const handleJobSelect = (jobId: string) => {
+    const job = availableJobs.find(j => j.id === jobId);
+    setFormData(prev => ({
+      ...prev,
+      selectedJobId: jobId,
+      clientReference: job?.client_name || '',
+      projectName: prev.projectName || job?.title || '',
+    }));
+  };
+
+  const isLinkOnlyService = formData.serviceType === 'uiux' || formData.serviceType === 'web';
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !user) return;
 
     const newFiles = Array.from(files);
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'application/pdf'];
+    const validTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'application/pdf',
+      'application/zip', 'application/x-zip-compressed',
+      'application/x-rar-compressed', 'application/vnd.rar',
+      'application/octet-stream',
+    ];
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.pdf', '.zip', '.rar'];
     const maxSize = 50 * 1024 * 1024; // 50MB
 
     for (const file of newFiles) {
-      if (!validTypes.includes(file.type)) {
-        setUploadError(`Invalid file type: ${file.type}. Accepted: JPG, PNG, GIF, SVG, PDF`);
+      const ext = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
+      const isValidType = validTypes.includes(file.type) || validExtensions.includes(ext);
+
+      if (!isValidType) {
+        setUploadError(`Invalid file type: ${file.name}. Accepted: JPG, PNG, GIF, SVG, PDF, ZIP, RAR`);
         continue;
       }
 
@@ -114,7 +197,6 @@ const SubmitWork = () => {
       // Upload to Supabase Storage
       try {
         const fileExt = file.name.split('.').pop();
-        // Use cryptographically random filename for security
         const randomId = crypto.randomUUID();
         const fileName = `${randomId}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
@@ -125,7 +207,6 @@ const SubmitWork = () => {
 
         if (uploadError) throw uploadError;
 
-        // Store the file path (not public URL) - we'll use signed URLs for access
         setUploadedFiles(prev => 
           prev.map(f => 
             f.file === file 
@@ -151,14 +232,12 @@ const SubmitWork = () => {
       }
     }
 
-    // Reset input
     e.target.value = '';
   };
 
   const removeFile = async (index: number) => {
     const fileToRemove = uploadedFiles[index];
     
-    // If file was uploaded, delete from storage
     if (fileToRemove.url && user) {
       try {
         await supabase.storage
@@ -169,7 +248,6 @@ const SubmitWork = () => {
       }
     }
 
-    // Revoke preview URL
     if (fileToRemove.preview) {
       URL.revokeObjectURL(fileToRemove.preview);
     }
@@ -190,7 +268,6 @@ const SubmitWork = () => {
       return;
     }
 
-    // Validation
     if (!formData.projectName.trim()) {
       toast({
         title: "Project name required",
@@ -201,7 +278,11 @@ const SubmitWork = () => {
     }
 
     const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
-    if (successfulUploads.length === 0) {
+    const hasLink = isLinkOnlyService && formData.designLink.trim();
+
+    // For UI/UX and Web Dev, either files or link is required
+    // For others, files are always required
+    if (!isLinkOnlyService && successfulUploads.length === 0) {
       toast({
         title: "Files required",
         description: "Please upload at least one file.",
@@ -210,10 +291,19 @@ const SubmitWork = () => {
       return;
     }
 
-    if (!formData.clientReference.trim()) {
+    if (isLinkOnlyService && successfulUploads.length === 0 && !hasLink) {
       toast({
-        title: "Client Reference required",
-        description: "Please enter the client reference from the job contract.",
+        title: "Submission required",
+        description: "Please upload files or provide a project link.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.selectedJobId && !formData.clientReference.trim()) {
+      toast({
+        title: "Job selection required",
+        description: "Please select a job from the dropdown.",
         variant: "destructive",
       });
       return;
@@ -237,7 +327,7 @@ const SubmitWork = () => {
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
-        ...((formData.serviceType === 'uiux' || formData.serviceType === 'web') && formData.designLink.trim() ? { design_link: formData.designLink.trim() } : {}),
+        ...((isLinkOnlyService && formData.designLink.trim()) ? { design_link: formData.designLink.trim() } : {}),
       };
 
       if (correctionId) {
@@ -283,7 +373,6 @@ const SubmitWork = () => {
         description: "Your work has been submitted for review.",
       });
 
-      // Cleanup previews
       uploadedFiles.forEach(f => {
         if (f.preview) URL.revokeObjectURL(f.preview);
       });
@@ -308,6 +397,12 @@ const SubmitWork = () => {
 
   const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
   const uploadingFiles = uploadedFiles.filter(f => f.uploading);
+
+  const getFileIcon = (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'zip' || ext === 'rar') return <Archive className="w-12 h-12 text-muted-foreground" />;
+    return <FileText className="w-12 h-12 text-muted-foreground" />;
+  };
 
   return (
     <DashboardLayout>
@@ -381,19 +476,37 @@ const SubmitWork = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="clientReference">
-                        Client Reference * 
-                        <span className="text-xs text-muted-foreground ml-1">(from job contract)</span>
+                      <Label>
+                        Job Contract * 
+                        <span className="text-xs text-muted-foreground ml-1">(select from active jobs)</span>
                       </Label>
-                      <Input
-                        id="clientReference"
-                        name="clientReference"
-                        value={formData.clientReference}
-                        onChange={handleInputChange}
-                        placeholder="Enter exactly as shown"
-                        required
-                        className="mt-2 bg-card border-border"
-                      />
+                      {correctionId ? (
+                        <Input
+                          value={formData.clientReference}
+                          disabled
+                          className="mt-2 bg-card border-border"
+                        />
+                      ) : (
+                        <Select
+                          value={formData.selectedJobId}
+                          onValueChange={handleJobSelect}
+                        >
+                          <SelectTrigger className="mt-2 bg-card border-border">
+                            <SelectValue placeholder={jobsLoading ? "Loading jobs..." : "Select a job"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableJobs.length === 0 && !jobsLoading ? (
+                              <SelectItem value="none" disabled>No active jobs for your category</SelectItem>
+                            ) : (
+                              availableJobs.map(job => (
+                                <SelectItem key={job.id} value={job.id}>
+                                  {job.title} {job.client_name ? `— ${job.client_name}` : ''}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
 
                     <div>
@@ -448,22 +561,52 @@ const SubmitWork = () => {
                 </CardContent>
               </Card>
 
+              {/* Design Link (UI/UX Design and Web Development) - shown BEFORE file upload */}
+              {isLinkOnlyService && (
+                <Card className="glass">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <LinkIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <CardTitle>{formData.serviceType === 'uiux' ? 'Design Tool Link' : 'Website / Project Link'}</CardTitle>
+                        <CardDescription>
+                          {formData.serviceType === 'uiux' 
+                            ? 'Provide a link to your Figma, Framer, or Adobe XD project (required if no files uploaded)'
+                            : 'Provide a link to the developed website or project (required if no files uploaded)'}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Input
+                      name="designLink"
+                      value={formData.designLink}
+                      onChange={handleInputChange}
+                      placeholder={formData.serviceType === 'uiux' ? 'https://www.figma.com/file/...' : 'https://example.com'}
+                      className="bg-card border-border"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      You can submit just a link, just files, or both.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* File Upload */}
               <Card className="glass">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <Upload className="w-5 h-5 text-primary" />
                     <div>
-                      <CardTitle>File Upload</CardTitle>
+                      <CardTitle>File Upload {isLinkOnlyService ? '(Optional)' : ''}</CardTitle>
                       <CardDescription>
                         {formData.serviceType === 'logo' && 'Upload pictures of the logo design'}
                         {formData.serviceType === 'branding' && 'Upload pictures of the brand identity'}
-                        {formData.serviceType === 'uiux' && 'Upload the homepage/first screen design for approval'}
-                        {formData.serviceType === 'web' && 'Upload screenshots of the developed site'}
+                        {formData.serviceType === 'uiux' && 'Upload screenshots or design files (optional if link provided)'}
+                        {formData.serviceType === 'web' && 'Upload screenshots or project files (optional if link provided)'}
                         {formData.serviceType === 'print' && 'Upload pictures of the print design'}
                         {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
-                        {formData.serviceType === 'flyer' && 'Upload pictures of the flyer design'}
-                        {' '}(JPG, PNG, GIF, SVG, PDF - Max 50MB)
+                        {' '}(JPG, PNG, GIF, SVG, PDF, ZIP, RAR - Max 50MB)
                       </CardDescription>
                     </div>
                   </div>
@@ -474,7 +617,7 @@ const SubmitWork = () => {
                       id="file-upload"
                       type="file"
                       multiple
-                      accept=".jpg,.jpeg,.png,.gif,.svg,.pdf"
+                      accept=".jpg,.jpeg,.png,.gif,.svg,.pdf,.zip,.rar"
                       onChange={handleFileUpload}
                       className="hidden"
                       disabled={uploadingFiles.length > 0}
@@ -526,7 +669,7 @@ const SubmitWork = () => {
                             />
                           ) : (
                             <div className="w-full h-32 flex items-center justify-center bg-secondary">
-                              <FileText className="w-12 h-12 text-muted-foreground" />
+                              {getFileIcon(file.file)}
                             </div>
                           )}
                           
@@ -573,45 +716,12 @@ const SubmitWork = () => {
                 </CardContent>
               </Card>
 
-              {/* Design Link (UI/UX Design and Web Development) */}
-              {(formData.serviceType === 'uiux' || formData.serviceType === 'web') && (
-                <Card className="glass">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <ImageIcon className="w-5 h-5 text-primary" />
-                      <div>
-                        <CardTitle>{formData.serviceType === 'uiux' ? 'Design Tool Link' : 'Website / Project Link'}</CardTitle>
-                        <CardDescription>
-                          {formData.serviceType === 'uiux' 
-                            ? 'Provide a link to your Figma, Framer, or Adobe XD project'
-                            : 'Provide a link to the developed website or project'}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Input
-                      name="designLink"
-                      value={formData.designLink}
-                      onChange={handleInputChange}
-                      placeholder={formData.serviceType === 'uiux' ? 'https://www.figma.com/file/...' : 'https://example.com'}
-                      className="bg-card border-border"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formData.serviceType === 'uiux'
-                        ? 'Upload screenshots above for initial approval, then include the full design link here.'
-                        : 'Upload screenshots above and include the live site or repository link here.'}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Submit Button */}
               <Button
                 type="submit"
                 size="lg"
                 className="w-full gap-2"
-                disabled={loading || uploadingFiles.length > 0 || successfulUploads.length === 0}
+                disabled={loading || uploadingFiles.length > 0 || (!isLinkOnlyService && successfulUploads.length === 0) || (isLinkOnlyService && successfulUploads.length === 0 && !formData.designLink.trim())}
               >
                 {loading ? (
                   <>
@@ -664,16 +774,22 @@ const SubmitWork = () => {
                 <ul className="text-xs text-muted-foreground space-y-2">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span>Use the exact client reference from your job contract</span>
+                    <span>Select the job contract from the dropdown</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span>Upload high-quality images or source files</span>
+                    <span>Upload high-quality files (images, ZIP, RAR, or PDF)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                     <span>Include all deliverables mentioned in the contract</span>
                   </li>
+                  {isLinkOnlyService && (
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span>You can submit just a link without uploading files</span>
+                    </li>
+                  )}
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                     <span>Review your submission before final upload</span>
