@@ -443,9 +443,14 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2 flex-wrap">
                             {s.design_link && (
-                              <Button size="sm" variant="outline" onClick={() => window.open(s.design_link, '_blank')}>
-                                <ExternalLink className="w-3 h-3 mr-1" />Link
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button size="sm" variant="outline" onClick={() => setPreviewLinkUrl(s.design_link)}>
+                                  <ExternalLink className="w-3 h-3 mr-1" />Preview
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => window.open(s.design_link, '_blank')}>
+                                  <ChevronRight className="w-3 h-3" />
+                                </Button>
+                              </div>
                             )}
                             {s.files_urls?.length > 0 && (
                               <Button size="sm" variant="outline" onClick={() => setViewFilesSubmission(s)}>
