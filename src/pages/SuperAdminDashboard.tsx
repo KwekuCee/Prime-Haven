@@ -2688,6 +2688,28 @@ const SuperAdminDashboard = () => {
         currentAdminId={user?.id}
         onSaved={() => loadDashboardDataSafe()}
       />
+
+      {/* Link Preview Dialog */}
+      <Dialog open={!!previewLinkUrl} onOpenChange={(open) => !open && setPreviewLinkUrl(null)}>
+        <DialogContent className="max-w-5xl h-[80vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-sm font-medium truncate max-w-md">{previewLinkUrl}</DialogTitle>
+              <Button size="sm" variant="outline" onClick={() => window.open(previewLinkUrl!, '_blank')} className="ml-4 shrink-0">
+                Open in New Tab
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 px-6 pb-6">
+            <iframe
+              src={previewLinkUrl || ''}
+              className="w-full h-full rounded-lg border border-border"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+              title="Link Preview"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
