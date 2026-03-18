@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import BrandLogo from '@/components/BrandLogo';
+import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { motion } from 'framer-motion';
 import { 
   Users, 
