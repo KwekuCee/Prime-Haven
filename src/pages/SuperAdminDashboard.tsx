@@ -47,10 +47,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
-import { AdminNavigation } from '@/components/admin/AdminNavigation';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
 import ManageTeam from '@/components/admin/ManageTeam';
