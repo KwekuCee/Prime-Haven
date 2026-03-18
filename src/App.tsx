@@ -91,6 +91,7 @@ const App = () => {
               <Route path="/review" element={<SubmitReview />} />
               <Route path="/start-project" element={<StartProject />} />
               <Route path="/superadmin/pricing" element={<ManagePricing />} />
+              <Route path="/superadmin/clients" element={<ManageClients />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
