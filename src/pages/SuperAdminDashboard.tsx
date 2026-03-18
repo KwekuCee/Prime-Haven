@@ -171,6 +171,7 @@ interface SystemSettings {
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
