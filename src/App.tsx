@@ -37,6 +37,7 @@ const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
 const ManagePricing = lazy(() => import("./pages/ManagePricing"));
+const ManageClients = lazy(() => import("./pages/ManageClients"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
 
 const queryClient = new QueryClient();
