@@ -1540,104 +1540,72 @@ const SuperAdminDashboard = () => {
     );
   }
 
+  const activeTab = searchParams.get('tab') || 'submissions';
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          {/* Top row: Logo + Actions */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <BrandLogo height={36} className="shrink-0" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs font-semibold shrink-0">
-                    <Shield className="w-3 h-3 mr-1" />
-                    Super Admin
-                  </Badge>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium hidden sm:block">Complete platform administration</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <AlertDialog>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" disabled={isResettingPoints} className="text-amber-500 border-amber-500 hover:bg-amber-500 hover:text-white">
-                          {isResettingPoints ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                          <span className="ml-1 hidden lg:inline">Reset Points</span>
-                        </Button>
-                      </AlertDialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Reset all designer points to zero</p></TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="font-bold text-amber-500">Reset All Designer Points?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will set all designer total points, monthly points, and estimated salaries to zero. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600">
-                      Reset All Points
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+    <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
+      <div className="p-4 sm:p-6 lg:p-8">
+        {/* Top Actions Bar */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-2xl font-heading font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Complete platform administration</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <AlertDialog>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={() => loadDashboardDataSafe()} disabled={loading}>
-                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    </Button>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" disabled={isResettingPoints} className="text-amber-500 border-amber-500 hover:bg-amber-500 hover:text-white">
+                        {isResettingPoints ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        <span className="ml-1 hidden lg:inline">Reset Points</span>
+                      </Button>
+                    </AlertDialogTrigger>
                   </TooltipTrigger>
-                  <TooltipContent><p>Refresh data</p></TooltipContent>
+                  <TooltipContent><p>Reset all designer points to zero</p></TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-1 sm:gap-2 px-2 sm:px-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-primary">{(adminDisplayName.charAt(0) || 'A').toUpperCase()}</span>
-                    </div>
-                    <div className="text-left hidden lg:block">
-                      <p className="text-sm font-semibold">Super Admin</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[120px]">{adminDisplayName}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 hidden sm:block" />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-bold text-amber-500">Reset All Designer Points?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will set all designer total points, monthly points, and estimated salaries to zero. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600">
+                    Reset All Points
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" onClick={() => loadDashboardDataSafe()} disabled={loading}>
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    Switch to User View
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-          {/* Navigation row */}
-          <div className="mt-3 -mb-1 overflow-x-auto">
-            <AdminNavigation />
+                </TooltipTrigger>
+                <TooltipContent><p>Refresh data</p></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Button variant="outline" size="sm" onClick={() => {
+              const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
+              setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
+              setIsRevenueModalOpen(true);
+            }}>
+              <DollarSign className="w-4 h-4 mr-1" />
+              Revenue
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
+              {isRecalculatingSalaries ? <RefreshCw className="w-4 h-4 animate-spin mr-1" /> : <Banknote className="w-4 h-4 mr-1" />}
+              Recalculate
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {[
@@ -1680,11 +1648,6 @@ const SuperAdminDashboard = () => {
               icon: DollarSign,
               value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(2)}`,
               borderColor: 'border-l-green-500',
-              onClick: () => {
-                const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
-                setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
-                setIsRevenueModalOpen(true);
-              },
               extra: (
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {systemSettings.monthly_revenue_by_category ? (
@@ -1694,7 +1657,7 @@ const SuperAdminDashboard = () => {
                       <Badge variant="outline" className="text-xs font-medium">W: GH₵{(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}</Badge>
                     </>
                   ) : (
-                    <Badge variant="outline" className="text-xs font-medium">Click to edit</Badge>
+                    <Badge variant="outline" className="text-xs font-medium">Click Revenue to edit</Badge>
                   )}
                 </div>
               ),
@@ -1717,10 +1680,7 @@ const SuperAdminDashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
-              <Card
-                className={`glass border-l-4 ${card.borderColor} ${card.onClick ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''}`}
-                onClick={card.onClick}
-              >
+              <Card className={`glass border-l-4 ${card.borderColor}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-semibold">{card.title}</CardTitle>
@@ -1736,46 +1696,10 @@ const SuperAdminDashboard = () => {
           ))}
         </div>
 
-
-        {/* Main Tabs */}
-        <Tabs defaultValue="submissions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="submissions" className="font-semibold">
-              <FileCheck className="w-4 h-4 mr-2" />
-              Submissions
-            </TabsTrigger>
-            <TabsTrigger value="users" className="font-semibold">
-              <Users className="w-4 h-4 mr-2" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="font-semibold">
-              <DollarSign className="w-4 h-4 mr-2" />
-              Payments
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="font-semibold">
-              <Download className="w-4 h-4 mr-2" />
-              Reports
-            </TabsTrigger>
-            <TabsTrigger value="testimonials" className="font-semibold">
-              <Star className="w-4 h-4 mr-2" />
-              Reviews
-            </TabsTrigger>
-            <TabsTrigger value="blog" className="font-semibold">
-              <Newspaper className="w-4 h-4 mr-2" />
-              Blog
-            </TabsTrigger>
-            <TabsTrigger value="team" className="font-semibold">
-              <UserCheck className="w-4 h-4 mr-2" />
-              Team
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="font-semibold">
-              <Activity className="w-4 h-4 mr-2" />
-              Logs
-            </TabsTrigger>
-          </TabsList>
-
+        {/* Main Tabs - driven by sidebar via searchParams */}
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
           {/* Submissions Tab with Two-Level Approval */}
-          <TabsContent value="submissions" className="space-y-6">
+          <TabsContent value="submissions" className="space-y-6 mt-0">
             <Card>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
