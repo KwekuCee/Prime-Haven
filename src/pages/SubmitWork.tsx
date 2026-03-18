@@ -201,9 +201,13 @@ const SubmitWork = () => {
         const fileName = `${randomId}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
 
+        const contentType = file.type || 'application/octet-stream';
         const { error: uploadError } = await supabase.storage
           .from('submissions')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            contentType,
+            cacheControl: '3600',
+          });
 
         if (uploadError) throw uploadError;
 
