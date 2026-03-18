@@ -2635,7 +2635,7 @@ const SuperAdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </SuperAdminLayout>
   );
 };
 
