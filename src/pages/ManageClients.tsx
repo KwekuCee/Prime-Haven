@@ -182,28 +182,23 @@ const ManageClients = () => {
         </div>
 
         {/* Client Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-xl border border-border/50 bg-card/50">
+          <div className="p-4 sm:p-5 border-b border-border/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle>All Client Records</CardTitle>
-                <CardDescription>Combined from orders and projects</CardDescription>
+                <h2 className="text-base font-bold">All Client Records</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Combined from orders and projects</p>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients..."
-                  className="pl-9 w-full sm:w-[250px]"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input placeholder="Search clients..." className="pl-8 h-8 text-sm w-full sm:w-48" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="p-4 sm:p-5">
             {loading ? (
               <div className="flex justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
               </div>
             ) : filteredClients.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
@@ -211,18 +206,18 @@ const ManageClients = () => {
                 <p>No clients found.</p>
               </div>
             ) : (
-              <div className="rounded-md border overflow-x-auto">
+              <div className="rounded-md border border-border/50 overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>WhatsApp</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold">Client</TableHead>
+                      <TableHead className="text-xs font-semibold">Email</TableHead>
+                      <TableHead className="text-xs font-semibold">WhatsApp</TableHead>
+                      <TableHead className="text-xs font-semibold">Source</TableHead>
+                      <TableHead className="text-xs font-semibold">Service</TableHead>
+                      <TableHead className="text-xs font-semibold">Status</TableHead>
+                      <TableHead className="text-xs font-semibold">Date</TableHead>
+                      <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
