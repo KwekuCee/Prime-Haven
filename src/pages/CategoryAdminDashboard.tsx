@@ -300,58 +300,12 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <Crown className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
-                    {categoryLabel} Admin
-                    <Badge variant="secondary" className="text-xs font-semibold">
-                      <Shield className="w-3 h-3 mr-1" />
-                      Admin
-                    </Badge>
-                  </h1>
-                  <p className="text-sm text-muted-foreground font-medium">{categoryLabel} submissions management</p>
-                </div>
-              </div>
-              <AdminNavigation />
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={() => loadData()} disabled={loading}>
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">A</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate('/superadmin')}>Main Dashboard</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>User View</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
+    <SuperAdminLayout onRefresh={() => loadData()} loading={loading}>
+      <div className="p-6 lg:p-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-heading font-bold">{categoryLabel} Admin</h1>
+          <p className="text-sm text-muted-foreground">{categoryLabel} submissions management</p>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <Card className="glass border-l-4 border-l-primary">
