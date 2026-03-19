@@ -164,6 +164,48 @@ export type Database = {
         }
         Relationships: []
       }
+      consultation_bookings: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string | null
+          phone: string | null
+          preferred_date: string
+          preferred_time: string
+          service_interest: string | null
+          status: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          preferred_date: string
+          preferred_time: string
+          service_interest?: string | null
+          status?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          preferred_date?: string
+          preferred_time?: string
+          service_interest?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       designer_details: {
         Row: {
           available_hours: number | null
