@@ -375,9 +375,8 @@ const JobContracts = () => {
                   </Table>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* Create Dialog */}
