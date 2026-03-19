@@ -16,11 +16,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 interface ClientOption {
+  id: string;
   name: string;
   email: string;
   whatsapp: string;
-  source: string;
-  projectTitle?: string;
 }
 
 interface AcceptedSubmission {
