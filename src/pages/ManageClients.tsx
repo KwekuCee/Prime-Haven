@@ -148,65 +148,57 @@ const ManageClients = () => {
   return (
     <SuperAdminLayout>
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-heading font-bold flex items-center gap-3">
-              <UserSquare className="w-7 h-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-heading font-bold flex items-center gap-2">
+              <UserSquare className="w-6 h-6 text-primary" />
               Client Management
             </h1>
-            <p className="text-muted-foreground mt-1">View all clients and send them emails</p>
+            <p className="text-xs text-muted-foreground mt-0.5">View all clients and send them emails</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">{uniqueClients.length} unique clients</Badge>
-            <Badge variant="outline">{clients.length} total records</Badge>
+            <Badge variant="outline" className="text-[10px]">{uniqueClients.length} unique</Badge>
+            <Badge variant="outline" className="text-[10px]">{clients.length} records</Badge>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <div className="text-3xl font-bold">{clients.filter(c => c.source === 'order').length}</div>
-              <p className="text-sm text-muted-foreground">Service Orders</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <div className="text-3xl font-bold text-primary">{clients.filter(c => c.source === 'project').length}</div>
-              <p className="text-sm text-muted-foreground">Projects</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <div className="text-3xl font-bold text-emerald-500">{clients.filter(c => c.email).length}</div>
-              <p className="text-sm text-muted-foreground">With Email</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+          {[
+            { label: 'Service Orders', value: clients.filter(c => c.source === 'order').length, icon: UserSquare, color: 'text-primary', bg: 'bg-primary/10' },
+            { label: 'Projects', value: clients.filter(c => c.source === 'project').length, icon: UserSquare, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+            { label: 'With Email', value: clients.filter(c => c.email).length, icon: Mail, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          ].map((card, i) => (
+            <div key={card.label} className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
+                <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                  <card.icon className={`w-4 h-4 ${card.color}`} />
+                </div>
+              </div>
+              <div className="text-2xl font-bold tracking-tight">{card.value}</div>
+            </div>
+          ))}
         </div>
 
         {/* Client Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-xl border border-border/50 bg-card/50">
+          <div className="p-4 sm:p-5 border-b border-border/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle>All Client Records</CardTitle>
-                <CardDescription>Combined from orders and projects</CardDescription>
+                <h2 className="text-base font-bold">All Client Records</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Combined from orders and projects</p>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients..."
-                  className="pl-9 w-full sm:w-[250px]"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input placeholder="Search clients..." className="pl-8 h-8 text-sm w-full sm:w-48" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="p-4 sm:p-5">
             {loading ? (
               <div className="flex justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
               </div>
             ) : filteredClients.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
@@ -214,18 +206,18 @@ const ManageClients = () => {
                 <p>No clients found.</p>
               </div>
             ) : (
-              <div className="rounded-md border overflow-x-auto">
+              <div className="rounded-md border border-border/50 overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>WhatsApp</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold">Client</TableHead>
+                      <TableHead className="text-xs font-semibold">Email</TableHead>
+                      <TableHead className="text-xs font-semibold">WhatsApp</TableHead>
+                      <TableHead className="text-xs font-semibold">Source</TableHead>
+                      <TableHead className="text-xs font-semibold">Service</TableHead>
+                      <TableHead className="text-xs font-semibold">Status</TableHead>
+                      <TableHead className="text-xs font-semibold">Date</TableHead>
+                      <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -273,8 +265,8 @@ const ManageClients = () => {
                 </Table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Send Email Dialog */}

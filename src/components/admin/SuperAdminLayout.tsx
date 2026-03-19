@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
@@ -305,9 +306,19 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page Content with animation */}
         <main className="flex-1 overflow-auto">
-          {children}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPath + currentTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

@@ -23,22 +23,24 @@ const SubmitWork = lazy(() => import("./pages/SubmitWork"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const SuperAdminLogin = lazy(() => import("./pages/SuperAdminLogin"));
-const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
-const UIUXAdminDashboard = lazy(() => import("./pages/UIUXAdminDashboard"));
-const WebDevAdminDashboard = lazy(() => import("./pages/WebDevAdminDashboard"));
-const ManagePortfolio = lazy(() => import("./pages/ManagePortfolio"));
-const JobContracts = lazy(() => import("./pages/JobContracts"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Install = lazy(() => import("./pages/Install"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const TrackProject = lazy(() => import("./pages/TrackProject"));
-const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
-const ManagePricing = lazy(() => import("./pages/ManagePricing"));
-const ManageClients = lazy(() => import("./pages/ManageClients"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+
+// Eagerly load admin pages for instant navigation
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import UIUXAdminDashboard from "./pages/UIUXAdminDashboard";
+import WebDevAdminDashboard from "./pages/WebDevAdminDashboard";
+import ManagePortfolio from "./pages/ManagePortfolio";
+import JobContracts from "./pages/JobContracts";
+import ManageClientProjects from "./pages/ManageClientProjects";
+import ManagePricing from "./pages/ManagePricing";
+import ManageClients from "./pages/ManageClients";
 
 const queryClient = new QueryClient();
 

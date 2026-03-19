@@ -249,87 +249,87 @@ const JobContracts = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
+      <SuperAdminLayout>
+        <div className="flex items-center justify-center py-32">
+          <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        </div>
+      </SuperAdminLayout>
     );
   }
 
   return (
     <SuperAdminLayout>
-      <div className="p-6 lg:p-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                <Briefcase className="w-8 h-8 text-primary" />
-                Job Contracts
-              </h1>
-              <p className="text-muted-foreground mt-1">Post job briefs to Discord channels and notify designers via email</p>
-            </div>
-            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" /> Post New Job
-            </Button>
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold flex items-center gap-2">
+              <Briefcase className="w-6 h-6 text-primary" />
+              Job Contracts
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Post job briefs to Discord channels and notify designers via email</p>
           </div>
+          <Button onClick={() => setIsCreateOpen(true)} size="sm" className="gap-2">
+            <Plus className="w-4 h-4" /> Post New Job
+          </Button>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="text-3xl font-bold text-foreground">{contracts.length}</div>
-                <p className="text-sm text-muted-foreground">Total Jobs Posted</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="text-3xl font-bold text-primary">{contracts.filter(c => c.status === 'active').length}</div>
-                <p className="text-sm text-muted-foreground">Active Jobs</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="text-3xl font-bold text-muted-foreground">{contracts.filter(c => c.discord_message_id).length}</div>
-                <p className="text-sm text-muted-foreground">Posted to Discord</p>
-              </CardContent>
-            </Card>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+          {[
+            { label: 'Total Jobs', value: contracts.length, icon: Briefcase, color: 'text-primary', bg: 'bg-primary/10' },
+            { label: 'Active Jobs', value: contracts.filter(c => c.status === 'active').length, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+            { label: 'On Discord', value: contracts.filter(c => c.discord_message_id).length, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          ].map((card, i) => (
+            <motion.div key={card.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.05 }}>
+              <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
+                  <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                    <card.icon className={`w-4 h-4 ${card.color}`} />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold tracking-tight">{card.value}</div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Contracts Table */}
+        <div className="rounded-xl border border-border/50 bg-card/50">
+          <div className="p-4 sm:p-5 border-b border-border/50">
+            <h2 className="text-base font-bold">All Job Contracts</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Manage job briefs posted to professional groups</p>
           </div>
-
-          {/* Contracts Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>All Job Contracts</CardTitle>
-              <CardDescription>Manage job briefs posted to professional groups</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="p-4 sm:p-5">
               {contracts.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
                   <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-30" />
                   <p>No job contracts posted yet.</p>
-                  <Button variant="outline" className="mt-4" onClick={() => setIsCreateOpen(true)}>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => setIsCreateOpen(true)}>
                     Post Your First Job
                   </Button>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-md border border-border/50">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Budget</TableHead>
-                        <TableHead>Deadline</TableHead>
-                        <TableHead>Discord</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Posted</TableHead>
-                        <TableHead></TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-xs font-semibold">Title</TableHead>
+                        <TableHead className="text-xs font-semibold">Category</TableHead>
+                        <TableHead className="text-xs font-semibold">Budget</TableHead>
+                        <TableHead className="text-xs font-semibold">Deadline</TableHead>
+                        <TableHead className="text-xs font-semibold">Discord</TableHead>
+                        <TableHead className="text-xs font-semibold">Status</TableHead>
+                        <TableHead className="text-xs font-semibold">Posted</TableHead>
+                        <TableHead className="text-xs font-semibold"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {contracts.map(c => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium max-w-[200px] truncate">{c.title}</TableCell>
+                        <TableRow key={c.id} className="group">
+                          <TableCell className="font-medium text-sm max-w-[200px] truncate">{c.title}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{getCategoryLabel(c.category)}</Badge>
+                            <Badge variant="outline" className="text-[10px] font-medium">{getCategoryLabel(c.category)}</Badge>
                           </TableCell>
                           <TableCell>{c.budget || '—'}</TableCell>
                           <TableCell>{c.deadline ? format(new Date(c.deadline), 'dd MMM yyyy') : '—'}</TableCell>
@@ -375,9 +375,8 @@ const JobContracts = () => {
                   </Table>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* Create Dialog */}
