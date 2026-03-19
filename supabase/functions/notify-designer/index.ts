@@ -176,7 +176,9 @@ serve(async (req: Request): Promise<Response> => {
 
     const sanitizedName = encodeHtml((profile.full_name || "Designer").slice(0, 100).trim());
     const sanitizedProject = encodeHtml((projectName || "Your Project").slice(0, 200).trim());
-    let subject = "", heading = "", message = "", badgeText = "", emoji = "";
+    const rawName = (profile.full_name || "Designer").slice(0, 100).trim();
+    const rawProject = (projectName || "Your Project").slice(0, 200).trim();
+    let subject = "", heading = "", message = "", badgeText = "", emoji = "", smsText = "";
 
     switch (notificationType) {
       case "ph_approved":
