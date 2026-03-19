@@ -1,40 +1,28 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  CreditCard, 
-  Smartphone, 
-  Building, 
-  Bitcoin, 
-  Wallet,
-  DollarSign,
-  CheckCircle,
-  Clock,
-  Loader2,
-  Copy,
-  Eye,
-  EyeOff
+  CreditCard, Smartphone, Building, Bitcoin, Wallet, DollarSign,
+  CheckCircle, Clock, Loader2, Copy, Eye, EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
-// Ghana-specific payment methods
+
 const paymentMethods = [
   { value: 'mtn_momo', label: 'MTN Mobile Money', icon: Smartphone, color: 'text-yellow-500' },
   { value: 'vodafone_cash', label: 'Vodafone Cash', icon: Smartphone, color: 'text-red-500' },
   { value: 'airteltigo_money', label: 'AirtelTigo Money', icon: Smartphone, color: 'text-blue-500' },
-  { value: 'bank_transfer', label: 'Bank Transfer', icon: Building, color: 'text-green-500' },
-  { value: 'crypto', label: 'Cryptocurrency', icon: Bitcoin, color: 'text-orange-500' },
+  { value: 'bank_transfer', label: 'Bank Transfer', icon: Building, color: 'text-emerald-500' },
+  { value: 'crypto', label: 'Cryptocurrency', icon: Bitcoin, color: 'text-amber-500' },
   { value: 'paypal', label: 'PayPal', icon: CreditCard, color: 'text-blue-400' },
-  { value: 'wise', label: 'Wise', icon: Wallet, color: 'text-green-400' },
+  { value: 'wise', label: 'Wise', icon: Wallet, color: 'text-emerald-400' },
 ];
 
 const Payments = () => {
@@ -45,227 +33,82 @@ const Payments = () => {
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
-  const [paymentStats, setPaymentStats] = useState({
-    totalEarned: 0,
-    pendingPayments: 0,
-    nextPayment: 0,
-  });
+  const [paymentStats, setPaymentStats] = useState({ totalEarned: 0, pendingPayments: 0, nextPayment: 0 });
+  const [formData, setFormData] = useState({ payment_method: '', payment_details: '', confirm_details: '' });
 
-  // Form state
-  const [formData, setFormData] = useState({
-    payment_method: '',
-    payment_details: '',
-    confirm_details: '',
-  });
-
-  // Load user payment data
   useEffect(() => {
     const loadPaymentData = async () => {
       if (!user) return;
-
       try {
         setLoading(true);
-        
-        // Load designer details for payment info
-        const { data: designerData, error } = await supabase
-          .from('designer_details')
-          .select('payment_method, payment_details, salary_estimated')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
+        const { data: designerData } = await supabase.from('designer_details').select('payment_method, payment_details, salary_estimated').eq('user_id', user.id).maybeSingle();
         if (designerData) {
-          setFormData({
-            payment_method: designerData.payment_method || '',
-            payment_details: designerData.payment_details ? JSON.stringify(designerData.payment_details, null, 2) : '',
-            confirm_details: '',
-          });
+          setFormData({ payment_method: designerData.payment_method || '', payment_details: designerData.payment_details ? JSON.stringify(designerData.payment_details, null, 2) : '', confirm_details: '' });
         }
-
-        // Load payment history
-        const { data: paymentsData } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
+        const { data: paymentsData } = await supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
         if (paymentsData) {
           setPaymentHistory(paymentsData);
-          
-          // Calculate stats
-          const totalEarned = paymentsData
-            .filter(p => p.type === 'salary' && p.status === 'completed')
-            .reduce((sum, p) => sum + (p.amount || 0), 0);
-          
-          const pendingPayments = paymentsData
-            .filter(p => p.status === 'pending').length;
-
-          setPaymentStats({
-            totalEarned,
-            pendingPayments,
-            nextPayment: designerData?.salary_estimated || 0,
-          });
+          const totalEarned = paymentsData.filter(p => p.type === 'salary' && p.status === 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
+          setPaymentStats({ totalEarned, pendingPayments: paymentsData.filter(p => p.status === 'pending').length, nextPayment: designerData?.salary_estimated || 0 });
         }
-
-      } catch (error) {
-        console.error('Error loading payment data:', error);
-        toast({
-          title: "Error loading payment data",
-          description: "Could not load your payment information.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
+      } catch { toast({ title: "Error loading payments", variant: "destructive" }); }
+      finally { setLoading(false); }
     };
-
     loadPaymentData();
   }, [user, toast]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData(prev => ({ ...prev, [e.target.name]: e.target.value })); };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const getPaymentMethodIcon = (methodValue: string) => {
-    const method = paymentMethods.find(m => m.value === methodValue);
-    if (!method) return <CreditCard className="w-4 h-4" />;
-    
-    const Icon = method.icon;
-    return <Icon className={`w-4 h-4 ${method.color}`} />;
-  };
-
-  const handleCopyDetails = () => {
-    if (formData.payment_details) {
-      navigator.clipboard.writeText(formData.payment_details);
-      toast({
-        title: "Copied!",
-        description: "Payment details copied to clipboard.",
-      });
-    }
+  const getPaymentMethodIcon = (v: string) => {
+    const m = paymentMethods.find(pm => pm.value === v);
+    if (!m) return <CreditCard className="w-3.5 h-3.5" />;
+    const Icon = m.icon;
+    return <Icon className={`w-3.5 h-3.5 ${m.color}`} />;
   };
 
   const handleSavePaymentMethod = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please login to update payment method.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.payment_method) {
-      toast({
-        title: "Payment method required",
-        description: "Please select a payment method.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.payment_details) {
-      toast({
-        title: "Payment details required",
-        description: "Please enter your payment details.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (formData.payment_details !== formData.confirm_details) {
-      toast({
-        title: "Details don't match",
-        description: "Payment details and confirmation don't match.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (!user || !formData.payment_method || !formData.payment_details) { toast({ title: "Missing fields", variant: "destructive" }); return; }
+    if (formData.payment_details !== formData.confirm_details) { toast({ title: "Details don't match", variant: "destructive" }); return; }
     setLoading(true);
-
     try {
-      const paymentDetails = formData.payment_details.trim();
-      let parsedDetails = paymentDetails;
-
-      // Try to parse as JSON, otherwise use as string
-      try {
-        parsedDetails = JSON.parse(paymentDetails);
-      } catch {
-        // Keep as string if not valid JSON
-      }
-
-      const updateData = {
-        payment_method: formData.payment_method,
-        payment_details: parsedDetails,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from('designer_details')
-        .update(updateData)
-        .eq('user_id', user.id);
-
+      let parsedDetails: any = formData.payment_details.trim();
+      try { parsedDetails = JSON.parse(parsedDetails); } catch {}
+      const { error } = await supabase.from('designer_details').update({ payment_method: formData.payment_method, payment_details: parsedDetails, updated_at: new Date().toISOString() }).eq('user_id', user.id);
       if (error) throw error;
-
-      toast({
-        title: "Payment method updated!",
-        description: "Your payment information has been saved securely.",
-      });
-
-      // Clear confirmation field
+      toast({ title: "Payment method updated!" });
       setFormData(prev => ({ ...prev, confirm_details: '' }));
-
-    } catch (error: any) {
-      console.error('Error updating payment method:', error);
-      toast({
-        title: "Update failed",
-        description: error.message || "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    } catch (error: any) { toast({ title: "Update failed", description: error.message, variant: "destructive" }); }
+    finally { setLoading(false); }
   };
 
-  const getPaymentMethodPlaceholder = () => {
-    switch (formData.payment_method) {
-      case 'mtn_momo':
-        return 'Enter your MTN Mobile Money number (e.g., 024XXXXXXX)';
-      case 'vodafone_cash':
-        return 'Enter your Vodafone Cash number (e.g., 020XXXXXXX)';
-      case 'airteltigo_money':
-        return 'Enter your AirtelTigo Money number (e.g., 027XXXXXXX)';
-      case 'bank_transfer':
-        return 'Enter bank account details (JSON format: {"bank": "Bank Name", "account": "1234567890", "name": "Your Name"})';
-      case 'crypto':
-        return 'Enter cryptocurrency wallet address (e.g., Bitcoin, Ethereum)';
-      case 'paypal':
-        return 'Enter your PayPal email address';
-      case 'wise':
-        return 'Enter your Wise email or account details';
-      default:
-        return 'Enter your payment details';
-    }
+  const getPlaceholder = () => {
+    const map: Record<string, string> = {
+      mtn_momo: '024XXXXXXX', vodafone_cash: '020XXXXXXX', airteltigo_money: '027XXXXXXX',
+      bank_transfer: '{"bank":"Name","account":"123","name":"You"}', crypto: 'Wallet address',
+      paypal: 'PayPal email', wise: 'Wise email/details',
+    };
+    return map[formData.payment_method] || 'Payment details';
   };
+
+  const SectionCard = ({ icon: Icon, title, desc, children, delay = 0 }: { icon: any; title: string; desc?: string; children: React.ReactNode; delay?: number }) => (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
+      className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Icon className="w-4 h-4 text-primary" /></div>
+        <div>
+          <h3 className="text-sm font-heading font-bold">{title}</h3>
+          {desc && <p className="text-[10px] text-muted-foreground">{desc}</p>}
+        </div>
+      </div>
+      {children}
+    </motion.div>
+  );
 
   if (loading && !paymentHistory.length) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading payment information...</p>
-          </div>
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="relative w-16 h-16 mx-auto"><div className="absolute inset-0 rounded-full border-2 border-primary/20" /><div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" /></div>
         </div>
       </DashboardLayout>
     );
@@ -273,363 +116,161 @@ const Payments = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 lg:p-8">
-        {/* Page Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">Payment Settings</h1>
-              <p className="text-muted-foreground">
-                Manage your payment methods and view earnings
-              </p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Finances</p>
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold">Payments</h1>
             </div>
-            <Badge variant="outline" className="gap-2 self-start sm:self-auto">
-              <DollarSign className="w-3 h-3" />
-              {settings.show_earnings ? formatCurrency(paymentStats.totalEarned) : '••••••'} Earned
+            <Badge variant="outline" className="text-[10px] gap-1.5 self-start sm:self-auto">
+              <DollarSign className="w-3 h-3" /> {settings.show_earnings ? formatCurrency(paymentStats.totalEarned) : '••••'} Earned
             </Badge>
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Left Column - Payment Setup */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-2 space-y-6"
-          >
-            {/* Current Payment Method */}
-            <Card className="glass">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-primary" />
-                  <div>
-                    <CardTitle>Current Payment Method</CardTitle>
-                    <CardDescription>
-                      How you receive your earnings
-                    </CardDescription>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            {/* Payment Method */}
+            <SectionCard icon={CreditCard} title="Payment Method" desc="How you receive earnings" delay={0.05}>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs">Method *</Label>
+                  <Select value={formData.payment_method} onValueChange={(v) => setFormData(p => ({ ...p, payment_method: v }))}>
+                    <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40"><SelectValue placeholder="Select method" /></SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map(m => (
+                        <SelectItem key={m.value} value={m.value}><div className="flex items-center gap-2">{getPaymentMethodIcon(m.value)}{m.label}</div></SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="payment_method" className="mb-2 block">
-                      Payment Method *
-                    </Label>
-                    <Select
-                      value={formData.payment_method}
-                      onValueChange={(value) => handleSelectChange('payment_method', value)}
-                    >
-                      <SelectTrigger className="bg-card border-border">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {paymentMethods.map((method) => (
-                          <SelectItem key={method.value} value={method.value}>
-                            <div className="flex items-center gap-2">
-                              {getPaymentMethodIcon(method.value)}
-                              {method.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {formData.payment_method && (
-                    <>
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <Label htmlFor="payment_details">
-                            Payment Details *
-                          </Label>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowDetails(!showDetails)}
-                              className="h-8 gap-1"
-                            >
-                              {showDetails ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              {showDetails ? 'Hide' : 'Show'}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleCopyDetails}
-                              className="h-8 gap-1"
-                              disabled={!formData.payment_details}
-                            >
-                              <Copy className="w-3 h-3" />
-                              Copy
-                            </Button>
-                          </div>
+                {formData.payment_method && (
+                  <>
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <Label className="text-xs">Details *</Label>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2" onClick={() => setShowDetails(!showDetails)}>
+                            {showDetails ? <><EyeOff className="w-3 h-3 mr-1" />Hide</> : <><Eye className="w-3 h-3 mr-1" />Show</>}
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2" onClick={() => { navigator.clipboard.writeText(formData.payment_details); toast({ title: "Copied!" }); }} disabled={!formData.payment_details}>
+                            <Copy className="w-3 h-3 mr-1" />Copy
+                          </Button>
                         </div>
-                        <textarea
-                          id="payment_details"
-                          name="payment_details"
-                          value={formData.payment_details}
-                          onChange={handleInputChange}
-                          placeholder={getPaymentMethodPlaceholder()}
-                          rows={4}
-                          className="w-full p-3 rounded-lg bg-card border border-border text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
                       </div>
-
-                      <div>
-                        <Label htmlFor="confirm_details" className="mb-2 block">
-                          Confirm Payment Details *
-                        </Label>
-                        <textarea
-                          id="confirm_details"
-                          name="confirm_details"
-                          value={formData.confirm_details}
-                          onChange={handleInputChange}
-                          placeholder="Re-enter your payment details to confirm"
-                          rows={2}
-                          className="w-full p-3 rounded-lg bg-card border border-border text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  <Button
-                    onClick={handleSavePaymentMethod}
-                    disabled={loading || !formData.payment_method || !formData.payment_details || !formData.confirm_details}
-                    className="w-full gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4" />
-                        Save Payment Method
-                      </>
-                    )}
-                  </Button>
-
-                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-sm font-medium text-primary mb-2">Security Notice:</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Payment details are encrypted and stored securely</li>
-                      <li>• Only you and administrators can view these details</li>
-                      <li>• Payments are processed on the 1st and 15th of each month</li>
-                      <li>• Minimum payout: GH₵100.00</li>
-                    </ul>
-                  </div>
+                      <textarea name="payment_details" value={formData.payment_details} onChange={handleInputChange} placeholder={getPlaceholder()} rows={3}
+                        className="w-full p-3 rounded-xl text-xs bg-muted/20 border border-border/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Confirm Details *</Label>
+                      <textarea name="confirm_details" value={formData.confirm_details} onChange={handleInputChange} placeholder="Re-enter to confirm" rows={2}
+                        className="w-full mt-1.5 p-3 rounded-xl text-xs bg-muted/20 border border-border/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
+                  </>
+                )}
+                <Button size="sm" className="w-full text-xs" onClick={handleSavePaymentMethod} disabled={loading || !formData.payment_method || !formData.payment_details || !formData.confirm_details}>
+                  {loading ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Saving...</> : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Save Payment Method</>}
+                </Button>
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-[10px] text-muted-foreground">
+                    🔒 Payment details are encrypted. Processed on 1st & 15th. Min payout: GH₵100.
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
 
             {/* Payment History */}
-            <Card className="glass">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-primary" />
-                  <div>
-                    <CardTitle>Payment History</CardTitle>
-                    <CardDescription>
-                      Track your earnings and payments
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {paymentHistory.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Reference</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paymentHistory.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell className="font-medium">
-                              {new Date(payment.created_at).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {payment.type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {settings.show_earnings ? formatCurrency(payment.amount) : '••••••'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                payment.status === 'completed' ? 'default' :
-                                payment.status === 'pending' ? 'outline' :
-                                'destructive'
-                              }>
-                                {payment.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <code className="text-xs bg-card px-2 py-1 rounded">
-                                {payment.transaction_id?.substring(0, 8) || 'N/A'}
-                              </code>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No payment history yet</p>
-                    <p className="text-sm mt-2">Earnings will appear here after approval</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Right Column - Stats & Info */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
-            {/* Earnings Summary */}
-            <Card className="glass">
-              <CardHeader>
-                <CardTitle>Earnings Summary</CardTitle>
-                <CardDescription>Your payment overview</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Earned:</span>
-                    <span className="text-lg font-bold text-primary">
-                      {settings.show_earnings ? formatCurrency(paymentStats.totalEarned) : '••••••'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Next Payment:</span>
-                    <span className="font-medium">
-                      {settings.show_earnings ? formatCurrency(paymentStats.nextPayment) : '••••••'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Pending Payments:</span>
-                    <Badge variant="outline">
-                      {paymentStats.pendingPayments}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-2">Payment Schedule:</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Processing:</span>
-                      <span className="text-primary">1st & 15th monthly</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Minimum Payout:</span>
-                      <span>GH₵100.00</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Processing Time:</span>
-                      <span>24-48 hours</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment Methods Guide */}
-            <Card className="glass">
-              <CardHeader>
-                <CardTitle>Payment Methods Guide</CardTitle>
-                <CardDescription>Supported in Ghana</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {paymentMethods.map((method) => (
-                    <div key={method.value} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors">
-                      <div className={`w-8 h-8 rounded-full ${method.color}/20 flex items-center justify-center`}>
-                        {getPaymentMethodIcon(method.value)}
+            <SectionCard icon={Clock} title="Payment History" desc="Your earnings record" delay={0.1}>
+              {paymentHistory.length > 0 ? (
+                <div className="space-y-2">
+                  {paymentHistory.map(payment => (
+                    <div key={payment.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/10 border border-border/30 hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0">
+                          <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium truncate">{payment.type}</p>
+                          <p className="text-[9px] text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{method.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {method.value === 'mtn_momo' && 'Instant, nationwide coverage'}
-                          {method.value === 'vodafone_cash' && 'Wide network, reliable'}
-                          {method.value === 'airteltigo_money' && 'Fast transfers'}
-                          {method.value === 'bank_transfer' && 'Direct to bank account'}
-                          {method.value === 'crypto' && 'Borderless, secure'}
-                          {method.value === 'paypal' && 'International payments'}
-                          {method.value === 'wise' && 'Low fees, multi-currency'}
-                        </p>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs font-bold">{settings.show_earnings ? formatCurrency(payment.amount) : '••••'}</span>
+                        <Badge variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'outline' : 'destructive'} className="text-[8px] h-5">
+                          {payment.status}
+                        </Badge>
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Next Steps */}
-            <Card className="glass">
-              <CardHeader>
-                <CardTitle>Next Steps</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">1</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Complete your profile to start earning
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">2</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Submit work for review and earn points
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">3</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Points convert to cash on payment dates
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground">
-                      Need help? Contact support at transactions@primehaven.tech
-                    </p>
-                  </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CreditCard className="w-8 h-8 text-muted mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No payment history yet</p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              )}
+            </SectionCard>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-4">
+            {/* Earnings Summary */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+              <h3 className="text-xs font-heading font-bold mb-4">Earnings Summary</h3>
+              <div className="space-y-3">
+                {[
+                  { label: 'Total Earned', value: settings.show_earnings ? formatCurrency(paymentStats.totalEarned) : '••••', highlight: true },
+                  { label: 'Next Payment', value: settings.show_earnings ? formatCurrency(paymentStats.nextPayment) : '••••' },
+                  { label: 'Pending', value: paymentStats.pendingPayments.toString() },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground">{item.label}</span>
+                    <span className={`text-xs font-bold ${item.highlight ? 'text-primary' : ''}`}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-border/40 space-y-1.5 text-[10px] text-muted-foreground">
+                <div className="flex justify-between"><span>Schedule</span><span className="text-primary">1st & 15th</span></div>
+                <div className="flex justify-between"><span>Min Payout</span><span>GH₵100</span></div>
+                <div className="flex justify-between"><span>Processing</span><span>24-48 hrs</span></div>
+              </div>
+            </motion.div>
+
+            {/* Methods Guide */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+              className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+              <h3 className="text-xs font-heading font-bold mb-3">Payment Methods</h3>
+              <div className="space-y-2">
+                {paymentMethods.map(m => (
+                  <div key={m.value} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/10 transition-colors">
+                    {getPaymentMethodIcon(m.value)}
+                    <span className="text-[10px] font-medium">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Steps */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+              <h3 className="text-xs font-heading font-bold mb-3">How It Works</h3>
+              <div className="space-y-2.5">
+                {['Complete your profile', 'Submit work & earn points', 'Points convert to cash'].map((text, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[8px] font-bold text-primary">{i + 1}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-3 pt-3 border-t border-border/40">
+                Need help? transactions@primehaven.tech
+              </p>
+            </motion.div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
