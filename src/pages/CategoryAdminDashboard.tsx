@@ -532,7 +532,8 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 };
 

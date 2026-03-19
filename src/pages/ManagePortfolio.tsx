@@ -471,7 +471,8 @@ const ManagePortfolio = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 };
 

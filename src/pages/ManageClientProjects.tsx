@@ -292,7 +292,8 @@ const ManageClientProjects = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 };
 

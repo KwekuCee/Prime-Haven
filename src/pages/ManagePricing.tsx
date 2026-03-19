@@ -242,7 +242,8 @@ const ManagePricing = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 };
 

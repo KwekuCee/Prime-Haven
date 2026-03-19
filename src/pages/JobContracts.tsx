@@ -539,7 +539,8 @@ const JobContracts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 };
 
