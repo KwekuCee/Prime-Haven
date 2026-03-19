@@ -203,7 +203,7 @@ serve(async (req: Request): Promise<Response> => {
         heading = "Client Rejected Your Design";
         message = `The client has rejected your submission <strong>"${sanitizedProject}"</strong>.${rejectionReason ? ` <strong>Feedback:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Your PH-approval points have been retained. Review the feedback and keep improving!`;
         badgeText = "CLIENT REJECTED"; emoji = "⚠️";
-        smsText = `⚠️ Prime Haven: Client rejected your design "${rawProject}".${rejectionReason ? ` Feedback: ${rejectionReason.slice(0, 80)}` : ""} PH points retained. View: primehaven.tech/dashboard`;
+        
         break;
     }
 
