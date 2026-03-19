@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
