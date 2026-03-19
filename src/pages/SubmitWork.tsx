@@ -196,6 +196,8 @@ const SubmitWork = () => {
       try { await supabase.from('system_logs').insert({ action_type: correctionId ? 'correction_submitted' : 'work_submitted', admin_id: user.id, description: `${correctionId ? 'Correction' : 'New work'}: ${formData.projectName.trim()} (${formData.serviceType})`, timestamp: new Date().toISOString() }); } catch {}
       try { await supabase.functions.invoke('notify-designer', { body: { designerId: user.id, projectName: formData.projectName.trim(), notificationType: 'new_submission', serviceType: formData.serviceType } }); } catch {}
       toast({ title: "Submission successful!", description: "Your work has been submitted for review." });
+      // Clear started project after successful submission
+      if (user) localStorage.removeItem(`started_project_${user.id}`);
       uploadedFiles.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview); });
       navigate('/dashboard');
     } catch (error: any) {
