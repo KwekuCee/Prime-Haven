@@ -102,7 +102,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // supabase client already created above
 
     // Record payment in database
     const { error: paymentError } = await supabase
