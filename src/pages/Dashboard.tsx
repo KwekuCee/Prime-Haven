@@ -605,7 +605,13 @@ const Dashboard = () => {
             <h2 className="text-sm font-heading font-bold mb-4">Quick Actions</h2>
             <div className="space-y-2">
               {[
-                { label: 'Start Work', icon: PlayCircle, action: () => setStartWorkingOpen(true), primary: true },
+                { label: hasStartedProject ? `In Progress: ${startedProjectInfo?.title}` : 'Start Work', icon: PlayCircle, action: () => {
+                  if (hasStartedProject) {
+                    toast({ title: 'Project Already Started', description: `You must submit your work for "${startedProjectInfo?.title}" before starting another.`, variant: 'destructive' });
+                    return;
+                  }
+                  setStartWorkingOpen(true);
+                }, primary: true },
                 { label: 'Submit New Work', icon: Upload, action: () => navigate('/submit-work') },
                 { label: 'Payment Settings', icon: Wallet, action: () => navigate('/payments') },
                 { label: 'Edit Profile', icon: Settings, action: () => navigate('/edit-profile') },
