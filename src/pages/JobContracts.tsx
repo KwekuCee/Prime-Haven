@@ -329,7 +329,7 @@ const JobContracts = () => {
                         <TableRow key={c.id} className="group">
                           <TableCell className="font-medium text-sm max-w-[200px] truncate">{c.title}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{getCategoryLabel(c.category)}</Badge>
+                            <Badge variant="outline" className="text-[10px] font-medium">{getCategoryLabel(c.category)}</Badge>
                           </TableCell>
                           <TableCell>{c.budget || '—'}</TableCell>
                           <TableCell>{c.deadline ? format(new Date(c.deadline), 'dd MMM yyyy') : '—'}</TableCell>
