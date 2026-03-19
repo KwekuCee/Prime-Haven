@@ -34,13 +34,15 @@ const SERVICE_TO_DISCORD: Record<string, string> = {
 interface NotifyRequest {
   designerId: string;
   projectName: string;
-  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid" | "start_working";
+  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid" | "start_working" | "correction_requested" | "rejected" | "client_rejected";
   pointsAwarded?: number;
   giftReason?: string;
   salaryAmount?: number;
   paymentMethod?: string;
   paymentAccount?: string;
   serviceType?: string;
+  correctionNote?: string;
+  rejectionReason?: string;
 }
 
 function encodeHtml(str: string): string {
