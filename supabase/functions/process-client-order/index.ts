@@ -180,7 +180,7 @@ serve(async (req: Request): Promise<Response> => {
       description,
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
-      budget: `GH₵${price}`,
+      budget: `GH₵${verifiedAmount}`,
     });
 
     // 3. Add revenue to the respective service category
