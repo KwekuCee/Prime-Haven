@@ -86,6 +86,14 @@ const Dashboard = () => {
   const [startWorkingSending, setStartWorkingSending] = useState(false);
   const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [hasStartedProject, setHasStartedProject] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const started = localStorage.getItem(`started_project_${user.id}`);
+      setHasStartedProject(!!started);
+    }
+  }, [user]);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
