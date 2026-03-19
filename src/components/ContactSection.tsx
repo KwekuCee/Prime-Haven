@@ -55,12 +55,12 @@ const ContactSection = () => {
               {t('contact.startProject')}
             </Button>
           </Link>
-          <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20book%20a%20free%20consultation%20call" target="_blank" rel="noopener noreferrer">
+          <BookConsultationDialog>
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <Calendar className="mr-2 w-5 h-5" />
               {t('contact.bookConsultation')}
             </Button>
-          </a>
+          </BookConsultationDialog>
           <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20start%20a%20project" target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <MessageCircle className="mr-2 w-5 h-5" />
