@@ -9,6 +9,10 @@ const SMTP_PASS = Deno.env.get("SMTP_PASS");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
+const TWILIO_FROM_NUMBER = Deno.env.get("TWILIO_FROM_NUMBER");
+const TWILIO_GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
