@@ -160,13 +160,13 @@ const ManagePricing = () => {
             <div className="p-4 sm:p-5 overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Tier</TableHead>
-                    <TableHead>Price (GH₵)</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Features</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Actions</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold">Tier</TableHead>
+                    <TableHead className="text-xs font-semibold">Price (GH₵)</TableHead>
+                    <TableHead className="text-xs font-semibold">Description</TableHead>
+                    <TableHead className="text-xs font-semibold">Features</TableHead>
+                    <TableHead className="text-xs font-semibold">Active</TableHead>
+                    <TableHead className="text-xs font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

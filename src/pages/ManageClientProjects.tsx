@@ -209,13 +209,13 @@ const ManageClientProjects = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-heading font-bold">Client Projects</h1>
-            <p className="text-muted-foreground">Manage projects and share tracking links with clients</p>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold">Client Projects</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Manage projects and share tracking links with clients</p>
           </div>
-          <Button variant="primary" onClick={() => { resetForm(); setShowCreateDialog(true); }}>
+          <Button size="sm" onClick={() => { resetForm(); setShowCreateDialog(true); }}>
             <Plus className="w-4 h-4 mr-2" /> New Project
           </Button>
         </div>
@@ -223,26 +223,26 @@ const ManageClientProjects = () => {
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : projects.length === 0 ? (
-          <Card><CardContent className="py-16 text-center text-muted-foreground">No projects yet. Create your first client project above.</CardContent></Card>
+          <div className="rounded-xl border border-border/50 bg-card/50 py-16 text-center text-muted-foreground">No projects yet. Create your first client project above.</div>
         ) : (
-          <Card>
+          <div className="rounded-xl border border-border/50 bg-card/50 overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs font-semibold">Project</TableHead>
+                  <TableHead className="text-xs font-semibold">Client</TableHead>
+                  <TableHead className="text-xs font-semibold">Status</TableHead>
+                  <TableHead className="text-xs font-semibold">Progress</TableHead>
+                  <TableHead className="text-xs font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {projects.map(p => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-semibold">{p.title}</TableCell>
-                    <TableCell>{p.client_name}</TableCell>
+                  <TableRow key={p.id} className="group">
+                    <TableCell className="font-medium text-sm">{p.title}</TableCell>
+                    <TableCell className="text-sm">{p.client_name}</TableCell>
                     <TableCell>{statusBadge(p.status)}</TableCell>
-                    <TableCell>{p.progress_percentage}%</TableCell>
+                    <TableCell className="text-sm">{p.progress_percentage}%</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => copyTrackingLink(p.tracking_token)} title="Copy tracking link"><Copy className="w-4 h-4" /></Button>
@@ -257,7 +257,7 @@ const ManageClientProjects = () => {
                 ))}
               </TableBody>
             </Table>
-          </Card>
+          </div>
         )}
       </div>
 
