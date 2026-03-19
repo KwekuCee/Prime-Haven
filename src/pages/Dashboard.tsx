@@ -120,10 +120,18 @@ const Dashboard = () => {
     if (!user || !startWorkingProject.trim()) return;
     setStartWorkingSending(true);
     try {
+      const selectedJob = activeJobs.find(j => j.title === startWorkingProject);
       const { error } = await supabase.functions.invoke('notify-designer', {
         body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working' },
       });
       if (error) throw error;
+      // Store started project info in localStorage
+      localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
+        jobId: selectedJob?.id || '',
+        title: startWorkingProject.trim(),
+        startedAt: new Date().toISOString(),
+      }));
+      setHasStartedProject(true);
       toast({ title: 'Notification sent!', description: 'Admin has been notified that you started working.' });
       setStartWorkingOpen(false);
       setStartWorkingProject('');
