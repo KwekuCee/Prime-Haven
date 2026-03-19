@@ -175,7 +175,7 @@ serve(async (req: Request): Promise<Response> => {
         heading = "You Received Bonus Points!";
         message = `You've been awarded <strong>+${pointsAwarded} bonus points</strong>${giftReason ? ` for: <strong>${encodeHtml(giftReason.slice(0, 200).trim())}</strong>` : ""}. Keep doing great work!`;
         badgeText = "BONUS POINTS"; emoji = "🎁";
-        smsText = `🎁 Prime Haven: You received +${pointsAwarded} bonus points${giftReason ? ` for: ${giftReason.slice(0, 100)}` : ""}! View: primehaven.tech/dashboard`;
+        
         break;
       case "salary_paid":
         subject = `💰 Your salary of GH₵${(salaryAmount || 0).toFixed(2)} has been sent!`;
