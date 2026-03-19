@@ -661,7 +661,11 @@ const Dashboard = () => {
             .select('id, title')
             .in('status', ['active', 'in_progress'])
             .order('created_at', { ascending: false })
-            .then(({ data }) => {
+            .then(({ data, error }) => {
+              if (error) {
+                console.error('Error fetching jobs:', error);
+              }
+              console.log('Fetched jobs:', data);
               setActiveJobs(data || []);
               setLoadingJobs(false);
             });
