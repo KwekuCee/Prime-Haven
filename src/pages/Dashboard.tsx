@@ -693,7 +693,7 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {activeJobs.length === 0 && !loadingJobs && (
-                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">No active jobs available</div>
+                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">No jobs available for your profession</div>
                   )}
                   {activeJobs.map((job) => (
                     <SelectItem key={job.id} value={job.title}>{job.title}</SelectItem>
