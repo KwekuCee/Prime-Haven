@@ -61,37 +61,18 @@ const ForwardWorkToClient = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load clients from orders and projects
-      const [ordersRes, projectsRes] = await Promise.all([
-        supabase.from('client_orders').select('client_name, client_email, client_whatsapp, service_type, created_at').order('created_at', { ascending: false }),
-        supabase.from('client_projects').select('title, client_name, client_email, client_whatsapp, category, created_at').order('created_at', { ascending: false }),
-      ]);
+      // Load clients from clients table
+      const { data: clientsData } = await supabase
+        .from('clients')
+        .select('id, name, email, whatsapp')
+        .order('name');
 
-      const clientMap = new Map<string, ClientOption>();
-      (ordersRes.data || []).forEach((o: any) => {
-        const key = o.client_email?.toLowerCase() || o.client_name.toLowerCase();
-        if (!clientMap.has(key)) {
-          clientMap.set(key, {
-            name: o.client_name,
-            email: o.client_email,
-            whatsapp: o.client_whatsapp || '',
-            source: 'order',
-          });
-        }
-      });
-      (projectsRes.data || []).forEach((p: any) => {
-        const key = p.client_email?.toLowerCase() || p.client_name.toLowerCase();
-        if (!clientMap.has(key)) {
-          clientMap.set(key, {
-            name: p.client_name,
-            email: p.client_email || '',
-            whatsapp: p.client_whatsapp || '',
-            source: 'project',
-            projectTitle: p.title,
-          });
-        }
-      });
-      setClients(Array.from(clientMap.values()));
+      setClients((clientsData || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email || '',
+        whatsapp: c.whatsapp || '',
+      })));
 
       // Load accepted/approved submissions
       const { data: subs, error: subsError } = await supabase
