@@ -472,8 +472,8 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                 <p className="font-medium">No submissions found</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <SubmissionFilesDialog open={!!viewFilesSubmission} onOpenChange={open => !open && setViewFilesSubmission(null)} submission={viewFilesSubmission} />
