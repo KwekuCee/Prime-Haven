@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/DashboardLayout';
 import AvailableJobs from '@/components/AvailableJobs';
@@ -84,6 +84,8 @@ const Dashboard = () => {
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
+  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
@@ -588,17 +590,42 @@ const Dashboard = () => {
       </div>
 
       {/* Start Working Dialog */}
-      <Dialog open={startWorkingOpen} onOpenChange={setStartWorkingOpen}>
+      <Dialog open={startWorkingOpen} onOpenChange={(open) => {
+        setStartWorkingOpen(open);
+        if (open) {
+          setLoadingJobs(true);
+          supabase
+            .from('job_contracts')
+            .select('id, title')
+            .in('status', ['active', 'in_progress'])
+            .order('created_at', { ascending: false })
+            .then(({ data }) => {
+              setActiveJobs(data || []);
+              setLoadingJobs(false);
+            });
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Start Work</DialogTitle>
-            <DialogDescription>Enter the project name. Admin will be notified via email.</DialogDescription>
+            <DialogDescription>Select the project you're starting. Admin will be notified via email.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="project-name">Project Name</Label>
-              <Input id="project-name" placeholder="e.g. ABC Company Logo Design"
-                value={startWorkingProject} onChange={(e) => setStartWorkingProject(e.target.value)} />
+              <Label>Project</Label>
+              <Select value={startWorkingProject} onValueChange={setStartWorkingProject}>
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingJobs ? 'Loading jobs...' : 'Select a project'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeJobs.length === 0 && !loadingJobs && (
+                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">No active jobs available</div>
+                  )}
+                  {activeJobs.map((job) => (
+                    <SelectItem key={job.id} value={job.title}>{job.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
