@@ -326,8 +326,8 @@ const JobContracts = () => {
                     </TableHeader>
                     <TableBody>
                       {contracts.map(c => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium max-w-[200px] truncate">{c.title}</TableCell>
+                        <TableRow key={c.id} className="group">
+                          <TableCell className="font-medium text-sm max-w-[200px] truncate">{c.title}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{getCategoryLabel(c.category)}</Badge>
                           </TableCell>
