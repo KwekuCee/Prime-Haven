@@ -34,13 +34,15 @@ const SERVICE_TO_DISCORD: Record<string, string> = {
 interface NotifyRequest {
   designerId: string;
   projectName: string;
-  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid" | "start_working";
+  notificationType: "ph_approved" | "client_accepted" | "gift_points" | "new_submission" | "salary_paid" | "start_working" | "correction_requested" | "rejected" | "client_rejected";
   pointsAwarded?: number;
   giftReason?: string;
   salaryAmount?: number;
   paymentMethod?: string;
   paymentAccount?: string;
   serviceType?: string;
+  correctionNote?: string;
+  rejectionReason?: string;
 }
 
 function encodeHtml(str: string): string {
@@ -85,7 +87,7 @@ async function sendSms(to: string, body: string): Promise<boolean> {
         "X-Connection-Api-Key": TWILIO_API_KEY,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ To: phone, From: "PrimeHaven", Body: body }),
+      body: new URLSearchParams({ To: phone, From: TWILIO_FROM_NUMBER!, Body: body }),
     });
     if (!res.ok) { console.error("SMS error:", res.status, await res.text()); return false; }
     const data = await res.json();
@@ -112,7 +114,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body: NotifyRequest = await req.json();
-    const { designerId, projectName, notificationType, pointsAwarded, giftReason, salaryAmount, paymentMethod, paymentAccount, serviceType } = body;
+    const { designerId, projectName, notificationType, pointsAwarded, giftReason, salaryAmount, paymentMethod, paymentAccount, serviceType, correctionNote, rejectionReason } = body;
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!designerId || !uuidRegex.test(designerId)) {
@@ -208,6 +210,27 @@ serve(async (req: Request): Promise<Response> => {
         message = `Great news! Your salary of <strong>GH₵${(salaryAmount || 0).toFixed(2)}</strong> has been sent to your <strong>${encodeHtml((paymentMethod || "account").slice(0, 50))}</strong>${paymentAccount ? ` ending in <strong>...${encodeHtml(paymentAccount.slice(-4))}</strong>` : ""}. Please allow some time for the funds to reflect in your account.`;
         badgeText = "SALARY PAID"; emoji = "💰";
         smsText = `💰 Prime Haven: Your salary of GH₵${(salaryAmount || 0).toFixed(2)} has been sent to your ${(paymentMethod || "account")}. View: primehaven.tech/dashboard`;
+        break;
+      case "correction_requested":
+        subject = `🔄 Correction requested for "${sanitizedProject}"`;
+        heading = "Correction Requested";
+        message = `Your submission <strong>"${sanitizedProject}"</strong> needs some revisions.${correctionNote ? ` <strong>Note:</strong> ${encodeHtml(correctionNote.slice(0, 300).trim())}` : ""} Please review the feedback and submit a corrected version.`;
+        badgeText = "CORRECTION NEEDED"; emoji = "🔄";
+        smsText = `🔄 Prime Haven: Correction requested for "${rawProject}".${correctionNote ? ` Note: ${correctionNote.slice(0, 80)}` : ""} Please revise & resubmit. View: primehaven.tech/dashboard`;
+        break;
+      case "rejected":
+        subject = `❌ Your submission "${sanitizedProject}" was rejected`;
+        heading = "Submission Rejected";
+        message = `Unfortunately, your submission <strong>"${sanitizedProject}"</strong> did not pass the Prime Haven quality check.${rejectionReason ? ` <strong>Reason:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Don't give up — review the feedback and try again!`;
+        badgeText = "REJECTED"; emoji = "❌";
+        smsText = `❌ Prime Haven: Your submission "${rawProject}" was rejected.${rejectionReason ? ` Reason: ${rejectionReason.slice(0, 80)}` : ""} View: primehaven.tech/dashboard`;
+        break;
+      case "client_rejected":
+        subject = `⚠️ Client rejected your design "${sanitizedProject}"`;
+        heading = "Client Rejected Your Design";
+        message = `The client has rejected your submission <strong>"${sanitizedProject}"</strong>.${rejectionReason ? ` <strong>Feedback:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Your PH-approval points have been retained. Review the feedback and keep improving!`;
+        badgeText = "CLIENT REJECTED"; emoji = "⚠️";
+        smsText = `⚠️ Prime Haven: Client rejected your design "${rawProject}".${rejectionReason ? ` Feedback: ${rejectionReason.slice(0, 80)}` : ""} PH points retained. View: primehaven.tech/dashboard`;
         break;
     }
 

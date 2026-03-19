@@ -25,7 +25,8 @@ serve(async (req: Request): Promise<Response> => {
     const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
     if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
 
-    const SMS_SENDER_ID = "PrimeHaven";
+    const TWILIO_FROM_NUMBER = Deno.env.get("TWILIO_FROM_NUMBER");
+    if (!TWILIO_FROM_NUMBER) throw new Error("TWILIO_FROM_NUMBER is not configured");
 
     const { to, body }: SmsRequest = await req.json();
 
@@ -51,7 +52,7 @@ serve(async (req: Request): Promise<Response> => {
       },
       body: new URLSearchParams({
         To: phone,
-        From: SMS_SENDER_ID,
+        From: TWILIO_FROM_NUMBER,
         Body: body,
       }),
     });
