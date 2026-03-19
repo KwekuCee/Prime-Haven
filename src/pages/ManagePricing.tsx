@@ -138,21 +138,12 @@ const ManagePricing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+    <SuperAdminLayout>
+      <div className="p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BrandLogo className="h-8" />
-            <div>
-              <h1 className="text-2xl font-heading font-bold">Service Pricing</h1>
-              <p className="text-sm text-muted-foreground">Manage prices for all service tiers</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <AdminNavigation />
+        <div>
+          <h1 className="text-2xl font-heading font-bold">Service Pricing</h1>
+          <p className="text-sm text-muted-foreground">Manage prices for all service tiers</p>
         </div>
 
         {/* Pricing Cards by Service */}
