@@ -265,8 +265,8 @@ const ManageClients = () => {
                 </Table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Send Email Dialog */}
