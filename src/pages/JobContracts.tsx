@@ -18,8 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { AdminNavigation } from '@/components/admin/AdminNavigation';
-import BrandLogo from '@/components/BrandLogo';
+import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 
 const JOB_CATEGORIES = [
@@ -257,21 +256,8 @@ const JobContracts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <BrandLogo />
-            <div className="hidden sm:block h-6 w-px bg-border" />
-            <AdminNavigation />
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/superadmin')}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back
-          </Button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <SuperAdminLayout>
+      <div className="p-6 lg:p-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -553,7 +539,7 @@ const JobContracts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </SuperAdminLayout>
   );
 };
 

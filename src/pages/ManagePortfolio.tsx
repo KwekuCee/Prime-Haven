@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 
 interface PortfolioItem {
   id: string;
@@ -239,20 +240,14 @@ const ManagePortfolio = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
+    <SuperAdminLayout>
+      <div className="p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link to="/superadmin">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-heading font-bold">Manage Portfolio</h1>
-              <p className="text-muted-foreground">Add and manage company works displayed on the website</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-heading font-bold">Manage Portfolio</h1>
+            <p className="text-muted-foreground">Add and manage company works displayed on the website</p>
           </div>
           <Button onClick={() => setShowForm(!showForm)} className="gap-2">
             <Plus className="w-4 h-4" />
@@ -476,7 +471,8 @@ const ManagePortfolio = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 };
 
