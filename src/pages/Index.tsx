@@ -36,6 +36,10 @@ const prefetchImages = async () => {
 };
 
 const Index = () => {
+  useEffect(() => {
+    prefetchImages();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <ParticleBackground />
