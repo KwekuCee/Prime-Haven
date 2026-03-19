@@ -95,7 +95,7 @@ serve(async (req: Request): Promise<Response> => {
     const {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
-      description, discordCategory, paymentReference
+      description, discordCategory, paymentReference, referenceFiles
     } = body;
 
     if (!clientName || !clientEmail || !serviceType || !tier || !price || !paymentReference) {
