@@ -260,7 +260,6 @@ Thank you for choosing Prime Haven! ✨`;
               <SelectValue placeholder="Choose a client..." />
             </SelectTrigger>
             <SelectContent>
-              {clients.map((c) => {
               {clients.map(c => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name} {c.email ? `— ${c.email}` : ''}
