@@ -208,15 +208,8 @@ const ManageClientProjects = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <BrandLogo height={36} />
-          <AdminNavigation />
-        </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-8">
+    <SuperAdminLayout>
+      <div className="p-6 lg:p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-heading font-bold">Client Projects</h1>
