@@ -118,7 +118,7 @@ const Register = () => {
         available_hours: formData.availableHours ? parseInt(formData.availableHours.split('-')[0]) : null,
       }).eq('user_id', userId);
 
-      await supabase.functions.invoke('verify-payment', { body: { reference: reference.reference, userId } });
+      await supabase.functions.invoke('verify-payment', { body: { reference: reference.reference } });
 
       toast({ title: 'Registration Successful!', description: 'Please check your email to verify your account.' });
       navigate('/login?registered=true');

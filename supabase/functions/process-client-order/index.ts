@@ -117,9 +117,33 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Use verified amount from Paystack, not client-supplied price
+    const verifiedAmount = paystackData.data.amount / 100; // pesewas → cedis
+    const verifiedCurrency = paystackData.data.currency;
+
+    // Validate currency
+    if (verifiedCurrency !== "GHS") {
+      return new Response(JSON.stringify({ success: false, error: "Invalid payment currency" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // 1. Create client order
+    // Check for duplicate payment reference
+    const { data: existingOrder } = await supabase
+      .from("client_orders")
+      .select("id")
+      .eq("payment_reference", paymentReference)
+      .maybeSingle();
+
+    if (existingOrder) {
+      return new Response(JSON.stringify({ success: false, error: "Payment already processed" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // 1. Create client order using verified amount
     const { data: order, error: orderError } = await supabase
       .from("client_orders")
       .insert({
@@ -128,7 +152,7 @@ serve(async (req: Request): Promise<Response> => {
         client_whatsapp: clientWhatsapp || null,
         service_type: serviceType,
         tier,
-        price,
+        price: verifiedAmount,
         description: description || null,
         payment_status: "completed",
         payment_reference: paymentReference,
@@ -156,7 +180,7 @@ serve(async (req: Request): Promise<Response> => {
       description,
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
-      budget: `GH₵${price}`,
+      budget: `GH₵${verifiedAmount}`,
     });
 
     // 3. Add revenue to the respective service category
@@ -172,7 +196,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     const currentRevenue = revenueSetting?.value as Record<string, number> || { graphic: 0, uiux: 0, web: 0 };
-    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + Number(price);
+    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + verifiedAmount;
 
     await supabase
       .from("system_settings")
@@ -191,7 +215,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     const totalRev = totalRevSetting?.value as any || { amount: 0, currency: "GHS" };
-    totalRev.amount = (Number(totalRev.amount) || 0) + Number(price);
+    totalRev.amount = (Number(totalRev.amount) || 0) + verifiedAmount;
 
     await supabase
       .from("system_settings")
@@ -215,7 +239,7 @@ serve(async (req: Request): Promise<Response> => {
           { name: "👤 Client", value: encodeHtml(clientName), inline: true },
           { name: "📧 Email", value: encodeHtml(clientEmail), inline: true },
           { name: "📦 Package", value: `${tier.charAt(0).toUpperCase() + tier.slice(1)}`, inline: true },
-          { name: "💰 Amount Paid", value: `GH₵${Number(price).toLocaleString()}`, inline: true },
+          { name: "💰 Amount Paid", value: `GH₵${verifiedAmount.toLocaleString()}`, inline: true },
           ...(clientWhatsapp ? [{ name: "📱 WhatsApp", value: encodeHtml(clientWhatsapp), inline: true }] : []),
         ],
         footer: { text: "Prime Haven • Client Order (Paid)" },
@@ -246,8 +270,8 @@ serve(async (req: Request): Promise<Response> => {
     // 5. Log the action
     await supabase.from("system_logs").insert({
       action_type: "client_order_created",
-      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${price}`,
-      new_value: { order_id: order?.id, service_type: serviceType, tier, price, payment_reference: paymentReference },
+      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${verifiedAmount}`,
+      new_value: { order_id: order?.id, service_type: serviceType, tier, price: verifiedAmount, payment_reference: paymentReference },
     });
 
     return new Response(JSON.stringify({ success: true, orderId: order?.id }), {
