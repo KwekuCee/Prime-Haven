@@ -48,14 +48,14 @@ const Index = () => {
       <main>
         <HeroSection />
         <ServicesSection />
-        <AdUnit slot="1234567890" />
+        <AdUnit slot="1675197526" />
         <PortfolioSection />
         <StatsSection />
-        <AdUnit slot="1234567891" />
+        <AdUnit slot="1675197526" />
         <FounderSection />
         <TeamSection />
         <TestimonialsSection />
-        <AdUnit slot="1234567892" />
+        <AdUnit slot="1675197526" />
         <FAQSection />
         <BlogSection />
         <JoinSection />
