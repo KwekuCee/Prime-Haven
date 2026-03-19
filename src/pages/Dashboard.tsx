@@ -84,6 +84,8 @@ const Dashboard = () => {
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
+  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
