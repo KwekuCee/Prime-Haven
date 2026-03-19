@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   Briefcase, Plus, Send, Calendar, DollarSign, Users, FileText,
   ArrowLeft, Trash2, Clock, CheckCircle, XCircle, Upload, Image as ImageIcon,
-  Loader2, RefreshCw
+  Loader2, RefreshCw, UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,14 @@ interface JobContract {
   created_at: string;
 }
 
+interface ClientOption {
+  id: string;
+  name: string;
+  email: string | null;
+  whatsapp: string | null;
+  company: string | null;
+}
+
 const JobContracts = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -56,6 +64,11 @@ const JobContracts = () => {
   const [referenceFiles, setReferenceFiles] = useState<{ file: File; uploading: boolean; url?: string }[]>([]);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
+  const [clientsList, setClientsList] = useState<ClientOption[]>([]);
+  const [isNewClientOpen, setIsNewClientOpen] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({ name: '', email: '', whatsapp: '', company: '' });
+  const [addingClient, setAddingClient] = useState(false);
+
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -66,6 +79,18 @@ const JobContracts = () => {
     clientName: '',
     specialInstructions: '',
   });
+
+  const loadClients = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, email, whatsapp, company')
+        .order('name');
+      setClientsList((data || []) as ClientOption[]);
+    } catch (err) {
+      console.error('Error loading clients:', err);
+    }
+  }, []);
 
   const loadContracts = useCallback(async () => {
     try {
@@ -99,10 +124,10 @@ const JobContracts = () => {
         navigate('/dashboard', { replace: true });
         return;
       }
-      await loadContracts();
+      await Promise.all([loadContracts(), loadClients()]);
     };
     checkAccess();
-  }, [user, authLoading, navigate, loadContracts]);
+  }, [user, authLoading, navigate, loadContracts, loadClients]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -133,6 +158,32 @@ const JobContracts = () => {
     setReferenceFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddNewClient = async () => {
+    if (!newClientForm.name.trim()) {
+      toast({ title: 'Name required', variant: 'destructive' });
+      return;
+    }
+    setAddingClient(true);
+    try {
+      const { data, error } = await supabase.from('clients').insert({
+        name: newClientForm.name.trim(),
+        email: newClientForm.email.trim() || null,
+        whatsapp: newClientForm.whatsapp.trim() || null,
+        company: newClientForm.company.trim() || null,
+      }).select().single();
+      if (error) throw error;
+      toast({ title: 'Client Added!', description: `${newClientForm.name} added to client list.` });
+      setForm(f => ({ ...f, clientName: newClientForm.name.trim() }));
+      setNewClientForm({ name: '', email: '', whatsapp: '', company: '' });
+      setIsNewClientOpen(false);
+      await loadClients();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setAddingClient(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.title || !form.description || !form.category) {
       toast({ title: 'Missing Fields', description: 'Title, description, and category are required.', variant: 'destructive' });
@@ -143,7 +194,6 @@ const JobContracts = () => {
     try {
       const fileUrls = referenceFiles.filter(f => f.url).map(f => f.url!);
 
-      // 1. Save to database
       const { data: contract, error } = await supabase
         .from('job_contracts')
         .insert({
@@ -163,7 +213,6 @@ const JobContracts = () => {
 
       if (error) throw error;
 
-      // 2. Post to Discord + send emails via edge function
       const { error: fnError } = await supabase.functions.invoke('post-job-contract', {
         body: {
           title: form.title,
@@ -207,7 +256,6 @@ const JobContracts = () => {
         .eq('id', contract.id);
       if (error) throw error;
 
-      // Update Discord if message exists
       if (contract.discord_message_id && contract.discord_channel_id) {
         try {
           await supabase.functions.invoke('post-job-contract', {
@@ -429,11 +477,37 @@ const JobContracts = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Client Name</Label>
-                <Input
-                  placeholder="e.g. Acme Corp"
-                  value={form.clientName}
-                  onChange={e => setForm(f => ({ ...f, clientName: e.target.value }))}
-                />
+                <div className="flex gap-2">
+                  <Select
+                    value={form.clientName}
+                    onValueChange={v => {
+                      if (v === '__new__') {
+                        setIsNewClientOpen(true);
+                      } else {
+                        setForm(f => ({ ...f, clientName: v }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientsList.map(c => (
+                        <SelectItem key={c.id} value={c.name}>
+                          <div className="flex flex-col">
+                            <span>{c.name}</span>
+                            {c.company && <span className="text-xs text-muted-foreground">{c.company}</span>}
+                          </div>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__new__" className="text-primary font-medium">
+                        <span className="flex items-center gap-1.5">
+                          <UserPlus className="w-3.5 h-3.5" /> Add New Client
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
                 <Label>Budget / Pay</Label>
@@ -534,6 +608,43 @@ const JobContracts = () => {
                   <Send className="w-4 h-4" /> Post Job
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Client Dialog (inline from job posting) */}
+      <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" /> Add New Client
+            </DialogTitle>
+            <DialogDescription>Create a new client and select them for this job.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Name *</Label>
+              <Input placeholder="Client name" value={newClientForm.name} onChange={e => setNewClientForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" placeholder="client@example.com" value={newClientForm.email} onChange={e => setNewClientForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>WhatsApp</Label>
+              <Input placeholder="+233..." value={newClientForm.whatsapp} onChange={e => setNewClientForm(f => ({ ...f, whatsapp: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Company</Label>
+              <Input placeholder="Company name" value={newClientForm.company} onChange={e => setNewClientForm(f => ({ ...f, company: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewClientOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddNewClient} disabled={addingClient || !newClientForm.name.trim()}>
+              {addingClient ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Add & Select
             </Button>
           </DialogFooter>
         </DialogContent>
