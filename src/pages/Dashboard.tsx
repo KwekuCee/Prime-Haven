@@ -87,11 +87,20 @@ const Dashboard = () => {
   const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [hasStartedProject, setHasStartedProject] = useState(false);
+  const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
 
   useEffect(() => {
     if (user) {
       const started = localStorage.getItem(`started_project_${user.id}`);
-      setHasStartedProject(!!started);
+      if (started) {
+        try {
+          const parsed = JSON.parse(started);
+          setStartedProjectInfo(parsed);
+          setHasStartedProject(true);
+        } catch {
+          setHasStartedProject(false);
+        }
+      }
     }
   }, [user]);
 
