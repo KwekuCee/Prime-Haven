@@ -104,6 +104,21 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!startWorkingOpen || !user) return;
+    setLoadingJobs(true);
+    supabase
+      .from('job_contracts')
+      .select('id, title')
+      .in('status', ['active', 'in_progress'])
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error('Error fetching jobs:', error);
+        setActiveJobs(data || []);
+        setLoadingJobs(false);
+      });
+  }, [startWorkingOpen, user]);
+
   const recalculateTalentScore = async () => {
     if (!user) return;
     setRecalculating(true);
