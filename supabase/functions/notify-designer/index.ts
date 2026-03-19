@@ -169,7 +169,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Designer notifications
-    const { data: profile, error: profileError } = await supabase.from("profiles").select("email, full_name").eq("id", designerId).single();
+    const { data: profile, error: profileError } = await supabase.from("profiles").select("email, full_name, phone").eq("id", designerId).single();
     if (profileError || !profile) {
       return new Response(JSON.stringify({ success: false, error: "designer_not_found" }), { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
