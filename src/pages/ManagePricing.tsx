@@ -131,31 +131,33 @@ const ManagePricing = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
+      <SuperAdminLayout>
+        <div className="flex items-center justify-center py-32">
+          <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        </div>
+      </SuperAdminLayout>
     );
   }
 
   return (
     <SuperAdminLayout>
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-heading font-bold">Service Pricing</h1>
-          <p className="text-sm text-muted-foreground">Manage prices for all service tiers</p>
+          <h1 className="text-xl sm:text-2xl font-heading font-bold">Service Pricing</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Manage prices for all service tiers</p>
         </div>
 
         {/* Pricing Cards by Service */}
         {Object.entries(grouped).map(([serviceType, items]) => (
-          <Card key={serviceType}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div key={serviceType} className="rounded-xl border border-border/50 bg-card/50">
+            <div className="p-4 sm:p-5 border-b border-border/50">
+              <h2 className="text-base font-bold flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-primary" />
                 {items[0]?.service_label || serviceType}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+            </div>
+            <div className="p-4 sm:p-5 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
