@@ -117,6 +117,17 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Use verified amount from Paystack, not client-supplied price
+    const verifiedAmount = paystackData.data.amount / 100; // pesewas → cedis
+    const verifiedCurrency = paystackData.data.currency;
+
+    // Validate currency
+    if (verifiedCurrency !== "GHS") {
+      return new Response(JSON.stringify({ success: false, error: "Invalid payment currency" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // 1. Create client order
