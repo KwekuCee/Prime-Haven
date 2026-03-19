@@ -70,6 +70,30 @@ async function postToDiscord(channelId: string, embed: any): Promise<string | nu
   } catch (e) { console.error("Discord post error:", e); return null; }
 }
 
+async function sendSms(to: string, body: string): Promise<boolean> {
+  if (!LOVABLE_API_KEY || !TWILIO_API_KEY || !TWILIO_FROM_NUMBER || !to) {
+    console.log("SMS skipped: missing config or phone number");
+    return false;
+  }
+  let phone = to.replace(/[\s\-()]/g, "");
+  if (!phone.startsWith("+")) phone = `+${phone}`;
+  try {
+    const res = await fetch(`${TWILIO_GATEWAY_URL}/Messages.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": TWILIO_API_KEY,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ To: phone, From: TWILIO_FROM_NUMBER, Body: body }),
+    });
+    if (!res.ok) { console.error("SMS error:", res.status, await res.text()); return false; }
+    const data = await res.json();
+    console.log(`SMS sent to ${phone}, SID: ${data.sid}`);
+    return true;
+  } catch (e) { console.error("SMS send error:", e); return false; }
+}
+
 async function getDesignerDiscordChannels(supabase: any, designerId: string): Promise<string[]> {
   const { data: detail } = await supabase.from("designer_details").select("skills, professional_title").eq("user_id", designerId).maybeSingle();
   if (!detail) return Object.values(DISCORD_CHANNELS);
