@@ -9,28 +9,30 @@ import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-// Lazy-loaded pages for better initial load speed
+// Lazy-loaded pages for non-dashboard routes
 const Register = lazy(() => import("./pages/Register"));
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AuthConfirm = lazy(() => import("./pages/AuthConfirm"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Payments = lazy(() => import("./pages/Payments"));
-const SubmitWork = lazy(() => import("./pages/SubmitWork"));
-const EditProfile = lazy(() => import("./pages/EditProfile"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const SuperAdminLogin = lazy(() => import("./pages/SuperAdminLogin"));
-const Messages = lazy(() => import("./pages/Messages"));
-const Install = lazy(() => import("./pages/Install"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const TrackProject = lazy(() => import("./pages/TrackProject"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+
+// Eagerly load dashboard pages for instant navigation
+import Dashboard from "./pages/Dashboard";
+import Settings from "./pages/Settings";
+import Payments from "./pages/Payments";
+import SubmitWork from "./pages/SubmitWork";
+import EditProfile from "./pages/EditProfile";
+import Messages from "./pages/Messages";
+import Install from "./pages/Install";
 
 // Eagerly load admin pages for instant navigation
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
