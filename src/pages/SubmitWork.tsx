@@ -38,21 +38,23 @@ const categoryToJobCategory = (profession: string): string[] => {
   }
 };
 
-const SectionCard = ({ icon: Icon, title, desc, children, delay = 0 }: { icon: any; title: string; desc?: string; children: React.ReactNode; delay?: number }) => (
-  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-    className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
-    <div className="flex items-center gap-3 mb-4">
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-        <Icon className="w-4 h-4 text-primary" />
+const SectionCard = ({ icon: Icon, title, desc, children, delay = 0 }: { icon: any; title: string; desc?: string; children: React.ReactNode; delay?: number }) => {
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
+      className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Icon className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-heading font-bold">{title}</h3>
+          {desc && <p className="text-[10px] text-muted-foreground">{desc}</p>}
+        </div>
       </div>
-      <div>
-        <h3 className="text-sm font-heading font-bold">{title}</h3>
-        {desc && <p className="text-[10px] text-muted-foreground">{desc}</p>}
-      </div>
-    </div>
-    {children}
-  </motion.div>
-);
+      {children}
+    </motion.div>
+  );
+};
 
 const SubmitWork = () => {
   const navigate = useNavigate();
