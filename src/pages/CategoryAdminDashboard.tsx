@@ -327,20 +327,20 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
         </div>
 
         {/* Submissions Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-xl border border-border/50 bg-card/50">
+          <div className="p-4 sm:p-5 border-b border-border/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle className="font-bold">{categoryLabel} Submissions</CardTitle>
-                <CardDescription className="font-medium">PH Check → Client Acceptance workflow</CardDescription>
+                <h2 className="text-base font-bold">{categoryLabel} Submissions</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">PH Check → Client Acceptance workflow</p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input placeholder="Search..." className="pl-9 w-[200px]" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
+                  <Input placeholder="Search..." className="pl-8 h-8 text-sm w-full sm:w-48" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm w-full sm:w-40"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
@@ -353,8 +353,7 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                 </Select>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
             {filteredSubmissions.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
