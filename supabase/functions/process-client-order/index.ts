@@ -215,7 +215,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     const totalRev = totalRevSetting?.value as any || { amount: 0, currency: "GHS" };
-    totalRev.amount = (Number(totalRev.amount) || 0) + Number(price);
+    totalRev.amount = (Number(totalRev.amount) || 0) + verifiedAmount;
 
     await supabase
       .from("system_settings")
