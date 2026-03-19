@@ -62,6 +62,7 @@ const navSections: NavSection[] = [
       { label: 'Projects', icon: FolderKanban, path: '/superadmin/projects' },
       { label: 'Pricing', icon: Tag, path: '/superadmin/pricing' },
       { label: 'Clients', icon: UserSquare, path: '/superadmin/clients' },
+      { label: 'Forward Work', icon: Send, path: '/superadmin/forward-work' },
     ],
   },
   {
