@@ -590,17 +590,42 @@ const Dashboard = () => {
       </div>
 
       {/* Start Working Dialog */}
-      <Dialog open={startWorkingOpen} onOpenChange={setStartWorkingOpen}>
+      <Dialog open={startWorkingOpen} onOpenChange={(open) => {
+        setStartWorkingOpen(open);
+        if (open) {
+          setLoadingJobs(true);
+          supabase
+            .from('job_contracts')
+            .select('id, title')
+            .in('status', ['active', 'in_progress'])
+            .order('created_at', { ascending: false })
+            .then(({ data }) => {
+              setActiveJobs(data || []);
+              setLoadingJobs(false);
+            });
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Start Work</DialogTitle>
-            <DialogDescription>Enter the project name. Admin will be notified via email.</DialogDescription>
+            <DialogDescription>Select the project you're starting. Admin will be notified via email.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="project-name">Project Name</Label>
-              <Input id="project-name" placeholder="e.g. ABC Company Logo Design"
-                value={startWorkingProject} onChange={(e) => setStartWorkingProject(e.target.value)} />
+              <Label>Project</Label>
+              <Select value={startWorkingProject} onValueChange={setStartWorkingProject}>
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingJobs ? 'Loading jobs...' : 'Select a project'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeJobs.length === 0 && !loadingJobs && (
+                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">No active jobs available</div>
+                  )}
+                  {activeJobs.map((job) => (
+                    <SelectItem key={job.id} value={job.title}>{job.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
