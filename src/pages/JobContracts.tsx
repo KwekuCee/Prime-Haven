@@ -18,8 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { AdminNavigation } from '@/components/admin/AdminNavigation';
-import BrandLogo from '@/components/BrandLogo';
+import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 
 const JOB_CATEGORIES = [
