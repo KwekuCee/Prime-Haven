@@ -161,7 +161,7 @@ serve(async (req: Request): Promise<Response> => {
         heading = "Design Approved by Prime Haven!";
         message = `Great news! Your submission <strong>"${sanitizedProject}"</strong> has passed the Prime Haven quality check and earned you <strong>+${pointsAwarded || 15} points</strong>. Your work is now awaiting client review.`;
         badgeText = "PH APPROVED"; emoji = "🎨";
-        smsText = `🎨 Prime Haven: Your design "${rawProject}" has been PH Approved! +${pointsAwarded || 15} pts. Now awaiting client review. View: primehaven.tech/dashboard`;
+        
         break;
       case "client_accepted":
         subject = `🏆 Client Accepted your design "${sanitizedProject}"!`;
