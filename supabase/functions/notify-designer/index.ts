@@ -9,10 +9,6 @@ const SMTP_PASS = Deno.env.get("SMTP_PASS");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
-const TWILIO_FROM_NUMBER = Deno.env.get("TWILIO_FROM_NUMBER");
-const TWILIO_GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,29 +68,6 @@ async function postToDiscord(channelId: string, embed: any): Promise<string | nu
   } catch (e) { console.error("Discord post error:", e); return null; }
 }
 
-async function sendSms(to: string, body: string): Promise<boolean> {
-  if (!LOVABLE_API_KEY || !TWILIO_API_KEY || !TWILIO_FROM_NUMBER || !to) {
-    console.log("SMS skipped: missing config or phone number");
-    return false;
-  }
-  let phone = to.replace(/[\s\-()]/g, "");
-  if (!phone.startsWith("+")) phone = `+${phone}`;
-  try {
-    const res = await fetch(`${TWILIO_GATEWAY_URL}/Messages.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TWILIO_API_KEY,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({ To: phone, From: TWILIO_FROM_NUMBER!, Body: body }),
-    });
-    if (!res.ok) { console.error("SMS error:", res.status, await res.text()); return false; }
-    const data = await res.json();
-    console.log(`SMS sent to ${phone}, SID: ${data.sid}`);
-    return true;
-  } catch (e) { console.error("SMS send error:", e); return false; }
-}
 
 async function getDesignerDiscordChannels(supabase: any, designerId: string): Promise<string[]> {
   const { data: detail } = await supabase.from("designer_details").select("skills, professional_title").eq("user_id", designerId).maybeSingle();
@@ -180,7 +153,7 @@ serve(async (req: Request): Promise<Response> => {
     const sanitizedProject = encodeHtml((projectName || "Your Project").slice(0, 200).trim());
     const rawName = (profile.full_name || "Designer").slice(0, 100).trim();
     const rawProject = (projectName || "Your Project").slice(0, 200).trim();
-    let subject = "", heading = "", message = "", badgeText = "", emoji = "", smsText = "";
+    let subject = "", heading = "", message = "", badgeText = "", emoji = "";
 
     switch (notificationType) {
       case "ph_approved":
@@ -188,49 +161,49 @@ serve(async (req: Request): Promise<Response> => {
         heading = "Design Approved by Prime Haven!";
         message = `Great news! Your submission <strong>"${sanitizedProject}"</strong> has passed the Prime Haven quality check and earned you <strong>+${pointsAwarded || 15} points</strong>. Your work is now awaiting client review.`;
         badgeText = "PH APPROVED"; emoji = "🎨";
-        smsText = `🎨 Prime Haven: Your design "${rawProject}" has been PH Approved! +${pointsAwarded || 15} pts. Now awaiting client review. View: primehaven.tech/dashboard`;
+        
         break;
       case "client_accepted":
         subject = `🏆 Client Accepted your design "${sanitizedProject}"!`;
         heading = "Client Accepted Your Design!";
         message = `Amazing work! The client has accepted your submission <strong>"${sanitizedProject}"</strong>! You've earned an additional <strong>+${pointsAwarded || 40} points</strong>. Keep up the incredible work!`;
         badgeText = "CLIENT ACCEPTED"; emoji = "🏆";
-        smsText = `🏆 Prime Haven: Client accepted your design "${rawProject}"! +${pointsAwarded || 40} pts. Amazing work! View: primehaven.tech/dashboard`;
+        
         break;
       case "gift_points":
         subject = `🎁 You received ${pointsAwarded} bonus points!`;
         heading = "You Received Bonus Points!";
         message = `You've been awarded <strong>+${pointsAwarded} bonus points</strong>${giftReason ? ` for: <strong>${encodeHtml(giftReason.slice(0, 200).trim())}</strong>` : ""}. Keep doing great work!`;
         badgeText = "BONUS POINTS"; emoji = "🎁";
-        smsText = `🎁 Prime Haven: You received +${pointsAwarded} bonus points${giftReason ? ` for: ${giftReason.slice(0, 100)}` : ""}! View: primehaven.tech/dashboard`;
+        
         break;
       case "salary_paid":
         subject = `💰 Your salary of GH₵${(salaryAmount || 0).toFixed(2)} has been sent!`;
         heading = "You've Been Paid!";
         message = `Great news! Your salary of <strong>GH₵${(salaryAmount || 0).toFixed(2)}</strong> has been sent to your <strong>${encodeHtml((paymentMethod || "account").slice(0, 50))}</strong>${paymentAccount ? ` ending in <strong>...${encodeHtml(paymentAccount.slice(-4))}</strong>` : ""}. Please allow some time for the funds to reflect in your account.`;
         badgeText = "SALARY PAID"; emoji = "💰";
-        smsText = `💰 Prime Haven: Your salary of GH₵${(salaryAmount || 0).toFixed(2)} has been sent to your ${(paymentMethod || "account")}. View: primehaven.tech/dashboard`;
+        
         break;
       case "correction_requested":
         subject = `🔄 Correction requested for "${sanitizedProject}"`;
         heading = "Correction Requested";
         message = `Your submission <strong>"${sanitizedProject}"</strong> needs some revisions.${correctionNote ? ` <strong>Note:</strong> ${encodeHtml(correctionNote.slice(0, 300).trim())}` : ""} Please review the feedback and submit a corrected version.`;
         badgeText = "CORRECTION NEEDED"; emoji = "🔄";
-        smsText = `🔄 Prime Haven: Correction requested for "${rawProject}".${correctionNote ? ` Note: ${correctionNote.slice(0, 80)}` : ""} Please revise & resubmit. View: primehaven.tech/dashboard`;
+        
         break;
       case "rejected":
         subject = `❌ Your submission "${sanitizedProject}" was rejected`;
         heading = "Submission Rejected";
         message = `Unfortunately, your submission <strong>"${sanitizedProject}"</strong> did not pass the Prime Haven quality check.${rejectionReason ? ` <strong>Reason:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Don't give up — review the feedback and try again!`;
         badgeText = "REJECTED"; emoji = "❌";
-        smsText = `❌ Prime Haven: Your submission "${rawProject}" was rejected.${rejectionReason ? ` Reason: ${rejectionReason.slice(0, 80)}` : ""} View: primehaven.tech/dashboard`;
+        
         break;
       case "client_rejected":
         subject = `⚠️ Client rejected your design "${sanitizedProject}"`;
         heading = "Client Rejected Your Design";
         message = `The client has rejected your submission <strong>"${sanitizedProject}"</strong>.${rejectionReason ? ` <strong>Feedback:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Your PH-approval points have been retained. Review the feedback and keep improving!`;
         badgeText = "CLIENT REJECTED"; emoji = "⚠️";
-        smsText = `⚠️ Prime Haven: Client rejected your design "${rawProject}".${rejectionReason ? ` Feedback: ${rejectionReason.slice(0, 80)}` : ""} PH points retained. View: primehaven.tech/dashboard`;
+        
         break;
     }
 
@@ -239,10 +212,6 @@ serve(async (req: Request): Promise<Response> => {
     await sendEmail(profile.email, subject, emailHtml);
     console.log(`Notification email sent to ${profile.email} for ${notificationType}`);
 
-    // Send SMS if designer has a phone number
-    if (smsText && profile.phone) {
-      await sendSms(profile.phone, smsText);
-    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (error) {
