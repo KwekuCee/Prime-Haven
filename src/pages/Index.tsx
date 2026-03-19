@@ -14,6 +14,7 @@ import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import VisitorChatbot from '@/components/VisitorChatbot';
+import AdUnit from '@/components/AdUnit';
 import { supabase } from '@/integrations/supabase/client';
 
 // Prefetch all homepage images immediately so they're cached before scrolling
@@ -47,11 +48,14 @@ const Index = () => {
       <main>
         <HeroSection />
         <ServicesSection />
+        <AdUnit slot="1234567890" />
         <PortfolioSection />
         <StatsSection />
+        <AdUnit slot="1234567891" />
         <FounderSection />
         <TeamSection />
         <TestimonialsSection />
+        <AdUnit slot="1234567892" />
         <FAQSection />
         <BlogSection />
         <JoinSection />
