@@ -189,7 +189,7 @@ serve(async (req: Request): Promise<Response> => {
         heading = "Correction Requested";
         message = `Your submission <strong>"${sanitizedProject}"</strong> needs some revisions.${correctionNote ? ` <strong>Note:</strong> ${encodeHtml(correctionNote.slice(0, 300).trim())}` : ""} Please review the feedback and submit a corrected version.`;
         badgeText = "CORRECTION NEEDED"; emoji = "🔄";
-        smsText = `🔄 Prime Haven: Correction requested for "${rawProject}".${correctionNote ? ` Note: ${correctionNote.slice(0, 80)}` : ""} Please revise & resubmit. View: primehaven.tech/dashboard`;
+        
         break;
       case "rejected":
         subject = `❌ Your submission "${sanitizedProject}" was rejected`;
