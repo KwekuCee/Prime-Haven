@@ -354,8 +354,9 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
               </div>
             </div>
           </div>
+          <div className="p-4 sm:p-5">
             {filteredSubmissions.length > 0 ? (
-              <div className="rounded-md border">
+              <div className="rounded-md border border-border/50 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
