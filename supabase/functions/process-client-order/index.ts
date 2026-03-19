@@ -270,8 +270,8 @@ serve(async (req: Request): Promise<Response> => {
     // 5. Log the action
     await supabase.from("system_logs").insert({
       action_type: "client_order_created",
-      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${price}`,
-      new_value: { order_id: order?.id, service_type: serviceType, tier, price, payment_reference: paymentReference },
+      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${verifiedAmount}`,
+      new_value: { order_id: order?.id, service_type: serviceType, tier, price: verifiedAmount, payment_reference: paymentReference },
     });
 
     return new Response(JSON.stringify({ success: true, orderId: order?.id }), {
