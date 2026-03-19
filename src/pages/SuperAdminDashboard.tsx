@@ -1544,1094 +1544,807 @@ const SuperAdminDashboard = () => {
 
   return (
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
-      <div className="p-4 sm:p-6 lg:p-8">
-        {/* Top Actions Bar */}
-        <div className="flex items-center justify-between gap-3 mb-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-heading font-bold">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Complete platform administration</p>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold tracking-tight">Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Overview of your platform</p>
           </div>
-          <div className="flex items-center gap-2">
-            <AlertDialog>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" disabled={isResettingPoints} className="text-amber-500 border-amber-500 hover:bg-amber-500 hover:text-white">
-                        {isResettingPoints ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        <span className="ml-1 hidden lg:inline">Reset Points</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Reset all designer points to zero</p></TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="font-bold text-amber-500">Reset All Designer Points?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will set all designer total points, monthly points, and estimated salaries to zero. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600">
-                    Reset All Points
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={() => loadDashboardDataSafe()} disabled={loading}>
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent><p>Refresh data</p></TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Button variant="outline" size="sm" onClick={() => {
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => {
               const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
               setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
               setIsRevenueModalOpen(true);
             }}>
-              <DollarSign className="w-4 h-4 mr-1" />
+              <DollarSign className="w-3.5 h-3.5" />
               Revenue
             </Button>
-            <Button variant="outline" size="sm" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
-              {isRecalculatingSalaries ? <RefreshCw className="w-4 h-4 animate-spin mr-1" /> : <Banknote className="w-4 h-4 mr-1" />}
-              Recalculate
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
+              {isRecalculatingSalaries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">Recalculate</span>
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 text-amber-500 border-amber-500/30 hover:bg-amber-500/10" disabled={isResettingPoints}>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isResettingPoints ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Reset Points</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-amber-500">Reset All Points?</AlertDialogTitle>
+                  <AlertDialogDescription>This will set all designer points and salaries to zero. Cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600">Reset</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {[
             {
-              title: 'Total Users',
-              icon: Users,
+              label: 'Total Users',
               value: stats.totalUsers,
-              borderColor: 'border-l-primary',
-              extra: (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs font-medium">{stats.totalDesigners} designers</Badge>
-                  <Badge variant="outline" className="text-xs font-medium">{stats.totalAdmins} admins</Badge>
-                </div>
-              ),
+              sub: `${stats.totalDesigners} designers · ${stats.totalAdmins} admins`,
+              icon: Users,
+              color: 'text-primary',
+              bg: 'bg-primary/10',
             },
             {
-              title: 'Total Points',
-              icon: Award,
+              label: 'Total Points',
               value: users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString(),
-              borderColor: 'border-l-purple-500',
-              extra: (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs font-medium">{users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month</Badge>
-                </div>
-              ),
+              sub: `${users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month`,
+              icon: Award,
+              color: 'text-purple-500',
+              bg: 'bg-purple-500/10',
             },
             {
-              title: 'Pending Work',
-              icon: FileCheck,
+              label: 'Pending',
               value: stats.pendingSubmissions,
-              borderColor: 'border-l-blue-500',
-              extra: (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs font-medium">{stats.activeProjects} active projects</Badge>
-                </div>
-              ),
+              sub: `${stats.activeProjects} active`,
+              icon: FileCheck,
+              color: 'text-blue-500',
+              bg: 'bg-blue-500/10',
             },
             {
-              title: 'Monthly Revenue',
+              label: 'Revenue',
+              value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(0)}`,
+              sub: systemSettings.monthly_revenue_by_category
+                ? `G:${(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)} · UI:${(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)} · W:${(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}`
+                : 'Click Revenue to edit',
               icon: DollarSign,
-              value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(2)}`,
-              borderColor: 'border-l-green-500',
-              extra: (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {systemSettings.monthly_revenue_by_category ? (
-                    <>
-                      <Badge variant="outline" className="text-xs font-medium">G: GH₵{(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)}</Badge>
-                      <Badge variant="outline" className="text-xs font-medium">UI: GH₵{(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)}</Badge>
-                      <Badge variant="outline" className="text-xs font-medium">W: GH₵{(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}</Badge>
-                    </>
-                  ) : (
-                    <Badge variant="outline" className="text-xs font-medium">Click Revenue to edit</Badge>
-                  )}
-                </div>
-              ),
+              color: 'text-emerald-500',
+              bg: 'bg-emerald-500/10',
             },
             {
-              title: 'Approval Time',
-              icon: Activity,
+              label: 'Approval Time',
               value: stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A',
-              borderColor: 'border-l-amber-500',
-              extra: (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs font-medium">Avg. approval time</Badge>
-                </div>
-              ),
+              sub: 'Average',
+              icon: Activity,
+              color: 'text-amber-500',
+              bg: 'bg-amber-500/10',
             },
-          ].map((card, index) => (
+          ].map((card, i) => (
             <motion.div
-              key={card.title}
-              initial={{ opacity: 0, y: 20 }}
+              key={card.label}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className={i === 4 ? 'col-span-2 lg:col-span-1' : ''}
             >
-              <Card className={`glass border-l-4 ${card.borderColor}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">{card.title}</CardTitle>
-                    <card.icon className="h-4 w-4 text-muted-foreground" />
+              <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
+                  <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                    <card.icon className={`w-4 h-4 ${card.color}`} />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{card.value}</div>
-                  {card.extra}
-                </CardContent>
-              </Card>
+                </div>
+                <div className="text-2xl font-bold tracking-tight">{card.value}</div>
+                <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
+              </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Main Tabs - driven by sidebar via searchParams */}
-        <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-6">
-          {/* Submissions Tab with Two-Level Approval */}
-          <TabsContent value="submissions" className="space-y-6 mt-0">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Main Content - Tab driven */}
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4">
+          {/* ========== SUBMISSIONS TAB ========== */}
+          <TabsContent value="submissions" className="mt-0 space-y-4">
+            <div className="rounded-xl border border-border/50 bg-card/50">
+              <div className="p-4 sm:p-5 border-b border-border/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle className="font-bold">Work Submissions ({submissions.length})</CardTitle>
-                    <CardDescription className="font-medium">Two-level approval: PH Check (+{systemSettings.ph_approval_points?.value || 15} pts) → Client Acceptance (points vary by service type)</CardDescription>
+                    <h2 className="text-base font-bold">Submissions</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">PH Check → Client Acceptance</p>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder="Search submissions..."
-                        className="pl-9 w-full sm:w-[250px]"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
+                      <Input placeholder="Search..." className="pl-8 h-8 text-sm w-full sm:w-48" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Filter by status" />
+                      <SelectTrigger className="h-8 text-sm w-full sm:w-40">
+                        <SelectValue placeholder="Filter" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending PH Approval</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="ph_approved">Awaiting Client</SelectItem>
-                        <SelectItem value="approved">Fully Approved</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
                         <SelectItem value="client_rejected">Client Rejected</SelectItem>
-                        <SelectItem value="correction_requested">Correction Requested</SelectItem>
+                        <SelectItem value="correction_requested">Correction</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button variant="outline" onClick={() => exportData('submissions')}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => exportData('submissions')}>
+                      <Download className="w-3.5 h-3.5 mr-1" />Export
                     </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {filteredSubmissions.length > 0 ? (
-                  <>
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="font-semibold">Project</TableHead>
-                            <TableHead className="font-semibold">Designer</TableHead>
-                            <TableHead className="font-semibold">Service</TableHead>
-                            <TableHead className="font-semibold">PH Status</TableHead>
-                            <TableHead className="font-semibold">Client Status</TableHead>
-                            <TableHead className="font-semibold">Points</TableHead>
-                            <TableHead className="font-semibold">Submitted</TableHead>
-                            <TableHead className="text-right font-semibold">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredSubmissions.slice((submissionsPage - 1) * ITEMS_PER_PAGE, submissionsPage * ITEMS_PER_PAGE).map((submission) => (
-                            <TableRow key={submission.id}>
-                              <TableCell className="font-semibold">
-                                {submission.project_name}
-                                {submission.parent_submission_id && (
-                                  <Badge variant="outline" className="ml-2 text-xs text-amber-500 border-amber-500">Correction</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div>
-                                  <p className="font-semibold">{submission.designer_name}</p>
-                                  <p className="text-xs text-muted-foreground">{submission.designer_email}</p>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="font-medium">{submission.service_type}</Badge>
-                              </TableCell>
-                              <TableCell>
-                                {submission.ph_approved ? (
-                                  <Badge className="bg-green-500/20 text-green-500 font-medium">
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    Approved
-                                  </Badge>
-                                ) : submission.status === 'rejected' ? (
-                                  <Badge variant="destructive" className="font-medium">Rejected</Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-amber-500 border-amber-500 font-medium">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    Pending
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {submission.client_accepted ? (
-                                  <Badge className="bg-primary/20 text-primary font-medium">
-                                    <Star className="w-3 h-3 mr-1" />
-                                    Accepted
-                                  </Badge>
-                                ) : submission.ph_approved ? (
-                                  <Badge variant="outline" className="text-blue-500 border-blue-500 font-medium">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    Awaiting
-                                  </Badge>
-                                ) : (
-                                  <span className="text-muted-foreground text-sm">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <span className="font-bold text-primary">{submission.points_awarded || 0}</span>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {format(new Date(submission.created_at), 'MMM d, yyyy')}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end items-center gap-2">
-                                   {/* Status badge for completed/special states */}
-                                  {submission.client_accepted && (
-                                    <Badge className="bg-green-500 text-white font-semibold">
-                                      <Award className="w-3 h-3 mr-1" />
-                                      Complete
-                                    </Badge>
-                                  )}
-                                  {submission.status === 'rejected' && (
-                                    <Badge variant="destructive" className="font-medium">Rejected</Badge>
-                                  )}
-                                  {submission.status === 'client_rejected' && !submission.client_accepted && (
-                                    <Badge variant="destructive" className="font-medium">Client Rejected</Badge>
-                                  )}
-                                  {submission.status === 'correction_requested' && (
-                                    <Badge className="bg-amber-500/20 text-amber-500 font-medium">Correction Requested</Badge>
-                                  )}
+              </div>
 
-                                   {/* Design Link */}
-                                   {submission.design_link && (
-                                     <div className="flex gap-1">
-                                       <Button size="sm" variant="outline" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
-                                         <Eye className="w-3 h-3 mr-1" />Preview
-                                       </Button>
-                                       <Button size="sm" variant="ghost" onClick={() => window.open(submission.design_link!, '_blank')}>
-                                         <ChevronRight className="w-3 h-3" />
-                                       </Button>
-                                     </div>
-                                   )}
-
-                                  {/* Actions Dropdown */}
-                                  {submission.status !== 'rejected' && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                          <Settings className="w-4 h-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end" className="w-52">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-
-                                        {/* View Files */}
-                                        {submission.files_urls && submission.files_urls.length > 0 && (
-                                          <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)}>
-                                            <ImageIcon className="w-4 h-4 mr-2" />
-                                            View Files ({submission.files_urls.length})
-                                          </DropdownMenuItem>
-                                        )}
-
-                                        {/* PH Approve - pending submissions */}
-                                        {!submission.ph_approved && !submission.client_accepted && (
-                                          <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-green-500 focus:text-green-500">
-                                            <CheckCircle className="w-4 h-4 mr-2" />
-                                            PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
-                                          </DropdownMenuItem>
-                                        )}
-
-                                        {/* Client Accept - ph_approved, not yet client accepted */}
-                                        {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                          <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-primary focus:text-primary">
-                                            <ThumbsUp className="w-4 h-4 mr-2" />
-                                            Client Accept (+{({logo:45,branding:50,uiux:65,web:65,print:20,flyer:30} as Record<string,number>)[submission.service_type] || 40} pts)
-                                          </DropdownMenuItem>
-                                        )}
-
-                                        {/* Request Correction */}
-                                        {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted) || submission.status === 'correction_requested') && (
-                                          <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-amber-500 focus:text-amber-500">
-                                            <Edit className="w-4 h-4 mr-2" />
-                                            Request Correction
-                                          </DropdownMenuItem>
-                                        )}
-
-                                        {/* Client Reject */}
-                                        {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                          <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-destructive focus:text-destructive">
-                                            <XCircle className="w-4 h-4 mr-2" />
-                                            Client Reject
-                                          </DropdownMenuItem>
-                                        )}
-
-                                        {/* Reject Completely - for non-completed */}
-                                        {!submission.client_accepted && (
-                                          <>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-destructive focus:text-destructive">
-                                              <Trash2 className="w-4 h-4 mr-2" />
-                                              Reject Completely
-                                            </DropdownMenuItem>
-                                          </>
-                                        )}
-
-                                        {/* Revoke Submission - available for any non-rejected submission with points */}
-                                        {(submission.points_awarded || 0) > 0 && (
-                                          <>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => handleRevokeSubmission(submission.id)} className="text-destructive focus:text-destructive font-semibold">
-                                              <AlertTriangle className="w-4 h-4 mr-2" />
-                                              Revoke Submission (−{submission.points_awarded} pts)
-                                            </DropdownMenuItem>
-                                          </>
-                                        )}
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    {/* Pagination */}
-                    {filteredSubmissions.length > ITEMS_PER_PAGE && (
-                      <div className="flex items-center justify-between mt-4">
-                        <p className="text-sm text-muted-foreground font-medium">
-                          Showing {(submissionsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(submissionsPage * ITEMS_PER_PAGE, filteredSubmissions.length)} of {filteredSubmissions.length}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setSubmissionsPage(p => Math.max(1, p - 1))} disabled={submissionsPage === 1}>
-                            Previous
-                          </Button>
-                          {Array.from({ length: Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
-                            .filter(p => p === 1 || p === Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE) || Math.abs(p - submissionsPage) <= 1)
-                            .map((page, idx, arr) => (
-                              <span key={page} className="flex items-center">
-                                {idx > 0 && arr[idx - 1] !== page - 1 && <span className="px-1 text-muted-foreground">…</span>}
-                                <Button
-                                  variant={submissionsPage === page ? 'default' : 'outline'}
-                                  size="sm"
-                                  className="w-8 h-8 p-0"
-                                  onClick={() => setSubmissionsPage(page)}
-                                >
-                                  {page}
-                                </Button>
-                              </span>
-                            ))}
-                          <Button variant="outline" size="sm" onClick={() => setSubmissionsPage(p => Math.min(Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE), p + 1))} disabled={submissionsPage >= Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE)}>
-                            Next
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileCheck className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No submissions found</p>
-                    <p className="text-sm mt-2">Try changing your search or filter criteria</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="font-bold">User Management ({users.length})</CardTitle>
-                    <CardDescription className="font-medium">Manage all platform users</CardDescription>
-                  </div>
-                   <div className="flex flex-wrap gap-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder="Search users..."
-                        className="pl-9 w-full sm:w-[250px]"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={handleRecalculateSalaries}
-                      disabled={isRecalculatingSalaries}
-                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                    >
-                      {isRecalculatingSalaries ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <DollarSign className="w-4 h-4 mr-2" />}
-                      {isRecalculatingSalaries ? 'Recalculating...' : 'Recalculate Salaries'}
-                    </Button>
-                    <Button variant="outline" onClick={() => exportData('users')}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {filteredUsers.length > 0 ? (
-                  <div className="rounded-md border">
+              {filteredSubmissions.length > 0 ? (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="font-semibold">User</TableHead>
-                          <TableHead className="font-semibold">Email</TableHead>
-                          <TableHead className="font-semibold">Role</TableHead>
-                          <TableHead className="font-semibold">Status</TableHead>
-                          <TableHead className="font-semibold">Points</TableHead>
-                          <TableHead className="font-semibold">Est. Salary</TableHead>
-                          <TableHead className="font-semibold">Salary Status</TableHead>
-                          <TableHead className="font-semibold">Payment Info</TableHead>
-                          <TableHead className="font-semibold">Joined</TableHead>
-                          <TableHead className="text-right font-semibold">Actions</TableHead>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold">Project</TableHead>
+                          <TableHead className="text-xs font-semibold">Designer</TableHead>
+                          <TableHead className="text-xs font-semibold">Type</TableHead>
+                          <TableHead className="text-xs font-semibold">PH</TableHead>
+                          <TableHead className="text-xs font-semibold">Client</TableHead>
+                          <TableHead className="text-xs font-semibold">Pts</TableHead>
+                          <TableHead className="text-xs font-semibold">Date</TableHead>
+                          <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredSubmissions.slice((submissionsPage - 1) * ITEMS_PER_PAGE, submissionsPage * ITEMS_PER_PAGE).map((submission) => (
+                          <TableRow key={submission.id} className="group">
+                            <TableCell className="font-medium text-sm">
+                              <div className="flex items-center gap-1.5">
+                                {submission.project_name}
+                                {submission.parent_submission_id && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/40 px-1 py-0">Fix</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm font-medium">{submission.designer_name}</div>
+                              <div className="text-[11px] text-muted-foreground">{submission.designer_email}</div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-[10px] font-medium">{submission.service_type}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {submission.ph_approved ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-500 text-xs font-medium"><CheckCircle className="w-3 h-3" />Yes</span>
+                              ) : submission.status === 'rejected' ? (
+                                <span className="text-destructive text-xs font-medium">No</span>
+                              ) : (
+                                <span className="text-amber-500 text-xs font-medium">Pending</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {submission.client_accepted ? (
+                                <span className="inline-flex items-center gap-1 text-primary text-xs font-medium"><Star className="w-3 h-3" />Yes</span>
+                              ) : submission.ph_approved ? (
+                                <span className="text-blue-500 text-xs font-medium">Waiting</span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-bold text-primary text-sm">{submission.points_awarded || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {format(new Date(submission.created_at), 'MMM d')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end items-center gap-1">
+                                {submission.design_link && (
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                                {submission.status !== 'rejected' && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                        <Settings className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-52">
+                                      <DropdownMenuLabel className="text-xs">Actions</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      {submission.files_urls?.length > 0 && (
+                                        <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)} className="text-xs">
+                                          <ImageIcon className="w-3.5 h-3.5 mr-2" />View Files ({submission.files_urls.length})
+                                        </DropdownMenuItem>
+                                      )}
+                                      {!submission.ph_approved && !submission.client_accepted && (
+                                        <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-xs text-emerald-500">
+                                          <CheckCircle className="w-3.5 h-3.5 mr-2" />PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
+                                        </DropdownMenuItem>
+                                      )}
+                                      {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                        <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-xs text-primary">
+                                          <ThumbsUp className="w-3.5 h-3.5 mr-2" />Client Accept
+                                        </DropdownMenuItem>
+                                      )}
+                                      {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted) || submission.status === 'correction_requested') && (
+                                        <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-xs text-amber-500">
+                                          <Edit className="w-3.5 h-3.5 mr-2" />Request Correction
+                                        </DropdownMenuItem>
+                                      )}
+                                      {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
+                                        <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-xs text-destructive">
+                                          <XCircle className="w-3.5 h-3.5 mr-2" />Client Reject
+                                        </DropdownMenuItem>
+                                      )}
+                                      {!submission.client_accepted && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-xs text-destructive">
+                                            <Trash2 className="w-3.5 h-3.5 mr-2" />Reject
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                      {(submission.points_awarded || 0) > 0 && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem onClick={() => handleRevokeSubmission(submission.id)} className="text-xs text-destructive font-semibold">
+                                            <AlertTriangle className="w-3.5 h-3.5 mr-2" />Revoke (−{submission.points_awarded} pts)
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="md:hidden divide-y divide-border/30">
+                    {filteredSubmissions.slice((submissionsPage - 1) * ITEMS_PER_PAGE, submissionsPage * ITEMS_PER_PAGE).map((submission) => (
+                      <div key={submission.id} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm flex items-center gap-1.5">
+                              {submission.project_name}
+                              {submission.parent_submission_id && <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/40 px-1 py-0">Fix</Badge>}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{submission.designer_name}</div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {submission.design_link && (
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            {submission.status !== 'rejected' && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Settings className="w-3.5 h-3.5" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  {submission.files_urls?.length > 0 && <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)} className="text-xs"><ImageIcon className="w-3.5 h-3.5 mr-2" />View Files</DropdownMenuItem>}
+                                  {!submission.ph_approved && !submission.client_accepted && <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-xs text-emerald-500"><CheckCircle className="w-3.5 h-3.5 mr-2" />PH Approve</DropdownMenuItem>}
+                                  {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-xs text-primary"><ThumbsUp className="w-3.5 h-3.5 mr-2" />Client Accept</DropdownMenuItem>}
+                                  {!submission.client_accepted && <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-xs text-destructive"><Trash2 className="w-3.5 h-3.5 mr-2" />Reject</DropdownMenuItem>}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-[10px]">{submission.service_type}</Badge>
+                          {submission.ph_approved ? (
+                            <span className="text-emerald-500 text-[10px] font-medium">✓ PH</span>
+                          ) : submission.status === 'rejected' ? (
+                            <span className="text-destructive text-[10px] font-medium">Rejected</span>
+                          ) : (
+                            <span className="text-amber-500 text-[10px] font-medium">Pending</span>
+                          )}
+                          {submission.client_accepted && <span className="text-primary text-[10px] font-medium">✓ Client</span>}
+                          <span className="text-primary font-bold text-xs ml-auto">{submission.points_awarded || 0} pts</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {filteredSubmissions.length > ITEMS_PER_PAGE && (
+                    <div className="flex items-center justify-between p-4 border-t border-border/50">
+                      <p className="text-[11px] text-muted-foreground">
+                        {(submissionsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(submissionsPage * ITEMS_PER_PAGE, filteredSubmissions.length)} of {filteredSubmissions.length}
+                      </p>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubmissionsPage(p => Math.max(1, p - 1))} disabled={submissionsPage === 1}>Prev</Button>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubmissionsPage(p => Math.min(Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE), p + 1))} disabled={submissionsPage >= Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE)}>Next</Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No submissions found</p>
+                  <p className="text-xs mt-1">Try changing your filters</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ========== USERS TAB ========== */}
+          <TabsContent value="users" className="mt-0 space-y-4">
+            <div className="rounded-xl border border-border/50 bg-card/50">
+              <div className="p-4 sm:p-5 border-b border-border/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-bold">Users ({users.length})</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Manage platform users</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
+                      <Input placeholder="Search users..." className="pl-8 h-8 text-sm w-full sm:w-48" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => exportData('users')}>
+                      <Download className="w-3.5 h-3.5 mr-1" />Export
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {filteredUsers.length > 0 ? (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden lg:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold">User</TableHead>
+                          <TableHead className="text-xs font-semibold">Role</TableHead>
+                          <TableHead className="text-xs font-semibold">Status</TableHead>
+                          <TableHead className="text-xs font-semibold">Points</TableHead>
+                          <TableHead className="text-xs font-semibold">Salary</TableHead>
+                          <TableHead className="text-xs font-semibold">Paid</TableHead>
+                          <TableHead className="text-xs font-semibold">Payment</TableHead>
+                          <TableHead className="text-xs font-semibold">Joined</TableHead>
+                          <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((userItem) => {
                           const paymentMethod = userItem.designer_details?.payment_method;
                           const paymentDetails = userItem.designer_details?.payment_details;
-                          const getPaymentDisplay = () => {
-                            if (!paymentMethod) return 'Not set';
-                            const methodLabels: Record<string, string> = {
-                              'mtn_momo': 'MTN MoMo',
-                              'vodafone_cash': 'Vodafone Cash',
-                              'airteltigo_money': 'AirtelTigo',
-                              'bank_transfer': 'Bank Transfer',
-                              'crypto': 'Crypto',
-                              'paypal': 'PayPal',
-                              'wise': 'Wise'
-                            };
-                            return methodLabels[paymentMethod] || paymentMethod;
-                          };
-                          const getPaymentDetailsDisplay = () => {
-                            if (!paymentDetails) return null;
-                            if (typeof paymentDetails === 'string') return paymentDetails;
-                            if (typeof paymentDetails === 'object') {
-                              if (paymentDetails.account) return paymentDetails.account;
-                              if (paymentDetails.email) return paymentDetails.email;
-                              return JSON.stringify(paymentDetails);
-                            }
-                            return String(paymentDetails);
-                          };
+                          const methodLabels: Record<string, string> = { 'mtn_momo': 'MTN MoMo', 'vodafone_cash': 'Vodafone', 'airteltigo_money': 'AirtelTigo', 'bank_transfer': 'Bank', 'crypto': 'Crypto', 'paypal': 'PayPal', 'wise': 'Wise' };
+                          const payDisplay = paymentMethod ? (methodLabels[paymentMethod] || paymentMethod) : '—';
+                          const detailDisplay = paymentDetails ? (typeof paymentDetails === 'object' ? (paymentDetails as any).account || (paymentDetails as any).email || '' : String(paymentDetails)) : '';
+                          const salaryStatus = userItem.designer_details?.salary_payment_status || 'unpaid';
+                          const isPaid = salaryStatus === 'paid';
+
                           return (
-                          <TableRow key={userItem.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                {userItem.designer_details?.profile_photo_url ? (
-                                  <img 
-                                    src={userItem.designer_details.profile_photo_url} 
-                                    alt={userItem.full_name || 'User'} 
-                                    className="w-8 h-8 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <span className="text-sm font-bold text-primary">
-                                      {userItem.full_name?.charAt(0) || userItem.email.charAt(0)}
-                                    </span>
-                                  </div>
-                                )}
-                                <div>
-                                  <p className="font-semibold">{userItem.full_name || 'No Name'}</p>
-                                  <p className="text-xs text-muted-foreground font-medium">
-                                    {userItem.designer_details?.professional_title || 'No title'}
-                                  </p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{userItem.email}</TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                userItem.user_roles?.[0]?.role === 'masteradmin' ? 'default' :
-                                userItem.user_roles?.[0]?.role === 'superadmin' ? 'secondary' :
-                                'outline'
-                              } className="font-medium">
-                                {userItem.user_roles?.[0]?.role || 'designer'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={!userItem.is_active ? 'destructive' : userItem.registration_fee_paid ? 'default' : 'outline'} className="font-medium">
-                                {!userItem.is_active ? 'Suspended' : userItem.registration_fee_paid ? 'Active' : 'Pending Payment'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-bold text-primary">{userItem.designer_details?.total_points || 0}</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-semibold">GH₵{(userItem.designer_details?.salary_estimated || 0).toFixed(2)}</span>
-                            </TableCell>
-                            <TableCell>
-                              {(() => {
-                                const status = userItem.designer_details?.salary_payment_status || 'unpaid';
-                                const isPaid = status === 'paid';
-                                return (
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant={isPaid ? 'default' : 'outline'} className={`font-medium ${isPaid ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}>
-                                      {isPaid ? '✓ Paid' : 'Unpaid'}
-                                    </Badge>
-                                    {!isPaid && (userItem.designer_details?.salary_estimated || 0) > 0 && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-                                        onClick={() => handleMarkSalaryPaid(userItem)}
-                                      >
-                                        <Banknote className="w-3 h-3 mr-1" />
-                                        Pay
-                                      </Button>
-                                    )}
-                                    {isPaid && (
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-7 text-xs text-muted-foreground"
-                                        onClick={() => handleResetSalaryStatus(userItem)}
-                                      >
-                                        Reset
-                                      </Button>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <p className="font-medium">{getPaymentDisplay()}</p>
-                                {getPaymentDetailsDisplay() && (
-                                  <p className="text-xs text-muted-foreground truncate max-w-[150px]" title={getPaymentDetailsDisplay() || ''}>
-                                    {getPaymentDetailsDisplay()}
-                                  </p>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{format(new Date(userItem.created_at), 'MMM d, yyyy')}</TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Settings className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  {userItem.is_active ? (
-                                    <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'suspend')}>
-                                      Suspend User
-                                    </DropdownMenuItem>
+                            <TableRow key={userItem.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  {userItem.designer_details?.profile_photo_url ? (
+                                    <img src={userItem.designer_details.profile_photo_url} alt="" className="w-7 h-7 rounded-lg object-cover" />
                                   ) : (
-                                    <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'activate')}>
-                                      Activate User
-                                    </DropdownMenuItem>
+                                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                      {(userItem.full_name || userItem.email).charAt(0).toUpperCase()}
+                                    </div>
                                   )}
-                                  {userItem.user_roles?.[0]?.role === 'designer' && (
-                                    <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'promote')}>
-                                      Promote to Admin
-                                    </DropdownMenuItem>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-medium truncate max-w-[140px]">{userItem.full_name || 'No Name'}</div>
+                                    <div className="text-[11px] text-muted-foreground truncate max-w-[140px]">{userItem.email}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-[10px]">{userItem.user_roles?.[0]?.role || 'designer'}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={!userItem.is_active ? 'destructive' : userItem.registration_fee_paid ? 'default' : 'outline'} className="text-[10px]">
+                                  {!userItem.is_active ? 'Suspended' : userItem.registration_fee_paid ? 'Active' : 'Pending'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-bold text-primary text-sm">{userItem.designer_details?.total_points || 0}</TableCell>
+                              <TableCell className="text-sm font-medium">GH₵{(userItem.designer_details?.salary_estimated || 0).toFixed(2)}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1.5">
+                                  <Badge variant={isPaid ? 'default' : 'outline'} className={`text-[10px] ${isPaid ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}>
+                                    {isPaid ? '✓ Paid' : 'Unpaid'}
+                                  </Badge>
+                                  {!isPaid && (userItem.designer_details?.salary_estimated || 0) > 0 && (
+                                    <Button size="sm" variant="ghost" className="h-6 text-[10px] text-emerald-500 px-1.5" onClick={() => handleMarkSalaryPaid(userItem)}>Pay</Button>
                                   )}
-                                  {(userItem.user_roles?.[0]?.role === 'superadmin') && (
-                                    <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'demote')}>
-                                      Demote to Designer
-                                    </DropdownMenuItem>
+                                  {isPaid && (
+                                    <Button size="sm" variant="ghost" className="h-6 text-[10px] text-muted-foreground px-1.5" onClick={() => handleResetSalaryStatus(userItem)}>Reset</Button>
                                   )}
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => setEditUser(userItem)}>
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Edit All Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }}>
-                                    <Award className="w-4 h-4 mr-2" />
-                                    Gift Points
-                                  </DropdownMenuItem>
-                                  {userItem.user_roles?.[0]?.role === 'designer' && userItem.id !== user?.id && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem 
-                                        onClick={() => setDeleteConfirmUser(userItem)}
-                                        className="text-destructive focus:text-destructive"
-                                      >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Delete Designer
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-xs">{payDisplay}</div>
+                                {detailDisplay && <div className="text-[10px] text-muted-foreground truncate max-w-[100px]">{detailDisplay}</div>}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{format(new Date(userItem.created_at), 'MMM d, yy')}</TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Settings className="w-3.5 h-3.5" /></Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuLabel className="text-xs">Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {userItem.is_active ? (
+                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'suspend')} className="text-xs">Suspend</DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'activate')} className="text-xs">Activate</DropdownMenuItem>
+                                    )}
+                                    {userItem.user_roles?.[0]?.role === 'designer' && (
+                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'promote')} className="text-xs">Promote</DropdownMenuItem>
+                                    )}
+                                    {userItem.user_roles?.[0]?.role === 'superadmin' && (
+                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'demote')} className="text-xs">Demote</DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs"><Edit className="w-3 h-3 mr-2" />Edit</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs"><Award className="w-3 h-3 mr-2" />Gift Points</DropdownMenuItem>
+                                    {userItem.user_roles?.[0]?.role === 'designer' && userItem.id !== user?.id && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive"><Trash2 className="w-3 h-3 mr-2" />Delete</DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
                           );
                         })}
                       </TableBody>
                     </Table>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No users found</p>
+
+                  {/* Mobile Cards */}
+                  <div className="lg:hidden divide-y divide-border/30">
+                    {filteredUsers.map((userItem) => {
+                      const isPaid = (userItem.designer_details?.salary_payment_status || 'unpaid') === 'paid';
+                      return (
+                        <div key={userItem.id} className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {userItem.designer_details?.profile_photo_url ? (
+                                <img src={userItem.designer_details.profile_photo_url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                                  {(userItem.full_name || userItem.email).charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate">{userItem.full_name || 'No Name'}</div>
+                                <div className="text-[11px] text-muted-foreground truncate">{userItem.email}</div>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0"><Settings className="w-3.5 h-3.5" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs"><Edit className="w-3 h-3 mr-2" />Edit</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs"><Award className="w-3 h-3 mr-2" />Gift Points</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                            <Badge variant="outline" className="text-[10px]">{userItem.user_roles?.[0]?.role || 'designer'}</Badge>
+                            <span className="text-primary font-bold">{userItem.designer_details?.total_points || 0} pts</span>
+                            <span className="font-medium">GH₵{(userItem.designer_details?.salary_estimated || 0).toFixed(2)}</span>
+                            <Badge variant={isPaid ? 'default' : 'outline'} className={`text-[10px] ${isPaid ? 'bg-emerald-600' : ''}`}>{isPaid ? '✓ Paid' : 'Unpaid'}</Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No users found</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
-          {/* Payments Tab */}
-          <TabsContent value="payments" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="font-bold">Payment History ({payments.length})</CardTitle>
-                    <CardDescription className="font-medium">All platform payments</CardDescription>
-                  </div>
-                  <Button variant="outline" onClick={() => exportData('payments')}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
+          {/* ========== PAYMENTS TAB ========== */}
+          <TabsContent value="payments" className="mt-0 space-y-4">
+            <div className="rounded-xl border border-border/50 bg-card/50">
+              <div className="p-4 sm:p-5 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold">Payments ({payments.length})</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">All platform payments</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {payments.length > 0 ? (
-                  <div className="rounded-md border">
+                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => exportData('payments')}>
+                  <Download className="w-3.5 h-3.5 mr-1" />Export
+                </Button>
+              </div>
+
+              {payments.length > 0 ? (
+                <>
+                  <div className="hidden sm:block overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="font-semibold">User</TableHead>
-                          <TableHead className="font-semibold">Amount</TableHead>
-                          <TableHead className="font-semibold">Type</TableHead>
-                          <TableHead className="font-semibold">Status</TableHead>
-                          <TableHead className="font-semibold">Transaction ID</TableHead>
-                          <TableHead className="font-semibold">Date</TableHead>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold">User</TableHead>
+                          <TableHead className="text-xs font-semibold">Amount</TableHead>
+                          <TableHead className="text-xs font-semibold">Type</TableHead>
+                          <TableHead className="text-xs font-semibold">Status</TableHead>
+                          <TableHead className="text-xs font-semibold">Transaction</TableHead>
+                          <TableHead className="text-xs font-semibold">Date</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {payments.map((payment) => (
                           <TableRow key={payment.id}>
-                            <TableCell className="font-semibold">{payment.user_name}</TableCell>
-                            <TableCell className="font-bold">GH₵{payment.amount.toFixed(2)}</TableCell>
-                            <TableCell><Badge variant="outline" className="font-medium">{payment.type}</Badge></TableCell>
+                            <TableCell className="text-sm font-medium">{payment.user_name}</TableCell>
+                            <TableCell className="text-sm font-bold">GH₵{payment.amount.toFixed(2)}</TableCell>
+                            <TableCell><Badge variant="outline" className="text-[10px]">{payment.type}</Badge></TableCell>
                             <TableCell>
-                              <Badge variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'outline' : 'destructive'} className="font-medium">
-                                {payment.status}
-                              </Badge>
+                              <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className="text-[10px]">{payment.status}</Badge>
                             </TableCell>
-                            <TableCell className="font-mono text-xs">{payment.transaction_id}</TableCell>
-                            <TableCell className="font-medium">{format(new Date(payment.created_at), 'MMM d, yyyy')}</TableCell>
+                            <TableCell className="font-mono text-[11px] text-muted-foreground">{payment.transaction_id}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{format(new Date(payment.created_at), 'MMM d, yy')}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No payments found</p>
+                  <div className="sm:hidden divide-y divide-border/30">
+                    {payments.map((payment) => (
+                      <div key={payment.id} className="p-4 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">{payment.user_name}</div>
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px]">{payment.type}</Badge>
+                            <span>{format(new Date(payment.created_at), 'MMM d')}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-bold">GH₵{payment.amount.toFixed(2)}</div>
+                          <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className="text-[10px]">{payment.status}</Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No payments yet</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
-          {/* Monthly Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
-            <div className="flex justify-end mb-4">
-              <Button onClick={handleGenerateSnapshot} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Generate Current Month Snapshot
+          {/* ========== REPORTS ========== */}
+          <TabsContent value="reports" className="mt-0 space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={handleGenerateSnapshot} variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                <Download className="w-3.5 h-3.5" />Generate Snapshot
               </Button>
             </div>
             <MonthlyReports />
           </TabsContent>
 
-          {/* Testimonials Tab */}
-          <TabsContent value="testimonials" className="space-y-6">
-            <ManageTestimonials />
-          </TabsContent>
+          {/* ========== TESTIMONIALS ========== */}
+          <TabsContent value="testimonials" className="mt-0"><ManageTestimonials /></TabsContent>
 
-          {/* Blog Tab */}
-          <TabsContent value="blog" className="space-y-6">
-            <ManageBlog />
-          </TabsContent>
+          {/* ========== BLOG ========== */}
+          <TabsContent value="blog" className="mt-0"><ManageBlog /></TabsContent>
 
-          {/* Team Tab */}
-          <TabsContent value="team" className="space-y-6">
-            <ManageTeam />
-          </TabsContent>
+          {/* ========== TEAM ========== */}
+          <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
 
-          {/* Logs Tab */}
-          <TabsContent value="logs" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="font-bold">System Logs ({systemLogs.length})</CardTitle>
-                    <CardDescription className="font-medium">All actions taken by admins, users, and the system</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {systemLogs.length > 0 ? (
-                  <>
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="font-semibold">Action</TableHead>
-                            <TableHead className="font-semibold">Actor</TableHead>
-                            <TableHead className="font-semibold">Description</TableHead>
-                            <TableHead className="font-semibold">Date & Time</TableHead>
+          {/* ========== LOGS ========== */}
+          <TabsContent value="logs" className="mt-0 space-y-4">
+            <div className="rounded-xl border border-border/50 bg-card/50">
+              <div className="p-4 sm:p-5 border-b border-border/50">
+                <h2 className="text-base font-bold">System Logs ({systemLogs.length})</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Admin actions and system events</p>
+              </div>
+
+              {systemLogs.length > 0 ? (
+                <>
+                  <div className="hidden sm:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold">Action</TableHead>
+                          <TableHead className="text-xs font-semibold">Actor</TableHead>
+                          <TableHead className="text-xs font-semibold">Description</TableHead>
+                          <TableHead className="text-xs font-semibold">Time</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {systemLogs.slice((logsPage - 1) * ITEMS_PER_PAGE, logsPage * ITEMS_PER_PAGE).map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>
+                              <Badge variant="outline" className="text-[10px]">{log.action_type.replace(/_/g, ' ')}</Badge>
+                            </TableCell>
+                            <TableCell className="text-sm font-medium">{log.profiles?.full_name || 'System'}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">{log.description}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(log.timestamp), 'MMM d, HH:mm')}</TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {systemLogs.slice((logsPage - 1) * ITEMS_PER_PAGE, logsPage * ITEMS_PER_PAGE).map((log) => (
-                            <TableRow key={log.id}>
-                              <TableCell>
-                                <Badge variant="outline" className="font-medium text-xs">
-                                  {log.action_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {log.profiles?.full_name || 'System'}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground font-medium max-w-[400px] truncate">
-                                {log.description}
-                              </TableCell>
-                              <TableCell className="font-medium text-sm">
-                                {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm')}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    {systemLogs.length > ITEMS_PER_PAGE && (
-                      <div className="flex items-center justify-between mt-4">
-                        <p className="text-sm text-muted-foreground font-medium">
-                          Showing {(logsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(logsPage * ITEMS_PER_PAGE, systemLogs.length)} of {systemLogs.length}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setLogsPage(p => Math.max(1, p - 1))} disabled={logsPage === 1}>
-                            Previous
-                          </Button>
-                          {Array.from({ length: Math.ceil(systemLogs.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
-                            .filter(p => p === 1 || p === Math.ceil(systemLogs.length / ITEMS_PER_PAGE) || Math.abs(p - logsPage) <= 1)
-                            .map((page, idx, arr) => (
-                              <span key={page} className="flex items-center">
-                                {idx > 0 && arr[idx - 1] !== page - 1 && <span className="px-1 text-muted-foreground">…</span>}
-                                <Button
-                                  variant={logsPage === page ? 'default' : 'outline'}
-                                  size="sm"
-                                  className="w-8 h-8 p-0"
-                                  onClick={() => setLogsPage(page)}
-                                >
-                                  {page}
-                                </Button>
-                              </span>
-                            ))}
-                          <Button variant="outline" size="sm" onClick={() => setLogsPage(p => Math.min(Math.ceil(systemLogs.length / ITEMS_PER_PAGE), p + 1))} disabled={logsPage >= Math.ceil(systemLogs.length / ITEMS_PER_PAGE)}>
-                            Next
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No logs yet</p>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <div className="sm:hidden divide-y divide-border/30">
+                    {systemLogs.slice((logsPage - 1) * ITEMS_PER_PAGE, logsPage * ITEMS_PER_PAGE).map((log) => (
+                      <div key={log.id} className="p-4 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <Badge variant="outline" className="text-[10px]">{log.action_type.replace(/_/g, ' ')}</Badge>
+                          <span className="text-[10px] text-muted-foreground">{format(new Date(log.timestamp), 'MMM d, HH:mm')}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{log.description}</p>
+                        <p className="text-[11px] font-medium">{log.profiles?.full_name || 'System'}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {systemLogs.length > ITEMS_PER_PAGE && (
+                    <div className="flex items-center justify-between p-4 border-t border-border/50">
+                      <p className="text-[11px] text-muted-foreground">
+                        {(logsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(logsPage * ITEMS_PER_PAGE, systemLogs.length)} of {systemLogs.length}
+                      </p>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setLogsPage(p => Math.max(1, p - 1))} disabled={logsPage === 1}>Prev</Button>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setLogsPage(p => Math.min(Math.ceil(systemLogs.length / ITEMS_PER_PAGE), p + 1))} disabled={logsPage >= Math.ceil(systemLogs.length / ITEMS_PER_PAGE)}>Next</Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No logs yet</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Revenue Edit Modal - By Category */}
+      {/* ========== DIALOGS ========== */}
+      {/* Revenue Modal */}
       <Dialog open={isRevenueModalOpen} onOpenChange={setIsRevenueModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-bold">Update Monthly Revenue</DialogTitle>
-            <DialogDescription className="font-medium">
-              Set revenue by category. Salaries are calculated from each designer's category-specific points.
-            </DialogDescription>
+            <DialogTitle>Update Revenue</DialogTitle>
+            <DialogDescription className="text-xs">Set revenue by category. Salaries auto-recalculate.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="font-semibold">Graphic Design Revenue (GH₵)</Label>
-              <Input type="number" placeholder="0.00" value={revenueByCategory.graphic} onChange={e => setRevenueByCategory(p => ({ ...p, graphic: e.target.value }))} step="0.01" min="0" />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">UI/UX Design Revenue (GH₵)</Label>
-              <Input type="number" placeholder="0.00" value={revenueByCategory.uiux} onChange={e => setRevenueByCategory(p => ({ ...p, uiux: e.target.value }))} step="0.01" min="0" />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Web Development Revenue (GH₵)</Label>
-              <Input type="number" placeholder="0.00" value={revenueByCategory.web} onChange={e => setRevenueByCategory(p => ({ ...p, web: e.target.value }))} step="0.01" min="0" />
-            </div>
-            <div className="p-3 rounded-lg bg-muted/50">
-              <p className="text-sm font-medium text-muted-foreground">
-                Total: <span className="text-foreground font-bold">GH₵{((parseFloat(revenueByCategory.graphic) || 0) + (parseFloat(revenueByCategory.uiux) || 0) + (parseFloat(revenueByCategory.web) || 0)).toFixed(2)}</span>
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Current: GH₵{(systemSettings.monthly_revenue?.amount || 0).toFixed(2)} · Share: {systemSettings.revenue_share_percentage?.value || 50}%
-              </p>
+          <div className="space-y-3 py-3">
+            <div><Label className="text-xs font-medium">Graphic Design (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.graphic} onChange={e => setRevenueByCategory(p => ({ ...p, graphic: e.target.value }))} className="mt-1 h-9" /></div>
+            <div><Label className="text-xs font-medium">UI/UX Design (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.uiux} onChange={e => setRevenueByCategory(p => ({ ...p, uiux: e.target.value }))} className="mt-1 h-9" /></div>
+            <div><Label className="text-xs font-medium">Web Development (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.web} onChange={e => setRevenueByCategory(p => ({ ...p, web: e.target.value }))} className="mt-1 h-9" /></div>
+            <div className="p-3 rounded-lg bg-muted/50 text-xs">
+              <span className="text-muted-foreground">Total: </span>
+              <span className="font-bold">GH₵{((parseFloat(revenueByCategory.graphic) || 0) + (parseFloat(revenueByCategory.uiux) || 0) + (parseFloat(revenueByCategory.web) || 0)).toFixed(2)}</span>
+              <span className="text-muted-foreground ml-2">· Share: {systemSettings.revenue_share_percentage?.value || 50}%</span>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRevenueModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateRevenue}>
-              <Save className="w-4 h-4 mr-2" />
-              Save Revenue
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsRevenueModalOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleUpdateRevenue}><Save className="w-3.5 h-3.5 mr-1.5" />Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Submission Files Preview Dialog */}
-      <SubmissionFilesDialog
-        open={!!viewFilesSubmission}
-        onOpenChange={(open) => !open && setViewFilesSubmission(null)}
-        submission={viewFilesSubmission}
-      />
+      <SubmissionFilesDialog open={!!viewFilesSubmission} onOpenChange={(open) => !open && setViewFilesSubmission(null)} submission={viewFilesSubmission} />
 
-      {/* Delete Designer Confirmation Dialog */}
       <AlertDialog open={!!deleteConfirmUser} onOpenChange={(open) => !open && setDeleteConfirmUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 font-bold text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Delete Designer Permanently?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>You are about to permanently delete <strong>{deleteConfirmUser?.full_name || deleteConfirmUser?.email}</strong>.</p>
-              <p className="text-destructive font-medium">This action cannot be undone. All associated data will be removed:</p>
-              <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-                <li>Profile information</li>
-                <li>Designer details and points</li>
-                <li>All work submissions</li>
-                <li>Payment records</li>
-              </ul>
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="w-4 h-4" />Delete Designer?</AlertDialogTitle>
+            <AlertDialogDescription>Permanently delete <strong>{deleteConfirmUser?.full_name || deleteConfirmUser?.email}</strong> and all their data. Cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteConfirmUser && handleDeleteDesigner(deleteConfirmUser)}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Permanently
-                </>
-              )}
+            <AlertDialogAction onClick={() => deleteConfirmUser && handleDeleteDesigner(deleteConfirmUser)} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />Deleting...</> : <><Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete</>}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Rejection Reason Dialog */}
       <Dialog open={!!rejectSubmission} onOpenChange={(open) => { if (!open) { setRejectSubmission(null); setRejectionReason(''); } }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Reject Submission</DialogTitle>
-            <DialogDescription>
-              Provide a reason for rejecting "{rejectSubmission?.project_name}". This will be visible to the designer.
-            </DialogDescription>
+            <DialogDescription className="text-xs">Provide a reason for rejecting "{rejectSubmission?.project_name}"</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="rejection-reason">Rejection Reason</Label>
-            <Textarea
-              id="rejection-reason"
-              placeholder="Explain why this submission is being rejected..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="mt-2 min-h-[100px]"
-            />
-          </div>
+          <Textarea placeholder="Reason..." value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} className="min-h-[80px]" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setRejectSubmission(null); setRejectionReason(''); }}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleRejectSubmission} disabled={!rejectionReason.trim()}>
-              <XCircle className="w-4 h-4 mr-2" />
-              Reject
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setRejectSubmission(null); setRejectionReason(''); }}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={handleRejectSubmission} disabled={!rejectionReason.trim()}>Reject</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Client Rejection Reason Dialog */}
       <Dialog open={!!clientRejectSubmission} onOpenChange={(open) => { if (!open) { setClientRejectSubmission(null); setClientRejectionReason(''); } }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Client Rejection</DialogTitle>
-            <DialogDescription>
-              Provide a reason for the client rejecting "{clientRejectSubmission?.project_name}". PH approval points will be retained.
-            </DialogDescription>
+            <DialogDescription className="text-xs">PH points retained for "{clientRejectSubmission?.project_name}"</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="client-rejection-reason">Rejection Reason</Label>
-            <Textarea
-              id="client-rejection-reason"
-              placeholder="Explain why the client rejected this submission..."
-              value={clientRejectionReason}
-              onChange={(e) => setClientRejectionReason(e.target.value)}
-              className="mt-2 min-h-[100px]"
-            />
-          </div>
+          <Textarea placeholder="Reason..." value={clientRejectionReason} onChange={(e) => setClientRejectionReason(e.target.value)} className="min-h-[80px]" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setClientRejectSubmission(null); setClientRejectionReason(''); }}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleClientRejection} disabled={!clientRejectionReason.trim()}>
-              <XCircle className="w-4 h-4 mr-2" />
-              Client Reject
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setClientRejectSubmission(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={handleClientRejection} disabled={!clientRejectionReason.trim()}>Client Reject</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Correction Request Dialog */}
       <Dialog open={!!correctionRequestSubmission} onOpenChange={(open) => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Request Correction</DialogTitle>
-            <DialogDescription>
-              Provide correction instructions for "{correctionRequestSubmission?.project_name}". This note will be visible to the designer.
-            </DialogDescription>
+            <DialogDescription className="text-xs">Instructions for "{correctionRequestSubmission?.project_name}"</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="correction-note">Correction Note</Label>
-            <Textarea
-              id="correction-note"
-              placeholder="Describe what needs to be corrected..."
-              value={correctionNote}
-              onChange={(e) => setCorrectionNote(e.target.value)}
-              className="mt-2 min-h-[100px]"
-            />
-          </div>
+          <Textarea placeholder="What needs fixing..." value={correctionNote} onChange={(e) => setCorrectionNote(e.target.value)} className="min-h-[80px]" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setCorrectionRequestSubmission(null); setCorrectionNote(''); }}>
-              Cancel
-            </Button>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
-              <Edit className="w-4 h-4 mr-2" />
-              Request Correction
+            <Button variant="outline" size="sm" onClick={() => setCorrectionRequestSubmission(null)}>Cancel</Button>
+            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
+              <Edit className="w-3.5 h-3.5 mr-1.5" />Request
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Gift Points Dialog */}
       <Dialog open={!!giftPointsUser} onOpenChange={(open) => { if (!open) { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); } }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-bold">Gift Points</DialogTitle>
-            <DialogDescription className="font-medium">
-              Award bonus points to {giftPointsUser?.full_name || giftPointsUser?.email}
-            </DialogDescription>
+            <DialogTitle>Gift Points</DialogTitle>
+            <DialogDescription className="text-xs">Award bonus to {giftPointsUser?.full_name || giftPointsUser?.email}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="gift-points" className="font-semibold">Points Amount</Label>
-              <Input
-                id="gift-points"
-                type="number"
-                placeholder="Enter points to gift"
-                value={giftPointsAmount}
-                onChange={(e) => setGiftPointsAmount(e.target.value)}
-                min="1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gift-reason" className="font-semibold">Reason (optional)</Label>
-              <Textarea
-                id="gift-reason"
-                placeholder="e.g. Excellent performance, bonus for extra work..."
-                value={giftPointsReason}
-                onChange={(e) => setGiftPointsReason(e.target.value)}
-                className="min-h-[80px]"
-              />
-            </div>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Points</Label><Input type="number" placeholder="Amount" value={giftPointsAmount} onChange={(e) => setGiftPointsAmount(e.target.value)} min="1" className="mt-1 h-9" /></div>
+            <div><Label className="text-xs">Reason (optional)</Label><Textarea placeholder="e.g. Excellent work..." value={giftPointsReason} onChange={(e) => setGiftPointsReason(e.target.value)} className="mt-1 min-h-[60px]" /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); }}>
-              Cancel
-            </Button>
-            <Button onClick={handleGiftPoints} disabled={!giftPointsAmount || parseInt(giftPointsAmount) <= 0}>
-              <Award className="w-4 h-4 mr-2" />
-              Gift Points
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setGiftPointsUser(null)}>Cancel</Button>
+            <Button size="sm" onClick={handleGiftPoints} disabled={!giftPointsAmount || parseInt(giftPointsAmount) <= 0}><Award className="w-3.5 h-3.5 mr-1.5" />Gift</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog */}
-      <EditUserDialog
-        open={!!editUser}
-        onOpenChange={(open) => !open && setEditUser(null)}
-        user={editUser}
-        currentAdminId={user?.id}
-        onSaved={() => loadDashboardDataSafe()}
-      />
+      <EditUserDialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)} user={editUser} currentAdminId={user?.id} onSaved={() => loadDashboardDataSafe()} />
 
-      {/* Link Preview Dialog */}
+      {/* Link Preview */}
       <Dialog open={!!previewLinkUrl} onOpenChange={(open) => !open && setPreviewLinkUrl(null)}>
         <DialogContent className="max-w-5xl h-[80vh] p-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-sm font-medium truncate max-w-md">{previewLinkUrl}</DialogTitle>
-              <Button size="sm" variant="outline" onClick={() => window.open(previewLinkUrl!, '_blank')} className="ml-4 shrink-0">
-                Open in New Tab
-              </Button>
+          <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle className="text-sm truncate max-w-md">{previewLinkUrl}</DialogTitle>
+              <Button size="sm" variant="outline" className="text-xs shrink-0" onClick={() => window.open(previewLinkUrl!, '_blank')}>Open Tab</Button>
             </div>
           </DialogHeader>
-          <div className="flex-1 px-6 pb-6">
-            <iframe
-              src={previewLinkUrl || ''}
-              className="w-full h-full rounded-lg border border-border"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              title="Link Preview"
-            />
+          <div className="flex-1 px-4 pb-4">
+            <iframe src={previewLinkUrl || ''} className="w-full h-full rounded-lg border border-border" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" title="Preview" />
           </div>
         </DialogContent>
       </Dialog>

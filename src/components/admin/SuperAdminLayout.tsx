@@ -1,38 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  FileCheck,
-  Users,
-  DollarSign,
-  Palette,
-  Layout,
-  Globe,
-  Image,
-  Briefcase,
-  FolderKanban,
-  Tag,
-  UserSquare,
-  Newspaper,
-  UserCheck,
-  Star,
-  Download,
-  Activity,
-  LogOut,
-  Menu,
-  X,
-  Shield,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  PanelLeftClose,
-  PanelLeft,
+  LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
+  Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
+  Star, Download, Activity, LogOut, Menu, X, Shield, ChevronDown,
+  RefreshCw, PanelLeftClose, PanelLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import BrandLogo from '@/components/BrandLogo';
 
 interface SuperAdminLayoutProps {
@@ -142,12 +120,56 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
     navigate('/login');
   };
 
+  const NavButton = ({ item }: { item: NavItem }) => {
+    const active = isActive(item);
+    
+    if (collapsed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => handleNavClick(item)}
+              className={`
+                flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-200
+                ${active
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }
+              `}
+            >
+              <item.icon className="w-[18px] h-[18px]" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            <p className="font-medium text-sm">{item.label}</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <button
+        onClick={() => handleNavClick(item)}
+        className={`
+          flex items-center gap-3 w-full px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200
+          ${active
+            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+          }
+        `}
+      >
+        <item.icon className="w-[18px] h-[18px] shrink-0" />
+        <span className="truncate">{item.label}</span>
+      </button>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex w-full">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -155,126 +177,87 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
-          ${collapsed ? 'w-16' : 'w-64'}
-          bg-card border-r border-border transform transition-all duration-300
+          fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 h-screen
+          ${collapsed ? 'w-[68px]' : 'w-[260px]'}
+          bg-card/95 backdrop-blur-xl border-r border-border/50
+          transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           flex flex-col
         `}
       >
-        {/* Logo */}
-        <div className="p-3 border-b border-border flex items-center justify-between">
+        {/* Header */}
+        <div className={`h-16 flex items-center border-b border-border/50 shrink-0 ${collapsed ? 'justify-center px-2' : 'px-4 justify-between'}`}>
           {!collapsed ? (
             <>
-              <Link to="/superadmin" className="flex items-center gap-2">
-                <BrandLogo height={28} />
+              <Link to="/superadmin" className="flex items-center gap-2.5">
+                <BrandLogo height={26} />
               </Link>
-              <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0.5">
-                  <Shield className="w-3 h-3 mr-0.5" />
+              <div className="flex items-center gap-1.5">
+                <Badge className="bg-primary/15 text-primary border-0 text-[10px] font-bold px-1.5 py-0.5 hover:bg-primary/15">
+                  <Shield className="w-2.5 h-2.5 mr-0.5" />
                   Admin
                 </Badge>
-                <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
-                  <X className="w-5 h-5" />
+                <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 rounded-lg hover:bg-secondary text-muted-foreground">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </>
           ) : (
-            <div className="w-full flex justify-center">
-              <Shield className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-primary" />
             </div>
           )}
         </div>
 
         {/* Navigation */}
         <TooltipProvider delayDuration={0}>
-          <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-            {navSections.map((section) => (
-              collapsed ? (
-                <div key={section.title} className="space-y-0.5 mb-2">
-                  {section.items.map((item) => {
-                    const active = isActive(item);
-                    return (
-                      <Tooltip key={item.label + (item.tab || '')}>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => handleNavClick(item)}
-                            className={`flex items-center justify-center w-full p-2.5 rounded-lg transition-colors ${
-                              active
-                                ? 'bg-primary/10 text-primary'
-                                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                            }`}
-                          >
-                            <item.icon className="w-4 h-4 shrink-0" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="font-medium">
-                          {item.label}
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-              ) : (
-                <Collapsible key={section.title} defaultOpen={section.defaultOpen}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                    {section.title}
-                    <ChevronDown className="w-3 h-3" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-0.5 mt-0.5">
-                    {section.items.map((item) => {
-                      const active = isActive(item);
-                      return (
-                        <button
-                          key={item.label + (item.tab || '')}
-                          onClick={() => handleNavClick(item)}
-                          className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                            active
-                              ? 'bg-primary/10 text-primary font-semibold'
-                              : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                          }`}
-                        >
-                          <item.icon className="w-4 h-4 shrink-0" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </CollapsibleContent>
-                </Collapsible>
-              )
-            ))}
-          </nav>
+          <ScrollArea className="flex-1">
+            <nav className={`py-3 space-y-1 ${collapsed ? 'px-2' : 'px-3'}`}>
+              {navSections.map((section) => (
+                collapsed ? (
+                  <div key={section.title} className="space-y-1 py-1.5">
+                    <div className="h-px bg-border/40 mx-1 mb-2" />
+                    {section.items.map((item) => (
+                      <NavButton key={item.label + (item.tab || '')} item={item} />
+                    ))}
+                  </div>
+                ) : (
+                  <Collapsible key={section.title} defaultOpen={section.defaultOpen}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors group">
+                      {section.title}
+                      <ChevronDown className="w-3 h-3 transition-transform group-data-[state=closed]:-rotate-90" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-0.5 mt-1">
+                      {section.items.map((item) => (
+                        <NavButton key={item.label + (item.tab || '')} item={item} />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )
+              ))}
+            </nav>
+          </ScrollArea>
         </TooltipProvider>
 
         {/* Footer */}
-        <div className="p-2 border-t border-border space-y-1">
-          {/* Collapse toggle - desktop only */}
+        <div className={`border-t border-border/50 shrink-0 ${collapsed ? 'p-2 space-y-1' : 'p-3 space-y-1'}`}>
+          {/* Collapse toggle */}
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-center lg:flex hidden text-muted-foreground"
+            className="w-full hidden lg:flex items-center justify-center text-muted-foreground hover:text-foreground h-9"
             onClick={() => setCollapsed(!collapsed)}
           >
-            {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-            {!collapsed && <span className="ml-2">Collapse</span>}
+            {collapsed ? <PanelLeft className="w-4 h-4" /> : <><PanelLeftClose className="w-4 h-4 mr-2" /><span className="text-xs">Collapse</span></>}
           </Button>
+
           {!collapsed ? (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-muted-foreground"
-                onClick={() => navigate('/dashboard')}
-              >
+              <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground h-9 text-xs" onClick={() => navigate('/dashboard')}>
                 <Users className="w-4 h-4 mr-2" />
-                Switch to User View
+                User View
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-muted-foreground"
-                onClick={handleLogout}
-              >
+              <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground h-9 text-xs" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
@@ -283,25 +266,15 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-center text-muted-foreground"
-                    onClick={() => navigate('/dashboard')}
-                  >
+                  <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground h-9" onClick={() => navigate('/dashboard')}>
                     <Users className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Switch to User View</TooltipContent>
+                <TooltipContent side="right">User View</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-center text-muted-foreground"
-                    onClick={handleLogout}
-                  >
+                  <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground h-9" onClick={handleLogout}>
                     <LogOut className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
@@ -315,22 +288,22 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Mobile Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="text-foreground">
-            <Menu className="w-6 h-6" />
+        <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-border/50 bg-background/95 backdrop-blur-xl lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-xl hover:bg-secondary text-foreground">
+            <Menu className="w-5 h-5" />
           </button>
-          <Badge variant="secondary" className="text-xs font-bold">
+          <Badge className="bg-primary/15 text-primary border-0 text-xs font-bold">
             <Shield className="w-3 h-3 mr-1" />
-            Super Admin
+            Admin Panel
           </Badge>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {onRefresh && (
-              <button onClick={onRefresh} className="text-muted-foreground">
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              <button onClick={onRefresh} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
             )}
           </div>
-        </div>
+        </header>
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto">
