@@ -652,25 +652,7 @@ const Dashboard = () => {
       </div>
 
       {/* Start Working Dialog */}
-      <Dialog open={startWorkingOpen} onOpenChange={(open) => {
-        setStartWorkingOpen(open);
-        if (open) {
-          setLoadingJobs(true);
-          supabase
-            .from('job_contracts')
-            .select('id, title')
-            .in('status', ['active', 'in_progress'])
-            .order('created_at', { ascending: false })
-            .then(({ data, error }) => {
-              if (error) {
-                console.error('Error fetching jobs:', error);
-              }
-              console.log('Fetched jobs:', data);
-              setActiveJobs(data || []);
-              setLoadingJobs(false);
-            });
-        }
-      }}>
+      <Dialog open={startWorkingOpen} onOpenChange={setStartWorkingOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Start Work</DialogTitle>
