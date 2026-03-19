@@ -300,27 +300,28 @@ const JobContracts = () => {
             <h2 className="text-base font-bold">All Job Contracts</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Manage job briefs posted to professional groups</p>
           </div>
+          <div className="p-4 sm:p-5">
               {contracts.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
                   <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-30" />
                   <p>No job contracts posted yet.</p>
-                  <Button variant="outline" className="mt-4" onClick={() => setIsCreateOpen(true)}>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => setIsCreateOpen(true)}>
                     Post Your First Job
                   </Button>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-md border border-border/50">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Budget</TableHead>
-                        <TableHead>Deadline</TableHead>
-                        <TableHead>Discord</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Posted</TableHead>
-                        <TableHead></TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-xs font-semibold">Title</TableHead>
+                        <TableHead className="text-xs font-semibold">Category</TableHead>
+                        <TableHead className="text-xs font-semibold">Budget</TableHead>
+                        <TableHead className="text-xs font-semibold">Deadline</TableHead>
+                        <TableHead className="text-xs font-semibold">Discord</TableHead>
+                        <TableHead className="text-xs font-semibold">Status</TableHead>
+                        <TableHead className="text-xs font-semibold">Posted</TableHead>
+                        <TableHead className="text-xs font-semibold"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
