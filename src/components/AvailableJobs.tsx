@@ -78,7 +78,29 @@ const AvailableJobs = () => {
   }, [user]);
 
   if (loading) return null;
-  if (jobs.length === 0) return null;
+  if (jobs.length === 0) return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="mb-8"
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Briefcase className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-lg font-heading font-bold">Available Jobs</h2>
+          <p className="text-xs text-muted-foreground font-medium">0 active jobs</p>
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-8 text-center">
+        <Briefcase className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+        <p className="text-sm font-medium text-muted-foreground">No jobs available for your profession</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">New jobs matching your skills will appear here</p>
+      </div>
+    </motion.div>
+  );
 
   return (
     <motion.div

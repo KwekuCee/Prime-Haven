@@ -43,6 +43,7 @@ import JobContracts from "./pages/JobContracts";
 import ManageClientProjects from "./pages/ManageClientProjects";
 import ManagePricing from "./pages/ManagePricing";
 import ManageClients from "./pages/ManageClients";
+import ForwardWork from "./pages/ForwardWork";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const App = () => {
               <Route path="/start-project" element={<StartProject />} />
               <Route path="/superadmin/pricing" element={<ManagePricing />} />
               <Route path="/superadmin/clients" element={<ManageClients />} />
+              <Route path="/superadmin/forward-work" element={<ForwardWork />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
