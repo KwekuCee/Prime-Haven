@@ -87,11 +87,20 @@ const Dashboard = () => {
   const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [hasStartedProject, setHasStartedProject] = useState(false);
+  const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
 
   useEffect(() => {
     if (user) {
       const started = localStorage.getItem(`started_project_${user.id}`);
-      setHasStartedProject(!!started);
+      if (started) {
+        try {
+          const parsed = JSON.parse(started);
+          setStartedProjectInfo(parsed);
+          setHasStartedProject(true);
+        } catch {
+          setHasStartedProject(false);
+        }
+      }
     }
   }, [user]);
 
@@ -301,6 +310,29 @@ const Dashboard = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Active Project Indicator */}
+        {hasStartedProject && startedProjectInfo && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
+            className="mb-6 p-4 rounded-2xl bg-primary/5 border border-primary/20 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground">Project In Progress</p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  <span className="font-medium text-primary">{startedProjectInfo.title}</span>
+                  {' — started '}
+                  {new Date(startedProjectInfo.startedAt).toLocaleDateString()}
+                </p>
+              </div>
+              <Button size="sm" className="text-xs" onClick={() => navigate('/submit-work')}>
+                <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit Now
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Verification Alerts */}
         {profile && (!profile.email_verified || !profile.registration_fee_paid) && (
@@ -573,7 +605,13 @@ const Dashboard = () => {
             <h2 className="text-sm font-heading font-bold mb-4">Quick Actions</h2>
             <div className="space-y-2">
               {[
-                { label: 'Start Work', icon: PlayCircle, action: () => setStartWorkingOpen(true), primary: true },
+                { label: hasStartedProject ? `In Progress: ${startedProjectInfo?.title}` : 'Start Work', icon: PlayCircle, action: () => {
+                  if (hasStartedProject) {
+                    toast({ title: 'Project Already Started', description: `You must submit your work for "${startedProjectInfo?.title}" before starting another.`, variant: 'destructive' });
+                    return;
+                  }
+                  setStartWorkingOpen(true);
+                }, primary: true },
                 { label: 'Submit New Work', icon: Upload, action: () => navigate('/submit-work') },
                 { label: 'Payment Settings', icon: Wallet, action: () => navigate('/payments') },
                 { label: 'Edit Profile', icon: Settings, action: () => navigate('/edit-profile') },
