@@ -188,15 +188,18 @@ serve(async (req: Request): Promise<Response> => {
         timestamp: new Date().toISOString(),
       };
 
-      // Add first reference image to Discord embed
+      // Download reference files and attach them to Discord message
+      const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
       if (referenceFiles && referenceFiles.length > 0) {
-        embed.image = { url: referenceFiles[0] };
-        if (referenceFiles.length > 1) {
-          fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        const downloads = await Promise.all(referenceFiles.slice(0, 10).map((url: string) => downloadFile(url)));
+        for (const file of downloads) {
+          if (file) downloadedFiles.push(file);
         }
+        console.log(`Downloaded ${downloadedFiles.length}/${referenceFiles.length} reference files for Discord`);
       }
 
-      discordMessageId = await postToDiscord(channelId, embed);
+      discordMessageId = await postToDiscord(channelId, embed, downloadedFiles.length > 0 ? downloadedFiles : undefined);
     }
 
     // 2. Update contract with discord_message_id if provided
