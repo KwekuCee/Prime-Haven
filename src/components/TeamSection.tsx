@@ -121,7 +121,9 @@ const TeamSection = () => {
                           <img
                             src={member.photo_url}
                             alt={member.full_name}
-                            className="w-full h-full object-cover object-top"
+                            loading="eager"
+                            decoding="async"
+                            className="w-full h-full object-cover object-top bg-muted"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-muted">

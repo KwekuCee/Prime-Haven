@@ -52,7 +52,10 @@ const FounderSection = () => {
                 <img
                   src={ceoPhoto}
                   alt="Michael Kweku Essilfie - CEO & Founder, Prime Haven"
-                  className="w-full h-full object-cover object-top"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                  className="w-full h-full object-cover object-top bg-muted"
                 />
               </div>
             </div>
