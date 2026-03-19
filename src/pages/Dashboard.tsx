@@ -311,6 +311,29 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
+        {/* Active Project Indicator */}
+        {hasStartedProject && startedProjectInfo && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
+            className="mb-6 p-4 rounded-2xl bg-primary/5 border border-primary/20 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground">Project In Progress</p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  <span className="font-medium text-primary">{startedProjectInfo.title}</span>
+                  {' — started '}
+                  {new Date(startedProjectInfo.startedAt).toLocaleDateString()}
+                </p>
+              </div>
+              <Button size="sm" className="text-xs" onClick={() => navigate('/submit-work')}>
+                <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit Now
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Verification Alerts */}
         {profile && (!profile.email_verified || !profile.registration_fee_paid) && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
