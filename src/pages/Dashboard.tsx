@@ -284,7 +284,15 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs" onClick={() => setStartWorkingOpen(true)}>
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                if (hasStartedProject) {
+                  const stored = localStorage.getItem(`started_project_${user?.id}`);
+                  const proj = stored ? JSON.parse(stored) : null;
+                  toast({ title: 'Project Already Started', description: `You must submit your work for "${proj?.title || 'your current project'}" before starting another.`, variant: 'destructive' });
+                  return;
+                }
+                setStartWorkingOpen(true);
+              }}>
                 <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Start Work
               </Button>
               <Button size="sm" className="text-xs bg-primary hover:bg-primary/90" onClick={() => navigate('/submit-work')}>
