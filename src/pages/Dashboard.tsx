@@ -86,6 +86,14 @@ const Dashboard = () => {
   const [startWorkingSending, setStartWorkingSending] = useState(false);
   const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [hasStartedProject, setHasStartedProject] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const started = localStorage.getItem(`started_project_${user.id}`);
+      setHasStartedProject(!!started);
+    }
+  }, [user]);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
@@ -112,10 +120,18 @@ const Dashboard = () => {
     if (!user || !startWorkingProject.trim()) return;
     setStartWorkingSending(true);
     try {
+      const selectedJob = activeJobs.find(j => j.title === startWorkingProject);
       const { error } = await supabase.functions.invoke('notify-designer', {
         body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working' },
       });
       if (error) throw error;
+      // Store started project info in localStorage
+      localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
+        jobId: selectedJob?.id || '',
+        title: startWorkingProject.trim(),
+        startedAt: new Date().toISOString(),
+      }));
+      setHasStartedProject(true);
       toast({ title: 'Notification sent!', description: 'Admin has been notified that you started working.' });
       setStartWorkingOpen(false);
       setStartWorkingProject('');
@@ -268,7 +284,15 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs" onClick={() => setStartWorkingOpen(true)}>
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                if (hasStartedProject) {
+                  const stored = localStorage.getItem(`started_project_${user?.id}`);
+                  const proj = stored ? JSON.parse(stored) : null;
+                  toast({ title: 'Project Already Started', description: `You must submit your work for "${proj?.title || 'your current project'}" before starting another.`, variant: 'destructive' });
+                  return;
+                }
+                setStartWorkingOpen(true);
+              }}>
                 <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Start Work
               </Button>
               <Button size="sm" className="text-xs bg-primary hover:bg-primary/90" onClick={() => navigate('/submit-work')}>
