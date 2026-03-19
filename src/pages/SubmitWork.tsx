@@ -95,7 +95,6 @@ const SubmitWork = () => {
     const loadJobs = async () => {
       if (!user) return;
       try {
-        // Get designer's profession to filter jobs
         const { data: designerData } = await supabase
           .from('designer_details')
           .select('professional_title')
@@ -105,13 +104,29 @@ const SubmitWork = () => {
         const profession = normalizeCategory(designerData?.professional_title || null);
         const jobCategories = categoryToJobCategory(profession);
 
-        const { data, error } = await supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).in('category', jobCategories).order('created_at', { ascending: false });
-        if (!error && data) setAvailableJobs(data as JobOption[]);
+        // For corrections, load ALL active/in_progress jobs so the correction job always appears
+        let query = supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).order('created_at', { ascending: false });
+        if (!correctionId) {
+          query = query.in('category', jobCategories);
+        }
+
+        const { data, error } = await query;
+        if (!error && data) {
+          setAvailableJobs(data as JobOption[]);
+          // Auto-select job for corrections by matching client name
+          if (correctionId && correctionClient) {
+            const decodedClient = decodeURIComponent(correctionClient);
+            const matchingJob = data.find(j => j.client_name === decodedClient);
+            if (matchingJob) {
+              setFormData(prev => ({ ...prev, selectedJobId: matchingJob.id, clientReference: matchingJob.client_name || '' }));
+            }
+          }
+        }
       } catch (err) { console.error('Error loading jobs:', err); }
       finally { setJobsLoading(false); }
     };
     loadJobs();
-  }, [user]);
+  }, [user, correctionId, correctionClient]);
 
   useEffect(() => {
     if (correctionId) {
@@ -254,22 +269,18 @@ const SubmitWork = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">Job Contract *</Label>
-                      {correctionId ? (
-                        <Input value={formData.clientReference} disabled className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40" />
-                      ) : (
-                        <Select value={formData.selectedJobId} onValueChange={handleJobSelect}>
-                          <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40">
-                            <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableJobs.length === 0 && !jobsLoading ? (
-                              <SelectItem value="none" disabled>No active jobs</SelectItem>
-                            ) : availableJobs.map(job => (
-                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      <Select value={formData.selectedJobId} onValueChange={handleJobSelect}>
+                        <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40">
+                          <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableJobs.length === 0 && !jobsLoading ? (
+                            <SelectItem value="none" disabled>No active jobs</SelectItem>
+                          ) : availableJobs.map(job => (
+                            <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label className="text-xs">Deadline (Optional)</Label>
