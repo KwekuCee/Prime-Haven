@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
-import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Loader2, LogIn, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -28,12 +27,9 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  // Sign out any existing user when visiting login page
   useEffect(() => {
     const handleExistingSession = async () => {
       if (!authLoading && user) {
-        // If user is already logged in and visits login page, sign them out first
-        // This ensures they can enter new credentials
         await signOut();
       }
     };
@@ -45,7 +41,6 @@ const Login = () => {
 
     if (error) {
       let errorMessage = 'An error occurred during sign in';
-      
       if (error.message.includes('Invalid login credentials')) {
         errorMessage = 'Invalid email or password. Please check your credentials and try again.';
       } else if (error.message.includes('Email not confirmed')) {
@@ -55,16 +50,10 @@ const Login = () => {
       } else {
         errorMessage = error.message;
       }
-
-      toast({
-        variant: 'destructive',
-        title: 'Sign In Failed',
-        description: errorMessage,
-      });
+      toast({ variant: 'destructive', title: 'Sign In Failed', description: errorMessage });
       return;
     }
 
-    // Check if email is verified in profiles table
     if (authData?.user) {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -73,7 +62,6 @@ const Login = () => {
         .single();
 
       if (profileData && !profileData.email_verified) {
-        // Sign out the user since email is not verified
         await signOut();
         toast({
           variant: 'destructive',
@@ -83,12 +71,8 @@ const Login = () => {
         return;
       }
 
-      toast({
-        title: 'Welcome back!',
-        description: 'You have been signed in successfully.',
-      });
+      toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
 
-      // Check user role and navigate accordingly
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -112,144 +96,122 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Panel - Visual */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-primary/20 via-background to-background items-center justify-center p-12 relative overflow-hidden">
-        {/* Decorative Elements */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
-        
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center relative z-10"
-        >
-          <Link to="/" className="inline-block mb-8">
-            <BrandLogo height={48} />
-          </Link>
-          <h2 className="text-3xl font-heading font-bold mb-4">
-            Welcome <span className="text-gradient">Back</span>
-          </h2>
-          <p className="text-muted-foreground max-w-sm mx-auto">
-            Continue your creative journey and manage your projects from your personal dashboard.
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/8 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       </div>
 
-      {/* Right Panel - Login Form */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-border">
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-        </div>
+      <div className="w-full max-w-[440px] relative z-10">
+        {/* Back link */}
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
 
-        {/* Form Content */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md"
-          >
-            {/* Mobile Logo */}
-            <div className="lg:hidden text-center mb-8">
-              <Link to="/" className="inline-block">
-                <BrandLogo height={40} className="mx-auto" />
-              </Link>
+        {/* Card */}
+        <div className="rounded-2xl border border-border/60 bg-card/50 backdrop-blur-xl p-8 shadow-2xl shadow-black/20">
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-block mb-5">
+              <BrandLogo height={36} />
+            </Link>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <LogIn className="w-5 h-5 text-primary" />
+              <h1 className="text-2xl font-heading font-bold">Welcome Back</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">Sign in to your designer dashboard</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                {...register('email')}
+                className={`h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl ${errors.email ? 'border-destructive' : ''}`}
+              />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
 
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-heading font-bold mb-2">Sign In</h1>
-              <p className="text-muted-foreground">
-                Access your designer dashboard
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
+                <Link to="/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  {...register('email')}
-                  className={errors.email ? 'border-destructive' : ''}
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  {...register('password')}
+                  className={`h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  autoComplete="current-password"
                 />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    {...register('password')}
-                    className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <ResendVerificationEmail />
+              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="text-muted-foreground">
-                Not a member yet?{' '}
-                <Link to="/register" className="text-primary hover:underline font-medium">
-                  Join Prime Haven
-                </Link>
-              </p>
-            </div>
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-xl font-semibold text-sm shadow-lg shadow-primary/20"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Sign In
+                </>
+              )}
+            </Button>
+          </form>
 
-            <div className="mt-4 text-center">
-              <p className="text-muted-foreground text-sm">
-                Admin access?{' '}
-                <Link to="/superadmin-login" className="text-primary hover:underline font-medium">
-                  Admin Portal
-                </Link>
-              </p>
+          <div className="mt-5 text-center">
+            <ResendVerificationEmail />
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/40" />
             </div>
-          </motion.div>
+            <div className="relative flex justify-center">
+              <span className="bg-card/50 px-3 text-xs text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-center">
+            <p className="text-sm text-muted-foreground">
+              Not a member yet?{' '}
+              <Link to="/register" className="text-primary hover:text-primary/80 font-semibold transition-colors">
+                Join Prime Haven
+              </Link>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Admin?{' '}
+              <Link to="/superadmin-login" className="text-primary/70 hover:text-primary transition-colors">
+                Admin Portal
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
