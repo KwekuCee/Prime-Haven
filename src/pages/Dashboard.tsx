@@ -104,6 +104,21 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!startWorkingOpen || !user) return;
+    setLoadingJobs(true);
+    supabase
+      .from('job_contracts')
+      .select('id, title')
+      .in('status', ['active', 'in_progress'])
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error('Error fetching jobs:', error);
+        setActiveJobs(data || []);
+        setLoadingJobs(false);
+      });
+  }, [startWorkingOpen, user]);
+
   const recalculateTalentScore = async () => {
     if (!user) return;
     setRecalculating(true);
@@ -652,21 +667,7 @@ const Dashboard = () => {
       </div>
 
       {/* Start Working Dialog */}
-      <Dialog open={startWorkingOpen} onOpenChange={(open) => {
-        setStartWorkingOpen(open);
-        if (open) {
-          setLoadingJobs(true);
-          supabase
-            .from('job_contracts')
-            .select('id, title')
-            .in('status', ['active', 'in_progress'])
-            .order('created_at', { ascending: false })
-            .then(({ data }) => {
-              setActiveJobs(data || []);
-              setLoadingJobs(false);
-            });
-        }
-      }}>
+      <Dialog open={startWorkingOpen} onOpenChange={setStartWorkingOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Start Work</DialogTitle>
