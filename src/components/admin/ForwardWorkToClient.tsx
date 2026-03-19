@@ -94,17 +94,30 @@ const ForwardWorkToClient = () => {
       });
       setClients(Array.from(clientMap.values()));
 
-      // Load accepted/approved submissions with designer info
-      const { data: subs } = await supabase
+      // Load accepted/approved submissions
+      const { data: subs, error: subsError } = await supabase
         .from('submissions')
-        .select('id, project_name, service_type, files_urls, design_link, client_ref, created_at, designer_id, profiles:designer_id(full_name)')
+        .select('id, project_name, service_type, files_urls, design_link, client_ref, created_at, designer_id')
         .or('status.eq.ph_approved,status.eq.approved,client_accepted.eq.true')
         .order('created_at', { ascending: false });
 
-      if (subs) {
+      if (subsError) {
+        console.error('Submissions query error:', subsError);
+      }
+
+      if (subs && subs.length > 0) {
+        // Fetch designer names separately
+        const designerIds = [...new Set(subs.map((s: any) => s.designer_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', designerIds);
+
+        const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+
         setSubmissions(subs.map((s: any) => ({
           ...s,
-          designer_name: s.profiles?.full_name || 'Unknown Designer',
+          designer_name: profileMap.get(s.designer_id) || 'Unknown Designer',
         })));
       }
     } catch (err) {
