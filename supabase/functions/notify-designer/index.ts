@@ -216,6 +216,11 @@ serve(async (req: Request): Promise<Response> => {
     await sendEmail(profile.email, subject, emailHtml);
     console.log(`Notification email sent to ${profile.email} for ${notificationType}`);
 
+    // Send SMS if designer has a phone number
+    if (smsText && profile.phone) {
+      await sendSms(profile.phone, smsText);
+    }
+
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (error) {
     console.error("Error in notify-designer:", error);
