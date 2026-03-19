@@ -85,7 +85,7 @@ async function sendSms(to: string, body: string): Promise<boolean> {
         "X-Connection-Api-Key": TWILIO_API_KEY,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ To: phone, From: "PrimeHaven", Body: body }),
+      body: new URLSearchParams({ To: phone, From: TWILIO_FROM_NUMBER!, Body: body }),
     });
     if (!res.ok) { console.error("SMS error:", res.status, await res.text()); return false; }
     const data = await res.json();
