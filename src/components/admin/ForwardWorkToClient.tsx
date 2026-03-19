@@ -109,11 +109,10 @@ const ForwardWorkToClient = () => {
 
   const handleClientSelect = (key: string) => {
     setSelectedClientKey(key);
-    const client = clients.find(c => (c.email?.toLowerCase() || c.name.toLowerCase()) === key);
+    const client = clients.find(c => c.id === key);
     setSelectedClient(client || null);
     setSelectedSubmissionIds([]);
 
-    // Auto-filter submissions for this client
     if (client) {
       setSearchQuery(client.name);
     }
