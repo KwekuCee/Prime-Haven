@@ -5,7 +5,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
+
+const normalizeCategory = (title: string | null): string => {
+  const t = (title || '').toLowerCase();
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+  if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  return 'Graphic Designer';
+};
+
+const categoryToJobCategories = (profession: string): string[] => {
+  switch (profession) {
+    case 'UI/UX Designer': return ['app-design'];
+    case 'Web Developer': return ['web-dev'];
+    default: return ['graphic-design'];
+  }
+};
 
 interface JobContract {
   id: string;
@@ -26,17 +42,30 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const AvailableJobs = () => {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState<JobContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const loadJobs = async () => {
+      if (!user) { setLoading(false); return; }
       try {
+        // Get designer's profession
+        const { data: designerData } = await supabase
+          .from('designer_details')
+          .select('professional_title')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        const profession = normalizeCategory(designerData?.professional_title || null);
+        const jobCategories = categoryToJobCategories(profession);
+
         const { data, error } = await supabase
           .from('job_contracts')
           .select('id, title, description, category, deadline, budget, client_name, status, created_at')
           .in('status', ['active', 'in_progress'])
+          .in('category', jobCategories)
           .order('created_at', { ascending: false });
         if (!error && data) setJobs(data as JobContract[]);
       } catch (err) {
@@ -46,7 +75,7 @@ const AvailableJobs = () => {
       }
     };
     loadJobs();
-  }, []);
+  }, [user]);
 
   if (loading) return null;
   if (jobs.length === 0) return null;

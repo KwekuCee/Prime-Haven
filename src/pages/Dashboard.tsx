@@ -104,20 +104,31 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  const categoryToJobCategories = (profession: string): string[] => {
+    switch (profession) {
+      case 'UI/UX Designer': return ['app-design'];
+      case 'Web Developer': return ['web-dev'];
+      default: return ['graphic-design'];
+    }
+  };
+
   useEffect(() => {
     if (!startWorkingOpen || !user) return;
     setLoadingJobs(true);
+    const profession = normalizeCategory(designer?.professional_title || null);
+    const jobCategories = categoryToJobCategories(profession);
     supabase
       .from('job_contracts')
       .select('id, title')
       .in('status', ['active', 'in_progress'])
+      .in('category', jobCategories)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) console.error('Error fetching jobs:', error);
         setActiveJobs(data || []);
         setLoadingJobs(false);
       });
-  }, [startWorkingOpen, user]);
+  }, [startWorkingOpen, user, designer]);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
