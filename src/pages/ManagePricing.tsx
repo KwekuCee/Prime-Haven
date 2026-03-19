@@ -204,8 +204,8 @@ const ManagePricing = () => {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
 
         {/* Edit Dialog */}
