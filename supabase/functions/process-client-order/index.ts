@@ -239,7 +239,7 @@ serve(async (req: Request): Promise<Response> => {
           { name: "👤 Client", value: encodeHtml(clientName), inline: true },
           { name: "📧 Email", value: encodeHtml(clientEmail), inline: true },
           { name: "📦 Package", value: `${tier.charAt(0).toUpperCase() + tier.slice(1)}`, inline: true },
-          { name: "💰 Amount Paid", value: `GH₵${Number(price).toLocaleString()}`, inline: true },
+          { name: "💰 Amount Paid", value: `GH₵${verifiedAmount.toLocaleString()}`, inline: true },
           ...(clientWhatsapp ? [{ name: "📱 WhatsApp", value: encodeHtml(clientWhatsapp), inline: true }] : []),
         ],
         footer: { text: "Prime Haven • Client Order (Paid)" },
