@@ -51,7 +51,7 @@ serve(async (req: Request): Promise<Response> => {
       },
       body: new URLSearchParams({
         To: phone,
-        From: TWILIO_FROM_NUMBER,
+        From: SMS_SENDER_ID,
         Body: body,
       }),
     });
