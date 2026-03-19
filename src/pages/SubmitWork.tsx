@@ -269,22 +269,18 @@ const SubmitWork = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">Job Contract *</Label>
-                      {correctionId ? (
-                        <Input value={formData.clientReference} disabled className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40" />
-                      ) : (
-                        <Select value={formData.selectedJobId} onValueChange={handleJobSelect}>
-                          <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40">
-                            <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableJobs.length === 0 && !jobsLoading ? (
-                              <SelectItem value="none" disabled>No active jobs</SelectItem>
-                            ) : availableJobs.map(job => (
-                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      <Select value={formData.selectedJobId} onValueChange={handleJobSelect}>
+                        <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40">
+                          <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableJobs.length === 0 && !jobsLoading ? (
+                            <SelectItem value="none" disabled>No active jobs</SelectItem>
+                          ) : availableJobs.map(job => (
+                            <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label className="text-xs">Deadline (Optional)</Label>
