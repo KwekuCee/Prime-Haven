@@ -66,6 +66,7 @@ const SubmitWork = () => {
   const [uploadError, setUploadError] = useState('');
   const [availableJobs, setAvailableJobs] = useState<JobOption[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
+  const [startedProject, setStartedProject] = useState<{ jobId: string; title: string } | null>(null);
   
   const correctionId = searchParams.get('correction');
   const correctionProject = searchParams.get('project');
@@ -77,14 +78,25 @@ const SubmitWork = () => {
     selectedJobId: '', description: '', deadline: '', designLink: '',
   });
 
+  // Check if user has a started project
+  useEffect(() => {
+    if (user) {
+      const stored = localStorage.getItem(`started_project_${user.id}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setStartedProject(parsed);
+        } catch {}
+      }
+    }
+  }, [user]);
+
   useEffect(() => {
     const loadJobs = async () => {
       if (!user) return;
       try {
-        const { data: designerData } = await supabase.from('designer_details').select('professional_title').eq('user_id', user.id).maybeSingle();
-        const profession = normalizeCategory(designerData?.professional_title || null);
-        const jobCategories = categoryToJobCategory(profession);
-        const { data, error } = await supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).in('category', jobCategories).order('created_at', { ascending: false });
+        // Fetch ALL active/in_progress jobs without category filter
+        const { data, error } = await supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).order('created_at', { ascending: false });
         if (!error && data) setAvailableJobs(data as JobOption[]);
       } catch (err) { console.error('Error loading jobs:', err); }
       finally { setJobsLoading(false); }
@@ -108,6 +120,15 @@ const SubmitWork = () => {
   };
 
   const handleJobSelect = (jobId: string) => {
+    // If there's a started project, only allow selecting that project
+    if (startedProject && startedProject.jobId && jobId !== startedProject.jobId) {
+      toast({
+        title: "Project Already Started",
+        description: `You must submit your work for "${startedProject.title}" before starting another project.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const job = availableJobs.find(j => j.id === jobId);
     setFormData(prev => ({ ...prev, selectedJobId: jobId, clientReference: job?.client_name || '', projectName: prev.projectName || job?.title || '' }));
   };
