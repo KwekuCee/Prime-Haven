@@ -24,9 +24,8 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
     const reference = body?.reference;
-    const userId = body?.userId;
 
-    // Input validation
+    // Input validation for reference
     if (!reference || typeof reference !== 'string' || reference.length > 100) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
@@ -34,7 +33,6 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate reference format (alphanumeric and common special chars)
     if (!/^[a-zA-Z0-9_-]+$/.test(reference)) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
@@ -42,11 +40,37 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate userId format (UUID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
+    // Verify JWT and extract userId from token — never trust body userId
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ success: false, error: "invalid_request" }),
+        JSON.stringify({ success: false, error: "unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    const userId = user.id;
+
+    // Check for duplicate payment reference
+    const { data: existingPayment } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("transaction_id", reference)
+      .maybeSingle();
+
+    if (existingPayment) {
+      return new Response(
+        JSON.stringify({ success: false, error: "payment_already_processed" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
