@@ -77,8 +77,8 @@ serve(async (req) => {
   } catch (error: any) {
     console.error("Project inquiry error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Failed to submit inquiry. Please try again or contact us directly." }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
