@@ -130,7 +130,20 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // 1. Create client order
+    // Check for duplicate payment reference
+    const { data: existingOrder } = await supabase
+      .from("client_orders")
+      .select("id")
+      .eq("payment_reference", paymentReference)
+      .maybeSingle();
+
+    if (existingOrder) {
+      return new Response(JSON.stringify({ success: false, error: "Payment already processed" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // 1. Create client order using verified amount
     const { data: order, error: orderError } = await supabase
       .from("client_orders")
       .insert({
@@ -139,7 +152,7 @@ serve(async (req: Request): Promise<Response> => {
         client_whatsapp: clientWhatsapp || null,
         service_type: serviceType,
         tier,
-        price,
+        price: verifiedAmount,
         description: description || null,
         payment_status: "completed",
         payment_reference: paymentReference,
