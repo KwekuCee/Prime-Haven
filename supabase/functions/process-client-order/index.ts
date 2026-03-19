@@ -22,16 +22,57 @@ function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-async function postToDiscord(channelId: string, embed: any): Promise<string | null> {
+async function downloadFile(url: string): Promise<{ data: Uint8Array; contentType: string; name: string } | null> {
   try {
-    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ embeds: [embed] }),
-    });
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = new Uint8Array(await res.arrayBuffer());
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const urlPath = new URL(url).pathname;
+    const name = urlPath.split("/").pop() || "file";
+    return { data, contentType, name };
+  } catch (e) {
+    console.error("Failed to download file:", url, e);
+    return null;
+  }
+}
+
+async function postToDiscord(channelId: string, embed: any, files?: { name: string; data: Uint8Array; contentType: string }[]): Promise<string | null> {
+  try {
+    let res: Response;
+
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      const attachments = files.map((f, i) => ({ id: i, filename: f.name }));
+      const imageExts = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+      const firstImage = files.find(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+      if (firstImage) {
+        embed.image = { url: `attachment://${firstImage.name}` };
+      }
+      const payload = { embeds: [embed], attachments };
+      formData.append("payload_json", JSON.stringify(payload));
+
+      for (let i = 0; i < files.length; i++) {
+        const blob = new Blob([files[i].data], { type: files[i].contentType });
+        formData.append(`files[${i}]`, blob, files[i].name);
+      }
+
+      res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+        body: formData,
+      });
+    } else {
+      res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ embeds: [embed] }),
+      });
+    }
+
     if (!res.ok) {
       console.error("Discord API error:", res.status, await res.text());
       return null;
@@ -54,7 +95,7 @@ serve(async (req: Request): Promise<Response> => {
     const {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
-      description, discordCategory, paymentReference
+      description, discordCategory, paymentReference, referenceFiles
     } = body;
 
     if (!clientName || !clientEmail || !serviceType || !tier || !price || !paymentReference) {
@@ -181,7 +222,18 @@ serve(async (req: Request): Promise<Response> => {
         timestamp: new Date().toISOString(),
       };
 
-      discordMessageId = await postToDiscord(channelId, embed);
+      // Download and attach reference files if provided
+      const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
+      if (referenceFiles && referenceFiles.length > 0) {
+        embed.fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        const downloads = await Promise.all(referenceFiles.slice(0, 10).map((url: string) => downloadFile(url)));
+        for (const file of downloads) {
+          if (file) downloadedFiles.push(file);
+        }
+        console.log(`Downloaded ${downloadedFiles.length}/${referenceFiles.length} reference files for Discord`);
+      }
+
+      discordMessageId = await postToDiscord(channelId, embed, downloadedFiles.length > 0 ? downloadedFiles : undefined);
 
       if (discordMessageId && order) {
         await supabase
