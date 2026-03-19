@@ -182,7 +182,7 @@ serve(async (req: Request): Promise<Response> => {
         heading = "You've Been Paid!";
         message = `Great news! Your salary of <strong>GH₵${(salaryAmount || 0).toFixed(2)}</strong> has been sent to your <strong>${encodeHtml((paymentMethod || "account").slice(0, 50))}</strong>${paymentAccount ? ` ending in <strong>...${encodeHtml(paymentAccount.slice(-4))}</strong>` : ""}. Please allow some time for the funds to reflect in your account.`;
         badgeText = "SALARY PAID"; emoji = "💰";
-        smsText = `💰 Prime Haven: Your salary of GH₵${(salaryAmount || 0).toFixed(2)} has been sent to your ${(paymentMethod || "account")}. View: primehaven.tech/dashboard`;
+        
         break;
       case "correction_requested":
         subject = `🔄 Correction requested for "${sanitizedProject}"`;
