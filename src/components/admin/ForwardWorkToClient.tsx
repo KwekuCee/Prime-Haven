@@ -261,13 +261,11 @@ Thank you for choosing Prime Haven! ✨`;
             </SelectTrigger>
             <SelectContent>
               {clients.map((c) => {
-                const key = c.email?.toLowerCase() || c.name.toLowerCase();
-                return (
-                  <SelectItem key={key} value={key}>
+              {clients.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
                     {c.name} {c.email ? `— ${c.email}` : ''}
                   </SelectItem>
-                );
-              })}
+                ))}
             </SelectContent>
           </Select>
 
