@@ -114,7 +114,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body: NotifyRequest = await req.json();
-    const { designerId, projectName, notificationType, pointsAwarded, giftReason, salaryAmount, paymentMethod, paymentAccount, serviceType } = body;
+    const { designerId, projectName, notificationType, pointsAwarded, giftReason, salaryAmount, paymentMethod, paymentAccount, serviceType, correctionNote, rejectionReason } = body;
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!designerId || !uuidRegex.test(designerId)) {
