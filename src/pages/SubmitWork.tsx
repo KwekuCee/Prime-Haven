@@ -95,7 +95,6 @@ const SubmitWork = () => {
     const loadJobs = async () => {
       if (!user) return;
       try {
-        // Get designer's profession to filter jobs
         const { data: designerData } = await supabase
           .from('designer_details')
           .select('professional_title')
@@ -105,13 +104,29 @@ const SubmitWork = () => {
         const profession = normalizeCategory(designerData?.professional_title || null);
         const jobCategories = categoryToJobCategory(profession);
 
-        const { data, error } = await supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).in('category', jobCategories).order('created_at', { ascending: false });
-        if (!error && data) setAvailableJobs(data as JobOption[]);
+        // For corrections, load ALL active/in_progress jobs so the correction job always appears
+        let query = supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).order('created_at', { ascending: false });
+        if (!correctionId) {
+          query = query.in('category', jobCategories);
+        }
+
+        const { data, error } = await query;
+        if (!error && data) {
+          setAvailableJobs(data as JobOption[]);
+          // Auto-select job for corrections by matching client name
+          if (correctionId && correctionClient) {
+            const decodedClient = decodeURIComponent(correctionClient);
+            const matchingJob = data.find(j => j.client_name === decodedClient);
+            if (matchingJob) {
+              setFormData(prev => ({ ...prev, selectedJobId: matchingJob.id, clientReference: matchingJob.client_name || '' }));
+            }
+          }
+        }
       } catch (err) { console.error('Error loading jobs:', err); }
       finally { setJobsLoading(false); }
     };
     loadJobs();
-  }, [user]);
+  }, [user, correctionId, correctionClient]);
 
   useEffect(() => {
     if (correctionId) {
