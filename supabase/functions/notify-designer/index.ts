@@ -196,7 +196,7 @@ serve(async (req: Request): Promise<Response> => {
         heading = "Submission Rejected";
         message = `Unfortunately, your submission <strong>"${sanitizedProject}"</strong> did not pass the Prime Haven quality check.${rejectionReason ? ` <strong>Reason:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Don't give up — review the feedback and try again!`;
         badgeText = "REJECTED"; emoji = "❌";
-        smsText = `❌ Prime Haven: Your submission "${rawProject}" was rejected.${rejectionReason ? ` Reason: ${rejectionReason.slice(0, 80)}` : ""} View: primehaven.tech/dashboard`;
+        
         break;
       case "client_rejected":
         subject = `⚠️ Client rejected your design "${sanitizedProject}"`;
