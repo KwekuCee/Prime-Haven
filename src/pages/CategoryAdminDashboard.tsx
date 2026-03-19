@@ -290,36 +290,40 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
 
   if (initialAuthCheck || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground font-medium">{initialAuthCheck ? 'Checking access...' : 'Loading...'}</p>
+      <SuperAdminLayout>
+        <div className="flex items-center justify-center py-32">
+          <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
         </div>
-      </div>
+      </SuperAdminLayout>
     );
   }
 
   return (
     <SuperAdminLayout onRefresh={() => loadData()} loading={loading}>
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-heading font-bold">{categoryLabel} Admin</h1>
-          <p className="text-sm text-muted-foreground">{categoryLabel} submissions management</p>
+          <h1 className="text-xl sm:text-2xl font-heading font-bold">{categoryLabel} Admin</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{categoryLabel} submissions management</p>
         </div>
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <Card className="glass border-l-4 border-l-primary">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Total Submissions</CardTitle></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{submissions.length}</div></CardContent>
-          </Card>
-          <Card className="glass border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Pending Review</CardTitle></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{pendingCount}</div></CardContent>
-          </Card>
-          <Card className="glass border-l-4 border-l-green-500">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Approved</CardTitle></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{submissions.filter((s: any) => s.client_accepted).length}</div></CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+          {[
+            { label: 'Total Submissions', value: submissions.length, icon: FileCheck, color: 'text-primary', bg: 'bg-primary/10' },
+            { label: 'Pending Review', value: pendingCount, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+            { label: 'Approved', value: submissions.filter((s: any) => s.client_accepted).length, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          ].map((card, i) => (
+            <motion.div key={card.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.05 }}>
+              <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
+                  <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                    <card.icon className={`w-4 h-4 ${card.color}`} />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold tracking-tight">{card.value}</div>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
         {/* Submissions Table */}
