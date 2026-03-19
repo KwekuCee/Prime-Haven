@@ -222,7 +222,18 @@ serve(async (req: Request): Promise<Response> => {
         timestamp: new Date().toISOString(),
       };
 
-      discordMessageId = await postToDiscord(channelId, embed);
+      // Download and attach reference files if provided
+      const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
+      if (referenceFiles && referenceFiles.length > 0) {
+        embed.fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        const downloads = await Promise.all(referenceFiles.slice(0, 10).map((url: string) => downloadFile(url)));
+        for (const file of downloads) {
+          if (file) downloadedFiles.push(file);
+        }
+        console.log(`Downloaded ${downloadedFiles.length}/${referenceFiles.length} reference files for Discord`);
+      }
+
+      discordMessageId = await postToDiscord(channelId, embed, downloadedFiles.length > 0 ? downloadedFiles : undefined);
 
       if (discordMessageId && order) {
         await supabase
