@@ -196,7 +196,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     const currentRevenue = revenueSetting?.value as Record<string, number> || { graphic: 0, uiux: 0, web: 0 };
-    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + Number(price);
+    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + verifiedAmount;
 
     await supabase
       .from("system_settings")
