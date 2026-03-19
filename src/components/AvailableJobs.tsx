@@ -5,7 +5,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
+
+const normalizeCategory = (title: string | null): string => {
+  const t = (title || '').toLowerCase();
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+  if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  return 'Graphic Designer';
+};
+
+const categoryToJobCategories = (profession: string): string[] => {
+  switch (profession) {
+    case 'UI/UX Designer': return ['app-design'];
+    case 'Web Developer': return ['web-dev'];
+    default: return ['graphic-design'];
+  }
+};
 
 interface JobContract {
   id: string;
