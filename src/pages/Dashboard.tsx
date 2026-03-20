@@ -157,7 +157,7 @@ const Dashboard = () => {
     try {
       const selectedJob = activeJobs.find(j => j.title === startWorkingProject);
       const { error } = await supabase.functions.invoke('notify-designer', {
-        body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working' },
+        body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working', serviceType: selectedJob?.category || '' },
       });
       if (error) throw error;
       // Store started project info in localStorage
