@@ -48,7 +48,7 @@ const Blog = () => {
       setLoading(true);
       let query = supabase
         .from('blog_posts')
-        .select('id, title, slug, excerpt, cover_image_url, category, published_at')
+        .select('id, title, slug, excerpt, cover_image_url, category, published_at, is_sponsored, sponsor_name')
         .eq('is_published', true)
         .order('published_at', { ascending: false });
 
