@@ -21,6 +21,8 @@ interface BlogPost {
   cover_image_url: string | null;
   category: string;
   published_at: string;
+  is_sponsored: boolean;
+  sponsor_name: string | null;
 }
 
 const categories = ['all', 'news', 'opportunities', 'updates', 'general'];
