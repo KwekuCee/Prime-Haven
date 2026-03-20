@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
 const Footer = () => {
@@ -43,10 +44,21 @@ const Footer = () => {
             </Link>
           </div>
 
-          {/* Copyright */}
-          <p className="text-muted-foreground text-sm text-center md:text-right">
-            © {currentYear} Prime Haven. All rights reserved.
-          </p>
+          {/* Support & Copyright */}
+          <div className="flex flex-col items-center md:items-end gap-3">
+            <a
+              href="https://buymeacoffee.com/primehaven"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFDD00] text-black text-sm font-semibold hover:bg-[#FFDD00]/90 transition-colors"
+            >
+              <Heart className="w-4 h-4 fill-current" />
+              Buy us a Coffee
+            </a>
+            <p className="text-muted-foreground text-sm text-center md:text-right">
+              © {currentYear} Prime Haven. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
