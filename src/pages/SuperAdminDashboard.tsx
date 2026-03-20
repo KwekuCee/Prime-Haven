@@ -2158,6 +2158,9 @@ const SuperAdminDashboard = () => {
           {/* ========== BLOG ========== */}
           <TabsContent value="blog" className="mt-0"><ManageBlog /></TabsContent>
 
+          {/* ========== AD REVENUE ========== */}
+          <TabsContent value="adsterra" className="mt-0"><AdsterraStats /></TabsContent>
+
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
 
