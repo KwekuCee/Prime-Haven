@@ -21,8 +21,6 @@ interface BlogPost {
   cover_image_url: string | null;
   category: string;
   published_at: string;
-  is_sponsored: boolean;
-  sponsor_name: string | null;
 }
 
 const categories = ['all', 'news', 'opportunities', 'updates', 'general'];
@@ -48,7 +46,7 @@ const Blog = () => {
       setLoading(true);
       let query = supabase
         .from('blog_posts')
-        .select('id, title, slug, excerpt, cover_image_url, category, published_at, is_sponsored, sponsor_name')
+        .select('id, title, slug, excerpt, cover_image_url, category, published_at')
         .eq('is_published', true)
         .order('published_at', { ascending: false });
 
@@ -94,7 +92,6 @@ const Blog = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -108,7 +105,6 @@ const Blog = () => {
             </p>
           </motion.div>
 
-          {/* Filters */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
             <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
               <TabsList className="flex flex-wrap h-auto gap-1">
@@ -130,7 +126,6 @@ const Blog = () => {
             </div>
           </div>
 
-          {/* Posts Grid */}
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
@@ -169,11 +164,6 @@ const Blog = () => {
                             <Tag className="w-3 h-3 mr-1" />
                             {post.category}
                           </Badge>
-                          {post.is_sponsored && (
-                            <Badge className="bg-amber-500/20 text-amber-400 text-xs">
-                              Sponsored
-                            </Badge>
-                          )}
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {format(new Date(post.published_at), 'MMM d, yyyy')}
@@ -196,7 +186,6 @@ const Blog = () => {
             </div>
           )}
 
-          {/* Newsletter CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

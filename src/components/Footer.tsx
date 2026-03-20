@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
 const Footer = () => {
@@ -9,7 +8,6 @@ const Footer = () => {
     <footer className="py-12 border-t border-border">
       <div className="container mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          {/* Logo & Tagline */}
           <div className="text-center md:text-left">
             <Link to="/">
               <BrandLogo height={40} />
@@ -19,42 +17,17 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Quick Links */}
           <div className="flex flex-wrap justify-center gap-6">
-            <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Services
-            </a>
-            <a href="#portfolio" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Portfolio
-            </a>
-            <a href="#founder" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Our Story
-            </a>
-            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Reviews
-            </a>
-            <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              About
-            </a>
-            <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Contact
-            </a>
-            <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Login
-            </Link>
+            <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Services</a>
+            <a href="#portfolio" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Portfolio</a>
+            <a href="#founder" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Our Story</a>
+            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Reviews</a>
+            <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">About</a>
+            <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Contact</a>
+            <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Login</Link>
           </div>
 
-          {/* Support & Copyright */}
           <div className="flex flex-col items-center md:items-end gap-3">
-            <a
-              href="https://buymeacoffee.com/primehaven"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFDD00] text-black text-sm font-semibold hover:bg-[#FFDD00]/90 transition-colors"
-            >
-              <Heart className="w-4 h-4 fill-current" />
-              Buy us a Coffee
-            </a>
             <p className="text-muted-foreground text-sm text-center md:text-right">
               © {currentYear} Prime Haven. All rights reserved.
             </p>
