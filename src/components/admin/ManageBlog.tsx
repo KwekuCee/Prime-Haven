@@ -357,6 +357,39 @@ const ManageBlog = () => {
               <RichTextEditor content={content} onChange={setContent} />
             </div>
             <div className="flex items-center gap-3">
+              <Switch checked={isSponsored} onCheckedChange={setIsSponsored} />
+              <Label className="font-semibold">Sponsored Post</Label>
+            </div>
+            {isSponsored && (
+              <div className="space-y-2">
+                <Label className="font-semibold">Sponsor Name</Label>
+                <Input value={sponsorName} onChange={e => setSponsorName(e.target.value)} placeholder="e.g. Canva, Figma..." />
+              </div>
+            )}
+
+            {/* Affiliate Links */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="font-semibold">Affiliate Links</Label>
+                <Button type="button" variant="outline" size="sm" onClick={() => setAffiliateLinks([...affiliateLinks, { title: '', url: '', description: '' }])}>
+                  <Plus className="w-3 h-3 mr-1" /> Add Link
+                </Button>
+              </div>
+              {affiliateLinks.map((link, i) => (
+                <div key={i} className="flex gap-2 items-start p-3 rounded-lg bg-muted/50">
+                  <div className="flex-1 space-y-2">
+                    <Input value={link.title} onChange={e => { const u = [...affiliateLinks]; u[i].title = e.target.value; setAffiliateLinks(u); }} placeholder="Product name" />
+                    <Input value={link.url} onChange={e => { const u = [...affiliateLinks]; u[i].url = e.target.value; setAffiliateLinks(u); }} placeholder="https://affiliate-link.com" />
+                    <Input value={link.description || ''} onChange={e => { const u = [...affiliateLinks]; u[i].description = e.target.value; setAffiliateLinks(u); }} placeholder="Short description (optional)" />
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setAffiliateLinks(affiliateLinks.filter((_, j) => j !== i))}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
               <Switch checked={isPublished} onCheckedChange={setIsPublished} />
               <Label className="font-semibold">Publish immediately</Label>
             </div>
