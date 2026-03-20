@@ -119,7 +119,7 @@ const Dashboard = () => {
     const jobCategories = categoryToJobCategories(profession);
     supabase
       .from('job_contracts')
-      .select('id, title')
+      .select('id, title, category')
       .in('status', ['active', 'in_progress'])
       .in('category', jobCategories)
       .order('created_at', { ascending: false })
