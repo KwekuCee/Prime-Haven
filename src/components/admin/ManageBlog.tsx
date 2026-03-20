@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff, Send, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Send, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,12 @@ import { format } from 'date-fns';
 import RichTextEditor from './RichTextEditor';
 import { Textarea } from '@/components/ui/textarea';
 
+interface AffiliateLink {
+  title: string;
+  url: string;
+  description?: string;
+}
+
 interface BlogPost {
   id: string;
   title: string;
@@ -27,6 +33,9 @@ interface BlogPost {
   is_published: boolean;
   published_at: string | null;
   created_at: string;
+  is_sponsored: boolean;
+  sponsor_name: string | null;
+  affiliate_links: AffiliateLink[];
 }
 
 const categories = [

@@ -59,7 +59,7 @@ const BlogPost = () => {
       if (data) {
         setPost({
           ...data,
-          affiliate_links: Array.isArray(data.affiliate_links) ? data.affiliate_links as AffiliateLink[] : [],
+          affiliate_links: Array.isArray(data.affiliate_links) ? (data.affiliate_links as unknown as AffiliateLink[]) : [],
         });
       }
       setLoading(false);
