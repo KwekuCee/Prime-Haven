@@ -21,6 +21,8 @@ interface BlogPost {
   cover_image_url: string | null;
   category: string;
   published_at: string;
+  is_sponsored: boolean;
+  sponsor_name: string | null;
 }
 
 const categories = ['all', 'news', 'opportunities', 'updates', 'general'];
@@ -46,7 +48,7 @@ const Blog = () => {
       setLoading(true);
       let query = supabase
         .from('blog_posts')
-        .select('id, title, slug, excerpt, cover_image_url, category, published_at')
+        .select('id, title, slug, excerpt, cover_image_url, category, published_at, is_sponsored, sponsor_name')
         .eq('is_published', true)
         .order('published_at', { ascending: false });
 
@@ -162,11 +164,16 @@ const Blog = () => {
                         </div>
                       )}
                       <CardContent className="p-6 space-y-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <Badge className={categoryColors[post.category] || categoryColors.general}>
                             <Tag className="w-3 h-3 mr-1" />
                             {post.category}
                           </Badge>
+                          {post.is_sponsored && (
+                            <Badge className="bg-amber-500/20 text-amber-400 text-xs">
+                              Sponsored
+                            </Badge>
+                          )}
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {format(new Date(post.published_at), 'MMM d, yyyy')}

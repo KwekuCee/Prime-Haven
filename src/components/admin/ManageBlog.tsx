@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff, Send, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Send, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,12 @@ import { format } from 'date-fns';
 import RichTextEditor from './RichTextEditor';
 import { Textarea } from '@/components/ui/textarea';
 
+interface AffiliateLink {
+  title: string;
+  url: string;
+  description?: string;
+}
+
 interface BlogPost {
   id: string;
   title: string;
@@ -27,6 +33,9 @@ interface BlogPost {
   is_published: boolean;
   published_at: string | null;
   created_at: string;
+  is_sponsored: boolean;
+  sponsor_name: string | null;
+  affiliate_links: AffiliateLink[];
 }
 
 const categories = [
@@ -53,6 +62,9 @@ const ManageBlog = () => {
   const [coverPreview, setCoverPreview] = useState('');
   const [category, setCategory] = useState('news');
   const [isPublished, setIsPublished] = useState(false);
+  const [isSponsored, setIsSponsored] = useState(false);
+  const [sponsorName, setSponsorName] = useState('');
+  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
   const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,7 +74,10 @@ const ManageBlog = () => {
       .from('blog_posts')
       .select('*')
       .order('created_at', { ascending: false });
-    setPosts(data || []);
+    setPosts((data || []).map(d => ({
+      ...d,
+      affiliate_links: Array.isArray(d.affiliate_links) ? (d.affiliate_links as unknown as AffiliateLink[]) : [],
+    })));
     setLoading(false);
   };
 
@@ -83,6 +98,9 @@ const ManageBlog = () => {
       setCoverFile(null);
       setCategory(post.category);
       setIsPublished(post.is_published);
+      setIsSponsored(post.is_sponsored);
+      setSponsorName(post.sponsor_name || '');
+      setAffiliateLinks(post.affiliate_links);
     } else {
       setEditingPost(null);
       setTitle('');
@@ -93,6 +111,9 @@ const ManageBlog = () => {
       setCoverFile(null);
       setCategory('news');
       setIsPublished(false);
+      setIsSponsored(false);
+      setSponsorName('');
+      setAffiliateLinks([]);
     }
     setIsEditorOpen(true);
   };
@@ -139,6 +160,9 @@ const ManageBlog = () => {
         category,
         is_published: isPublished,
         published_at: isPublished ? (editingPost?.published_at || new Date().toISOString()) : null,
+        is_sponsored: isSponsored,
+        sponsor_name: isSponsored ? (sponsorName.trim() || null) : null,
+        affiliate_links: affiliateLinks as any,
       };
 
       if (editingPost) {
@@ -332,6 +356,39 @@ const ManageBlog = () => {
               <Label className="font-semibold">Content</Label>
               <RichTextEditor content={content} onChange={setContent} />
             </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={isSponsored} onCheckedChange={setIsSponsored} />
+              <Label className="font-semibold">Sponsored Post</Label>
+            </div>
+            {isSponsored && (
+              <div className="space-y-2">
+                <Label className="font-semibold">Sponsor Name</Label>
+                <Input value={sponsorName} onChange={e => setSponsorName(e.target.value)} placeholder="e.g. Canva, Figma..." />
+              </div>
+            )}
+
+            {/* Affiliate Links */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="font-semibold">Affiliate Links</Label>
+                <Button type="button" variant="outline" size="sm" onClick={() => setAffiliateLinks([...affiliateLinks, { title: '', url: '', description: '' }])}>
+                  <Plus className="w-3 h-3 mr-1" /> Add Link
+                </Button>
+              </div>
+              {affiliateLinks.map((link, i) => (
+                <div key={i} className="flex gap-2 items-start p-3 rounded-lg bg-muted/50">
+                  <div className="flex-1 space-y-2">
+                    <Input value={link.title} onChange={e => { const u = [...affiliateLinks]; u[i].title = e.target.value; setAffiliateLinks(u); }} placeholder="Product name" />
+                    <Input value={link.url} onChange={e => { const u = [...affiliateLinks]; u[i].url = e.target.value; setAffiliateLinks(u); }} placeholder="https://affiliate-link.com" />
+                    <Input value={link.description || ''} onChange={e => { const u = [...affiliateLinks]; u[i].description = e.target.value; setAffiliateLinks(u); }} placeholder="Short description (optional)" />
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setAffiliateLinks(affiliateLinks.filter((_, j) => j !== i))}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
             <div className="flex items-center gap-3">
               <Switch checked={isPublished} onCheckedChange={setIsPublished} />
               <Label className="font-semibold">Publish immediately</Label>

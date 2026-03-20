@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       blog_posts: {
         Row: {
+          affiliate_links: Json | null
           author_id: string | null
           category: string
           content: string
@@ -24,12 +25,15 @@ export type Database = {
           excerpt: string
           id: string
           is_published: boolean
+          is_sponsored: boolean
           published_at: string | null
           slug: string
+          sponsor_name: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          affiliate_links?: Json | null
           author_id?: string | null
           category?: string
           content: string
@@ -38,12 +42,15 @@ export type Database = {
           excerpt: string
           id?: string
           is_published?: boolean
+          is_sponsored?: boolean
           published_at?: string | null
           slug: string
+          sponsor_name?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          affiliate_links?: Json | null
           author_id?: string | null
           category?: string
           content?: string
@@ -52,8 +59,10 @@ export type Database = {
           excerpt?: string
           id?: string
           is_published?: boolean
+          is_sponsored?: boolean
           published_at?: string | null
           slug?: string
+          sponsor_name?: string | null
           title?: string
           updated_at?: string
         }
