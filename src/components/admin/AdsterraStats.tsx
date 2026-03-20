@@ -36,12 +36,6 @@ const AdsterraStats = () => {
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
       const finDate = format(new Date(), 'yyyy-MM-dd');
 
-      const { data, error } = await supabase.functions.invoke('adsterra-stats', {
-        body: null,
-        method: 'GET',
-      });
-
-      // Use query params via invoke headers workaround — call directly
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
