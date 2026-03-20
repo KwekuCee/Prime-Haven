@@ -74,7 +74,10 @@ const ManageBlog = () => {
       .from('blog_posts')
       .select('*')
       .order('created_at', { ascending: false });
-    setPosts(data || []);
+    setPosts((data || []).map(d => ({
+      ...d,
+      affiliate_links: Array.isArray(d.affiliate_links) ? (d.affiliate_links as unknown as AffiliateLink[]) : [],
+    })));
     setLoading(false);
   };
 
