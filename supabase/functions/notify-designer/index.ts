@@ -122,9 +122,15 @@ serve(async (req: Request): Promise<Response> => {
       // Post to Discord
       if (DISCORD_BOT_TOKEN) {
         if (isStartWorking) {
-          const channels = await getDesignerDiscordChannels(supabase, designerId);
-          const embed = { title: `🚀 Designer Started Working`, description: `**${rawDesignerName}** has started working on **"${rawProject}"**`, color: 0x3b82f6, footer: { text: "Prime Haven • Start Work" }, timestamp: new Date().toISOString() };
-          await Promise.all(channels.map(ch => postToDiscord(ch, embed)));
+          const discordCategory = serviceType ? SERVICE_TO_DISCORD[serviceType] || serviceType : null;
+          const channelId = discordCategory ? DISCORD_CHANNELS[discordCategory] : null;
+          const embed = { title: `🚀 Designer Started Working`, description: `**${rawDesignerName}** has started working on **"${rawProject}"**`, color: 0x3b82f6, fields: [...(serviceType ? [{ name: "Category", value: serviceType, inline: true }] : [])], footer: { text: "Prime Haven • Start Work" }, timestamp: new Date().toISOString() };
+          if (channelId) {
+            await postToDiscord(channelId, embed);
+          } else {
+            const channels = await getDesignerDiscordChannels(supabase, designerId);
+            await Promise.all(channels.map(ch => postToDiscord(ch, embed)));
+          }
         } else {
           // new_submission — post to channel based on service type
           const discordCategory = serviceType ? SERVICE_TO_DISCORD[serviceType] : null;

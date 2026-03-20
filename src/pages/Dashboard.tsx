@@ -84,7 +84,7 @@ const Dashboard = () => {
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
-  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string }[]>([]);
+  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string; category: string }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [hasStartedProject, setHasStartedProject] = useState(false);
   const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
@@ -119,7 +119,7 @@ const Dashboard = () => {
     const jobCategories = categoryToJobCategories(profession);
     supabase
       .from('job_contracts')
-      .select('id, title')
+      .select('id, title, category')
       .in('status', ['active', 'in_progress'])
       .in('category', jobCategories)
       .order('created_at', { ascending: false })
@@ -157,7 +157,7 @@ const Dashboard = () => {
     try {
       const selectedJob = activeJobs.find(j => j.title === startWorkingProject);
       const { error } = await supabase.functions.invoke('notify-designer', {
-        body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working' },
+        body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working', serviceType: selectedJob?.category || '' },
       });
       if (error) throw error;
       // Store started project info in localStorage
