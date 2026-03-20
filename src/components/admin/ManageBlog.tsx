@@ -98,6 +98,9 @@ const ManageBlog = () => {
       setCoverFile(null);
       setCategory(post.category);
       setIsPublished(post.is_published);
+      setIsSponsored(post.is_sponsored);
+      setSponsorName(post.sponsor_name || '');
+      setAffiliateLinks(post.affiliate_links);
     } else {
       setEditingPost(null);
       setTitle('');
@@ -108,6 +111,9 @@ const ManageBlog = () => {
       setCoverFile(null);
       setCategory('news');
       setIsPublished(false);
+      setIsSponsored(false);
+      setSponsorName('');
+      setAffiliateLinks([]);
     }
     setIsEditorOpen(true);
   };
