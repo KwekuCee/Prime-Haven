@@ -52,6 +52,7 @@ import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog'
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
+import AdsterraStats from '@/components/admin/AdsterraStats';
 import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import { Textarea } from '@/components/ui/textarea';
@@ -2156,6 +2157,9 @@ const SuperAdminDashboard = () => {
 
           {/* ========== BLOG ========== */}
           <TabsContent value="blog" className="mt-0"><ManageBlog /></TabsContent>
+
+          {/* ========== AD REVENUE ========== */}
+          <TabsContent value="adsterra" className="mt-0"><AdsterraStats /></TabsContent>
 
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
