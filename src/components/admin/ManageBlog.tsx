@@ -62,6 +62,9 @@ const ManageBlog = () => {
   const [coverPreview, setCoverPreview] = useState('');
   const [category, setCategory] = useState('news');
   const [isPublished, setIsPublished] = useState(false);
+  const [isSponsored, setIsSponsored] = useState(false);
+  const [sponsorName, setSponsorName] = useState('');
+  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
   const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
