@@ -160,6 +160,9 @@ const ManageBlog = () => {
         category,
         is_published: isPublished,
         published_at: isPublished ? (editingPost?.published_at || new Date().toISOString()) : null,
+        is_sponsored: isSponsored,
+        sponsor_name: isSponsored ? (sponsorName.trim() || null) : null,
+        affiliate_links: affiliateLinks as any,
       };
 
       if (editingPost) {
