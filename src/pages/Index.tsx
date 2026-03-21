@@ -15,6 +15,7 @@ import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import VisitorChatbot from '@/components/VisitorChatbot';
 import AdUnit from '@/components/AdUnit';
+import EzoicAd from '@/components/EzoicAd';
 import { supabase } from '@/integrations/supabase/client';
 
 // Prefetch all homepage images immediately so they're cached before scrolling
@@ -49,13 +50,16 @@ const Index = () => {
         <HeroSection />
         <ServicesSection />
         <AdUnit slot="1675197526" />
+        <EzoicAd placeholderId={101} />
         <PortfolioSection />
         <StatsSection />
         <AdUnit slot="1675197526" />
+        <EzoicAd placeholderId={102} />
         <FounderSection />
         <TeamSection />
         <TestimonialsSection />
         <AdUnit slot="1675197526" />
+        <EzoicAd placeholderId={103} />
         <FAQSection />
         <BlogSection />
         <JoinSection />
