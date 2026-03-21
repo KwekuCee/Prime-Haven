@@ -30,7 +30,7 @@ serve(async (req) => {
       case 'stats': {
         const params = new URLSearchParams();
         if (startDate) params.set('start_date', startDate);
-        if (finDate) params.set('fin_date', finDate);
+        if (finishDate) params.set('finish_date', finishDate);
         if (groupBy) params.set('group_by', groupBy);
         apiUrl = `${ADSTERRA_API_BASE}/stats.json?${params.toString()}`;
         break;
