@@ -15,6 +15,7 @@ import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import VisitorChatbot from '@/components/VisitorChatbot';
 import AdUnit from '@/components/AdUnit';
+import EzoicAd from '@/components/EzoicAd';
 import { supabase } from '@/integrations/supabase/client';
 
 // Prefetch all homepage images immediately so they're cached before scrolling
