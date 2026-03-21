@@ -147,6 +147,8 @@ const BlogPost = () => {
               className="prose prose-invert prose-orange max-w-none [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_p]:text-muted-foreground [&_li]:text-muted-foreground [&_a]:text-primary [&_strong]:text-foreground [&_img]:rounded-lg [&_img]:max-w-full"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
             />
+
+            <EzoicAd placeholderId={104} />
           </motion.div>
 
           {/* Subscribe CTA */}

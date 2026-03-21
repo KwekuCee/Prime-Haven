@@ -50,13 +50,16 @@ const Index = () => {
         <HeroSection />
         <ServicesSection />
         <AdUnit slot="1675197526" />
+        <EzoicAd placeholderId={101} />
         <PortfolioSection />
         <StatsSection />
         <AdUnit slot="1675197526" />
+        <EzoicAd placeholderId={102} />
         <FounderSection />
         <TeamSection />
         <TestimonialsSection />
         <AdUnit slot="1675197526" />
+        <EzoicAd placeholderId={103} />
         <FAQSection />
         <BlogSection />
         <JoinSection />
