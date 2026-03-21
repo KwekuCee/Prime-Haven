@@ -21,7 +21,7 @@ serve(async (req) => {
     const url = new URL(req.url);
     const endpoint = url.searchParams.get('endpoint') || 'stats';
     const startDate = url.searchParams.get('start_date') || '';
-    const finDate = url.searchParams.get('fin_date') || '';
+    const finishDate = url.searchParams.get('finish_date') || '';
     const groupBy = url.searchParams.get('group_by') || 'date';
 
     let apiUrl = '';
