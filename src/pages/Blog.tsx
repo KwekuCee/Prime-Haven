@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import EzoicAd from '@/components/EzoicAd';
 
 interface BlogPost {
   id: string;
