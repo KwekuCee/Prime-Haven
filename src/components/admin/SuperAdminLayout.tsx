@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield, ChevronDown,
-  RefreshCw, PanelLeftClose, PanelLeft, Send,
+  RefreshCw, PanelLeftClose, PanelLeft, Send, BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
