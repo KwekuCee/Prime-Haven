@@ -73,6 +73,7 @@ const navSections: NavSection[] = [
       { label: 'Team', icon: UserCheck, path: '/superadmin', tab: 'team' },
       { label: 'Reviews', icon: Star, path: '/superadmin', tab: 'testimonials' },
       { label: 'Ad Revenue', icon: DollarSign, path: '/superadmin', tab: 'adsterra' },
+      { label: 'Analytics', icon: BarChart3, path: '/superadmin', tab: 'analytics' },
     ],
   },
   {

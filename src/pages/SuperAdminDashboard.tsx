@@ -2162,6 +2162,9 @@ const SuperAdminDashboard = () => {
           {/* ========== AD REVENUE ========== */}
           <TabsContent value="adsterra" className="mt-0"><AdsterraStats /></TabsContent>
 
+          {/* ========== GOOGLE ANALYTICS ========== */}
+          <TabsContent value="analytics" className="mt-0"><GoogleAnalytics /></TabsContent>
+
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
 
