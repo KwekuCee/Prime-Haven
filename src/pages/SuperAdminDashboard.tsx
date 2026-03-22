@@ -53,6 +53,7 @@ import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
 import AdsterraStats from '@/components/admin/AdsterraStats';
+import GoogleAnalytics from '@/components/admin/GoogleAnalytics';
 import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import { Textarea } from '@/components/ui/textarea';
