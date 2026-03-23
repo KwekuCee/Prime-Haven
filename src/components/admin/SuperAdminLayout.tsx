@@ -119,7 +119,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
   };
 
   const handleLogout = async () => {
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { supabase } = await import(/* @vite-ignore */ '@/integrations/supabase/client');
     await supabase.auth.signOut();
     navigate('/login');
   };
