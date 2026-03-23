@@ -14,6 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/DashboardLayout';
 import AvailableJobs from '@/components/AvailableJobs';
+import EarningsChart from '@/components/dashboard/EarningsChart';
+import GoalTracker from '@/components/dashboard/GoalTracker';
+import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
+import ContractApplications from '@/components/dashboard/ContractApplications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
