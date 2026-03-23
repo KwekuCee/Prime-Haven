@@ -14,6 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/DashboardLayout';
 import AvailableJobs from '@/components/AvailableJobs';
+import EarningsChart from '@/components/dashboard/EarningsChart';
+import GoalTracker from '@/components/dashboard/GoalTracker';
+import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
+import ContractApplications from '@/components/dashboard/ContractApplications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
@@ -421,7 +425,27 @@ const Dashboard = () => {
         {/* Available Jobs */}
         <AvailableJobs />
 
-        {/* AI Talent Score */}
+        {/* Earnings Breakdown & Goal Tracker */}
+        {user && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+            <EarningsChart userId={user.id} />
+            <GoalTracker userId={user.id} currentPoints={designer?.monthly_points || 0} currentSubmissions={stats.totalSubmissions} />
+          </div>
+        )}
+
+        {/* Contract Applications */}
+        {user && (
+          <div className="mb-6">
+            <ContractApplications userId={user.id} professionalTitle={designer?.professional_title || null} />
+          </div>
+        )}
+
+        {/* Designer Portfolio */}
+        {user && (
+          <div className="mb-6">
+            <DesignerPortfolio userId={user.id} />
+          </div>
+        )}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           className="mb-6 rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 sm:p-6">
           <div className="flex items-center justify-between mb-5">

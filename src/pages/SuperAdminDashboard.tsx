@@ -53,9 +53,11 @@ import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
 import AdsterraStats from '@/components/admin/AdsterraStats';
-
 import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
+import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
+import ManageClientOrders from '@/components/admin/ManageClientOrders';
+import ManageConsultations from '@/components/admin/ManageConsultations';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -2162,6 +2164,14 @@ const SuperAdminDashboard = () => {
           {/* ========== AD REVENUE ========== */}
           <TabsContent value="adsterra" className="mt-0"><AdsterraStats /></TabsContent>
 
+          {/* ========== ANALYTICS ========== */}
+          <TabsContent value="analytics" className="mt-0"><PerformanceAnalytics /></TabsContent>
+
+          {/* ========== CLIENT ORDERS ========== */}
+          <TabsContent value="orders" className="mt-0"><ManageClientOrders /></TabsContent>
+
+          {/* ========== CONSULTATIONS ========== */}
+          <TabsContent value="consultations" className="mt-0"><ManageConsultations /></TabsContent>
 
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
