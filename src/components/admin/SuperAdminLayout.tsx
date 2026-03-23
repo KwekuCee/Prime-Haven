@@ -305,6 +305,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
             Admin Panel
           </Badge>
           <div className="flex items-center gap-1">
+            <NotificationCenter />
             {onRefresh && (
               <button onClick={onRefresh} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground">
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
