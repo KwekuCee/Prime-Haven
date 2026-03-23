@@ -5,13 +5,15 @@ import {
   LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield, ChevronDown,
-  RefreshCw, PanelLeftClose, PanelLeft, Send,
+  RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import NotificationCenter from '@/components/admin/NotificationCenter';
 import BrandLogo from '@/components/BrandLogo';
 
 interface SuperAdminLayoutProps {
