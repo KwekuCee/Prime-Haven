@@ -53,7 +53,7 @@ import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
 import AdsterraStats from '@/components/admin/AdsterraStats';
-import GoogleAnalytics from '@/components/admin/GoogleAnalytics';
+
 import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import { Textarea } from '@/components/ui/textarea';
@@ -2162,8 +2162,6 @@ const SuperAdminDashboard = () => {
           {/* ========== AD REVENUE ========== */}
           <TabsContent value="adsterra" className="mt-0"><AdsterraStats /></TabsContent>
 
-          {/* ========== GOOGLE ANALYTICS ========== */}
-          <TabsContent value="analytics" className="mt-0"><GoogleAnalytics /></TabsContent>
 
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
