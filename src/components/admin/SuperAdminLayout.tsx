@@ -44,6 +44,7 @@ const navSections: NavSection[] = [
       { label: 'Submissions', icon: FileCheck, path: '/superadmin', tab: 'submissions' },
       { label: 'Users', icon: Users, path: '/superadmin', tab: 'users' },
       { label: 'Payments', icon: DollarSign, path: '/superadmin', tab: 'payments' },
+      { label: 'Analytics', icon: TrendingUp, path: '/superadmin', tab: 'analytics' },
     ],
   },
   {
@@ -59,6 +60,8 @@ const navSections: NavSection[] = [
     title: 'Management',
     defaultOpen: true,
     items: [
+      { label: 'Orders', icon: ShoppingCart, path: '/superadmin', tab: 'orders' },
+      { label: 'Consultations', icon: Calendar, path: '/superadmin', tab: 'consultations' },
       { label: 'Portfolio', icon: Image, path: '/superadmin/portfolio' },
       { label: 'Contracts', icon: Briefcase, path: '/superadmin/contracts' },
       { label: 'Projects', icon: FolderKanban, path: '/superadmin/projects' },
@@ -75,7 +78,6 @@ const navSections: NavSection[] = [
       { label: 'Team', icon: UserCheck, path: '/superadmin', tab: 'team' },
       { label: 'Reviews', icon: Star, path: '/superadmin', tab: 'testimonials' },
       { label: 'Ad Revenue', icon: DollarSign, path: '/superadmin', tab: 'adsterra' },
-      
     ],
   },
   {
