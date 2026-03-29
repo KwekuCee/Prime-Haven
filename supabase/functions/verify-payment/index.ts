@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
+const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -10,11 +10,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-interface VerifyPaymentRequest {
-  reference: string;
-  userId: string;
-}
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -26,21 +21,21 @@ serve(async (req: Request): Promise<Response> => {
     const reference = body?.reference;
 
     // Input validation for reference
-    if (!reference || typeof reference !== 'string' || reference.length > 100) {
+    if (!reference || typeof reference !== 'string' || reference.length > 200) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(reference)) {
+    if (!/^[a-zA-Z0-9_\-]+$/.test(reference)) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Verify JWT and extract userId from token — never trust body userId
+    // Verify JWT and extract userId from token
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -75,210 +70,138 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify payment with Paystack
-    const paystackResponse = await fetch(
-      `https://api.paystack.co/transaction/verify/${reference}`,
+    // Verify payment with Korapay
+    const korapayResponse = await fetch(
+      `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(reference)}`,
       {
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${KORAPAY_SECRET_KEY}`,
         },
       }
     );
 
-    const paystackData = await paystackResponse.json();
+    const korapayData = await korapayResponse.json();
 
-    if (!paystackData.status || paystackData.data.status !== "success") {
-      console.error("Payment verification failed:", paystackData);
+    if (!korapayData.status || korapayData.data?.status !== "success") {
+      console.error("Payment verification failed:", korapayData);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "payment_failed", 
-          message: "Payment verification failed" 
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ success: false, error: "payment_failed", message: "Payment verification failed" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // supabase client already created above
+    const verifiedAmount = korapayData.data.amount;
+    const verifiedCurrency = korapayData.data.currency;
+
+    // Convert USD to GHS for storage if needed
+    const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * 15.5 : verifiedAmount;
 
     // Record payment in database
     const { error: paymentError } = await supabase
       .from("payments")
       .insert({
         user_id: userId,
-        amount: paystackData.data.amount / 100, // Convert from pesewas to cedis
+        amount: amountInGhs,
         type: "registration",
         status: "completed",
-        payment_gateway: "paystack",
+        payment_gateway: "korapay",
         transaction_id: reference,
         payment_details: {
-          channel: paystackData.data.channel,
-          currency: paystackData.data.currency,
-          paid_at: paystackData.data.paid_at,
+          channel: korapayData.data.payment_method || korapayData.data.channel,
+          currency: verifiedCurrency,
+          original_amount: verifiedAmount,
+          paid_at: korapayData.data.paid_at || new Date().toISOString(),
         },
       });
 
     if (paymentError) {
       console.error("Failed to record payment:", paymentError);
-      // Don't fail the request, payment was successful
     }
 
     // Get user profile for Discord invite
-    const { data: profile, error: profileFetchError } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("email, full_name, discord_invite_sent")
       .eq("id", userId)
       .single();
 
-    if (profileFetchError) {
-      console.error("Failed to fetch profile:", profileFetchError);
-    }
-
     // Update profile to mark registration fee as paid
-    const { error: profileError } = await supabase
+    await supabase
       .from("profiles")
       .update({ registration_fee_paid: true })
       .eq("id", userId);
 
-    if (profileError) {
-      console.error("Failed to update profile:", profileError);
-    }
-
     console.log("Payment verified and recorded for user:", userId);
 
-    // Send verification email, welcome guide email, and Discord invite in parallel
+    // Send verification email, welcome email, and Discord invite in parallel
     if (profile) {
       const promises: Promise<void>[] = [];
 
-      // Send verification email
       promises.push(
         (async () => {
           try {
-            const verificationResponse = await fetch(
-              `${SUPABASE_URL}/functions/v1/send-verification-email`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                },
-                body: JSON.stringify({
-                  email: profile.email,
-                  fullName: profile.full_name || "Designer",
-                  userId,
-                  redirectUrl: req.headers.get("origin") || "https://primehaven.lovable.app",
-                }),
-              }
-            );
-
-            if (verificationResponse.ok) {
-              console.log("Verification email sent for user:", userId);
-            } else {
-              const errorData = await verificationResponse.json();
-              console.error("Failed to send verification email:", errorData);
-            }
-          } catch (verifyError) {
-            console.error("Error sending verification email:", verifyError);
-          }
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/send-verification-email`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+              body: JSON.stringify({
+                email: profile.email,
+                fullName: profile.full_name || "Designer",
+                userId,
+                redirectUrl: req.headers.get("origin") || "https://primehaven.tech",
+              }),
+            });
+            if (res.ok) console.log("Verification email sent for user:", userId);
+            else console.error("Failed to send verification email:", await res.json());
+          } catch (e) { console.error("Error sending verification email:", e); }
         })()
       );
 
-      // Send welcome/guide email
       promises.push(
         (async () => {
           try {
-            const welcomeResponse = await fetch(
-              `${SUPABASE_URL}/functions/v1/send-welcome-email`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                },
-                body: JSON.stringify({
-                  email: profile.email,
-                  fullName: profile.full_name || "Designer",
-                }),
-              }
-            );
-
-            if (welcomeResponse.ok) {
-              console.log("Welcome email sent for user:", userId);
-            } else {
-              const errorData = await welcomeResponse.json();
-              console.error("Failed to send welcome email:", errorData);
-            }
-          } catch (welcomeError) {
-            console.error("Error sending welcome email:", welcomeError);
-          }
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+              body: JSON.stringify({ email: profile.email, fullName: profile.full_name || "Designer" }),
+            });
+            if (res.ok) console.log("Welcome email sent for user:", userId);
+            else console.error("Failed to send welcome email:", await res.json());
+          } catch (e) { console.error("Error sending welcome email:", e); }
         })()
       );
 
-      // Send Discord invite if not already sent
       if (!profile.discord_invite_sent) {
         promises.push(
           (async () => {
             try {
-              const discordInviteResponse = await fetch(
-                `${SUPABASE_URL}/functions/v1/create-discord-invite`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                  },
-                  body: JSON.stringify({
-                    userId,
-                    email: profile.email,
-                    fullName: profile.full_name || "Designer",
-                  }),
-                }
-              );
-
-              if (discordInviteResponse.ok) {
-                console.log("Discord invite sent successfully for user:", userId);
-              } else {
-                const errorData = await discordInviteResponse.json();
-                console.error("Failed to send Discord invite:", errorData);
-              }
-            } catch (discordError) {
-              console.error("Error sending Discord invite:", discordError);
-            }
+              const res = await fetch(`${SUPABASE_URL}/functions/v1/create-discord-invite`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+                body: JSON.stringify({ userId, email: profile.email, fullName: profile.full_name || "Designer" }),
+              });
+              if (res.ok) console.log("Discord invite sent for user:", userId);
+              else console.error("Failed to send Discord invite:", await res.json());
+            } catch (e) { console.error("Error sending Discord invite:", e); }
           })()
         );
       }
 
-      // Wait for all to complete (don't block payment success)
       await Promise.allSettled(promises);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: "Payment verified successfully",
-        data: {
-          amount: paystackData.data.amount / 100,
-          currency: paystackData.data.currency,
-          reference: reference,
-        }
+        data: { amount: amountInGhs, currency: verifiedCurrency, reference },
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: unknown) {
     console.error("Error in verify-payment:", error);
-    // Return generic error - don't expose internal details
     return new Response(
       JSON.stringify({ success: false, error: "server_error" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 });

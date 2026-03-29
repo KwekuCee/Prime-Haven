@@ -15,7 +15,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { usePaystackPayment } from 'react-paystack';
 import { cn } from '@/lib/utils';
 import { 
   registerPersonalSchema, 
@@ -27,7 +26,15 @@ import {
   getMinimumAgeDate,
 } from '@/lib/validations';
 
-const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb";
+declare global {
+  interface Window {
+    Korapay: {
+      initialize: (config: any) => void;
+    };
+  }
+}
+
+const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
 const REGISTRATION_FEE_GHS = 100;
 
 const steps = [
@@ -81,65 +88,69 @@ const Register = () => {
   const handleStep3Submit = (data: RegisterAccountData) => { Object.entries(data).forEach(([k, v]) => updateFormData(k, v)); setCurrentStep(4); };
   const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
 
-  const paystackConfig = {
-    reference: `PH_${Date.now()}_${Math.floor(Math.random() * 1000000)}`,
-    email: formData.email,
-    amount: REGISTRATION_FEE_GHS * 100,
-    publicKey: PAYSTACK_PUBLIC_KEY,
-    currency: 'GHS',
-    channels: ['card', 'mobile_money', 'bank_transfer'] as ('card' | 'mobile_money' | 'bank_transfer')[],
-  };
-
-  const initializePayment = usePaystackPayment(paystackConfig);
-
-  const handlePaymentSuccess = async (reference: { reference: string }) => {
-    setIsSubmitting(true);
-    try {
-      const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, { full_name: formData.fullName });
-      if (signUpError) {
-        let msg = 'An error occurred during registration';
-        if (signUpError.message.includes('User already registered')) msg = 'An account with this email already exists.';
-        else if (signUpError.message.includes('Password should be at least')) msg = 'Password is too weak.';
-        else if (signUpError.message.includes('Invalid email')) msg = 'Please enter a valid email address.';
-        else msg = signUpError.message;
-        toast({ variant: 'destructive', title: 'Registration Failed', description: msg });
-        setIsSubmitting(false);
-        return;
-      }
-
-      const userId = authData?.user?.id;
-      if (!userId) throw new Error('Failed to create user account');
-
-      await supabase.from('profiles').update({ phone: formData.phone, dob: formData.dob ? format(formData.dob, 'yyyy-MM-dd') : null }).eq('id', userId);
-      await supabase.from('designer_details').update({
-        professional_title: formData.professionalTitle,
-        portfolio_url: formData.portfolioUrl || null,
-        experience_level: formData.experience,
-        available_hours: formData.availableHours ? parseInt(formData.availableHours.split('-')[0]) : null,
-      }).eq('user_id', userId);
-
-      await supabase.functions.invoke('verify-payment', { body: { reference: reference.reference } });
-
-      toast({ title: 'Registration Successful!', description: 'Please check your email to verify your account.' });
-      navigate('/login?registered=true');
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast({ variant: 'destructive', title: 'Registration Error', description: 'An unexpected error occurred. Please contact support.' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePaymentClose = () => {
-    toast({ variant: 'destructive', title: 'Payment Cancelled', description: 'Please try again to complete registration.' });
-  };
-
   const handlePayNow = () => {
-    if (!PAYSTACK_PUBLIC_KEY) {
-      toast({ variant: 'destructive', title: 'Payment Configuration Error', description: 'Payment system is not properly configured.' });
+    if (!window.Korapay) {
+      toast({ variant: 'destructive', title: 'Payment Error', description: 'Payment system is loading. Please try again.' });
       return;
     }
-    initializePayment({ onSuccess: handlePaymentSuccess, onClose: handlePaymentClose });
+    setIsSubmitting(true);
+    const reference = `PH_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+
+    window.Korapay.initialize({
+      key: KORAPAY_PUBLIC_KEY,
+      reference,
+      amount: REGISTRATION_FEE_GHS,
+      currency: 'GHS',
+      customer: {
+        name: formData.fullName,
+        email: formData.email,
+      },
+      notification_url: `https://kbxijzsrywcwnyvtbruh.supabase.co/functions/v1/verify-payment`,
+      onSuccess: async (data: any) => {
+        try {
+          const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, { full_name: formData.fullName });
+          if (signUpError) {
+            let msg = 'An error occurred during registration';
+            if (signUpError.message.includes('User already registered')) msg = 'An account with this email already exists.';
+            else if (signUpError.message.includes('Password should be at least')) msg = 'Password is too weak.';
+            else if (signUpError.message.includes('Invalid email')) msg = 'Please enter a valid email address.';
+            else msg = signUpError.message;
+            toast({ variant: 'destructive', title: 'Registration Failed', description: msg });
+            setIsSubmitting(false);
+            return;
+          }
+
+          const userId = authData?.user?.id;
+          if (!userId) throw new Error('Failed to create user account');
+
+          await supabase.from('profiles').update({ phone: formData.phone, dob: formData.dob ? format(formData.dob, 'yyyy-MM-dd') : null }).eq('id', userId);
+          await supabase.from('designer_details').update({
+            professional_title: formData.professionalTitle,
+            portfolio_url: formData.portfolioUrl || null,
+            experience_level: formData.experience,
+            available_hours: formData.availableHours ? parseInt(formData.availableHours.split('-')[0]) : null,
+          }).eq('user_id', userId);
+
+          await supabase.functions.invoke('verify-payment', { body: { reference } });
+
+          toast({ title: 'Registration Successful!', description: 'Please check your email to verify your account.' });
+          navigate('/login?registered=true');
+        } catch (error) {
+          console.error('Registration error:', error);
+          toast({ variant: 'destructive', title: 'Registration Error', description: 'An unexpected error occurred. Please contact support.' });
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+      onClose: () => {
+        setIsSubmitting(false);
+        toast({ variant: 'destructive', title: 'Payment Cancelled', description: 'Please try again to complete registration.' });
+      },
+      onFailed: () => {
+        setIsSubmitting(false);
+        toast({ variant: 'destructive', title: 'Payment Failed', description: 'Payment could not be completed. Please try again.' });
+      },
+    });
   };
 
   const getPasswordStrength = (password: string): number => {
@@ -406,7 +417,7 @@ const Register = () => {
                 </div>
 
                 <p className="text-[10px] text-center text-muted-foreground">
-                  Secure payment powered by Paystack. Accept Mobile Money, Cards & Bank Transfer.
+                  Secure payment powered by Korapay. Accept Mobile Money, Cards & Bank Transfer.
                 </p>
 
                 <div className="flex gap-3">

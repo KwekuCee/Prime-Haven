@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
+const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 
 const corsHeaders = {
@@ -17,6 +17,9 @@ const DISCORD_CHANNELS: Record<string, string> = {
   "app-design": "1470244675951529984",
   "web-dev": "1470244738073497704",
 };
+
+// Approximate conversion rate
+const USD_TO_GHS = 15.5;
 
 function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -104,25 +107,28 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Verify payment with Paystack
-    const paystackResponse = await fetch(
-      `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
-      { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
+    // Verify payment with Korapay
+    const korapayResponse = await fetch(
+      `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
+      { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
     );
-    const paystackData = await paystackResponse.json();
+    const korapayData = await korapayResponse.json();
 
-    if (!paystackData.status || paystackData.data.status !== "success") {
+    if (!korapayData.status || korapayData.data?.status !== "success") {
       return new Response(JSON.stringify({ success: false, error: "Payment verification failed" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Use verified amount from Paystack, not client-supplied price
-    const verifiedAmount = paystackData.data.amount / 100; // pesewas → cedis
-    const verifiedCurrency = paystackData.data.currency;
+    // Use verified amount from Korapay
+    const verifiedAmount = korapayData.data.amount;
+    const verifiedCurrency = korapayData.data.currency;
+
+    // Convert to GHS for storage if paid in USD
+    const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
 
     // Validate currency
-    if (verifiedCurrency !== "GHS") {
+    if (verifiedCurrency !== "GHS" && verifiedCurrency !== "USD") {
       return new Response(JSON.stringify({ success: false, error: "Invalid payment currency" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -143,7 +149,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // 1. Create client order using verified amount
+    // 1. Create client order using verified amount (stored in GHS)
     const { data: order, error: orderError } = await supabase
       .from("client_orders")
       .insert({
@@ -152,7 +158,7 @@ serve(async (req: Request): Promise<Response> => {
         client_whatsapp: clientWhatsapp || null,
         service_type: serviceType,
         tier,
-        price: verifiedAmount,
+        price: amountInGhs,
         description: description || null,
         payment_status: "completed",
         payment_reference: paymentReference,
@@ -180,7 +186,7 @@ serve(async (req: Request): Promise<Response> => {
       description,
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
-      budget: `GH₵${verifiedAmount}`,
+      budget: `GH₵${amountInGhs}`,
     });
 
     // 3. Add revenue to the respective service category
@@ -188,7 +194,6 @@ serve(async (req: Request): Promise<Response> => {
       : discordCategory === "app-design" ? "uiux"
       : "web";
 
-    // Fetch current revenue settings
     const { data: revenueSetting } = await supabase
       .from("system_settings")
       .select("value")
@@ -196,7 +201,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     const currentRevenue = revenueSetting?.value as Record<string, number> || { graphic: 0, uiux: 0, web: 0 };
-    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + verifiedAmount;
+    currentRevenue[revenueCategoryKey] = (Number(currentRevenue[revenueCategoryKey]) || 0) + amountInGhs;
 
     await supabase
       .from("system_settings")
@@ -207,7 +212,6 @@ serve(async (req: Request): Promise<Response> => {
         updated_at: new Date().toISOString(),
       }, { onConflict: "key" });
 
-    // Also update the total monthly revenue
     const { data: totalRevSetting } = await supabase
       .from("system_settings")
       .select("value")
@@ -215,7 +219,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     const totalRev = totalRevSetting?.value as any || { amount: 0, currency: "GHS" };
-    totalRev.amount = (Number(totalRev.amount) || 0) + verifiedAmount;
+    totalRev.amount = (Number(totalRev.amount) || 0) + amountInGhs;
 
     await supabase
       .from("system_settings")
@@ -231,30 +235,32 @@ serve(async (req: Request): Promise<Response> => {
     const channelId = DISCORD_CHANNELS[discordCategory];
 
     if (channelId && DISCORD_BOT_TOKEN) {
+      const displayAmount = verifiedCurrency === 'USD'
+        ? `$${verifiedAmount.toLocaleString()} USD (≈ GH₵${amountInGhs.toLocaleString()})`
+        : `GH₵${amountInGhs.toLocaleString()}`;
+
       const embed = {
         title: `🆕 New Client Order: ${encodeHtml(serviceLabel)}`,
         description: description ? encodeHtml(description.slice(0, 2048)) : "No description provided",
-        color: 0x22c55e, // green for paid orders
+        color: 0x22c55e,
         fields: [
           { name: "👤 Client", value: encodeHtml(clientName), inline: true },
           { name: "📧 Email", value: encodeHtml(clientEmail), inline: true },
           { name: "📦 Package", value: `${tier.charAt(0).toUpperCase() + tier.slice(1)}`, inline: true },
-          { name: "💰 Amount Paid", value: `GH₵${verifiedAmount.toLocaleString()}`, inline: true },
+          { name: "💰 Amount Paid", value: displayAmount, inline: true },
           ...(clientWhatsapp ? [{ name: "📱 WhatsApp", value: encodeHtml(clientWhatsapp), inline: true }] : []),
         ],
-        footer: { text: "Prime Haven • Client Order (Paid)" },
+        footer: { text: "Prime Haven • Client Order (Paid via Korapay)" },
         timestamp: new Date().toISOString(),
       };
 
-      // Download and attach reference files if provided
       const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
       if (referenceFiles && referenceFiles.length > 0) {
-        embed.fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        embed.fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached`, inline: false });
         const downloads = await Promise.all(referenceFiles.slice(0, 10).map((url: string) => downloadFile(url)));
         for (const file of downloads) {
           if (file) downloadedFiles.push(file);
         }
-        console.log(`Downloaded ${downloadedFiles.length}/${referenceFiles.length} reference files for Discord`);
       }
 
       discordMessageId = await postToDiscord(channelId, embed, downloadedFiles.length > 0 ? downloadedFiles : undefined);
@@ -270,8 +276,8 @@ serve(async (req: Request): Promise<Response> => {
     // 5. Log the action
     await supabase.from("system_logs").insert({
       action_type: "client_order_created",
-      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${verifiedAmount}`,
-      new_value: { order_id: order?.id, service_type: serviceType, tier, price: verifiedAmount, payment_reference: paymentReference },
+      description: `New client order: ${serviceLabel} (${tier}) by ${clientName} — GH₵${amountInGhs} (${verifiedCurrency})`,
+      new_value: { order_id: order?.id, service_type: serviceType, tier, price: amountInGhs, payment_reference: paymentReference, original_currency: verifiedCurrency },
     });
 
     return new Response(JSON.stringify({ success: true, orderId: order?.id }), {
