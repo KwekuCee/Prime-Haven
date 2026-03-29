@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Globe, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,9 +11,19 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/BrandLogo';
-import { usePaystackPayment } from 'react-paystack';
 
-const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb";
+declare global {
+  interface Window {
+    Korapay: {
+      initialize: (config: any) => void;
+    };
+  }
+}
+
+const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
+
+// Approximate conversion rate: 1 USD ≈ 15.5 GHS
+const GHS_TO_USD = 1 / 15.5;
 
 interface ServicePricing {
   id: string;
@@ -41,10 +51,11 @@ const tierLabels: Record<string, string> = {
 const StartProject = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: select service, 2: select tier, 3: fill details
+  const [step, setStep] = useState(1);
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
 
   const [selectedService, setSelectedService] = useState<string>('');
   const [selectedTier, setSelectedTier] = useState<string>('');
@@ -71,7 +82,6 @@ const StartProject = () => {
     fetchPricing();
   }, []);
 
-  // Group services by type
   const serviceTypes = [...new Set(services.map(s => s.service_type))];
   const serviceLabels: Record<string, string> = {};
   services.forEach(s => { serviceLabels[s.service_type] = s.service_label; });
@@ -89,46 +99,19 @@ const StartProject = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // Paystack config
-  const paystackConfig = {
-    reference: `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    email: form.clientEmail,
-    amount: (selectedPricing?.price || 0) * 100, // pesewas
-    publicKey: PAYSTACK_PUBLIC_KEY,
-    currency: 'GHS',
-    channels: ['mobile_money', 'card', 'bank_transfer'] as any,
-  };
-
-  const onPaystackSuccess = async (reference: any) => {
-    try {
-      // Create order and process
-      const { error } = await supabase.functions.invoke('process-client-order', {
-        body: {
-          clientName: form.clientName,
-          clientEmail: form.clientEmail,
-          clientWhatsapp: form.clientWhatsapp,
-          serviceType: selectedPricing!.service_type,
-          serviceLabel: selectedPricing!.service_label,
-          tier: selectedPricing!.tier,
-          price: selectedPricing!.price,
-          description: form.description,
-          discordCategory: selectedPricing!.discord_category,
-          paymentReference: reference.reference || reference.trxref,
-        },
-      });
-      if (error) throw error;
-      toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
-      navigate('/?project=success');
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to process order.', variant: 'destructive' });
+  const formatPrice = (priceGhs: number) => {
+    if (currency === 'USD') {
+      return `$${(priceGhs * GHS_TO_USD).toFixed(2)}`;
     }
+    return `GH₵${priceGhs.toLocaleString()}`;
   };
 
-  const onPaystackClose = () => {
-    toast({ title: 'Payment Cancelled', description: 'You can try again when ready.', variant: 'destructive' });
+  const getPaymentAmount = (priceGhs: number) => {
+    if (currency === 'USD') {
+      return Math.ceil(priceGhs * GHS_TO_USD * 100) / 100; // round up to nearest cent
+    }
+    return priceGhs;
   };
-
-  const initializePayment = usePaystackPayment(paystackConfig);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,9 +119,59 @@ const StartProject = () => {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
     }
+    if (!window.Korapay) {
+      toast({ title: 'Payment Error', description: 'Payment system is loading. Please try again.', variant: 'destructive' });
+      return;
+    }
+    if (!selectedPricing) return;
+
     setSubmitting(true);
-    initializePayment({ onSuccess: onPaystackSuccess, onClose: onPaystackClose } as any);
-    setSubmitting(false);
+    const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const amount = getPaymentAmount(selectedPricing.price);
+
+    window.Korapay.initialize({
+      key: KORAPAY_PUBLIC_KEY,
+      reference,
+      amount,
+      currency,
+      customer: {
+        name: form.clientName,
+        email: form.clientEmail,
+      },
+      onSuccess: async () => {
+        try {
+          const { error } = await supabase.functions.invoke('process-client-order', {
+            body: {
+              clientName: form.clientName,
+              clientEmail: form.clientEmail,
+              clientWhatsapp: form.clientWhatsapp,
+              serviceType: selectedPricing!.service_type,
+              serviceLabel: selectedPricing!.service_label,
+              tier: selectedPricing!.tier,
+              price: selectedPricing!.price,
+              description: form.description,
+              discordCategory: selectedPricing!.discord_category,
+              paymentReference: reference,
+            },
+          });
+          if (error) throw error;
+          toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
+          navigate('/?project=success');
+        } catch (err: any) {
+          toast({ title: 'Error', description: err.message || 'Failed to process order.', variant: 'destructive' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+      onClose: () => {
+        setSubmitting(false);
+        toast({ title: 'Payment Cancelled', description: 'You can try again when ready.', variant: 'destructive' });
+      },
+      onFailed: () => {
+        setSubmitting(false);
+        toast({ title: 'Payment Failed', description: 'Payment could not be completed. Please try again.', variant: 'destructive' });
+      },
+    });
   };
 
   if (loading) {
@@ -157,12 +190,29 @@ const StartProject = () => {
           <Link to="/" className="flex items-center gap-2">
             <BrandLogo className="h-8" />
           </Link>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map(s => (
-              <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                {step > s ? <Check className="w-4 h-4" /> : s}
-              </div>
-            ))}
+          <div className="flex items-center gap-4">
+            {/* Currency Toggle */}
+            <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
+              <button
+                onClick={() => setCurrency('GHS')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'GHS' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Banknote className="w-3 h-3" /> GHS
+              </button>
+              <button
+                onClick={() => setCurrency('USD')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'USD' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Globe className="w-3 h-3" /> USD
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3].map(s => (
+                <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {step > s ? <Check className="w-4 h-4" /> : s}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -186,7 +236,7 @@ const StartProject = () => {
                     <CardHeader>
                       <CardTitle className="text-lg">{serviceLabels[type]}</CardTitle>
                       <CardDescription>
-                        From GH₵{Math.min(...services.filter(s => s.service_type === type).map(s => s.price)).toLocaleString()}
+                        From {formatPrice(Math.min(...services.filter(s => s.service_type === type).map(s => s.price)))}
                       </CardDescription>
                     </CardHeader>
                   </Card>
@@ -222,7 +272,7 @@ const StartProject = () => {
                     <CardHeader className="text-center pb-2">
                       <Badge variant="outline" className="w-fit mx-auto mb-2">{tierLabels[pricing.tier]}</Badge>
                       <CardTitle className="text-3xl font-bold">
-                        GH₵{pricing.price.toLocaleString()}
+                        {formatPrice(pricing.price)}
                       </CardTitle>
                       <CardDescription>{pricing.description}</CardDescription>
                     </CardHeader>
@@ -256,7 +306,7 @@ const StartProject = () => {
               <div className="text-center space-y-3">
                 <h1 className="text-3xl sm:text-4xl font-heading font-bold">Project Details</h1>
                 <p className="text-muted-foreground">
-                  {selectedPricing.service_label} — {tierLabels[selectedPricing.tier]} (GH₵{selectedPricing.price.toLocaleString()})
+                  {selectedPricing.service_label} — {tierLabels[selectedPricing.tier]} ({formatPrice(selectedPricing.price)})
                 </p>
               </div>
 
@@ -291,16 +341,24 @@ const StartProject = () => {
                         <span className="text-muted-foreground">Package</span>
                         <span className="font-medium">{tierLabels[selectedPricing.tier]}</span>
                       </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Currency</span>
+                        <span className="font-medium">{currency === 'USD' ? '🌍 USD (International)' : '🇬🇭 GHS (Local)'}</span>
+                      </div>
                       <div className="border-t border-border pt-2 flex justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span className="text-primary">GH₵{selectedPricing.price.toLocaleString()}</span>
+                        <span className="text-primary">{formatPrice(selectedPricing.price)}</span>
                       </div>
                     </div>
 
                     <Button type="submit" disabled={submitting} className="w-full gap-2 glow-primary text-lg py-6">
                       {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                      {submitting ? 'Processing...' : `Pay GH₵${selectedPricing.price.toLocaleString()} & Submit`}
+                      {submitting ? 'Processing...' : `Pay ${formatPrice(selectedPricing.price)} & Submit`}
                     </Button>
+
+                    <p className="text-[10px] text-center text-muted-foreground">
+                      Secure payment powered by Korapay. {currency === 'GHS' ? 'Accept Mobile Money, Cards & Bank Transfer.' : 'Pay securely with international cards.'}
+                    </p>
                   </form>
                 </CardContent>
               </Card>
