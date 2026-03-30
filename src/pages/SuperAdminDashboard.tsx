@@ -1372,10 +1372,29 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Handle reset all points
+  // Handle reset all points — generates monthly report snapshot FIRST
   const handleResetAllPoints = async () => {
     try {
       setIsResettingPoints(true);
+
+      // Step 1: Generate monthly report snapshot BEFORE resetting
+      const currentDate = new Date();
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+      
+      toast({ title: 'Generating Report...', description: 'Creating monthly snapshot before reset.' });
+      
+      const { error: reportError } = await supabase.functions.invoke('generate-monthly-report', {
+        body: { month, year },
+      });
+      if (reportError) {
+        console.error('Report generation failed:', reportError);
+        toast({ title: 'Report Warning', description: 'Monthly report failed to generate but proceeding with reset.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Report Saved', description: `Monthly snapshot for ${format(currentDate, 'MMMM yyyy')} saved.` });
+      }
+
+      // Step 2: Reset all designer points and salaries
       const { error } = await supabase
         .from('designer_details')
         .update({ monthly_points: 0, total_points: 0, salary_estimated: 0, updated_at: new Date().toISOString() })
@@ -1383,16 +1402,22 @@ const SuperAdminDashboard = () => {
 
       if (error) throw error;
 
+      // Step 3: Reset active_designers_count on all job contracts
+      await supabase
+        .from('job_contracts')
+        .update({ active_designers_count: 0, active_designer_ids: [] } as any)
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
       if (user) {
         await supabase.from('system_logs').insert({
           action_type: 'points_reset',
           admin_id: user.id,
-          description: 'All designer points reset to zero',
+          description: `All designer points reset to zero. Monthly report for ${format(currentDate, 'MMMM yyyy')} saved before reset.`,
           timestamp: new Date().toISOString(),
         });
       }
 
-      toast({ title: 'Points Reset', description: 'All designer points have been reset to zero.' });
+      toast({ title: 'Points Reset', description: 'Monthly report saved & all designer points reset to zero.' });
       await loadDashboardDataSafe();
     } catch (error: any) {
       console.error('Reset points error:', error);
@@ -1578,7 +1603,7 @@ const SuperAdminDashboard = () => {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-amber-500">Reset All Points?</AlertDialogTitle>
-                  <AlertDialogDescription>This will set all designer points and salaries to zero. Cannot be undone.</AlertDialogDescription>
+                  <AlertDialogDescription>This will first generate a monthly report snapshot, then set all designer points and salaries to zero. Cannot be undone.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
