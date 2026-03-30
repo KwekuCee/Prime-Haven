@@ -61,6 +61,13 @@ import ManageConsultations from '@/components/admin/ManageConsultations';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
+const normalizeCategory = (title: string | null): string => {
+  const t = (title || '').toLowerCase();
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+  if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  return 'Graphic Designer';
+};
+
 // Types
 interface AdminStats {
   totalUsers: number;
@@ -226,6 +233,8 @@ const SuperAdminDashboard = () => {
   const ITEMS_PER_PAGE = 10;
 
   // Recalculate salaries standalone (without re-saving revenue)
+  // Web developers get 60% of web project revenue (no points system)
+  // Graphic/UI designers use the points-based share system
   const handleRecalculateSalaries = async () => {
     try {
       setIsRecalculatingSalaries(true);
@@ -249,7 +258,7 @@ const SuperAdminDashboard = () => {
 
       const { data: allDesigners } = await supabase
         .from('designer_details')
-        .select('user_id, monthly_points');
+        .select('user_id, monthly_points, professional_title');
 
       // Only fetch current month's approved submissions for salary calculation
       const now = new Date();
@@ -262,22 +271,47 @@ const SuperAdminDashboard = () => {
 
       if (allDesigners && allSubmissions) {
         const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
-        const eligibleDesignerIds = new Set(
-          allDesigners.filter((d: any) => Number(d.monthly_points || 0) > 0).map((d: any) => d.user_id)
+
+        // Separate web developers from other designers
+        const webDevIds = new Set(
+          allDesigners
+            .filter((d: any) => {
+              const cat = normalizeCategory(d.professional_title);
+              return cat === 'Web Developer';
+            })
+            .map((d: any) => d.user_id)
         );
 
-        const designerCategoryPoints: Record<string, { graphic: number; uiux: number; web: number }> = {};
+        // Non-web designers with monthly points > 0 are eligible for points-based salary
+        const eligibleDesignerIds = new Set(
+          allDesigners
+            .filter((d: any) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
+            .map((d: any) => d.user_id)
+        );
+
+        const designerCategoryPoints: Record<string, { graphic: number; uiux: number }> = {};
         allDesigners.forEach((d: any) => {
-          designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0, web: 0 };
+          if (!webDevIds.has(d.user_id)) {
+            designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0 };
+          }
         });
 
+        // Count web dev submissions per developer for revenue split
+        const webDevSubmissions: Record<string, number> = {};
+        let totalWebDevSubmissions = 0;
+
         allSubmissions.forEach((s: any) => {
+          if (s.service_type === 'web' && webDevIds.has(s.designer_id)) {
+            webDevSubmissions[s.designer_id] = (webDevSubmissions[s.designer_id] || 0) + 1;
+            totalWebDevSubmissions++;
+            return;
+          }
+
           if (!eligibleDesignerIds.has(s.designer_id)) return;
           const pts = Number(s.points_awarded || 0);
           if (pts <= 0) return;
           if (graphicTypes.includes(s.service_type)) designerCategoryPoints[s.designer_id].graphic += pts;
           else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
-          else if (s.service_type === 'web') designerCategoryPoints[s.designer_id].web += pts;
         });
 
         const totals = Object.entries(designerCategoryPoints).reduce(
@@ -285,32 +319,38 @@ const SuperAdminDashboard = () => {
             if (!eligibleDesignerIds.has(designerId)) return acc;
             acc.graphic += points.graphic;
             acc.uiux += points.uiux;
-            acc.web += points.web;
             return acc;
           },
-          { graphic: 0, uiux: 0, web: 0 }
+          { graphic: 0, uiux: 0 }
         );
 
         await Promise.all(
           allDesigners.map((designer: any) => {
+            // Web developers: 60% of web revenue split by their submissions
+            if (webDevIds.has(designer.user_id)) {
+              const devSubs = webDevSubmissions[designer.user_id] || 0;
+              const webSalary = totalWebDevSubmissions > 0 ? (devSubs / totalWebDevSubmissions) * (webAmt * 0.6) : 0;
+              const safeSalary = Number.isFinite(webSalary) && webSalary > 0 ? Number(webSalary.toFixed(2)) : 0;
+              return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
+            }
+
             const monthlyPts = Number(designer.monthly_points || 0);
             if (monthlyPts <= 0) {
               return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
-            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0, web: 0 };
-            if (dp.graphic <= 0 && dp.uiux <= 0 && dp.web <= 0) {
+            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0 };
+            if (dp.graphic <= 0 && dp.uiux <= 0) {
               return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
             const graphicSalary = totals.graphic > 0 ? (dp.graphic / totals.graphic) * (graphicAmt * shareRatio) : 0;
             const uiuxSalary = totals.uiux > 0 ? (dp.uiux / totals.uiux) * (uiuxAmt * shareRatio) : 0;
-            const webSalary = totals.web > 0 ? (dp.web / totals.web) * (webAmt * shareRatio) : 0;
-            const totalSalary = graphicSalary + uiuxSalary + webSalary;
+            const totalSalary = graphicSalary + uiuxSalary;
             const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
             return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
           })
         );
 
-        // Hard guard
+        // Hard guard for non-web designers with no points
         await supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
       }
 
@@ -862,14 +902,14 @@ const SuperAdminDashboard = () => {
 
       setSystemSettings(prev => ({ ...prev, monthly_revenue: revenueData, monthly_revenue_by_category: categoryData }));
 
-      // Recalculate salaries by category
+      // Recalculate salaries by category (web devs get 60% of web revenue)
       const revenueShare = systemSettings.revenue_share_percentage?.value || 50;
       const shareRatio = revenueShare / 100;
       const nowIso = new Date().toISOString();
 
       const { data: allDesigners } = await supabase
         .from('designer_details')
-        .select('user_id, monthly_points');
+        .select('user_id, monthly_points, professional_title');
 
       const { data: allSubmissions } = await supabase
         .from('submissions')
@@ -879,27 +919,39 @@ const SuperAdminDashboard = () => {
       if (allDesigners && allSubmissions) {
         const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
 
-        // Only designers with monthly points > 0 are eligible for estimated salary
-        const eligibleDesignerIds = new Set(
+        const webDevIds = new Set(
           allDesigners
-            .filter((d: any) => Number(d.monthly_points || 0) > 0)
+            .filter((d: any) => normalizeCategory(d.professional_title) === 'Web Developer')
             .map((d: any) => d.user_id)
         );
 
-        const designerCategoryPoints: Record<string, { graphic: number; uiux: number; web: number }> = {};
+        const eligibleDesignerIds = new Set(
+          allDesigners
+            .filter((d: any) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
+            .map((d: any) => d.user_id)
+        );
+
+        const designerCategoryPoints: Record<string, { graphic: number; uiux: number }> = {};
         allDesigners.forEach((d: any) => {
-          designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0, web: 0 };
+          if (!webDevIds.has(d.user_id)) {
+            designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0 };
+          }
         });
 
-        allSubmissions.forEach((s: any) => {
-          if (!eligibleDesignerIds.has(s.designer_id)) return;
+        const webDevSubmissions: Record<string, number> = {};
+        let totalWebDevSubmissions = 0;
 
+        allSubmissions.forEach((s: any) => {
+          if (s.service_type === 'web' && webDevIds.has(s.designer_id)) {
+            webDevSubmissions[s.designer_id] = (webDevSubmissions[s.designer_id] || 0) + 1;
+            totalWebDevSubmissions++;
+            return;
+          }
+          if (!eligibleDesignerIds.has(s.designer_id)) return;
           const pts = Number(s.points_awarded || 0);
           if (pts <= 0) return;
-
           if (graphicTypes.includes(s.service_type)) designerCategoryPoints[s.designer_id].graphic += pts;
           else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
-          else if (s.service_type === 'web') designerCategoryPoints[s.designer_id].web += pts;
         });
 
         const totals = Object.entries(designerCategoryPoints).reduce(
@@ -907,50 +959,38 @@ const SuperAdminDashboard = () => {
             if (!eligibleDesignerIds.has(designerId)) return acc;
             acc.graphic += points.graphic;
             acc.uiux += points.uiux;
-            acc.web += points.web;
             return acc;
           },
-          { graphic: 0, uiux: 0, web: 0 }
+          { graphic: 0, uiux: 0 }
         );
 
         await Promise.all(
           allDesigners.map((designer: any) => {
+            if (webDevIds.has(designer.user_id)) {
+              const devSubs = webDevSubmissions[designer.user_id] || 0;
+              const webSalary = totalWebDevSubmissions > 0 ? (devSubs / totalWebDevSubmissions) * (webAmt * 0.6) : 0;
+              const safeSalary = Number.isFinite(webSalary) && webSalary > 0 ? Number(webSalary.toFixed(2)) : 0;
+              return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
+            }
+
             const monthlyPts = Number(designer.monthly_points || 0);
             if (monthlyPts <= 0) {
-              return supabase
-                .from('designer_details')
-                .update({ salary_estimated: 0, updated_at: nowIso })
-                .eq('user_id', designer.user_id);
+              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
-
-            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0, web: 0 };
-            const hasAnyCategoryPoints = dp.graphic > 0 || dp.uiux > 0 || dp.web > 0;
-
-            if (!hasAnyCategoryPoints) {
-              return supabase
-                .from('designer_details')
-                .update({ salary_estimated: 0, updated_at: nowIso })
-                .eq('user_id', designer.user_id);
+            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0 };
+            if (dp.graphic <= 0 && dp.uiux <= 0) {
+              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
-
             const graphicSalary = totals.graphic > 0 ? (dp.graphic / totals.graphic) * (graphicAmt * shareRatio) : 0;
             const uiuxSalary = totals.uiux > 0 ? (dp.uiux / totals.uiux) * (uiuxAmt * shareRatio) : 0;
-            const webSalary = totals.web > 0 ? (dp.web / totals.web) * (webAmt * shareRatio) : 0;
-            const totalSalary = graphicSalary + uiuxSalary + webSalary;
+            const totalSalary = graphicSalary + uiuxSalary;
             const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
-
-            return supabase
-              .from('designer_details')
-              .update({ salary_estimated: safeSalary, updated_at: nowIso })
-              .eq('user_id', designer.user_id);
+            return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
           })
         );
 
-        // Hard guard: zero-point designers must always stay at zero salary
-        await supabase
-          .from('designer_details')
-          .update({ salary_estimated: 0, updated_at: nowIso })
-          .or('monthly_points.is.null,monthly_points.lte.0');
+        // Hard guard
+        await supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
       }
 
       toast({ title: 'Revenue Updated', description: `Total: GH₵${totalAmount.toFixed(2)}. Salaries recalculated by category.` });
@@ -1372,10 +1412,29 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Handle reset all points
+  // Handle reset all points — generates monthly report snapshot FIRST
   const handleResetAllPoints = async () => {
     try {
       setIsResettingPoints(true);
+
+      // Step 1: Generate monthly report snapshot BEFORE resetting
+      const currentDate = new Date();
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+      
+      toast({ title: 'Generating Report...', description: 'Creating monthly snapshot before reset.' });
+      
+      const { error: reportError } = await supabase.functions.invoke('generate-monthly-report', {
+        body: { month, year },
+      });
+      if (reportError) {
+        console.error('Report generation failed:', reportError);
+        toast({ title: 'Report Warning', description: 'Monthly report failed to generate but proceeding with reset.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Report Saved', description: `Monthly snapshot for ${format(currentDate, 'MMMM yyyy')} saved.` });
+      }
+
+      // Step 2: Reset all designer points and salaries
       const { error } = await supabase
         .from('designer_details')
         .update({ monthly_points: 0, total_points: 0, salary_estimated: 0, updated_at: new Date().toISOString() })
@@ -1383,16 +1442,22 @@ const SuperAdminDashboard = () => {
 
       if (error) throw error;
 
+      // Step 3: Reset active_designers_count on all job contracts
+      await supabase
+        .from('job_contracts')
+        .update({ active_designers_count: 0, active_designer_ids: [] } as any)
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
       if (user) {
         await supabase.from('system_logs').insert({
           action_type: 'points_reset',
           admin_id: user.id,
-          description: 'All designer points reset to zero',
+          description: `All designer points reset to zero. Monthly report for ${format(currentDate, 'MMMM yyyy')} saved before reset.`,
           timestamp: new Date().toISOString(),
         });
       }
 
-      toast({ title: 'Points Reset', description: 'All designer points have been reset to zero.' });
+      toast({ title: 'Points Reset', description: 'Monthly report saved & all designer points reset to zero.' });
       await loadDashboardDataSafe();
     } catch (error: any) {
       console.error('Reset points error:', error);
@@ -1578,7 +1643,7 @@ const SuperAdminDashboard = () => {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-amber-500">Reset All Points?</AlertDialogTitle>
-                  <AlertDialogDescription>This will set all designer points and salaries to zero. Cannot be undone.</AlertDialogDescription>
+                  <AlertDialogDescription>This will first generate a monthly report snapshot, then set all designer points and salaries to zero. Cannot be undone.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -123,13 +123,20 @@ const Dashboard = () => {
     const jobCategories = categoryToJobCategories(profession);
     supabase
       .from('job_contracts')
-      .select('id, title, category')
+      .select('id, title, category, active_designers_count, active_designer_ids')
       .in('status', ['active', 'in_progress'])
       .in('category', jobCategories)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) console.error('Error fetching jobs:', error);
-        setActiveJobs(data || []);
+        // Filter out graphic-design contracts that already have 2+ designers
+        const filtered = (data || []).filter((job: any) => {
+          if (job.category === 'graphic-design' && (job.active_designers_count || 0) >= 2) {
+            return false;
+          }
+          return true;
+        });
+        setActiveJobs(filtered);
         setLoadingJobs(false);
       });
   }, [startWorkingOpen, user, designer]);
@@ -164,6 +171,30 @@ const Dashboard = () => {
         body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working', serviceType: selectedJob?.category || '' },
       });
       if (error) throw error;
+
+      // For graphic-design contracts, increment the active_designers_count
+      if (selectedJob && selectedJob.category === 'graphic-design') {
+        // Fetch current contract state
+        const { data: contractData } = await supabase
+          .from('job_contracts')
+          .select('active_designers_count, active_designer_ids')
+          .eq('id', selectedJob.id)
+          .single();
+
+        const currentCount = (contractData as any)?.active_designers_count || 0;
+        const currentIds = (contractData as any)?.active_designer_ids || [];
+
+        // Only increment if this designer hasn't already started
+        if (!currentIds.includes(user.id)) {
+          const newIds = [...currentIds, user.id];
+          const newCount = currentCount + 1;
+          await supabase
+            .from('job_contracts')
+            .update({ active_designers_count: newCount, active_designer_ids: newIds } as any)
+            .eq('id', selectedJob.id);
+        }
+      }
+
       // Store started project info in localStorage
       localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
         jobId: selectedJob?.id || '',
@@ -171,6 +202,7 @@ const Dashboard = () => {
         startedAt: new Date().toISOString(),
       }));
       setHasStartedProject(true);
+      setStartedProjectInfo({ jobId: selectedJob?.id || '', title: startWorkingProject.trim(), startedAt: new Date().toISOString() });
       toast({ title: 'Notification sent!', description: 'Admin has been notified that you started working.' });
       setStartWorkingOpen(false);
       setStartWorkingProject('');
