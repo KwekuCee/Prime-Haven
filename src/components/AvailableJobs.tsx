@@ -33,6 +33,7 @@ interface JobContract {
   client_name: string | null;
   status: string;
   created_at: string;
+  active_designers_count?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {

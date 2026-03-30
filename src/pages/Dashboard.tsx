@@ -123,13 +123,20 @@ const Dashboard = () => {
     const jobCategories = categoryToJobCategories(profession);
     supabase
       .from('job_contracts')
-      .select('id, title, category')
+      .select('id, title, category, active_designers_count, active_designer_ids')
       .in('status', ['active', 'in_progress'])
       .in('category', jobCategories)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) console.error('Error fetching jobs:', error);
-        setActiveJobs(data || []);
+        // Filter out graphic-design contracts that already have 2+ designers
+        const filtered = (data || []).filter((job: any) => {
+          if (job.category === 'graphic-design' && (job.active_designers_count || 0) >= 2) {
+            return false;
+          }
+          return true;
+        });
+        setActiveJobs(filtered);
         setLoadingJobs(false);
       });
   }, [startWorkingOpen, user, designer]);
