@@ -346,6 +346,8 @@ export type Database = {
       }
       job_contracts: {
         Row: {
+          active_designer_ids: string[]
+          active_designers_count: number
           budget: string | null
           category: string
           client_name: string | null
@@ -364,6 +366,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_designer_ids?: string[]
+          active_designers_count?: number
           budget?: string | null
           category: string
           client_name?: string | null
@@ -382,6 +386,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_designer_ids?: string[]
+          active_designers_count?: number
           budget?: string | null
           category?: string
           client_name?: string | null
