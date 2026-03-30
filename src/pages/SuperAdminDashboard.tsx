@@ -61,6 +61,13 @@ import ManageConsultations from '@/components/admin/ManageConsultations';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
+const normalizeCategory = (title: string | null): string => {
+  const t = (title || '').toLowerCase();
+  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+  if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  return 'Graphic Designer';
+};
+
 // Types
 interface AdminStats {
   totalUsers: number;
