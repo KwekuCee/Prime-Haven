@@ -64,11 +64,20 @@ const AvailableJobs = () => {
 
         const { data, error } = await supabase
           .from('job_contracts')
-          .select('id, title, description, category, deadline, budget, client_name, status, created_at')
+          .select('id, title, description, category, deadline, budget, client_name, status, created_at, active_designers_count')
           .in('status', ['active', 'in_progress'])
           .in('category', jobCategories)
           .order('created_at', { ascending: false });
-        if (!error && data) setJobs(data as JobContract[]);
+        if (!error && data) {
+          // Filter out graphic-design contracts with 2+ active designers
+          const filtered = (data as any[]).filter((job) => {
+            if (job.category === 'graphic-design' && (job.active_designers_count || 0) >= 2) {
+              return false;
+            }
+            return true;
+          });
+          setJobs(filtered as JobContract[]);
+        }
       } catch (err) {
         console.error('Error loading jobs:', err);
       } finally {
