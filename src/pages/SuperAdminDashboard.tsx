@@ -1609,7 +1609,7 @@ const SuperAdminDashboard = () => {
     );
   }
 
-  const activeTab = searchParams.get('tab') || 'submissions';
+  const activeTab = searchParams.get('tab') || 'overview';
 
   return (
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
@@ -1654,75 +1654,196 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          {[
-            {
-              label: 'Total Users',
-              value: stats.totalUsers,
-              sub: `${stats.totalDesigners} designers · ${stats.totalAdmins} admins`,
-              icon: Users,
-              color: 'text-primary',
-              bg: 'bg-primary/10',
-            },
-            {
-              label: 'Total Points',
-              value: users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString(),
-              sub: `${users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month`,
-              icon: Award,
-              color: 'text-purple-500',
-              bg: 'bg-purple-500/10',
-            },
-            {
-              label: 'Pending',
-              value: stats.pendingSubmissions,
-              sub: `${stats.activeProjects} active`,
-              icon: FileCheck,
-              color: 'text-blue-500',
-              bg: 'bg-blue-500/10',
-            },
-            {
-              label: 'Revenue',
-              value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(0)}`,
-              sub: systemSettings.monthly_revenue_by_category
-                ? `G:${(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)} · UI:${(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)} · W:${(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}`
-                : 'Click Revenue to edit',
-              icon: DollarSign,
-              color: 'text-emerald-500',
-              bg: 'bg-emerald-500/10',
-            },
-            {
-              label: 'Approval Time',
-              value: stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A',
-              sub: 'Average',
-              icon: Activity,
-              color: 'text-amber-500',
-              bg: 'bg-amber-500/10',
-            },
-          ].map((card, i) => (
-            <motion.div
-              key={card.label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className={i === 4 ? 'col-span-2 lg:col-span-1' : ''}
-            >
-              <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
-                  <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
-                    <card.icon className={`w-4 h-4 ${card.color}`} />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold tracking-tight">{card.value}</div>
-                <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
         {/* Main Content - Tab driven */}
         <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4">
+          {/* ========== OVERVIEW TAB ========== */}
+          <TabsContent value="overview" className="mt-0 space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              {[
+                {
+                  label: 'Total Users',
+                  value: stats.totalUsers,
+                  sub: `${stats.totalDesigners} designers · ${stats.totalAdmins} admins`,
+                  icon: Users,
+                  color: 'text-primary',
+                  bg: 'bg-primary/10',
+                },
+                {
+                  label: 'Total Points',
+                  value: users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString(),
+                  sub: `${users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month`,
+                  icon: Award,
+                  color: 'text-purple-500',
+                  bg: 'bg-purple-500/10',
+                },
+                {
+                  label: 'Pending',
+                  value: stats.pendingSubmissions,
+                  sub: `${stats.activeProjects} active`,
+                  icon: FileCheck,
+                  color: 'text-blue-500',
+                  bg: 'bg-blue-500/10',
+                },
+                {
+                  label: 'Revenue',
+                  value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(0)}`,
+                  sub: systemSettings.monthly_revenue_by_category
+                    ? `G:${(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)} · UI:${(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)} · W:${(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}`
+                    : 'Click Revenue to edit',
+                  icon: DollarSign,
+                  color: 'text-emerald-500',
+                  bg: 'bg-emerald-500/10',
+                },
+                {
+                  label: 'Approval Time',
+                  value: stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A',
+                  sub: 'Average',
+                  icon: Activity,
+                  color: 'text-amber-500',
+                  bg: 'bg-amber-500/10',
+                },
+              ].map((card, i) => (
+                <motion.div
+                  key={card.label}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  className={i === 4 ? 'col-span-2 lg:col-span-1' : ''}
+                >
+                  <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
+                      <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                        <card.icon className={`w-4 h-4 ${card.color}`} />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold tracking-tight">{card.value}</div>
+                    <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Overview Grid — Recent Submissions + Top Designers + Quick Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Recent Submissions */}
+              <div className="lg:col-span-2 rounded-xl border border-border/50 bg-card/50">
+                <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-bold">Recent Submissions</h2>
+                    <p className="text-[11px] text-muted-foreground">Latest designer work</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSearchParams({ tab: 'submissions' })}>
+                    View All <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+                <div className="divide-y divide-border/30">
+                  {submissions.slice(0, 5).map(s => (
+                    <div key={s.id} className="p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{s.project_name}</div>
+                        <div className="text-[11px] text-muted-foreground">{s.designer_name} · {s.service_type}</div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-primary font-bold text-xs">{s.points_awarded || 0} pts</span>
+                        <Badge variant={s.status === 'approved' ? 'default' : s.status === 'rejected' ? 'destructive' : 'outline'} className="text-[10px]">
+                          {s.ph_approved && s.client_accepted ? 'Approved' : s.ph_approved ? 'PH ✓' : s.status === 'rejected' ? 'Rejected' : 'Pending'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {submissions.length === 0 && (
+                    <div className="p-8 text-center text-muted-foreground text-sm">No submissions yet</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Top Designers + Quick Actions */}
+              <div className="space-y-4">
+                {/* Top Designers */}
+                <div className="rounded-xl border border-border/50 bg-card/50">
+                  <div className="p-4 border-b border-border/50">
+                    <h2 className="text-sm font-bold">Top Designers</h2>
+                    <p className="text-[11px] text-muted-foreground">By monthly points</p>
+                  </div>
+                  <div className="divide-y divide-border/30">
+                    {users
+                      .filter(u => u.user_roles?.some(r => r.role === 'designer') && (u.designer_details?.monthly_points || 0) > 0)
+                      .sort((a, b) => (b.designer_details?.monthly_points || 0) - (a.designer_details?.monthly_points || 0))
+                      .slice(0, 5)
+                      .map((u, i) => (
+                        <div key={u.id} className="p-3 flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-amber-500/20 text-amber-500' : i === 1 ? 'bg-muted text-muted-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
+                            {i + 1}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{u.full_name || 'No Name'}</div>
+                            <div className="text-[10px] text-muted-foreground">{u.designer_details?.professional_title || 'Designer'}</div>
+                          </div>
+                          <span className="text-primary font-bold text-xs shrink-0">{u.designer_details?.monthly_points || 0}</span>
+                        </div>
+                      ))}
+                    {users.filter(u => (u.designer_details?.monthly_points || 0) > 0).length === 0 && (
+                      <div className="p-6 text-center text-muted-foreground text-xs">No points recorded yet</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="rounded-xl border border-border/50 bg-card/50 p-4 space-y-2">
+                  <h2 className="text-sm font-bold mb-3">Quick Actions</h2>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'submissions' })}>
+                    <FileCheck className="w-3.5 h-3.5" /> Review Submissions
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => {
+                    const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
+                    setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
+                    setIsRevenueModalOpen(true);
+                  }}>
+                    <DollarSign className="w-3.5 h-3.5" /> Update Revenue
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'users' })}>
+                    <Users className="w-3.5 h-3.5" /> Manage Users
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'orders' })}>
+                    <Crown className="w-3.5 h-3.5" /> Client Orders
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity Log */}
+            <div className="rounded-xl border border-border/50 bg-card/50">
+              <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold">Recent Activity</h2>
+                  <p className="text-[11px] text-muted-foreground">Latest admin actions</p>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSearchParams({ tab: 'logs' })}>
+                  View All <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              </div>
+              <div className="divide-y divide-border/30">
+                {systemLogs.slice(0, 6).map(log => (
+                  <div key={log.id} className="p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] shrink-0">{log.action_type.replace(/_/g, ' ')}</Badge>
+                        <span className="text-xs font-medium">{log.profiles?.full_name || 'System'}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate mt-0.5">{log.description}</p>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">{format(new Date(log.timestamp), 'MMM d, HH:mm')}</span>
+                  </div>
+                ))}
+                {systemLogs.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground text-sm">No activity yet</div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
           {/* ========== SUBMISSIONS TAB ========== */}
           <TabsContent value="submissions" className="mt-0 space-y-4">
             <div className="rounded-xl border border-border/50 bg-card/50">

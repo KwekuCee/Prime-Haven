@@ -56,7 +56,6 @@ async function downloadFile(url: string): Promise<{ data: Uint8Array; contentTyp
     if (!res.ok) return null;
     const data = new Uint8Array(await res.arrayBuffer());
     const contentType = res.headers.get("content-type") || "application/octet-stream";
-    // Extract filename from URL
     const urlPath = new URL(url).pathname;
     const name = urlPath.split("/").pop() || "file";
     return { data, contentType, name };
@@ -73,7 +72,6 @@ async function postToDiscord(channelId: string, embed: any, files?: { name: stri
     if (files && files.length > 0) {
       const formData = new FormData();
       const attachments = files.map((f, i) => ({ id: i, filename: f.name }));
-      // Set first image file as embed image
       const imageExts = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
       const firstImage = files.find(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
       if (firstImage) {
@@ -136,7 +134,6 @@ serve(async (req: Request): Promise<Response> => {
         };
         const emoji = statusEmoji[newStatus] || "🔄";
 
-        // Post a follow-up message about the status change
         const embed = {
           title: `${emoji} Status Update: ${(title || "").slice(0, 200)}`,
           description: `This job has been updated to **${newStatus.replace(/_/g, " ").toUpperCase()}**`,
@@ -154,7 +151,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Original create flow
-    const { title, description, category, deadline, budget, requirements, clientName, specialInstructions, contractId, referenceFiles } = body;
+    const { title, description, category, deadline, budget, requirements, clientName, clientEmail, clientWhatsapp, specialInstructions, contractId, referenceFiles } = body;
 
     if (!title || !description || !category) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
@@ -188,7 +185,6 @@ serve(async (req: Request): Promise<Response> => {
         timestamp: new Date().toISOString(),
       };
 
-      // Download reference files and attach them to Discord message
       const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
       if (referenceFiles && referenceFiles.length > 0) {
         fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
@@ -210,7 +206,24 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", contractId);
     }
 
-    // 3. Auto-create a client project entry for tracking
+    // 3. Look up client details from clients table if clientName is provided
+    let resolvedEmail = clientEmail || null;
+    let resolvedWhatsapp = clientWhatsapp || null;
+
+    if (clientName && (!resolvedEmail || !resolvedWhatsapp)) {
+      const { data: clientRecord } = await supabase
+        .from("clients")
+        .select("email, whatsapp")
+        .eq("name", clientName)
+        .maybeSingle();
+
+      if (clientRecord) {
+        if (!resolvedEmail && clientRecord.email) resolvedEmail = clientRecord.email;
+        if (!resolvedWhatsapp && clientRecord.whatsapp) resolvedWhatsapp = clientRecord.whatsapp;
+      }
+    }
+
+    // 4. Auto-create a client project entry for tracking
     const categoryMap: Record<string, string> = {
       "graphic-design": "graphic-design",
       "app-design": "ui-ux",
@@ -221,7 +234,8 @@ serve(async (req: Request): Promise<Response> => {
       .insert({
         title: title,
         client_name: clientName || "TBD",
-        client_email: null,
+        client_email: resolvedEmail,
+        client_whatsapp: resolvedWhatsapp,
         description: description,
         category: categoryMap[category] || "web-development",
         status: "pending",
@@ -233,7 +247,7 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Auto-created client project:", clientProject?.tracking_token);
 
-    // 3. Send emails to relevant designers
+    // 5. Send emails to relevant designers
     const skills = CATEGORY_SKILLS[category] || [];
     
     const { data: allDesigners } = await supabase
