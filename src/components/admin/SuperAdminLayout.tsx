@@ -105,7 +105,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       return currentPath === '/superadmin' && currentTab === item.tab;
     }
     if (item.path === '/superadmin' && !item.tab && item.label === 'Overview') {
-      return currentPath === '/superadmin' && !currentTab;
+      return currentPath === '/superadmin' && (!currentTab || currentTab === 'overview');
     }
     if (item.path && item.path !== '/superadmin') {
       return currentPath === item.path;
