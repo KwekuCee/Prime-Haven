@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Mail, UserSquare, Send, Loader2, Phone, Plus, Trash2 } from 'lucide-react';
+import { Search, Mail, UserSquare, Send, Loader2, Phone, Plus, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,9 @@ const ManageClients = () => {
   const [addForm, setAddForm] = useState({ name: '', email: '', whatsapp: '', company: '', notes: '' });
   const [adding, setAdding] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [editClient, setEditClient] = useState<Client | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', whatsapp: '', company: '', notes: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -120,6 +123,42 @@ const ManageClients = () => {
     }
   };
 
+  const openEditDialog = (client: Client) => {
+    setEditClient(client);
+    setEditForm({
+      name: client.name,
+      email: client.email || '',
+      whatsapp: client.whatsapp || '',
+      company: client.company || '',
+      notes: client.notes || '',
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editClient || !editForm.name.trim()) {
+      toast({ title: 'Name required', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('clients').update({
+        name: editForm.name.trim(),
+        email: editForm.email.trim() || null,
+        whatsapp: editForm.whatsapp.trim() || null,
+        company: editForm.company.trim() || null,
+        notes: editForm.notes.trim() || null,
+      }).eq('id', editClient.id);
+      if (error) throw error;
+      toast({ title: 'Client Updated!', description: `${editForm.name} has been updated.` });
+      setEditClient(null);
+      await loadClients();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openEmailDialog = (client: Client) => {
     setEmailDialog(client);
     setEmailSubject('');
@@ -170,7 +209,6 @@ const ManageClients = () => {
           </div>
         </div>
 
-        {/* Client Table */}
         <div className="rounded-xl border border-border/50 bg-card/50">
           <div className="p-4 sm:p-5 border-b border-border/50">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -229,6 +267,9 @@ const ManageClients = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(client)} className="gap-1 h-7 text-xs">
+                              <Pencil className="w-3 h-3" /> Edit
+                            </Button>
                             {client.email && (
                               <Button size="sm" variant="outline" onClick={() => openEmailDialog(client)} className="gap-1 h-7 text-xs">
                                 <Mail className="w-3 h-3" /> Email
@@ -285,6 +326,47 @@ const ManageClients = () => {
             <Button onClick={handleAddClient} disabled={adding || !addForm.name.trim()}>
               {adding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
               Add Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={!!editClient} onOpenChange={(open) => !open && setEditClient(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-primary" /> Edit Client
+            </DialogTitle>
+            <DialogDescription>Update client details.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Name *</Label>
+              <Input placeholder="Client name" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" placeholder="client@example.com" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>WhatsApp</Label>
+              <Input placeholder="+233..." value={editForm.whatsapp} onChange={e => setEditForm(f => ({ ...f, whatsapp: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Company</Label>
+              <Input placeholder="Company name" value={editForm.company} onChange={e => setEditForm(f => ({ ...f, company: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Notes</Label>
+              <Textarea placeholder="Any notes..." value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditClient(null)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={saving || !editForm.name.trim()}>
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pencil className="w-4 h-4 mr-2" />}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
