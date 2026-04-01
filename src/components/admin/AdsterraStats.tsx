@@ -8,6 +8,7 @@ import { RefreshCw, DollarSign, Eye, MousePointer, TrendingUp } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
+import { useAdsEnabled, setAdsEnabledSetting } from '@/hooks/useAdsEnabled';
 
 interface StatRow {
   date?: string;
