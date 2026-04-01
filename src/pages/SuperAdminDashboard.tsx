@@ -1609,7 +1609,7 @@ const SuperAdminDashboard = () => {
     );
   }
 
-  const activeTab = searchParams.get('tab') || 'submissions';
+  const activeTab = searchParams.get('tab') || 'overview';
 
   return (
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
