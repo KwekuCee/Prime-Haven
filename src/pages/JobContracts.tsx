@@ -213,6 +213,9 @@ const JobContracts = () => {
 
       if (error) throw error;
 
+      // Look up client email/whatsapp from the selected client
+      const selectedClient = clientsList.find(c => c.name === form.clientName);
+
       const { error: fnError } = await supabase.functions.invoke('post-job-contract', {
         body: {
           title: form.title,
@@ -222,6 +225,8 @@ const JobContracts = () => {
           budget: form.budget || null,
           requirements: form.requirements || null,
           clientName: form.clientName || null,
+          clientEmail: selectedClient?.email || null,
+          clientWhatsapp: selectedClient?.whatsapp || null,
           specialInstructions: form.specialInstructions || null,
           contractId: contract?.id,
           referenceFiles: fileUrls,
