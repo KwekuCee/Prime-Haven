@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useRef } from 'react';
+import { useAdsEnabled } from '@/hooks/useAdsEnabled';
 
 interface AdUnitProps {
   slot: string;
@@ -10,31 +10,16 @@ interface AdUnitProps {
 const AdUnit = ({ slot, format = 'auto', className = '' }: AdUnitProps) => {
   const adRef = useRef<HTMLDivElement>(null);
   const pushed = useRef(false);
-  const [adsEnabled, setAdsEnabled] = useState(true);
+  const adsEnabled = useAdsEnabled();
 
-  useEffect(() => {
-    const checkAdSetting = async () => {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'ads_enabled')
-        .maybeSingle();
-      if (data) {
-        setAdsEnabled(data.value === true || data.value === 'true');
-      }
-    };
-    checkAdSetting();
-  }, []);
-
-  useEffect(() => {
-    if (!adsEnabled || pushed.current) return;
+  if (!pushed.current && adsEnabled) {
     try {
       ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       pushed.current = true;
     } catch {
       // AdSense not ready or blocked
     }
-  }, [adsEnabled]);
+  }
 
   if (!adsEnabled) return null;
 

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAdsEnabled } from '@/hooks/useAdsEnabled';
 
 interface EzoicAdProps {
   placeholderId: number;
@@ -21,23 +21,8 @@ declare global {
 const EzoicAd = ({ placeholderId, className = '' }: EzoicAdProps) => {
   const location = useLocation();
   const prevPath = useRef(location.pathname);
-  const [adsEnabled, setAdsEnabled] = useState(true);
+  const adsEnabled = useAdsEnabled();
 
-  useEffect(() => {
-    const checkAdSetting = async () => {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'ads_enabled')
-        .maybeSingle();
-      if (data) {
-        setAdsEnabled(data.value === true || data.value === 'true');
-      }
-    };
-    checkAdSetting();
-  }, []);
-
-  // Show ad on mount
   useEffect(() => {
     if (!adsEnabled) return;
     window.ezstandalone = window.ezstandalone || { cmd: [], showAds: () => {}, destroyPlaceholders: () => {}, destroyAll: () => {} };
@@ -47,7 +32,6 @@ const EzoicAd = ({ placeholderId, className = '' }: EzoicAdProps) => {
     });
   }, [placeholderId, adsEnabled]);
 
-  // Refresh ads on route change
   useEffect(() => {
     if (!adsEnabled) return;
     if (prevPath.current !== location.pathname) {
@@ -58,7 +42,6 @@ const EzoicAd = ({ placeholderId, className = '' }: EzoicAdProps) => {
     }
   }, [location.pathname, adsEnabled]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (!adsEnabled) return;

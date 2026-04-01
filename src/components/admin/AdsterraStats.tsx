@@ -8,6 +8,7 @@ import { RefreshCw, DollarSign, Eye, MousePointer, TrendingUp } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
+import { useAdsEnabled, setAdsEnabledSetting } from '@/hooks/useAdsEnabled';
 
 interface StatRow {
   date?: string;
@@ -28,46 +29,14 @@ const AdsterraStats = () => {
   const [stats, setStats] = useState<StatRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [range, setRange] = useState('7');
-  const [adsEnabled, setAdsEnabled] = useState(true);
+  const adsEnabled = useAdsEnabled();
   const [toggleLoading, setToggleLoading] = useState(false);
   const { toast } = useToast();
-
-  // Load ad display setting
-  useEffect(() => {
-    const loadAdSetting = async () => {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'ads_enabled')
-        .maybeSingle();
-      if (data) {
-        setAdsEnabled(data.value === true || data.value === 'true');
-      }
-    };
-    loadAdSetting();
-  }, []);
 
   const toggleAds = async (enabled: boolean) => {
     setToggleLoading(true);
     try {
-      const { data: existing } = await supabase
-        .from('system_settings')
-        .select('id')
-        .eq('key', 'ads_enabled')
-        .maybeSingle();
-
-      if (existing) {
-        await supabase
-          .from('system_settings')
-          .update({ value: enabled, updated_at: new Date().toISOString() })
-          .eq('key', 'ads_enabled');
-      } else {
-        await supabase
-          .from('system_settings')
-          .insert({ key: 'ads_enabled', value: enabled, description: 'Toggle ad display on the site' });
-      }
-
-      setAdsEnabled(enabled);
+      await setAdsEnabledSetting(enabled);
       toast({
         title: enabled ? 'Ads enabled' : 'Ads disabled',
         description: enabled ? 'Ads will now be displayed on the site.' : 'All ads have been hidden from the site.',
