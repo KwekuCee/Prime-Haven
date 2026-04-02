@@ -224,8 +224,8 @@ const Dashboard = () => {
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
           supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at').eq('user_id', user.id).maybeSingle(),
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10),
-          supabase.from('designer_details').select('user_id, total_points, monthly_points, professional_title, talent_score').order('total_points', { ascending: false }),
-          supabase.from('profiles').select('id, full_name'),
+          supabase.from('leaderboard_designer_details').select('user_id, total_points, monthly_points, professional_title, talent_score').order('total_points', { ascending: false }),
+          supabase.from('leaderboard_profiles').select('id, full_name'),
           supabase.from('system_settings').select('key, value')
         ]);
         if (profileResult.data) setProfile(profileResult.data);
