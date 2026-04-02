@@ -26,8 +26,7 @@ interface Client {
 }
 
 const ManageClients = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, checking } = useAdminGuard();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
@@ -45,18 +44,10 @@ const ManageClients = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/superadmin-login', { replace: true }); return; }
-    const checkAccess = async () => {
-      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-      if (!data || !['superadmin', 'masteradmin'].includes(data.role)) {
-        navigate('/dashboard', { replace: true });
-        return;
-      }
+    if (!checking && user) {
       loadClients();
-    };
-    checkAccess();
-  }, [user, authLoading, navigate]);
+    }
+  }, [checking, user]);
 
   const loadClients = async () => {
     setLoading(true);
