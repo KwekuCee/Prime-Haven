@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { z } from "npm:zod@3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+const RequestSchema = z.object({
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2100),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,11 +36,15 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'access_denied' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { month, year } = await req.json();
-    
-    if (!month || !year) {
-      return new Response(JSON.stringify({ error: 'month and year required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Validate input
+    const rawBody = await req.json();
+    const parsed = RequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+    const { month, year } = parsed.data;
 
     // Fetch all data for the month
     const startDate = new Date(year, month - 1, 1).toISOString();

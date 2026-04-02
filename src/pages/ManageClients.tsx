@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Search, Mail, UserSquare, Send, Loader2, Phone, Plus, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAdminGuard } from '@/hooks/useAdminGuard';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 
@@ -26,8 +25,7 @@ interface Client {
 }
 
 const ManageClients = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, checking } = useAdminGuard();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
@@ -45,18 +43,10 @@ const ManageClients = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/superadmin-login', { replace: true }); return; }
-    const checkAccess = async () => {
-      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-      if (!data || !['superadmin', 'masteradmin'].includes(data.role)) {
-        navigate('/dashboard', { replace: true });
-        return;
-      }
+    if (!checking && user) {
       loadClients();
-    };
-    checkAccess();
-  }, [user, authLoading, navigate]);
+    }
+  }, [checking, user]);
 
   const loadClients = async () => {
     setLoading(true);

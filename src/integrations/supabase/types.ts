@@ -1065,7 +1065,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_designer_details: {
+        Row: {
+          experience_level: string | null
+          monthly_points: number | null
+          professional_title: string | null
+          profile_photo_url: string | null
+          skills: string[] | null
+          talent_score: number | null
+          total_points: number | null
+          user_id: string | null
+        }
+        Insert: {
+          experience_level?: string | null
+          monthly_points?: number | null
+          professional_title?: string | null
+          profile_photo_url?: string | null
+          skills?: string[] | null
+          talent_score?: number | null
+          total_points?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          experience_level?: string | null
+          monthly_points?: number | null
+          professional_title?: string | null
+          profile_photo_url?: string | null
+          skills?: string[] | null
+          talent_score?: number | null
+          total_points?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_profiles: {
+        Row: {
+          full_name: string | null
+          id: string | null
+          username: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id?: string | null
+          username?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_role: {

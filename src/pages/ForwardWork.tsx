@@ -1,25 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import ForwardWorkToClient from '@/components/admin/ForwardWorkToClient';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAdminGuard } from '@/hooks/useAdminGuard';
 
 const ForwardWork = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { checking } = useAdminGuard();
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/superadmin-login', { replace: true }); return; }
-    const checkAccess = async () => {
-      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-      if (!data || !['superadmin', 'masteradmin'].includes(data.role)) {
-        navigate('/dashboard', { replace: true });
-      }
-    };
-    checkAccess();
-  }, [user, authLoading, navigate]);
+  if (checking) return null;
 
   return (
     <SuperAdminLayout>
