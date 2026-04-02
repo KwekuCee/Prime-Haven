@@ -9,36 +9,30 @@ const notify = (val: boolean) => {
   listeners.forEach(fn => fn(val));
 };
 
-// Initial fetch + realtime subscription (singleton)
+// Initial fetch + polling (singleton) — no realtime since system_settings is admin-only
 let initialized = false;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+const fetchAdsEnabled = async () => {
+  const { data } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'ads_enabled')
+    .maybeSingle();
+
+  if (data) {
+    notify(data.value === true || data.value === 'true');
+  }
+};
+
 const init = () => {
   if (initialized) return;
   initialized = true;
 
-  supabase
-    .from('system_settings')
-    .select('value')
-    .eq('key', 'ads_enabled')
-    .maybeSingle()
-    .then(({ data }) => {
-      if (data) {
-        notify(data.value === true || data.value === 'true');
-      }
-    });
+  fetchAdsEnabled();
 
-  supabase
-    .channel('ads-enabled-realtime')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'system_settings', filter: 'key=eq.ads_enabled' },
-      (payload) => {
-        const val = (payload.new as any)?.value;
-        if (val !== undefined) {
-          notify(val === true || val === 'true');
-        }
-      }
-    )
-    .subscribe();
+  // Poll every 30 seconds for changes (replaces realtime which was a security risk)
+  pollInterval = setInterval(fetchAdsEnabled, 30000);
 };
 
 export const useAdsEnabled = () => {
@@ -73,6 +67,6 @@ export const setAdsEnabledSetting = async (enabled: boolean) => {
       .insert({ key: 'ads_enabled', value: enabled, description: 'Toggle ad display on the site' });
   }
 
-  // Immediately notify all listeners (don't wait for realtime)
+  // Immediately notify all listeners
   notify(enabled);
 };
