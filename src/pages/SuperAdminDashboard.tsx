@@ -58,6 +58,8 @@ import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
 import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
+import AdminSubmissions from '@/components/admin/AdminSubmissions';
+import AdminPayments from '@/components/admin/AdminPayments';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -1845,238 +1847,20 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
           {/* ========== SUBMISSIONS TAB ========== */}
-          <TabsContent value="submissions" className="mt-0 space-y-4">
-            <div className="rounded-xl border border-border/50 bg-card/50">
-              <div className="p-4 sm:p-5 border-b border-border/50">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-bold">Submissions</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">PH Check → Client Acceptance</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
-                      <Input placeholder="Search..." className="pl-8 h-8 text-sm w-full sm:w-48" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                    </div>
-                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className="h-8 text-sm w-full sm:w-40">
-                        <SelectValue placeholder="Filter" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="ph_approved">Awaiting Client</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                        <SelectItem value="client_rejected">Client Rejected</SelectItem>
-                        <SelectItem value="correction_requested">Correction</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => exportData('submissions')}>
-                      <Download className="w-3.5 h-3.5 mr-1" />Export
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {filteredSubmissions.length > 0 ? (
-                <>
-                  {/* Desktop Table */}
-                  <div className="hidden md:block overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="text-xs font-semibold">Project</TableHead>
-                          <TableHead className="text-xs font-semibold">Designer</TableHead>
-                          <TableHead className="text-xs font-semibold">Type</TableHead>
-                          <TableHead className="text-xs font-semibold">PH</TableHead>
-                          <TableHead className="text-xs font-semibold">Client</TableHead>
-                          <TableHead className="text-xs font-semibold">Pts</TableHead>
-                          <TableHead className="text-xs font-semibold">Date</TableHead>
-                          <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSubmissions.slice((submissionsPage - 1) * ITEMS_PER_PAGE, submissionsPage * ITEMS_PER_PAGE).map((submission) => (
-                          <TableRow key={submission.id} className="group">
-                            <TableCell className="font-medium text-sm">
-                              <div className="flex items-center gap-1.5">
-                                {submission.project_name}
-                                {submission.parent_submission_id && (
-                                  <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/40 px-1 py-0">Fix</Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm font-medium">{submission.designer_name}</div>
-                              <div className="text-[11px] text-muted-foreground">{submission.designer_email}</div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-[10px] font-medium">{submission.service_type}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {submission.ph_approved ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-500 text-xs font-medium"><CheckCircle className="w-3 h-3" />Yes</span>
-                              ) : submission.status === 'rejected' ? (
-                                <span className="text-destructive text-xs font-medium">No</span>
-                              ) : (
-                                <span className="text-amber-500 text-xs font-medium">Pending</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {submission.client_accepted ? (
-                                <span className="inline-flex items-center gap-1 text-primary text-xs font-medium"><Star className="w-3 h-3" />Yes</span>
-                              ) : submission.ph_approved ? (
-                                <span className="text-blue-500 text-xs font-medium">Waiting</span>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-bold text-primary text-sm">{submission.points_awarded || 0}</span>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {format(new Date(submission.created_at), 'MMM d')}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end items-center gap-1">
-                                {submission.design_link && (
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </Button>
-                                )}
-                                {submission.status !== 'rejected' && (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                        <Settings className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-52">
-                                      <DropdownMenuLabel className="text-xs">Actions</DropdownMenuLabel>
-                                      <DropdownMenuSeparator />
-                                      {submission.files_urls?.length > 0 && (
-                                        <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)} className="text-xs">
-                                          <ImageIcon className="w-3.5 h-3.5 mr-2" />View Files ({submission.files_urls.length})
-                                        </DropdownMenuItem>
-                                      )}
-                                      {!submission.ph_approved && !submission.client_accepted && (
-                                        <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-xs text-emerald-500">
-                                          <CheckCircle className="w-3.5 h-3.5 mr-2" />PH Approve (+{submission.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
-                                        </DropdownMenuItem>
-                                      )}
-                                      {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                        <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-xs text-primary">
-                                          <ThumbsUp className="w-3.5 h-3.5 mr-2" />Client Accept
-                                        </DropdownMenuItem>
-                                      )}
-                                      {(submission.status === 'client_rejected' || (submission.ph_approved && !submission.client_accepted) || submission.status === 'correction_requested') && (
-                                        <DropdownMenuItem onClick={() => { setCorrectionRequestSubmission(submission); setCorrectionNote(''); }} className="text-xs text-amber-500">
-                                          <Edit className="w-3.5 h-3.5 mr-2" />Request Correction
-                                        </DropdownMenuItem>
-                                      )}
-                                      {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && (
-                                        <DropdownMenuItem onClick={() => { setClientRejectSubmission(submission); setClientRejectionReason(''); }} className="text-xs text-destructive">
-                                          <XCircle className="w-3.5 h-3.5 mr-2" />Client Reject
-                                        </DropdownMenuItem>
-                                      )}
-                                      {!submission.client_accepted && (
-                                        <>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-xs text-destructive">
-                                            <Trash2 className="w-3.5 h-3.5 mr-2" />Reject
-                                          </DropdownMenuItem>
-                                        </>
-                                      )}
-                                      {(submission.points_awarded || 0) > 0 && (
-                                        <>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem onClick={() => handleRevokeSubmission(submission.id)} className="text-xs text-destructive font-semibold">
-                                            <AlertTriangle className="w-3.5 h-3.5 mr-2" />Revoke (−{submission.points_awarded} pts)
-                                          </DropdownMenuItem>
-                                        </>
-                                      )}
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Mobile Cards */}
-                  <div className="md:hidden divide-y divide-border/30">
-                    {filteredSubmissions.slice((submissionsPage - 1) * ITEMS_PER_PAGE, submissionsPage * ITEMS_PER_PAGE).map((submission) => (
-                      <div key={submission.id} className="p-4 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-sm flex items-center gap-1.5">
-                              {submission.project_name}
-                              {submission.parent_submission_id && <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/40 px-1 py-0">Fix</Badge>}
-                            </div>
-                            <div className="text-xs text-muted-foreground">{submission.designer_name}</div>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {submission.design_link && (
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPreviewLinkUrl(submission.design_link!)}>
-                                <Eye className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                            {submission.status !== 'rejected' && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Settings className="w-3.5 h-3.5" /></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                  {submission.files_urls?.length > 0 && <DropdownMenuItem onClick={() => setViewFilesSubmission(submission)} className="text-xs"><ImageIcon className="w-3.5 h-3.5 mr-2" />View Files</DropdownMenuItem>}
-                                  {!submission.ph_approved && !submission.client_accepted && <DropdownMenuItem onClick={() => handlePHApproval(submission.id)} className="text-xs text-emerald-500"><CheckCircle className="w-3.5 h-3.5 mr-2" />PH Approve</DropdownMenuItem>}
-                                  {submission.ph_approved && !submission.client_accepted && submission.status !== 'client_rejected' && <DropdownMenuItem onClick={() => handleClientAcceptance(submission.id)} className="text-xs text-primary"><ThumbsUp className="w-3.5 h-3.5 mr-2" />Client Accept</DropdownMenuItem>}
-                                  {!submission.client_accepted && <DropdownMenuItem onClick={() => { setRejectSubmission(submission); setRejectionReason(''); }} className="text-xs text-destructive"><Trash2 className="w-3.5 h-3.5 mr-2" />Reject</DropdownMenuItem>}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-[10px]">{submission.service_type}</Badge>
-                          {submission.ph_approved ? (
-                            <span className="text-emerald-500 text-[10px] font-medium">✓ PH</span>
-                          ) : submission.status === 'rejected' ? (
-                            <span className="text-destructive text-[10px] font-medium">Rejected</span>
-                          ) : (
-                            <span className="text-amber-500 text-[10px] font-medium">Pending</span>
-                          )}
-                          {submission.client_accepted && <span className="text-primary text-[10px] font-medium">✓ Client</span>}
-                          <span className="text-primary font-bold text-xs ml-auto">{submission.points_awarded || 0} pts</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {filteredSubmissions.length > ITEMS_PER_PAGE && (
-                    <div className="flex items-center justify-between p-4 border-t border-border/50">
-                      <p className="text-[11px] text-muted-foreground">
-                        {(submissionsPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(submissionsPage * ITEMS_PER_PAGE, filteredSubmissions.length)} of {filteredSubmissions.length}
-                      </p>
-                      <div className="flex gap-1">
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubmissionsPage(p => Math.max(1, p - 1))} disabled={submissionsPage === 1}>Prev</Button>
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubmissionsPage(p => Math.min(Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE), p + 1))} disabled={submissionsPage >= Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE)}>Next</Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No submissions found</p>
-                  <p className="text-xs mt-1">Try changing your filters</p>
-                </div>
-              )}
-            </div>
+          <TabsContent value="submissions" className="mt-0">
+            <AdminSubmissions
+              submissions={submissions}
+              systemSettings={systemSettings}
+              onPHApproval={handlePHApproval}
+              onClientAcceptance={handleClientAcceptance}
+              onReject={(s) => { setRejectSubmission(s); setRejectionReason(''); }}
+              onClientReject={(s) => { setClientRejectSubmission(s); setClientRejectionReason(''); }}
+              onCorrectionRequest={(s) => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}
+              onRevoke={handleRevokeSubmission}
+              onViewFiles={setViewFilesSubmission}
+              onPreviewLink={setPreviewLinkUrl}
+              onExport={() => exportData('submissions')}
+            />
           </TabsContent>
 
           {/* ========== USERS TAB ========== */}
@@ -2262,73 +2046,8 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
           {/* ========== PAYMENTS TAB ========== */}
-          <TabsContent value="payments" className="mt-0 space-y-4">
-            <div className="rounded-xl border border-border/50 bg-card/50">
-              <div className="p-4 sm:p-5 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold">Payments ({payments.length})</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">All platform payments</p>
-                </div>
-                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => exportData('payments')}>
-                  <Download className="w-3.5 h-3.5 mr-1" />Export
-                </Button>
-              </div>
-
-              {payments.length > 0 ? (
-                <>
-                  <div className="hidden sm:block overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="text-xs font-semibold">User</TableHead>
-                          <TableHead className="text-xs font-semibold">Amount</TableHead>
-                          <TableHead className="text-xs font-semibold">Type</TableHead>
-                          <TableHead className="text-xs font-semibold">Status</TableHead>
-                          <TableHead className="text-xs font-semibold">Transaction</TableHead>
-                          <TableHead className="text-xs font-semibold">Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {payments.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell className="text-sm font-medium">{payment.user_name}</TableCell>
-                            <TableCell className="text-sm font-bold">GH₵{payment.amount.toFixed(2)}</TableCell>
-                            <TableCell><Badge variant="outline" className="text-[10px]">{payment.type}</Badge></TableCell>
-                            <TableCell>
-                              <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className="text-[10px]">{payment.status}</Badge>
-                            </TableCell>
-                            <TableCell className="font-mono text-[11px] text-muted-foreground">{payment.transaction_id}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{format(new Date(payment.created_at), 'MMM d, yy')}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <div className="sm:hidden divide-y divide-border/30">
-                    {payments.map((payment) => (
-                      <div key={payment.id} className="p-4 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold">{payment.user_name}</div>
-                          <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px]">{payment.type}</Badge>
-                            <span>{format(new Date(payment.created_at), 'MMM d')}</span>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-bold">GH₵{payment.amount.toFixed(2)}</div>
-                          <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className="text-[10px]">{payment.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No payments yet</p>
-                </div>
-              )}
-            </div>
+          <TabsContent value="payments" className="mt-0">
+            <AdminPayments payments={payments} onExport={() => exportData('payments')} />
           </TabsContent>
 
           {/* ========== REPORTS ========== */}

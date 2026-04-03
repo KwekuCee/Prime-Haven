@@ -141,9 +141,10 @@ const ForwardWorkToClient = () => {
     for (const path of filePaths) {
       try {
         const { data } = await supabase.functions.invoke('get-signed-url', {
-          body: { bucket: 'submissions', path },
+          body: { filePath: path, expiresIn: 604800 },  // 7 days for email delivery
         });
-        if (data?.url) urls.push(data.url);
+        if (data?.signedUrl) urls.push(data.signedUrl);
+        else if (data?.url) urls.push(data.url);
       } catch {
         // Try public URL as fallback
         const { data: pubData } = supabase.storage.from('submissions').getPublicUrl(path);

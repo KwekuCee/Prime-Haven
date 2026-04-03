@@ -6,6 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Convert plain-text URLs to clickable <a> tags
+function linkifyUrls(text: string): string {
+  return text.replace(
+    /(https?:\/\/[^\s<>"']+)/g,
+    '<a href="$1" style="color: #d4af37; text-decoration: underline; word-break: break-all;" target="_blank">$1</a>'
+  );
+}
+
+// Convert newlines to <br> and linkify URLs
+function formatBodyHtml(text: string): string {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const withLinks = linkifyUrls(escaped.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
+  // Re-escape but keep our <a> tags
+  return text
+    .split('\n')
+    .map(line => {
+      // Linkify URLs in each line
+      return line.replace(
+        /(https?:\/\/[^\s<>"']+)/g,
+        '<a href="$1" style="color: #d4af37; text-decoration: underline; word-break: break-all;" target="_blank">View / Download</a>'
+      );
+    })
+    .join('<br>');
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,21 +78,26 @@ serve(async (req) => {
       ssl: true,
     });
 
+    // Format body: convert URLs to clickable links, newlines to <br>
+    const formattedBody = formatBodyHtml(body);
+
     const htmlBody = `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #0a0a0a; color: #e5e5e5;">
-  <div style="text-align: center; padding: 20px 0; border-bottom: 1px solid #333;">
-    <h2 style="color: #d4af37; margin: 0;">Prime Haven</h2>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 0; background: #f5f5f5; color: #333;">
+  <div style="background: #0a0a0a; padding: 30px 20px; text-align: center;">
+    <h2 style="color: #d4af37; margin: 0; font-size: 24px; letter-spacing: 1px;">Prime Haven</h2>
+    <p style="color: #888; font-size: 12px; margin: 8px 0 0;">Creative Studio</p>
   </div>
-  <div style="padding: 30px 0;">
-    <p style="margin-bottom: 10px;">Dear ${clientName || 'Client'},</p>
-    <div style="line-height: 1.6; white-space: pre-wrap;">${body}</div>
+  <div style="background: #ffffff; padding: 32px 28px;">
+    <p style="margin: 0 0 16px; font-size: 15px; color: #333;">Dear <strong>${clientName || 'Client'}</strong>,</p>
+    <div style="line-height: 1.8; font-size: 14px; color: #444;">${formattedBody}</div>
   </div>
-  <div style="text-align: center; padding: 20px 0; border-top: 1px solid #333; font-size: 12px; color: #888;">
-    <p>Prime Haven Creative Studio</p>
-    <p>team@primehaven.tech</p>
+  <div style="background: #0a0a0a; text-align: center; padding: 24px 20px; font-size: 12px; color: #888;">
+    <p style="margin: 0 0 6px;">Prime Haven Creative Studio</p>
+    <p style="margin: 0;"><a href="mailto:team@primehaven.tech" style="color: #d4af37; text-decoration: none;">team@primehaven.tech</a></p>
+    <p style="margin: 10px 0 0; color: #555;">© ${new Date().getFullYear()} Prime Haven. All rights reserved.</p>
   </div>
 </body>
 </html>`;
@@ -85,6 +118,8 @@ serve(async (req) => {
       description: `Email sent to ${clientName || to}: "${subject}"`,
       timestamp: new Date().toISOString(),
     });
+
+    console.log(`✅ Email sent successfully to ${to}`);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

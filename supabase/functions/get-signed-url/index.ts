@@ -76,7 +76,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Validate expiresIn (1 minute to 1 hour)
-    const validExpiresIn = Math.min(Math.max(Number(expiresIn) || 3600, 60), 3600);
+    const validExpiresIn = Math.min(Math.max(Number(expiresIn) || 3600, 60), 604800); // up to 7 days
 
     // Use service role to generate signed URL
     const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
