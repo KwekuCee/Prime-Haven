@@ -58,6 +58,8 @@ import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
 import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
+import AdminSubmissions from '@/components/admin/AdminSubmissions';
+import AdminPayments from '@/components/admin/AdminPayments';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
