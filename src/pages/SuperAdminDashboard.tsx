@@ -2046,73 +2046,8 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
           {/* ========== PAYMENTS TAB ========== */}
-          <TabsContent value="payments" className="mt-0 space-y-4">
-            <div className="rounded-xl border border-border/50 bg-card/50">
-              <div className="p-4 sm:p-5 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold">Payments ({payments.length})</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">All platform payments</p>
-                </div>
-                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => exportData('payments')}>
-                  <Download className="w-3.5 h-3.5 mr-1" />Export
-                </Button>
-              </div>
-
-              {payments.length > 0 ? (
-                <>
-                  <div className="hidden sm:block overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="text-xs font-semibold">User</TableHead>
-                          <TableHead className="text-xs font-semibold">Amount</TableHead>
-                          <TableHead className="text-xs font-semibold">Type</TableHead>
-                          <TableHead className="text-xs font-semibold">Status</TableHead>
-                          <TableHead className="text-xs font-semibold">Transaction</TableHead>
-                          <TableHead className="text-xs font-semibold">Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {payments.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell className="text-sm font-medium">{payment.user_name}</TableCell>
-                            <TableCell className="text-sm font-bold">GH₵{payment.amount.toFixed(2)}</TableCell>
-                            <TableCell><Badge variant="outline" className="text-[10px]">{payment.type}</Badge></TableCell>
-                            <TableCell>
-                              <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className="text-[10px]">{payment.status}</Badge>
-                            </TableCell>
-                            <TableCell className="font-mono text-[11px] text-muted-foreground">{payment.transaction_id}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{format(new Date(payment.created_at), 'MMM d, yy')}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <div className="sm:hidden divide-y divide-border/30">
-                    {payments.map((payment) => (
-                      <div key={payment.id} className="p-4 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold">{payment.user_name}</div>
-                          <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px]">{payment.type}</Badge>
-                            <span>{format(new Date(payment.created_at), 'MMM d')}</span>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-bold">GH₵{payment.amount.toFixed(2)}</div>
-                          <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className="text-[10px]">{payment.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No payments yet</p>
-                </div>
-              )}
-            </div>
+          <TabsContent value="payments" className="mt-0">
+            <AdminPayments payments={payments} onExport={() => exportData('payments')} />
           </TabsContent>
 
           {/* ========== REPORTS ========== */}
