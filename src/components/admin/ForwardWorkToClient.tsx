@@ -141,7 +141,7 @@ const ForwardWorkToClient = () => {
     for (const path of filePaths) {
       try {
         const { data } = await supabase.functions.invoke('get-signed-url', {
-          body: { filePath: path, expiresIn: 3600 },
+          body: { filePath: path, expiresIn: 604800 },  // 7 days for email delivery
         });
         if (data?.signedUrl) urls.push(data.signedUrl);
         else if (data?.url) urls.push(data.url);
