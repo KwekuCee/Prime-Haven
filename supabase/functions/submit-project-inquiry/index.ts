@@ -62,7 +62,7 @@ serve(async (req) => {
 
     await client.send({
       from: `Prime Haven <${Deno.env.get("SMTP_USER")}>`,
-      to: "team@primehaven.tech",
+      to: "primehaven26@gmail.com",
       subject: `🚀 New Project Inquiry from ${fullName}`,
       content: `New project inquiry:\n\nName: ${fullName}\nEmail: ${email}\nWhatsApp: ${whatsapp}\nService: ${category}\nBudget: ${budget || "Not specified"}\nDescription: ${description}`,
       html: emailHtml,
