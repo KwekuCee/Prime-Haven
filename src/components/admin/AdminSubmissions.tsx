@@ -158,6 +158,7 @@ const AdminSubmissions = ({
                       </TableCell>
                       <TableCell>
                         {s.client_accepted ? <span className="inline-flex items-center gap-1 text-primary text-xs font-medium"><Star className="w-3 h-3" />Yes</span>
+                          : s.status === 'client_rejected' ? <span className="inline-flex items-center gap-1 text-destructive text-xs font-medium"><XCircle className="w-3 h-3" />No</span>
                           : s.ph_approved ? <span className="text-blue-500 text-xs font-medium">Waiting</span>
                           : <span className="text-muted-foreground text-xs">—</span>}
                       </TableCell>
