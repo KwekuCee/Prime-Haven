@@ -216,7 +216,7 @@ function buildPlainText(name: string, verificationLink: string): string {
     'Instagram: https://instagram.com/primehaven_co',
     '',
     "If you didn't create an account, ignore this email.",
-    'Questions? team@primehaven.tech',
+    'Questions? primehaven26@gmail.com',
     '',
     '© 2026 Prime Haven - Making IT Dreams a Reality',
   ].join('\n');

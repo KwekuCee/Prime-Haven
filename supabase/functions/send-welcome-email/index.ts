@@ -192,7 +192,7 @@ function buildPlainText(name: string): string {
     '   Client Acceptance: +20-65 points (varies by service)',
     '   Bonus Points: Awarded for exceptional work',
     '',
-    'Need help? team@primehaven.tech',
+    'Need help? primehaven26@gmail.com',
     '',
     '© 2026 Prime Haven - Making IT Dreams a Reality',
   ].join('\n');
