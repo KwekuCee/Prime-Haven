@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,27 +48,25 @@ serve(async (req) => {
 </td></tr></table>
 </body></html>`;
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: Deno.env.get("SMTP_HOST")!,
-        port: parseInt(Deno.env.get("SMTP_PORT") || "465"),
-        tls: true,
-        auth: {
-          username: Deno.env.get("SMTP_USER")!,
-          password: Deno.env.get("SMTP_PASS")!,
-        },
-      },
+    const smtpHost = Deno.env.get("SMTP_HOST")!;
+    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "587");
+    const smtpUser = Deno.env.get("SMTP_USER")!;
+    const smtpPass = Deno.env.get("SMTP_PASS")!;
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
     });
 
-    await client.send({
-      from: `Prime Haven <${Deno.env.get("SMTP_USER")}>`,
+    await transporter.sendMail({
+      from: `Prime Haven <${smtpUser}>`,
       to: "primehaven26@gmail.com",
       subject: `🚀 New Project Inquiry from ${fullName}`,
-      content: `New project inquiry:\n\nName: ${fullName}\nEmail: ${email}\nWhatsApp: ${whatsapp}\nService: ${category}\nBudget: ${budget || "Not specified"}\nDescription: ${description}`,
+      text: `New project inquiry:\n\nName: ${fullName}\nEmail: ${email}\nWhatsApp: ${whatsapp}\nService: ${category}\nBudget: ${budget || "Not specified"}\nDescription: ${description}`,
       html: emailHtml,
     });
-
-    await client.close();
 
     return new Response(
       JSON.stringify({ success: true }),

@@ -153,10 +153,11 @@ serve(async (req: Request): Promise<Response> => {
     ].join('\n');
 
     const fromAddress = (SMTP_USER || "").trim();
+    const smtpPort = SMTP_PORT || 587;
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
+      port: smtpPort,
+      secure: smtpPort === 465,
       auth: { user: fromAddress, pass: SMTP_PASS },
     });
 

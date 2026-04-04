@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,16 +97,16 @@ serve(async (req) => {
 </td></tr></table>
 </body></html>`;
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: Deno.env.get("SMTP_HOST")!,
-        port: parseInt(Deno.env.get("SMTP_PORT") || "465"),
-        tls: true,
-        auth: {
-          username: Deno.env.get("SMTP_USER")!,
-          password: Deno.env.get("SMTP_PASS")!,
-        },
-      },
+    const smtpHost = Deno.env.get("SMTP_HOST")!;
+    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "587");
+    const smtpUser = Deno.env.get("SMTP_USER")!;
+    const smtpPass = Deno.env.get("SMTP_PASS")!;
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
     });
 
     let sent = 0;
@@ -114,12 +114,12 @@ serve(async (req) => {
 
     for (const sub of subscribers) {
       try {
-        await client.send({
-          from: `Prime Haven <${Deno.env.get("SMTP_USER")}>`,
+        await transporter.sendMail({
+          from: `Prime Haven <${smtpUser}>`,
           to: sub.email,
           subject: `📰 ${post.title} — Prime Haven Blog`,
-          content: "auto",
           html: emailHtml,
+          text: `${post.title}\n\nRead more: ${siteUrl}/blog/${post.slug}`,
         });
         sent++;
       } catch (err) {
@@ -127,8 +127,6 @@ serve(async (req) => {
         failed++;
       }
     }
-
-    await client.close();
 
     return new Response(
       JSON.stringify({ message: `Newsletter sent to ${sent} subscribers (${failed} failed)` }),
