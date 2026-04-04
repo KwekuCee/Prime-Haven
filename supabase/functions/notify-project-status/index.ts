@@ -148,7 +148,7 @@ serve(async (req: Request): Promise<Response> => {
       '',
       `Track your project here: ${trackingLink}`,
       '',
-      'Questions? team@primehaven.tech',
+      'Questions? primehaven26@gmail.com',
       '© 2026 Prime Haven',
     ].join('\n');
 

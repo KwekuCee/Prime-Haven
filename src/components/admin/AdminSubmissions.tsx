@@ -171,7 +171,36 @@ const AdminSubmissions = ({
                               <Eye className="w-3.5 h-3.5" />
                             </Button>
                           )}
-                          {s.status !== 'rejected' && (
+                          {s.status === 'rejected' ? (
+                            <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Rejected</Badge>
+                          ) : s.status === 'client_rejected' && !s.client_accepted ? (
+                            <div className="flex items-center gap-1">
+                              <Badge className="text-[10px] px-2 py-0.5 bg-orange-500/15 text-orange-500 border-orange-500/30">Client Rejected</Badge>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Settings className="w-3.5 h-3.5" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52">
+                                  <DropdownMenuLabel className="text-xs">Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  {s.files_urls?.length > 0 && (
+                                    <DropdownMenuItem onClick={() => onViewFiles(s)} className="text-xs">
+                                      <ImageIcon className="w-3.5 h-3.5 mr-2" />View Files ({s.files_urls.length})
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => onCorrectionRequest(s)} className="text-xs text-amber-500">
+                                    <Edit className="w-3.5 h-3.5 mr-2" />Request Correction
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => onReject(s)} className="text-xs text-destructive">
+                                    <Trash2 className="w-3.5 h-3.5 mr-2" />Reject
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          ) : s.client_accepted ? (
+                            <Badge className="text-[10px] px-2 py-0.5 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">Approved</Badge>
+                          ) : (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Settings className="w-3.5 h-3.5" /></Button>
@@ -189,17 +218,17 @@ const AdminSubmissions = ({
                                     <CheckCircle className="w-3.5 h-3.5 mr-2" />PH Approve (+{s.parent_submission_id ? 0 : (systemSettings.ph_approval_points?.value || 15)} pts)
                                   </DropdownMenuItem>
                                 )}
-                                {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
+                                {s.ph_approved && !s.client_accepted && (
                                   <DropdownMenuItem onClick={() => onClientAcceptance(s.id)} className="text-xs text-primary">
                                     <ThumbsUp className="w-3.5 h-3.5 mr-2" />Client Accept
                                   </DropdownMenuItem>
                                 )}
-                                {(s.status === 'client_rejected' || (s.ph_approved && !s.client_accepted) || s.status === 'correction_requested') && (
+                                {s.ph_approved && !s.client_accepted && (
                                   <DropdownMenuItem onClick={() => onCorrectionRequest(s)} className="text-xs text-amber-500">
                                     <Edit className="w-3.5 h-3.5 mr-2" />Request Correction
                                   </DropdownMenuItem>
                                 )}
-                                {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
+                                {s.ph_approved && !s.client_accepted && (
                                   <DropdownMenuItem onClick={() => onClientReject(s)} className="text-xs text-destructive">
                                     <XCircle className="w-3.5 h-3.5 mr-2" />Client Reject
                                   </DropdownMenuItem>

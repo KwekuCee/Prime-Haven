@@ -96,7 +96,7 @@ serve(async (req) => {
   </div>
   <div style="background: #0a0a0a; text-align: center; padding: 24px 20px; font-size: 12px; color: #888;">
     <p style="margin: 0 0 6px;">Prime Haven Creative Studio</p>
-    <p style="margin: 0;"><a href="mailto:team@primehaven.tech" style="color: #d4af37; text-decoration: none;">team@primehaven.tech</a></p>
+    <p style="margin: 0;"><a href="mailto:primehaven26@gmail.com" style="color: #d4af37; text-decoration: none;">primehaven26@gmail.com</a></p>
     <p style="margin: 10px 0 0; color: #555;">© ${new Date().getFullYear()} Prime Haven. All rights reserved.</p>
   </div>
 </body>
