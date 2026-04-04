@@ -80,8 +80,8 @@ function buildStatusEmailHtml(
     '<hr style="border:none;height:1px;background-color:#2a2a2a;margin:0;" />',
     '</td></tr>',
     '<tr><td align="center" style="padding:0 40px 40px;">',
-    '<p style="margin:0 0 8px;font-size:12px;color:#555555;">Questions? Contact us at ',
-    '<a href="mailto:team@primehaven.tech" style="color:#fe4c18;text-decoration:none;">team@primehaven.tech</a></p>',
+     '<p style="margin:0 0 8px;font-size:12px;color:#555555;">Questions? Contact us at ',
+    '<a href="mailto:primehaven26@gmail.com" style="color:#fe4c18;text-decoration:none;">primehaven26@gmail.com</a></p>',
     '<p style="margin:12px 0 0;font-size:11px;color:#fe4c18;font-weight:600;letter-spacing:2px;text-transform:uppercase;">Making IT Dreams a Reality</p>',
     '<p style="margin:8px 0 0;font-size:12px;color:#555555;">&copy; 2026 Prime Haven.</p>',
     '</td></tr>',
@@ -148,7 +148,7 @@ serve(async (req: Request): Promise<Response> => {
       '',
       `Track your project here: ${trackingLink}`,
       '',
-      'Questions? team@primehaven.tech',
+      'Questions? primehaven26@gmail.com',
       '© 2026 Prime Haven',
     ].join('\n');
 
