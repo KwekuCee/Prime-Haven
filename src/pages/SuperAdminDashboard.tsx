@@ -245,15 +245,23 @@ const SuperAdminDashboard = () => {
       const { data: settingsData } = await supabase
         .from('system_settings')
         .select('key, value')
-        .in('key', ['monthly_revenue_by_category', 'revenue_share_percentage']);
+        .in('key', ['monthly_revenue_by_category', 'revenue_share_percentage', 'monthly_revenue']);
 
       const settings: any = {};
       (settingsData || []).forEach((s: any) => { settings[s.key] = s.value; });
 
-      const categoryRevenue = settings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
-      const graphicAmt = Number(categoryRevenue.graphic || 0);
-      const uiuxAmt = Number(categoryRevenue.uiux || 0);
-      const webAmt = Number(categoryRevenue.web || 0);
+      // Use category breakdown if available, otherwise fall back to total monthly revenue
+      let graphicAmt = 0, uiuxAmt = 0, webAmt = 0;
+      const categoryRevenue = settings.monthly_revenue_by_category;
+      if (categoryRevenue && (Number(categoryRevenue.graphic || 0) > 0 || Number(categoryRevenue.uiux || 0) > 0 || Number(categoryRevenue.web || 0) > 0)) {
+        graphicAmt = Number(categoryRevenue.graphic || 0);
+        uiuxAmt = Number(categoryRevenue.uiux || 0);
+        webAmt = Number(categoryRevenue.web || 0);
+      } else {
+        // Fallback: use total monthly_revenue as the graphic design pool
+        const totalRevenue = Number(settings.monthly_revenue?.amount || 0);
+        graphicAmt = totalRevenue;
+      }
       const revenueShare = settings.revenue_share_percentage?.value || 50;
       const shareRatio = revenueShare / 100;
       const nowIso = new Date().toISOString();
