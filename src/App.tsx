@@ -68,6 +68,7 @@ const App = () => {
         <BrowserRouter>
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>}>
             <InstallPrompt />
+            <VisitorTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/register" element={<Register />} />
