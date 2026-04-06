@@ -24,6 +24,7 @@ const TrackProject = lazy(() => import("./pages/TrackProject"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+const VisitorTracker = lazy(() => import("./components/VisitorTracker"));
 
 // Eagerly load dashboard pages for instant navigation
 import Dashboard from "./pages/Dashboard";
