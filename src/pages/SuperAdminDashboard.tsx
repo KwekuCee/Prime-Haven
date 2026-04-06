@@ -1853,6 +1853,9 @@ const SuperAdminDashboard = () => {
                 )}
               </div>
             </div>
+
+            {/* Traffic Map */}
+            <TrafficMap />
           </TabsContent>
 
           {/* ========== SUBMISSIONS TAB ========== */}
