@@ -24,6 +24,7 @@ const TrackProject = lazy(() => import("./pages/TrackProject"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+const VisitorTracker = lazy(() => import("./components/VisitorTracker"));
 
 // Eagerly load dashboard pages for instant navigation
 import Dashboard from "./pages/Dashboard";
@@ -67,6 +68,7 @@ const App = () => {
         <BrowserRouter>
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>}>
             <InstallPrompt />
+            <VisitorTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/register" element={<Register />} />

@@ -56,6 +56,7 @@ import AdsterraStats from '@/components/admin/AdsterraStats';
 import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
+import TrafficMap from '@/components/admin/TrafficMap';
 import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
 import AdminSubmissions from '@/components/admin/AdminSubmissions';
@@ -1852,6 +1853,9 @@ const SuperAdminDashboard = () => {
                 )}
               </div>
             </div>
+
+            {/* Traffic Map */}
+            <TrafficMap />
           </TabsContent>
 
           {/* ========== SUBMISSIONS TAB ========== */}
