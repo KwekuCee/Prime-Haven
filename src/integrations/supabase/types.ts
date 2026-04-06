@@ -1063,6 +1063,54 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_analytics: {
+        Row: {
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          id: string
+          ip_hash: string
+          is_registered_user: boolean | null
+          latitude: number | null
+          longitude: number | null
+          page_path: string
+          region: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          ip_hash: string
+          is_registered_user?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          page_path?: string
+          region?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          is_registered_user?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          page_path?: string
+          region?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       leaderboard_designer_details: {
