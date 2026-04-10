@@ -16,9 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { 
-  registerPersonalSchema, 
-  registerSkillsSchema, 
+import {
+  registerPersonalSchema,
+  registerSkillsSchema,
   registerAccountSchema,
   RegisterPersonalData,
   RegisterSkillsData,
@@ -165,11 +165,11 @@ const Register = () => {
   const passwordStrength = getPasswordStrength(accountForm.watch('password') || '');
 
   if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return <div className="min-h-screen bg-transparent relative z-0 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center p-4 z-0">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/8 rounded-full blur-[120px]" />
@@ -205,8 +205,8 @@ const Register = () => {
                     currentStep > step.id
                       ? "bg-primary/20 border-primary/30 text-primary"
                       : currentStep === step.id
-                      ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "bg-muted/30 border-border/40 text-muted-foreground"
+                        ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
+                        : "bg-muted/30 border-border/40 text-muted-foreground"
                   )}>
                     {currentStep > step.id ? (
                       <CheckCircle className="w-5 h-5" />

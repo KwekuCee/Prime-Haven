@@ -35,7 +35,7 @@ const SuperAdminLogin = () => {
 
   const onSubmit = async (data: SuperAdminLoginForm) => {
     setIsLoading(true);
-    
+
     try {
       // Use the admin-login edge function for secure authentication
       const { data: response, error } = await supabase.functions.invoke('admin-login', {
@@ -50,10 +50,10 @@ const SuperAdminLogin = () => {
       }
 
       if (!response?.success) {
-        const errorMessage = response?.error === 'access_denied' 
+        const errorMessage = response?.error === 'access_denied'
           ? 'You do not have admin access.'
           : 'Invalid username or password.';
-        
+
         toast({
           variant: 'destructive',
           title: 'Access Denied',
@@ -69,7 +69,7 @@ const SuperAdminLogin = () => {
           if (event === 'SIGNED_IN' && session) {
             // Unsubscribe immediately after receiving the event
             subscription.unsubscribe();
-            
+
             toast({
               title: 'Access Granted',
               description: `Welcome back, ${response.user?.name || 'Admin'}!`,
@@ -100,13 +100,13 @@ const SuperAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent relative z-0 flex items-center justify-center p-4">
       <div
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
             onClick={(e) => {
               e.preventDefault();
@@ -116,7 +116,7 @@ const SuperAdminLogin = () => {
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          
+
           <div className="flex flex-col items-center gap-2 mb-4">
             <BrandLogo height={40} />
             <p className="text-sm text-muted-foreground font-medium">Admin Portal</p>

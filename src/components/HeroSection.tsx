@@ -16,10 +16,35 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 z-0">
-        <img src={heroBg} alt="Digital technology background" className="w-full h-full object-cover opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+      {/* Dynamic Aurora/Mesh Tech Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-transparent">
+        {/* Animated glowing orbs for tech aurora effect */}
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-[10%] left-[10%] w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-primary/20 rounded-full blur-[100px] md:blur-[150px]"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.4, 0.2],
+            x: [0, -100, 0],
+            y: [0, 100, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] md:w-[700px] md:h-[700px] bg-blue-600/15 rounded-full blur-[120px] md:blur-[160px]"
+        />
+
+        {/* Overlay grid mesh that fades out towards the bottom */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,hsla(226,60%,40%,0.08)_1px,transparent_1px),linear-gradient(to_bottom,hsla(226,60%,40%,0.08)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_20%,#000_40%,transparent_100%)]" />
+
+        {/* Gradient fade out to seamlessly transition to standard page body */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/80 to-background" />
       </div>
 
       {/* Content */}

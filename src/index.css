@@ -4,6 +4,22 @@
 
 /* Prime Haven Design System - Dark theme with orange accent */
 
+@font-face {
+  font-family: 'PP Neue Machina';
+  src: url('/fonts/PPNeueMachina-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'PP Neue Machina';
+  src: url('/fonts/PPNeueMachina-Ultrabold.otf') format('opentype');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -111,11 +127,6 @@
 
   .dark body {
     background-color: hsl(var(--background));
-    background-image:
-      linear-gradient(to right, hsla(226, 60%, 40%, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, hsla(226, 60%, 40%, 0.05) 1px, transparent 1px);
-    background-size: 50px 50px;
-    background-attachment: fixed;
   }
 
   .dark body::before {
@@ -125,9 +136,35 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 50% 10%, hsla(16, 99%, 55%, 0.12) 0%, transparent 60%);
+    background-image:
+      linear-gradient(to right, hsla(226, 60%, 40%, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, hsla(226, 60%, 40%, 0.07) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: bg-scroll 30s linear infinite;
+    pointer-events: none;
+    z-index: -2;
+  }
+
+  .dark body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, hsla(16, 99%, 55%, 0.15) 0%, transparent 70%);
     pointer-events: none;
     z-index: -1;
+  }
+
+  @keyframes bg-scroll {
+    from {
+      background-position: 0 0;
+    }
+
+    to {
+      background-position: -50px -50px;
+    }
   }
 
   h1,
@@ -136,7 +173,7 @@
   h4,
   h5,
   h6 {
-    font-family: 'PP Neue Machina', 'Switzer', system-ui, sans-serif;
+    font-family: 'PP Neue Machina', 'Space Grotesk', 'Switzer', system-ui, sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
   }

@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["PP Neue Machina", "system-ui", "sans-serif"],
+        heading: ["PP Neue Machina", "Space Grotesk", "system-ui", "sans-serif"],
         body: ["Switzer", "system-ui", "sans-serif"],
       },
       colors: {
