@@ -350,7 +350,7 @@ const JobContracts = () => {
             { label: 'On Discord', value: contracts.filter(c => c.discord_message_id).length, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
           ].map((card, i) => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.05 }}>
-              <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+              <div className="rounded-xl glass-card p-4 glass-hover">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
                   <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
@@ -364,7 +364,7 @@ const JobContracts = () => {
         </div>
 
         {/* Contracts Table */}
-        <div className="rounded-xl border border-border/50 bg-card/50">
+        <div className="rounded-xl glass-card">
           <div className="p-4 sm:p-5 border-b border-border/50">
             <h2 className="text-base font-bold">All Job Contracts</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Manage job briefs posted to professional groups</p>
@@ -379,7 +379,7 @@ const JobContracts = () => {
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-md border border-border/50">
+              <div className="overflow-x-auto rounded-md border border-white/5 bg-transparent">
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">

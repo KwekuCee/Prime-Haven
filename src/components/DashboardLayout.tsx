@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User, 
+import {
+  LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User,
   MessageSquare, Download, Shield, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -68,7 +68,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const pageTitle = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-transparent flex w-full relative z-0">
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -216,7 +216,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 lg:px-6 bg-background/80 backdrop-blur-md sticky top-0 z-30">
+        <header className="h-14 border-b border-white/5 flex items-center justify-between px-4 lg:px-6 bg-background/40 backdrop-blur-3xl sticky top-0 z-30 shadow-lg">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-foreground hover:text-primary transition-colors">
               <Menu className="w-5 h-5" />

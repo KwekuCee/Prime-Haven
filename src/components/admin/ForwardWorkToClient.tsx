@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  Send, Loader2, Mail, User, Phone, FileCheck, Paperclip, 
+import {
+  Send, Loader2, Mail, User, Phone, FileCheck, Paperclip,
   CheckCircle, Image as ImageIcon, ExternalLink, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -122,13 +122,13 @@ const ForwardWorkToClient = () => {
   const filteredSubmissions = useMemo(() => {
     if (!selectedClient) return submissions;
     const clientName = selectedClient.name.toLowerCase();
-    
+
     // Show submissions matching the client ref
     const matched = submissions.filter(s =>
       s.client_ref?.toLowerCase().includes(clientName) ||
       s.project_name.toLowerCase().includes(clientName)
     );
-    
+
     return matched;
   }, [submissions, selectedClient]);
 
@@ -169,11 +169,11 @@ const ForwardWorkToClient = () => {
     setSending(true);
     try {
       const selectedSubs = submissions.filter(s => selectedSubmissionIds.includes(s.id));
-      
+
       // Build file links for all selected submissions
       const allFileLinks: string[] = [];
       const designLinks: string[] = [];
-      
+
       for (const sub of selectedSubs) {
         if (sub.files_urls && sub.files_urls.length > 0) {
           const urls = await getSignedUrls(sub.files_urls);
@@ -185,7 +185,7 @@ const ForwardWorkToClient = () => {
       }
 
       // Build the email body
-      const projectList = selectedSubs.map(s => 
+      const projectList = selectedSubs.map(s =>
         `• ${s.project_name} (${SERVICE_LABELS[s.service_type] || s.service_type}) — by ${s.designer_name}`
       ).join('\n');
 
@@ -226,7 +226,7 @@ Thank you for choosing Prime Haven! ✨`;
       if (error) throw error;
 
       toast({ title: '✅ Email Sent!', description: `Work forwarded to ${selectedClient.name} at ${selectedClient.email}` });
-      
+
       // Reset form
       setSelectedSubmissionIds([]);
       setCustomMessage('');
@@ -250,7 +250,7 @@ Thank you for choosing Prime Haven! ✨`;
   return (
     <div className="space-y-6">
       {/* Client Selection */}
-      <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
+      <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-heading flex items-center gap-2">
             <User className="w-4 h-4 text-primary" />
@@ -259,20 +259,20 @@ Thank you for choosing Prime Haven! ✨`;
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={selectedClientKey} onValueChange={handleClientSelect}>
-            <SelectTrigger className="bg-muted/20 border-border/40">
+            <SelectTrigger className="glass bg-transparent">
               <SelectValue placeholder="Choose a client..." />
             </SelectTrigger>
             <SelectContent>
               {clients.map(c => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name} {c.email ? `— ${c.email}` : ''}
-                  </SelectItem>
-                ))}
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name} {c.email ? `— ${c.email}` : ''}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
           {selectedClient && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-muted/10 border border-border/30">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl glass bg-transparent">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
                 <div>
@@ -301,7 +301,7 @@ Thank you for choosing Prime Haven! ✨`;
 
       {/* Accepted Submissions for Client */}
       {selectedClient && (
-        <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
+        <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-heading flex items-center gap-2">
@@ -325,11 +325,10 @@ Thank you for choosing Prime Haven! ✨`;
                   <div
                     key={sub.id}
                     onClick={() => toggleSubmission(sub.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                      selectedSubmissionIds.includes(sub.id)
-                        ? 'border-primary/50 bg-primary/5'
-                        : 'border-border/40 bg-muted/5 hover:bg-muted/10'
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedSubmissionIds.includes(sub.id)
+                        ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_hsla(16,99%,55%,0.2)] scale-[1.02]'
+                        : 'border-white/5 glass bg-transparent hover:border-primary/30 hover:scale-[1.01]'
+                      }`}
                   >
                     <Checkbox
                       checked={selectedSubmissionIds.includes(sub.id)}
@@ -371,7 +370,7 @@ Thank you for choosing Prime Haven! ✨`;
 
       {/* Message & Send */}
       {selectedClient && selectedSubmissionIds.length > 0 && (
-        <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
+        <Card className="glass-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-heading flex items-center gap-2">
               <Send className="w-4 h-4 text-primary" />
@@ -386,7 +385,7 @@ Thank you for choosing Prime Haven! ✨`;
                 onChange={(e) => setCustomMessage(e.target.value)}
                 placeholder="Add a personal touch... Leave empty for the default message."
                 rows={3}
-                className="mt-1.5 text-xs bg-muted/20 border-border/40 resize-none"
+                className="mt-1.5 text-xs glass bg-transparent resize-none"
               />
             </div>
             <div>
@@ -395,7 +394,7 @@ Thank you for choosing Prime Haven! ✨`;
                 value={reviewLink}
                 onChange={(e) => setReviewLink(e.target.value)}
                 placeholder="https://drive.google.com/... or any review platform"
-                className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40"
+                className="mt-1.5 h-9 text-xs glass bg-transparent"
               />
             </div>
 

@@ -1801,7 +1801,7 @@ const SuperAdminDashboard = () => {
               {/* Top Designers + Quick Actions */}
               <div className="space-y-4">
                 {/* Top Designers */}
-                <div className="rounded-xl border border-border/50 bg-card/50">
+                <div className="rounded-xl glass-card">
                   <div className="p-4 border-b border-border/50">
                     <h2 className="text-sm font-bold">Top Designers</h2>
                     <p className="text-[11px] text-muted-foreground">By monthly points</p>
@@ -1830,7 +1830,7 @@ const SuperAdminDashboard = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="rounded-xl border border-border/50 bg-card/50 p-4 space-y-2">
+                <div className="rounded-xl glass-card p-4 space-y-2">
                   <h2 className="text-sm font-bold mb-3">Quick Actions</h2>
                   <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'submissions' })}>
                     <FileCheck className="w-3.5 h-3.5" /> Review Submissions
@@ -1853,7 +1853,7 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* Recent Activity Log */}
-            <div className="rounded-xl border border-border/50 bg-card/50">
+            <div className="rounded-xl glass-card">
               <div className="p-4 border-b border-border/50 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-bold">Recent Activity</h2>
@@ -1905,7 +1905,7 @@ const SuperAdminDashboard = () => {
 
           {/* ========== USERS TAB ========== */}
           <TabsContent value="users" className="mt-0 space-y-4">
-            <div className="rounded-xl border border-border/50 bg-card/50">
+            <div className="rounded-xl glass-card">
               <div className="p-4 sm:p-5 border-b border-border/50">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>

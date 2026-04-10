@@ -130,7 +130,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
 
   const NavButton = ({ item }: { item: NavItem }) => {
     const active = isActive(item);
-    
+
     if (collapsed) {
       return (
         <Tooltip>
@@ -138,10 +138,10 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
             <button
               onClick={() => handleNavClick(item)}
               className={`
-                flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-200
+                flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-300
                 ${active
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-[0_0_20px_hsla(16,99%,55%,0.3)] scale-105'
+                  : 'text-muted-foreground hover:bg-white/5 hover:text-foreground hover:scale-105 hover:shadow-lg'
                 }
               `}
             >
@@ -159,10 +159,10 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       <button
         onClick={() => handleNavClick(item)}
         className={`
-          flex items-center gap-3 w-full px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200
+          flex items-center gap-3 w-full px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
           ${active
-            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_hsla(16,99%,55%,0.15)] translate-x-1'
+            : 'text-muted-foreground hover:bg-white/5 hover:text-foreground hover:translate-x-1'
           }
         `}
       >
@@ -173,7 +173,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
   };
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div className="min-h-screen bg-transparent flex w-full relative z-0">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -187,7 +187,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
         className={`
           fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 h-screen
           ${collapsed ? 'w-[68px]' : 'w-[260px]'}
-          bg-card/95 backdrop-blur-xl border-r border-border/50
+          bg-sidebar-background/40 backdrop-blur-3xl border-r border-white/5 shadow-2xl
           transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           flex flex-col
@@ -211,7 +211,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               </div>
             </>
           ) : (
-            <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_15px_hsla(16,99%,55%,0.3)]">
               <Shield className="w-4 h-4 text-primary" />
             </div>
           )}
@@ -296,8 +296,8 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Mobile Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-border/50 bg-background/95 backdrop-blur-xl lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-xl hover:bg-secondary text-foreground">
+        <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-white/5 bg-background/40 backdrop-blur-3xl shadow-lg lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-xl hover:bg-white/5 text-foreground">
             <Menu className="w-5 h-5" />
           </button>
           <Badge className="bg-primary/15 text-primary border-0 text-xs font-bold">
