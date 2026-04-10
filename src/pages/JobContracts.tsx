@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
+import {
   Briefcase, Plus, Send, Calendar, DollarSign, Users, FileText,
   ArrowLeft, Trash2, Clock, CheckCircle, XCircle, Upload, Image as ImageIcon,
   Loader2, RefreshCw, UserPlus
@@ -40,7 +40,8 @@ interface JobContract {
   discord_message_id: string | null;
   discord_channel_id: string | null;
   reference_files: string[] | null;
-  status: string;
+  active_designers_count: number;
+  active_designer_ids: string[];
   created_at: string;
 }
 
@@ -68,6 +69,7 @@ const JobContracts = () => {
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [newClientForm, setNewClientForm] = useState({ name: '', email: '', whatsapp: '', company: '' });
   const [addingClient, setAddingClient] = useState(false);
+  const [designerNames, setDesignerNames] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     title: '',
@@ -100,7 +102,21 @@ const JobContracts = () => {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setContracts((data || []) as JobContract[]);
+      const contractsData = (data || []) as JobContract[];
+      setContracts(contractsData);
+
+      // Fetch active designer names
+      const allActiveIds = [...new Set(contractsData.flatMap(c => c.active_designer_ids || []))];
+      if (allActiveIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', allActiveIds);
+
+        const names: Record<string, string> = {};
+        profiles?.forEach(p => { names[p.id] = p.full_name || 'Designer'; });
+        setDesignerNames(names);
+      }
     } catch (err: any) {
       console.error('Error loading contracts:', err);
     } finally {
@@ -132,17 +148,17 @@ const JobContracts = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || !user) return;
-    
+
     for (const file of Array.from(files)) {
       const entry = { file, uploading: true } as { file: File; uploading: boolean; url?: string };
       setReferenceFiles(prev => [...prev, entry]);
-      
+
       try {
         const ext = file.name.split('.').pop();
         const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from('job-reference-files').upload(path, file);
         if (error) throw error;
-        
+
         const { data: { publicUrl } } = supabase.storage.from('job-reference-files').getPublicUrl(path);
         setReferenceFiles(prev => prev.map(f => f.file === file ? { ...f, uploading: false, url: publicUrl } : f));
       } catch (err: any) {
@@ -354,80 +370,103 @@ const JobContracts = () => {
             <p className="text-xs text-muted-foreground mt-0.5">Manage job briefs posted to professional groups</p>
           </div>
           <div className="p-4 sm:p-5">
-              {contracts.length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground">
-                  <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                  <p>No job contracts posted yet.</p>
-                  <Button variant="outline" size="sm" className="mt-4" onClick={() => setIsCreateOpen(true)}>
-                    Post Your First Job
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto rounded-md border border-border/50">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="text-xs font-semibold">Title</TableHead>
-                        <TableHead className="text-xs font-semibold">Category</TableHead>
-                        <TableHead className="text-xs font-semibold">Budget</TableHead>
-                        <TableHead className="text-xs font-semibold">Deadline</TableHead>
-                        <TableHead className="text-xs font-semibold">Discord</TableHead>
-                        <TableHead className="text-xs font-semibold">Status</TableHead>
-                        <TableHead className="text-xs font-semibold">Posted</TableHead>
-                        <TableHead className="text-xs font-semibold"></TableHead>
+            {contracts.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                <p>No job contracts posted yet.</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => setIsCreateOpen(true)}>
+                  Post Your First Job
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-md border border-border/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold">Title</TableHead>
+                      <TableHead className="text-xs font-semibold">Category</TableHead>
+                      <TableHead className="text-xs font-semibold">Budget</TableHead>
+                      <TableHead className="text-xs font-semibold">Designers</TableHead>
+                      <TableHead className="text-xs font-semibold">Deadline</TableHead>
+                      <TableHead className="text-xs font-semibold">Discord</TableHead>
+                      <TableHead className="text-xs font-semibold">Status</TableHead>
+                      <TableHead className="text-xs font-semibold">Posted</TableHead>
+                      <TableHead className="text-xs font-semibold"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contracts.map(c => (
+                      <TableRow key={c.id} className="group">
+                        <TableCell className="font-medium text-sm max-w-[200px] truncate">{c.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] font-medium">{getCategoryLabel(c.category)}</Badge>
+                        </TableCell>
+                        <TableCell>{c.budget || '—'}</TableCell>
+                        <TableCell>
+                          {c.active_designer_ids && c.active_designer_ids.length > 0 ? (
+                            <div className="flex -space-x-2 overflow-hidden py-1">
+                              {c.active_designer_ids.map((id, idx) => (
+                                <div
+                                  key={id}
+                                  title={designerNames[id] || 'Loading...'}
+                                  className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary cursor-help"
+                                >
+                                  {(designerNames[id] || '?').charAt(0).toUpperCase()}
+                                </div>
+                              ))}
+                              {c.active_designers_count > c.active_designer_ids.length && (
+                                <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                                  +{c.active_designers_count - c.active_designer_ids.length}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">None yet</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{c.deadline ? format(new Date(c.deadline), 'dd MMM yyyy') : '—'}</TableCell>
+                        <TableCell>
+                          {c.discord_message_id ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={c.status}
+                            onValueChange={(v) => handleStatusUpdate(c, v)}
+                            disabled={statusUpdating === c.id}
+                          >
+                            <SelectTrigger className="w-[120px] h-8 text-xs">
+                              {statusUpdating === c.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <SelectValue />
+                              )}
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {format(new Date(c.created_at), 'dd MMM yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {contracts.map(c => (
-                        <TableRow key={c.id} className="group">
-                          <TableCell className="font-medium text-sm max-w-[200px] truncate">{c.title}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-[10px] font-medium">{getCategoryLabel(c.category)}</Badge>
-                          </TableCell>
-                          <TableCell>{c.budget || '—'}</TableCell>
-                          <TableCell>{c.deadline ? format(new Date(c.deadline), 'dd MMM yyyy') : '—'}</TableCell>
-                          <TableCell>
-                            {c.discord_message_id ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={c.status}
-                              onValueChange={(v) => handleStatusUpdate(c, v)}
-                              disabled={statusUpdating === c.id}
-                            >
-                              <SelectTrigger className="w-[120px] h-8 text-xs">
-                                {statusUpdating === c.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <SelectValue />
-                                )}
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-xs">
-                            {format(new Date(c.created_at), 'dd MMM yyyy')}
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
         </div>
       </div>

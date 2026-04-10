@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  FileCheck, 
-  DollarSign, 
+import {
+  Users,
+  FileCheck,
+  DollarSign,
   TrendingUp,
   Shield,
   Settings,
@@ -325,15 +325,36 @@ const SuperAdminDashboard = () => {
           else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
         });
 
-        const totals = Object.entries(designerCategoryPoints).reduce(
-          (acc, [designerId, points]) => {
-            if (!eligibleDesignerIds.has(designerId)) return acc;
-            acc.graphic += points.graphic;
-            acc.uiux += points.uiux;
-            return acc;
-          },
-          { graphic: 0, uiux: 0 }
-        );
+        // Use "current points" (monthly_points) as the weight, but split by submission ratio
+        const designersEffectivePoints: Record<string, { graphic: number; uiux: number }> = {};
+        const effectiveTotals = { graphic: 0, uiux: 0 };
+
+        allDesigners.forEach((d: any) => {
+          if (webDevIds.has(d.user_id)) return;
+
+          const totalMonthlyPts = Number(d.monthly_points || 0);
+          if (totalMonthlyPts <= 0) return;
+
+          const subPts = designerCategoryPoints[d.user_id] || { graphic: 0, uiux: 0 };
+          const subTotal = subPts.graphic + subPts.uiux;
+
+          let effectiveG = 0;
+          let effectiveU = 0;
+
+          if (subTotal > 0) {
+            effectiveG = (subPts.graphic / subTotal) * totalMonthlyPts;
+            effectiveU = (subPts.uiux / subTotal) * totalMonthlyPts;
+          } else {
+            // No submissions but has points (gift points?) -> assign to primary category
+            const cat = normalizeCategory(d.professional_title);
+            if (cat === 'UI/UX Designer') effectiveU = totalMonthlyPts;
+            else effectiveG = totalMonthlyPts;
+          }
+
+          designersEffectivePoints[d.user_id] = { graphic: effectiveG, uiux: effectiveU };
+          effectiveTotals.graphic += effectiveG;
+          effectiveTotals.uiux += effectiveU;
+        });
 
         await Promise.all(
           allDesigners.map((designer: any) => {
@@ -345,16 +366,9 @@ const SuperAdminDashboard = () => {
               return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
 
-            const monthlyPts = Number(designer.monthly_points || 0);
-            if (monthlyPts <= 0) {
-              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
-            }
-            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0 };
-            if (dp.graphic <= 0 && dp.uiux <= 0) {
-              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
-            }
-            const graphicSalary = totals.graphic > 0 ? (dp.graphic / totals.graphic) * (graphicAmt * shareRatio) : 0;
-            const uiuxSalary = totals.uiux > 0 ? (dp.uiux / totals.uiux) * (uiuxAmt * shareRatio) : 0;
+            const ep = designersEffectivePoints[designer.user_id] || { graphic: 0, uiux: 0 };
+            const graphicSalary = effectiveTotals.graphic > 0 ? (ep.graphic / effectiveTotals.graphic) * (graphicAmt * shareRatio) : 0;
+            const uiuxSalary = effectiveTotals.uiux > 0 ? (ep.uiux / effectiveTotals.uiux) * (uiuxAmt * shareRatio) : 0;
             const totalSalary = graphicSalary + uiuxSalary;
             const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
             return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
@@ -390,9 +404,9 @@ const SuperAdminDashboard = () => {
       const { data, error } = await supabase
         .from('system_settings')
         .select('key, value');
-      
+
       if (error) throw error;
-      
+
       if (data) {
         const settings: any = {};
         data.forEach((item: any) => {
@@ -601,7 +615,7 @@ const SuperAdminDashboard = () => {
 
     const checkAdminAccess = async () => {
       console.log('🔒 Checking admin access via Supabase Auth...');
-      
+
       if (!user) {
         console.log('❌ No authenticated user, redirecting to login');
         toast({
@@ -645,9 +659,9 @@ const SuperAdminDashboard = () => {
 
         console.log('✅ Admin authenticated:', user.email, 'Role:', roleData.role);
         setInitialAuthCheck(false);
-        
+
         await loadDashboardDataSafe();
-        
+
       } catch (error) {
         console.error('❌ Auth check error:', error);
         toast({
@@ -699,7 +713,7 @@ const SuperAdminDashboard = () => {
         if (designerData) {
           const newTotalPoints = (designerData.total_points || 0) + phPoints;
           const newMonthlyPoints = (designerData.monthly_points || 0) + phPoints;
-          
+
           await supabase
             .from('designer_details')
             .update({
@@ -788,7 +802,7 @@ const SuperAdminDashboard = () => {
       if (designerData) {
         const newTotalPoints = (designerData.total_points || 0) + clientPoints;
         const newMonthlyPoints = (designerData.monthly_points || 0) + clientPoints;
-        
+
         await supabase
           .from('designer_details')
           .update({
@@ -965,15 +979,36 @@ const SuperAdminDashboard = () => {
           else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
         });
 
-        const totals = Object.entries(designerCategoryPoints).reduce(
-          (acc, [designerId, points]) => {
-            if (!eligibleDesignerIds.has(designerId)) return acc;
-            acc.graphic += points.graphic;
-            acc.uiux += points.uiux;
-            return acc;
-          },
-          { graphic: 0, uiux: 0 }
-        );
+        // Use "current points" (monthly_points) as the weight, but split by submission ratio
+        const designersEffectivePoints: Record<string, { graphic: number; uiux: number }> = {};
+        const effectiveTotals = { graphic: 0, uiux: 0 };
+
+        allDesigners.forEach((d: any) => {
+          if (webDevIds.has(d.user_id)) return;
+
+          const totalMonthlyPts = Number(d.monthly_points || 0);
+          if (totalMonthlyPts <= 0) return;
+
+          const subPts = designerCategoryPoints[d.user_id] || { graphic: 0, uiux: 0 };
+          const subTotal = subPts.graphic + subPts.uiux;
+
+          let effectiveG = 0;
+          let effectiveU = 0;
+
+          if (subTotal > 0) {
+            effectiveG = (subPts.graphic / subTotal) * totalMonthlyPts;
+            effectiveU = (subPts.uiux / subTotal) * totalMonthlyPts;
+          } else {
+            // No submissions but has points (gift points?) -> assign to primary category
+            const cat = normalizeCategory(d.professional_title);
+            if (cat === 'UI/UX Designer') effectiveU = totalMonthlyPts;
+            else effectiveG = totalMonthlyPts;
+          }
+
+          designersEffectivePoints[d.user_id] = { graphic: effectiveG, uiux: effectiveU };
+          effectiveTotals.graphic += effectiveG;
+          effectiveTotals.uiux += effectiveU;
+        });
 
         await Promise.all(
           allDesigners.map((designer: any) => {
@@ -984,16 +1019,9 @@ const SuperAdminDashboard = () => {
               return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
 
-            const monthlyPts = Number(designer.monthly_points || 0);
-            if (monthlyPts <= 0) {
-              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
-            }
-            const dp = designerCategoryPoints[designer.user_id] || { graphic: 0, uiux: 0 };
-            if (dp.graphic <= 0 && dp.uiux <= 0) {
-              return supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).eq('user_id', designer.user_id);
-            }
-            const graphicSalary = totals.graphic > 0 ? (dp.graphic / totals.graphic) * (graphicAmt * shareRatio) : 0;
-            const uiuxSalary = totals.uiux > 0 ? (dp.uiux / totals.uiux) * (uiuxAmt * shareRatio) : 0;
+            const ep = designersEffectivePoints[designer.user_id] || { graphic: 0, uiux: 0 };
+            const graphicSalary = effectiveTotals.graphic > 0 ? (ep.graphic / effectiveTotals.graphic) * (graphicAmt * shareRatio) : 0;
+            const uiuxSalary = effectiveTotals.uiux > 0 ? (ep.uiux / effectiveTotals.uiux) * (uiuxAmt * shareRatio) : 0;
             const totalSalary = graphicSalary + uiuxSalary;
             const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
             return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
@@ -1022,10 +1050,10 @@ const SuperAdminDashboard = () => {
       return;
     }
     try {
-      await supabase.from('submissions').update({ 
-        status: 'correction_requested', 
+      await supabase.from('submissions').update({
+        status: 'correction_requested',
         rejection_reason: correctionNote.trim(),
-        updated_at: new Date().toISOString() 
+        updated_at: new Date().toISOString()
       } as any).eq('id', correctionRequestSubmission.id);
       if (user) {
         await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() });
@@ -1094,12 +1122,12 @@ const SuperAdminDashboard = () => {
       const currentDate = new Date();
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
-      
+
       const { error } = await supabase.functions.invoke('generate-monthly-report', {
         body: { month, year },
       });
       if (error) throw error;
-      
+
       toast({ title: 'Snapshot Generated', description: `Monthly report for ${format(currentDate, 'MMMM yyyy')} created.` });
       await loadDashboardDataSafe();
     } catch (error: any) {
@@ -1171,46 +1199,46 @@ const SuperAdminDashboard = () => {
   const handleDeleteDesigner = async (targetUser: User) => {
     try {
       setIsDeleting(true);
-      
+
       // Delete in order: submissions, designer_details, user_roles, payments, then profile
       // Delete submissions
       await supabase
         .from('submissions')
         .delete()
         .eq('designer_id', targetUser.id);
-      
+
       // Delete designer_details
       await supabase
         .from('designer_details')
         .delete()
         .eq('user_id', targetUser.id);
-      
+
       // Delete user_roles
       await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', targetUser.id);
-      
+
       // Delete payments
       await supabase
         .from('payments')
         .delete()
         .eq('user_id', targetUser.id);
-      
+
       // Delete email verification tokens
       await supabase
         .from('email_verification_tokens')
         .delete()
         .eq('user_id', targetUser.id);
-      
+
       // Delete profile last
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', targetUser.id);
-      
+
       if (profileError) throw profileError;
-      
+
       // Log the action
       if (user) {
         await supabase.from('system_logs').insert({
@@ -1432,9 +1460,9 @@ const SuperAdminDashboard = () => {
       const currentDate = new Date();
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
-      
+
       toast({ title: 'Generating Report...', description: 'Creating monthly snapshot before reset.' });
-      
+
       const { error: reportError } = await supabase.functions.invoke('generate-monthly-report', {
         body: { month, year },
       });
@@ -1555,7 +1583,7 @@ const SuperAdminDashboard = () => {
   // Filtered data — reset page on filter change
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
-    
+
     if (selectedStatus !== 'all') {
       if (selectedStatus === 'pending') {
         filtered = filtered.filter(s => !s.ph_approved && s.status !== 'rejected');
@@ -1567,16 +1595,16 @@ const SuperAdminDashboard = () => {
         filtered = filtered.filter(s => s.status === selectedStatus);
       }
     }
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(s => 
+      filtered = filtered.filter(s =>
         s.project_name.toLowerCase().includes(query) ||
         s.designer_name.toLowerCase().includes(query) ||
         s.service_type.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   }, [submissions, selectedStatus, searchQuery]);
 
@@ -1585,15 +1613,15 @@ const SuperAdminDashboard = () => {
 
   const filteredUsers = useMemo(() => {
     let filtered = users;
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(u => 
+      filtered = filtered.filter(u =>
         (u.full_name && u.full_name.toLowerCase().includes(query)) ||
         u.email.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   }, [users, searchQuery]);
 

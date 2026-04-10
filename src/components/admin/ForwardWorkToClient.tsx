@@ -74,11 +74,11 @@ const ForwardWorkToClient = () => {
         whatsapp: c.whatsapp || '',
       })));
 
-      // Load accepted/approved submissions
+      // Load client-accepted submissions (strictly those marked as accepted by client)
       const { data: subs, error: subsError } = await supabase
         .from('submissions')
         .select('id, project_name, service_type, files_urls, design_link, client_ref, created_at, designer_id')
-        .or('status.eq.ph_approved,status.eq.approved,client_accepted.eq.true')
+        .eq('client_accepted', true)
         .order('created_at', { ascending: false });
 
       if (subsError) {
@@ -122,12 +122,14 @@ const ForwardWorkToClient = () => {
   const filteredSubmissions = useMemo(() => {
     if (!selectedClient) return submissions;
     const clientName = selectedClient.name.toLowerCase();
-    // Show submissions matching the client ref or all if no exact match
+    
+    // Show submissions matching the client ref
     const matched = submissions.filter(s =>
       s.client_ref?.toLowerCase().includes(clientName) ||
       s.project_name.toLowerCase().includes(clientName)
     );
-    return matched.length > 0 ? matched : submissions;
+    
+    return matched;
   }, [submissions, selectedClient]);
 
   const toggleSubmission = (id: string) => {
