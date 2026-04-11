@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   TrendingUp, Award, Clock, FileCheck, Upload, Wallet, Settings,
   Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap, Brain,
   RefreshCw, PlayCircle, ArrowUpRight, Flame, Target, Sparkles
@@ -12,6 +12,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
+import { MagneticEffect } from '@/components/ui/MagneticEffect';
 import DashboardLayout from '@/components/DashboardLayout';
 import AvailableJobs from '@/components/AvailableJobs';
 import EarningsChart from '@/components/dashboard/EarningsChart';
@@ -329,13 +332,26 @@ const Dashboard = () => {
   if (loading || authLoading) {
     return (
       <DashboardLayout>
-        <div className="min-h-[80vh] flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative w-16 h-16 mx-auto mb-4">
-              <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+        <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
+          <div className="flex justify-between items-end">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-8 w-64" />
             </div>
-            <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-24" />
+              <Skeleton className="h-9 w-32" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Skeleton className="h-[140px] rounded-2xl" />
+            <Skeleton className="h-[140px] rounded-2xl" />
+            <Skeleton className="h-[140px] rounded-2xl" />
+            <Skeleton className="h-[140px] rounded-2xl" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Skeleton className="h-[300px] rounded-2xl w-full" />
+            <Skeleton className="h-[300px] rounded-2xl w-full" />
           </div>
         </div>
       </DashboardLayout>
@@ -355,20 +371,24 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs" onClick={() => {
-                if (hasStartedProject) {
-                  const stored = localStorage.getItem(`started_project_${user?.id}`);
-                  const proj = stored ? JSON.parse(stored) : null;
-                  toast({ title: 'Project Already Started', description: `You must submit your work for "${proj?.title || 'your current project'}" before starting another.`, variant: 'destructive' });
-                  return;
-                }
-                setStartWorkingOpen(true);
-              }}>
-                <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Start Work
-              </Button>
-              <Button size="sm" className="text-xs bg-primary hover:bg-primary/90" onClick={() => navigate('/submit-work')}>
-                <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit Work
-              </Button>
+              <MagneticEffect intensity={0.1}>
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                  if (hasStartedProject) {
+                    const stored = localStorage.getItem(`started_project_${user?.id}`);
+                    const proj = stored ? JSON.parse(stored) : null;
+                    toast({ title: 'Project Already Started', description: `You must submit your work for "${proj?.title || 'your current project'}" before starting another.`, variant: 'destructive' });
+                    return;
+                  }
+                  setStartWorkingOpen(true);
+                }}>
+                  <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Start Work
+                </Button>
+              </MagneticEffect>
+              <MagneticEffect intensity={0.1}>
+                <Button size="sm" className="text-xs bg-primary hover:bg-primary/90" onClick={() => navigate('/submit-work')}>
+                  <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit Work
+                </Button>
+              </MagneticEffect>
             </div>
           </div>
         </motion.div>
@@ -423,17 +443,18 @@ const Dashboard = () => {
             { label: 'Est. Salary', value: showEarnings ? formatCurrency(stats.estSalary) : '••••', sub: showEarnings ? 'Based on points' : 'Hidden', icon: showEarnings ? Wallet : EyeOff, iconColor: 'text-emerald-500' },
             { label: 'Submissions', value: stats.totalSubmissions.toString(), sub: `${stats.approvedSubmissions} approved`, icon: FileCheck, iconColor: 'text-blue-500' },
           ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }}
-              className="relative group rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 sm:p-5 hover:border-primary/20 hover:bg-card/60 transition-all duration-300 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+            <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }} className="h-full">
+              <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 sm:p-5 hover:border-primary/20 hover:bg-card/60 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">{stat.value}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{stat.label}</p>
+                  <p className="text-[10px] text-primary mt-0.5 font-medium">{stat.sub}</p>
                 </div>
-                <p className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">{stat.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">{stat.label}</p>
-                <p className="text-[10px] text-primary mt-0.5 font-medium">{stat.sub}</p>
-              </div>
+              </SpotlightCard>
             </motion.div>
           ))}
         </div>
@@ -687,13 +708,15 @@ const Dashboard = () => {
             <h2 className="text-sm font-heading font-bold mb-4">Quick Actions</h2>
             <div className="space-y-2">
               {[
-                { label: hasStartedProject ? `In Progress: ${startedProjectInfo?.title}` : 'Start Work', icon: PlayCircle, action: () => {
-                  if (hasStartedProject) {
-                    toast({ title: 'Project Already Started', description: `You must submit your work for "${startedProjectInfo?.title}" before starting another.`, variant: 'destructive' });
-                    return;
-                  }
-                  setStartWorkingOpen(true);
-                }, primary: true },
+                {
+                  label: hasStartedProject ? `In Progress: ${startedProjectInfo?.title}` : 'Start Work', icon: PlayCircle, action: () => {
+                    if (hasStartedProject) {
+                      toast({ title: 'Project Already Started', description: `You must submit your work for "${startedProjectInfo?.title}" before starting another.`, variant: 'destructive' });
+                      return;
+                    }
+                    setStartWorkingOpen(true);
+                  }, primary: true
+                },
                 { label: 'Submit New Work', icon: Upload, action: () => navigate('/submit-work') },
                 { label: 'Payment Settings', icon: Wallet, action: () => navigate('/payments') },
                 { label: 'Edit Profile', icon: Settings, action: () => navigate('/edit-profile') },

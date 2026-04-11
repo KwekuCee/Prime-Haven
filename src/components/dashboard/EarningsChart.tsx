@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,11 +82,20 @@ const EarningsChart = ({ userId }: EarningsChartProps) => {
             <div className="h-40">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={byType} cx="50%" cy="50%" innerRadius={30} outerRadius={60} dataKey="points"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                    {byType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  <Pie data={byType} cx="50%" cy="50%" innerRadius={34} outerRadius={58} dataKey="points" stroke="rgba(255,255,255,0.05)" strokeWidth={2}
+                    label={({ name, percent }) => percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''} labelLine={false}>
+                    {byType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="hover:opacity-80 transition-opacity drop-shadow-md" />)}
                   </Pie>
-                  <Tooltip contentStyle={{ fontSize: 11, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                  <Tooltip
+                    contentStyle={{
+                      fontSize: 11,
+                      background: 'rgba(20, 20, 25, 0.7)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px'
+                    }}
+                    itemStyle={{ fontWeight: 'bold' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -97,12 +106,27 @@ const EarningsChart = ({ userId }: EarningsChartProps) => {
             <p className="text-[11px] text-muted-foreground mb-2 font-medium">Monthly Points</p>
             <div className="h-40">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyTrend}>
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip contentStyle={{ fontSize: 11, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                  <Bar dataKey="points" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      fontSize: 11,
+                      background: 'rgba(20, 20, 25, 0.7)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px'
+                    }}
+                    itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
+                  />
+                  <Area type="monotone" dataKey="points" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorPoints)" />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>

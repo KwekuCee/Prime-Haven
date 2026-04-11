@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Search, Briefcase, Users, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MagneticEffect } from '@/components/ui/MagneticEffect';
 import { Link } from 'react-router-dom';
 import heroBg from '@/assets/hero-bg.jpg';
 import { useTranslation } from 'react-i18next';
@@ -91,19 +92,23 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
           >
-            <Link to="/start-project">
-              <Button variant="primary" size="lg" className="group glow-primary text-base px-8">
-                <Briefcase className="w-5 h-5 mr-2" />
-                Start a Project
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="outline" size="lg" className="text-base px-8">
-                <Users className="w-5 h-5 mr-2" />
-                Join as a Freelancer
-              </Button>
-            </Link>
+            <MagneticEffect intensity={0.15}>
+              <Link to="/start-project">
+                <Button variant="primary" size="lg" className="group glow-primary text-base px-8">
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  Start a Project
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </MagneticEffect>
+            <MagneticEffect intensity={0.1}>
+              <Link to="/register">
+                <Button variant="outline" size="lg" className="text-base px-8">
+                  <Users className="w-5 h-5 mr-2" />
+                  Join as a Freelancer
+                </Button>
+              </Link>
+            </MagneticEffect>
           </motion.div>
 
           {/* Quick Stats */}
