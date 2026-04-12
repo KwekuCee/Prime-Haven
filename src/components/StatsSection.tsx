@@ -230,9 +230,7 @@ const StatsSection = () => {
               </span>
             )}
           </div>
-          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6">
-            Numbers That <span className="text-gradient">Speak</span>
-          </h2>
+          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6 text-foreground">Our Impact in <span className="text-gradient">Numbers</span></h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Our growing community of talented designers and developers continue to deliver exceptional results.
           </p>

@@ -86,7 +86,7 @@ const TestimonialsSection = () => {
             Client Stories
           </span>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            What Our <span className="text-primary">Clients Say</span>
+            What Our <span className="text-gradient">Clients Say</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
             Real words from the businesses we've helped transform digitally.
@@ -160,9 +160,8 @@ const TestimonialsSection = () => {
                     setDirection(i > current ? 1 : -1);
                     setCurrent(i);
                   }}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    i === current ? 'w-8 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60'
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${i === current ? 'w-8 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60'
+                    }`}
                   aria-label={`Go to review ${i + 1}`}
                 />
               ))}

@@ -43,8 +43,8 @@ const PortfolioSection = () => {
           className="text-center mb-16"
         >
           <span className="text-primary font-medium uppercase tracking-wider text-sm">Our Work</span>
-          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6">
-            Featured <span className="text-gradient">Projects</span>
+          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6 text-foreground">
+            Our Latest <span className="text-gradient">Work</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Explore our portfolio of innovative digital solutions crafted for clients worldwide.

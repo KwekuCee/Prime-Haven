@@ -69,7 +69,7 @@ const TeamSection = () => {
             Our People
           </span>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            Meet Our <span className="text-primary">Team</span>
+            Meet the Minds <span className="text-gradient">Behind the Magic</span>
           </h2>
           <p className="text-muted-foreground mt-4 max-w-2xl mx-auto text-lg">
             The passionate minds behind Prime Haven's mission

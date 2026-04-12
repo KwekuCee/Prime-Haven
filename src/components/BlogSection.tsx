@@ -93,8 +93,8 @@ const BlogSection = () => {
           <Badge variant="outline" className="mb-4 border-primary/50 text-primary font-semibold">
             Blog & News
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Latest from <span className="text-gradient">Prime Haven</span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+            Our <span className="text-gradient">Insights</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Stay updated with our latest news, opportunities, and insights from the creative industry.

@@ -75,7 +75,7 @@ const FAQSection = () => {
             Got Questions?
           </span>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            Frequently Asked <span className="text-primary">Questions</span>
+            Frequently Asked <span className="text-gradient">Questions</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
             Everything you need to know, whether you're a business or a freelancer.
@@ -95,8 +95,8 @@ const FAQSection = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`relative px-6 py-4 rounded-xl text-left font-semibold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
-                        ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
                       }`}
                   >
                     {activeTab === tab.id && (

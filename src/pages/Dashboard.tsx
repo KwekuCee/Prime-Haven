@@ -25,6 +25,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { useToast } from '@/hooks/use-toast';
+import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
+import AchievementBadges from '@/components/dashboard/AchievementBadges';
+import ActivityStreak from '@/components/dashboard/ActivityStreak';
+import LiveFeed from '@/components/dashboard/LiveFeed';
+import ExpectedSalaryModal from '@/components/dashboard/ExpectedSalaryModal';
 
 interface ProfileData {
   full_name: string;
@@ -95,6 +100,7 @@ const Dashboard = () => {
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [hasStartedProject, setHasStartedProject] = useState(false);
   const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
+  const [showSalaryModal, setShowSalaryModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -435,26 +441,31 @@ const Dashboard = () => {
           </motion.div>
         )}
 
+        <ProfileCompleteness profile={profile} designer={designer} submissions={submissions} />
+        <AchievementBadges designer={designer} submissions={submissions} />
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
             { label: 'Total Points', value: stats.totalPoints.toLocaleString(), sub: `+${designer?.monthly_points || 0} this month`, icon: Flame, iconColor: 'text-primary' },
             { label: 'Rank', value: stats.monthlyRank > 0 ? `#${stats.monthlyRank}` : '—', sub: `of ${stats.totalDesigners} designers`, icon: Trophy, iconColor: 'text-yellow-500' },
-            { label: 'Est. Salary', value: showEarnings ? formatCurrency(stats.estSalary) : '••••', sub: showEarnings ? 'Based on points' : 'Hidden', icon: showEarnings ? Wallet : EyeOff, iconColor: 'text-emerald-500' },
+            { label: 'Est. Salary', value: showEarnings ? formatCurrency(stats.estSalary) : '••••', sub: showEarnings ? 'Click for breakdown' : 'Hidden', icon: showEarnings ? Wallet : EyeOff, iconColor: 'text-emerald-500', action: 'EST_SALARY' },
             { label: 'Submissions', value: stats.totalSubmissions.toString(), sub: `${stats.approvedSubmissions} approved`, icon: FileCheck, iconColor: 'text-blue-500' },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }} className="h-full">
-              <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 sm:p-5 hover:border-primary/20 hover:bg-card/60 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+              <div onClick={() => { if (stat.action === 'EST_SALARY') setShowSalaryModal(true); }} className={`h-full ${stat.action && 'cursor-pointer'}`}>
+                <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 sm:p-5 hover:border-primary/20 hover:bg-card/60 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                    </div>
+                    <p className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">{stat.value}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{stat.label}</p>
+                    <p className="text-[10px] text-primary mt-0.5 font-medium">{stat.sub}</p>
                   </div>
-                  <p className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">{stat.value}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">{stat.label}</p>
-                  <p className="text-[10px] text-primary mt-0.5 font-medium">{stat.sub}</p>
-                </div>
-              </SpotlightCard>
+                </SpotlightCard>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -474,6 +485,8 @@ const Dashboard = () => {
             </div>
           </motion.div>
         )}
+
+        <ActivityStreak submissions={submissions} />
 
         {/* Available Jobs */}
         <AvailableJobs />
@@ -576,67 +589,9 @@ const Dashboard = () => {
 
         {/* Three Column Grid: Submissions, Leaderboard, Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Recent Submissions */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-            className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-heading font-bold">Recent Submissions</h2>
-              <Badge variant="outline" className="text-[10px] px-2 py-0">{submissions.length}</Badge>
-            </div>
-            {submissions.length > 0 ? (
-              <div className="space-y-1">
-                {submissions.slice(0, 6).map((sub) => {
-                  const type = getActivityType(sub);
-                  return (
-                    <div key={sub.id} className="group p-3 rounded-xl hover:bg-muted/30 transition-colors">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2.5 min-w-0">
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${getStatusColor(type)}`} />
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold truncate">{sub.project_name}</p>
-                            <p className="text-[10px] text-muted-foreground">{getActivityLabel(type)}</p>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          {sub.points_awarded > 0 && (
-                            <p className="text-[10px] text-primary font-bold">+{sub.points_awarded}</p>
-                          )}
-                          <p className="text-[9px] text-muted-foreground flex items-center gap-0.5 justify-end">
-                            <Clock className="w-2.5 h-2.5" />{getTimeAgo(sub.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                      {(type === 'rejected' || type === 'client_rejected') && sub.rejection_reason && (
-                        <div className="mt-2 ml-4 p-2 rounded-lg bg-red-500/5 border border-red-500/10">
-                          <p className="text-[10px] text-red-400">{sub.rejection_reason}</p>
-                        </div>
-                      )}
-                      {type === 'correction_requested' && (
-                        <>
-                          {sub.rejection_reason && (
-                            <div className="mt-2 ml-4 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
-                              <p className="text-[10px] text-amber-400">{sub.rejection_reason}</p>
-                            </div>
-                          )}
-                          <div className="mt-2 ml-4">
-                            <Button size="sm" variant="outline"
-                              className="h-6 text-[10px] border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-white"
-                              onClick={() => navigate(`/submit-work?correction=${sub.id}&project=${encodeURIComponent(sub.project_name)}&client=${encodeURIComponent(sub.client_ref || '')}&service=${sub.service_type || 'logo'}`)}>
-                              Submit Correction
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileCheck className="w-8 h-8 text-muted mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No submissions yet</p>
-              </div>
-            )}
+          {/* Live Feed (Replaces original Recent Submissions) */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            <LiveFeed submissions={submissions} activeJobs={activeJobs} />
           </motion.div>
 
           {/* Leaderboard */}
@@ -768,6 +723,13 @@ const Dashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExpectedSalaryModal
+        open={showSalaryModal}
+        onOpenChange={setShowSalaryModal}
+        submissions={submissions}
+        formatCurrency={formatCurrency}
+      />
     </DashboardLayout>
   );
 };

@@ -23,9 +23,9 @@ const ValueBentoGrid = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl font-heading font-bold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70"
+                        className="text-4xl md:text-5xl font-heading font-bold mb-6 tracking-tight text-foreground"
                     >
-                        Built for the modern digital era.
+                        Built for the <span className="text-gradient">modern digital era.</span>
                     </motion.h2>
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
@@ -134,7 +134,7 @@ const ValueBentoGrid = () => {
                             <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-500/20 text-blue-400 mb-6 group-hover:scale-110 transition-transform duration-500">
                                 <Globe className="w-6 h-6" />
                             </div>
-                            <h3 className="text-xl font-heading font-bold mb-3 text-white">Global Reach & Standards</h3>
+                            <h3 className="text-xl font-heading font-bold mb-3 text-foreground dark:text-white">Global Reach & Standards</h3>
                             <p className="text-blue-200/60 text-sm">
                                 Borderless talent pool operating under strict international design standards. We deliver Silicon Valley quality, globally accessible.
                             </p>
