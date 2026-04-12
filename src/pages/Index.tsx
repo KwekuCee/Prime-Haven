@@ -10,6 +10,11 @@ import TeamSection from '@/components/TeamSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import FAQSection from '@/components/FAQSection';
 import BlogSection from '@/components/BlogSection';
+import ValueBentoGrid from '@/components/ValueBentoGrid';
+import CommunityPulse from '@/components/CommunityPulse';
+import ProcessTimeline from '@/components/ProcessTimeline';
+import ProjectEstimator from '@/components/ProjectEstimator';
+import GlobalPresence from '@/components/GlobalPresence';
 import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
@@ -48,15 +53,20 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
+        <CommunityPulse />
+        <ValueBentoGrid />
+        <ProcessTimeline />
         <ServicesSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={101} />
         <PortfolioSection />
+        <ProjectEstimator />
         <StatsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={102} />
         <FounderSection />
         <TeamSection />
+        <GlobalPresence />
         <TestimonialsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={103} />
