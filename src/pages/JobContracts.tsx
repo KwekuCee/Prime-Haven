@@ -277,6 +277,27 @@ const JobContracts = () => {
         .eq('id', contract.id);
       if (error) throw error;
 
+      // Sync with client_projects table where applicable
+      if (contract.title && contract.client_name) {
+        const projectStatusMap: Record<string, string> = {
+          active: 'pending',
+          in_progress: 'in_progress',
+          completed: 'completed',
+          cancelled: 'on_hold'
+        };
+        const syncedStatus = projectStatusMap[newStatus] || newStatus;
+
+        const { error: projError } = await supabase
+          .from('client_projects')
+          .update({ status: syncedStatus })
+          .eq('title', contract.title)
+          .eq('client_name', contract.client_name);
+
+        if (projError) {
+          console.error("Optionally skipped project sync: ", projError);
+        }
+      }
+
       if (contract.discord_message_id && contract.discord_channel_id) {
         try {
           await supabase.functions.invoke('post-job-contract', {

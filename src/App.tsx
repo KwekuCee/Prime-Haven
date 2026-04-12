@@ -28,25 +28,25 @@ const StartProject = lazy(() => import("./pages/StartProject"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
 const VisitorTracker = lazy(() => import("./components/VisitorTracker"));
 
-// Eagerly load dashboard pages for instant navigation
-import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
-import Payments from "./pages/Payments";
-import SubmitWork from "./pages/SubmitWork";
-import EditProfile from "./pages/EditProfile";
-import Messages from "./pages/Messages";
-import Install from "./pages/Install";
+// Lazy load dashboard pages for better initial bundle size
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Payments = lazy(() => import("./pages/Payments"));
+const SubmitWork = lazy(() => import("./pages/SubmitWork"));
+const EditProfile = lazy(() => import("./pages/EditProfile"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Install = lazy(() => import("./pages/Install"));
 
-// Eagerly load admin pages for instant navigation
-import SuperAdminDashboard from "./pages/SuperAdminDashboard";
-import UIUXAdminDashboard from "./pages/UIUXAdminDashboard";
-import WebDevAdminDashboard from "./pages/WebDevAdminDashboard";
-import ManagePortfolio from "./pages/ManagePortfolio";
-import JobContracts from "./pages/JobContracts";
-import ManageClientProjects from "./pages/ManageClientProjects";
-import ManagePricing from "./pages/ManagePricing";
-import ManageClients from "./pages/ManageClients";
-import ForwardWork from "./pages/ForwardWork";
+// Lazy load admin pages for better initial bundle size
+const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
+const UIUXAdminDashboard = lazy(() => import("./pages/UIUXAdminDashboard"));
+const WebDevAdminDashboard = lazy(() => import("./pages/WebDevAdminDashboard"));
+const ManagePortfolio = lazy(() => import("./pages/ManagePortfolio"));
+const JobContracts = lazy(() => import("./pages/JobContracts"));
+const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
+const ManagePricing = lazy(() => import("./pages/ManagePricing"));
+const ManageClients = lazy(() => import("./pages/ManageClients"));
+const ForwardWork = lazy(() => import("./pages/ForwardWork"));
 
 const queryClient = new QueryClient();
 
