@@ -100,42 +100,55 @@ const TeamSection = () => {
                 </motion.div>
               )}
 
-              <div className={`grid gap-12 max-w-5xl mx-auto ${
-                tierMembers.length === 1 ? 'grid-cols-1 max-w-lg' :
-                isCsuite && tierMembers.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-              }`}>
+              <div className={`grid gap-4 max-w-6xl mx-auto ${tierMembers.length === 1 ? 'grid-cols-1 max-w-md' :
+                isCsuite && tierMembers.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl' :
+                  'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                }`}>
                 {tierMembers.map((member, i) => (
                   <motion.div
                     key={member.id}
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: i * 0.15 }}
-                    className="flex flex-col items-center text-center"
+                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                    className={`group relative overflow-hidden rounded-[1.5rem] bg-card/20 cursor-pointer ${isCsuite ? 'aspect-[4/5]' : 'aspect-square'
+                      }`}
                   >
-                    <div className="relative group mb-6">
-                      <div className={`absolute -inset-3 rounded-2xl bg-gradient-to-br ${tier?.accent || 'from-primary/10 to-transparent'} opacity-50 blur-sm group-hover:opacity-70 transition-opacity duration-500`} />
-                      <div className={`relative ${isCsuite ? 'w-56 h-64 sm:w-64 sm:h-72' : 'w-44 h-52 sm:w-52 sm:h-60'} rounded-2xl overflow-hidden border-2 border-primary/30 bg-card`}>
-                        {member.photo_url ? (
-                          <img
-                            src={member.photo_url}
-                            alt={member.full_name}
-                            loading="eager"
-                            decoding="async"
-                            className="w-full h-full object-cover object-top bg-muted"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <Users className="w-16 h-16 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
+                    {/* The Full Rectangular Image */}
+                    <div className="absolute inset-0">
+                      {member.photo_url ? (
+                        <img
+                          src={member.photo_url}
+                          alt={member.full_name}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted/60">
+                          <Users className="w-16 h-16 text-muted-foreground/30" />
+                        </div>
+                      )}
                     </div>
 
-                    <h3 className={`font-bold text-foreground ${isCsuite ? 'text-2xl' : 'text-xl'}`}>{member.full_name}</h3>
-                    <p className="text-primary font-semibold mt-1">{member.role_title}</p>
-                    <p className="text-muted-foreground mt-3 leading-relaxed max-w-md text-sm">{member.bio}</p>
+                    {/* Static Title Gradient Drop */}
+                    <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/80 to-transparent p-6 z-10 transition-opacity duration-300 group-hover:opacity-0">
+                      <h3 className="font-bold font-heading text-foreground drop-shadow-md text-xl">{member.full_name}</h3>
+                      <p className="text-primary font-semibold mt-1 text-xs uppercase tracking-wider drop-shadow-md">{member.role_title}</p>
+                    </div>
+
+                    {/* Stacked Glassmorphism Card (Displays on Hover) */}
+                    <div className="absolute inset-x-2 bottom-2 top-2 p-6 rounded-xl glass border border-primary/20 bg-background/60 backdrop-blur-xl opacity-0 translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out z-20 flex flex-col justify-end shadow-2xl">
+                      <h3 className={`font-bold font-heading text-foreground ${isCsuite ? 'text-3xl' : 'text-2xl'}`}>
+                        {member.full_name}
+                      </h3>
+                      <p className="text-primary font-bold mt-1 text-sm uppercase tracking-wider">{member.role_title}</p>
+
+                      <div className="h-px bg-border/50 my-4" />
+
+                      <p className="text-foreground/90 text-sm font-medium leading-relaxed overflow-y-auto pr-2 custom-scrollbar max-h-[50%]">
+                        {member.bio}
+                      </p>
+                    </div>
                   </motion.div>
                 ))}
               </div>

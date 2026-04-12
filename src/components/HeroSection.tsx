@@ -50,86 +50,88 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="container mx-auto px-6 relative z-10 pt-20">
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full mb-8"
-          >
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground font-medium">Ghana's Premier Freelance Design & Tech Hub</span>
-          </motion.div>
+        <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
+          <div className="text-center">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full mb-8 mx-auto"
+            >
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground font-medium">Ghana's Premier Freelance Design & Tech Hub</span>
+            </motion.div>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-heading font-bold leading-tight mb-6"
-          >
-            Find Top{' '}
-            <span className="text-gradient">Creative Talent</span>
-            <br />
-            or Get Hired
-          </motion.h1>
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight mb-6"
+            >
+              Find Top{' '}
+              <span className="text-gradient">Creative Talent</span>
+              <br />
+              or Get Hired
+            </motion.h1>
 
-          {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto px-2"
-          >
-            Post your project and get matched with skilled designers & developers, or join as a freelancer and start earning.
-          </motion.p>
+            {/* Subheadline */}
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto px-2 lg:px-0"
+            >
+              Post your project and get matched with skilled designers & developers, or join as a freelancer and start earning.
+            </motion.p>
 
-          {/* Dual CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
-          >
-            <MagneticEffect intensity={0.15}>
-              <Link to="/start-project">
-                <Button variant="primary" size="lg" className="group glow-primary text-base px-8">
-                  <Briefcase className="w-5 h-5 mr-2" />
-                  Start a Project
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            </MagneticEffect>
-            <MagneticEffect intensity={0.1}>
-              <Link to="/register">
-                <Button variant="outline" size="lg" className="text-base px-8">
-                  <Users className="w-5 h-5 mr-2" />
-                  Join as a Freelancer
-                </Button>
-              </Link>
-            </MagneticEffect>
-          </motion.div>
+            {/* Dual CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14"
+            >
+              <MagneticEffect intensity={0.15}>
+                <Link to="/start-project">
+                  <Button variant="primary" size="lg" className="group glow-primary text-base px-8 h-12">
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    Start a Project
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </MagneticEffect>
+              <MagneticEffect intensity={0.1}>
+                <Link to="/register">
+                  <Button variant="outline" size="lg" className="text-base px-8 h-12 bg-background/50 backdrop-blur-md">
+                    <Users className="w-5 h-5 mr-2" />
+                    Join as Freelancer
+                  </Button>
+                </Link>
+              </MagneticEffect>
+            </motion.div>
 
-          {/* Quick Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 md:gap-12"
-          >
-            {quickStats.map((stat) => (
-              <div key={stat.label} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="w-5 h-5 text-primary" />
+            {/* Quick Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 lg:gap-12"
+            >
+              {quickStats.map((stat) => (
+                <div key={stat.label} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <stat.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-lg font-bold">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="text-lg font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+              ))}
+            </motion.div>
+          </div>
         </div>
 
         {/* Scroll Indicator */}

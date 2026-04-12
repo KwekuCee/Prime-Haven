@@ -9,6 +9,7 @@ import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
+import { TechStackLoader } from "./components/ui/TechStackLoader";
 
 // Lazy-loaded pages for non-dashboard routes
 const Register = lazy(() => import("./pages/Register"));
@@ -67,7 +68,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>}>
+              <Suspense fallback={<TechStackLoader />}>
                 <InstallPrompt />
                 <VisitorTracker />
                 <GlobalCommandPalette />

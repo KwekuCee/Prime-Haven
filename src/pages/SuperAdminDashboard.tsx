@@ -1970,7 +1970,7 @@ const SuperAdminDashboard = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="text-[10px]">{userItem.user_roles?.[0]?.role || 'designer'}</Badge>
+                                <Badge variant="outline" className="text-[10px]">{userItem.designer_details?.professional_title || userItem.user_roles?.[0]?.role || 'Designer'}</Badge>
                               </TableCell>
                               <TableCell>
                                 <Badge variant={!userItem.is_active ? 'destructive' : userItem.registration_fee_paid ? 'default' : 'outline'} className="text-[10px]">
@@ -2066,7 +2066,7 @@ const SuperAdminDashboard = () => {
                             </DropdownMenu>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                            <Badge variant="outline" className="text-[10px]">{userItem.user_roles?.[0]?.role || 'designer'}</Badge>
+                            <Badge variant="outline" className="text-[10px]">{userItem.designer_details?.professional_title || userItem.user_roles?.[0]?.role || 'Designer'}</Badge>
                             <span className="text-primary font-bold">{userItem.designer_details?.total_points || 0} pts</span>
                             <span className="font-medium">GH₵{(userItem.designer_details?.salary_estimated || 0).toFixed(2)}</span>
                             <Badge variant={isPaid ? 'default' : 'outline'} className={`text-[10px] ${isPaid ? 'bg-emerald-600' : ''}`}>{isPaid ? '✓ Paid' : 'Unpaid'}</Badge>

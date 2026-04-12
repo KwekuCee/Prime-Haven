@@ -226,7 +226,7 @@ const Dashboard = () => {
         const [profileResult, designerResult, submissionsResult, designersResult, profilesResult, settingsResult] = await Promise.all([
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
           supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at').eq('user_id', user.id).maybeSingle(),
-          supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }).limit(10),
+          supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }),
           supabase.from('leaderboard_designer_details').select('user_id, total_points, monthly_points, professional_title, talent_score').order('total_points', { ascending: false }),
           supabase.from('leaderboard_profiles').select('id, full_name'),
           supabase.from('system_settings').select('key, value')
@@ -647,53 +647,31 @@ const Dashboard = () => {
               <Trophy className="w-4 h-4 text-yellow-500" />
             </div>
             {leaderboard.length > 0 ? (
-              <Tabs defaultValue={normalizeCategory(designer?.professional_title || null)} className="w-full">
-                <TabsList className="w-full mb-3 h-8 gap-0.5 bg-muted/40">
-                  {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((cat) => (
-                    <TabsTrigger key={cat} value={cat} className="text-[10px] flex-1 min-w-0 h-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-                      {cat.replace('Designer', '').replace('Developer', 'Dev').trim()}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map((cat) => {
-                  const filtered = leaderboard
-                    .filter(e => normalizeCategory(e.professional_title) === cat)
-                    .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
-                    .slice(0, 8);
-                  return (
-                    <TabsContent key={cat} value={cat} className="mt-0">
-                      {filtered.length > 0 ? (
-                        <div className="space-y-1">
-                          {filtered.map((entry, idx) => {
-                            const isMe = entry.user_id === user?.id;
-                            return (
-                              <div key={entry.user_id}
-                                className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20'}`}>
-                                <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
-                                  {getRankIcon(idx + 1)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : ''}`}>
-                                    {entry.full_name} {isMe && <span className="text-[9px] opacity-60">(You)</span>}
-                                  </p>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                  <p className="text-xs font-bold">{entry.total_points}</p>
-                                  {entry.talent_score > 0 && (
-                                    <span className="text-[9px] text-primary">⚡{entry.talent_score}</span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+              <div className="space-y-1 mt-3">
+                {leaderboard
+                  .sort((a, b) => (b.total_points || 0) - (a.total_points || 0))
+                  .slice(0, 8)
+                  .map((entry, idx) => {
+                    const isMe = entry.user_id === user?.id;
+                    return (
+                      <div key={entry.user_id}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20'}`}>
+                        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                          {getRankIcon(idx + 1)}
                         </div>
-                      ) : (
-                        <p className="text-center py-6 text-xs text-muted-foreground">No designers yet</p>
-                      )}
-                    </TabsContent>
-                  );
-                })}
-              </Tabs>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : ''}`}>
+                            {entry.full_name} {isMe && <span className="text-[9px] opacity-60">(You)</span>}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xs font-bold text-primary">{entry.total_points || 0} pts</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.professional_title}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             ) : (
               <div className="text-center py-8">
                 <Trophy className="w-8 h-8 text-muted mx-auto mb-2" />

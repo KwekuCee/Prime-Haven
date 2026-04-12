@@ -51,54 +51,58 @@ const PortfolioSection = () => {
           </p>
         </motion.div>
 
-        {/* Portfolio Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
-            <motion.div
-              key={project.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-            >
-              <a
-                href={project.project_url || project.image_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <motion.div
-                  whileHover={{ y: -8 }}
-                  className="group relative overflow-hidden rounded-2xl glass cursor-pointer"
+        {/* Automated Infinite Carousel Track */}
+        <div className="relative w-full overflow-hidden py-10 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="absolute inset-y-0 left-0 w-1/6 md:w-1/4 bg-gradient-to-r from-secondary/30 via-secondary/10 to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-1/6 md:w-1/4 bg-gradient-to-l from-secondary/30 via-secondary/10 to-transparent z-10 pointer-events-none" />
+
+          <motion.div
+            className="flex gap-6 w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ ease: "linear", duration: 35, repeat: Infinity }}
+          >
+            {[...projects, ...projects, ...projects].map((project, index) => (
+              <div key={`${project.id}-${index}`} className="w-[300px] md:w-[400px] shrink-0">
+                <a
+                  href={project.project_url || project.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block h-full"
                 >
-                  {/* Image */}
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img
-                      src={project.image_url}
-                      alt={project.title}
-                      loading="eager"
-                      decoding="async"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 bg-muted"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
-                  </div>
-
-                  {/* Content Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <span className="text-primary text-sm font-medium">{project.category}</span>
-                    <h3 className="text-xl font-heading font-bold mt-1 mb-1">{project.title}</h3>
-                    <p className="text-muted-foreground text-sm">{project.client}</p>
-                  </div>
-
-                  {/* Hover Icon */}
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                      <ExternalLink className="w-5 h-5 text-primary-foreground" />
+                  <motion.div
+                    whileHover={{ y: -8 }}
+                    className="group relative overflow-hidden rounded-2xl glass cursor-pointer h-full"
+                  >
+                    {/* Image */}
+                    <div className="aspect-[4/3] overflow-hidden">
+                      <img
+                        src={project.image_url}
+                        alt={project.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 bg-muted"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-90" />
                     </div>
-                  </div>
-                </motion.div>
-              </a>
-            </motion.div>
-          ))}
+
+                    {/* Content Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                      <span className="text-primary text-sm font-medium">{project.category}</span>
+                      <h3 className="text-xl font-heading font-bold mt-1 mb-1">{project.title}</h3>
+                      <p className="text-muted-foreground text-sm">{project.client}</p>
+                    </div>
+
+                    {/* Hover Icon */}
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                        <ExternalLink className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                    </div>
+                  </motion.div>
+                </a>
+              </div>
+            ))}
+          </motion.div>
         </div>
 
         {/* View All Button */}

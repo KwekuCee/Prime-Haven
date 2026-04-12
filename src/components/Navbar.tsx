@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -40,7 +45,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8 glass px-8 py-2.5 rounded-full border border-primary/20 shadow-sm">
             {navItems.map((item) => (
               <motion.a
                 key={item.name}
@@ -55,8 +60,27 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <LanguageSwitcher />
-            <ThemeToggle />
+            <div className="glass p-1 rounded-full flex items-center border border-primary/20">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-9 px-4 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
+                    <Settings className="w-4 h-4 mr-2" />
+                    <span className="text-sm font-medium">Options</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="glass border-primary/20 bg-card/80 p-2 rounded-xl mt-2 w-56 space-y-1 z-[100]">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-primary/5 transition-colors cursor-default">
+                    <span className="text-sm font-medium text-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-primary/5 transition-colors cursor-default">
+                    <span className="text-sm font-medium text-foreground">Language</span>
+                    <LanguageSwitcher />
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             <Link to="/login">
               <Button variant="ghost" className="text-foreground hover:text-primary">
                 {t('nav.login')}

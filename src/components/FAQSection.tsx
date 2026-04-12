@@ -82,50 +82,64 @@ const FAQSection = () => {
           </p>
         </motion.div>
 
-        {/* Tab Switcher */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex rounded-full bg-card border border-border p-1 gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  activeTab === tab.id
-                    ? 'bg-primary text-primary-foreground shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        {/* Dual Pane Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 max-w-6xl mx-auto mt-16">
+
+          {/* Sticky Sidebar Tab Switcher */}
+          <div className="lg:col-span-4 relative">
+            <div className="sticky top-32 space-y-6">
+              <h3 className="text-2xl font-bold font-heading border-b border-border/50 pb-4">Select Category</h3>
+              <div className="flex flex-col gap-4">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative px-6 py-4 rounded-xl text-left font-semibold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
+                        ? 'text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    {activeTab === tab.id && (
+                      <>
+                        <div className="absolute inset-0 bg-primary/10 blur-xl pointer-events-none" />
+                        <motion.div layoutId="faqTab" className="absolute left-0 top-1/4 bottom-1/4 w-1.5 bg-primary rounded-r-full shadow-[0_0_15px_hsl(var(--primary))]" />
+                      </>
+                    )}
+                    <span className="relative z-10">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Glowing Accordion Items */}
+          <div className="lg:col-span-8">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Accordion type="single" collapsible className="space-y-4">
+                {activeFAQs.map((faq, i) => (
+                  <AccordionItem
+                    key={i}
+                    value={`item-${i}`}
+                    className="border-b border-border/50 py-2 data-[state=open]:border-primary/40 transition-colors duration-300 relative group"
+                  >
+                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-[[data-state=open]]:opacity-100 blur-3xl transition-opacity duration-500 pointer-events-none -z-10" />
+                    <AccordionTrigger className="text-left text-foreground hover:no-underline py-6 text-lg lg:text-xl font-medium [&[data-state=open]>div]:text-primary transition-colors relative z-10">
+                      <div>{faq.q}</div>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed pb-8 text-base relative z-10">
+                      {faq.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </motion.div>
           </div>
         </div>
-
-        {/* FAQ Accordion */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="max-w-3xl mx-auto"
-        >
-          <Accordion type="single" collapsible className="space-y-3">
-            {activeFAQs.map((faq, i) => (
-              <AccordionItem
-                key={i}
-                value={`item-${i}`}
-                className="border border-border rounded-xl px-6 bg-card/60 backdrop-blur-sm data-[state=open]:border-primary/30 data-[state=open]:shadow-md transition-all"
-              >
-                <AccordionTrigger className="text-left text-foreground hover:no-underline py-5 text-base">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </motion.div>
       </div>
     </section>
   );

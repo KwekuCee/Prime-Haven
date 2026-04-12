@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,6 +67,36 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    let dynamicContext = "";
+
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { count: totalMembers } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_active", true);
+        const { count: totalSubmissions } = await supabase.from("submissions").select("*", { count: "exact", head: true });
+        const { count: activeProjects } = await supabase.from("submissions").select("*", { count: "exact", head: true }).in('status', ['pending']);
+
+        const { data: topDesigners } = await supabase
+          .from("designer_details")
+          .select("total_points, professional_title, profiles(full_name)")
+          .order("total_points", { ascending: false })
+          .limit(3);
+
+        const topDesignersStr = topDesigners?.map((d: any) => `${d.profiles?.full_name || 'Anonymous'} (${d.professional_title || 'Designer'} with ${d.total_points} total points)`).join(', ') || 'N/A';
+
+        dynamicContext = `\n\n## Live System Context (Real-time Platform Data)\n` +
+          `- Total Active Platform Members: ${totalMembers || 0}\n` +
+          `- Total Submissions Received: ${totalSubmissions || 0}\n` +
+          `- Currently Pending Projects: ${activeProjects || 0}\n` +
+          `- Current Top 3 Designers on Leaderboard: ${topDesignersStr}\n` +
+          `Use these live stats to answer questions about platform engagement, the community size, or the best designers on the platform.`;
+      } catch (err) {
+        console.error("Error fetching dynamic stats:", err);
+      }
+    }
+
     const body = await req.json();
     const messages = body?.messages;
 
@@ -93,7 +124,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: SYSTEM_PROMPT + dynamicContext },
           ...messages,
         ],
         stream: true,
