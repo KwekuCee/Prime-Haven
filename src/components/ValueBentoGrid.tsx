@@ -23,7 +23,7 @@ const ValueBentoGrid = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl font-heading font-bold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-wb from-white to-white/70"
+                        className="text-4xl md:text-5xl font-heading font-bold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70"
                     >
                         Built for the modern digital era.
                     </motion.h2>
