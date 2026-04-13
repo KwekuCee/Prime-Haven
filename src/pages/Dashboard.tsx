@@ -43,7 +43,7 @@ interface DesignerData {
   salary_estimated: number;
   professional_title: string;
   talent_score: number;
-  talent_score_breakdown: any;
+  talent_score_breakdown: Record<string, unknown> | null;
   talent_score_updated_at: string;
 }
 
@@ -139,7 +139,8 @@ const Dashboard = () => {
       .then(({ data, error }) => {
         if (error) console.error('Error fetching jobs:', error);
         // Filter out graphic-design contracts that already have 2+ designers
-        const filtered = (data || []).filter((job: any) => {
+        type JobRow = { id: string; title?: string; category?: string; active_designers_count?: number; active_designer_ids?: string[] };
+        const filtered = (data || []).filter((job: JobRow) => {
           if (job.category === 'graphic-design' && (job.active_designers_count || 0) >= 2) {
             return false;
           }
@@ -190,16 +191,17 @@ const Dashboard = () => {
           .eq('id', selectedJob.id)
           .single();
 
-        const currentCount = (contractData as any)?.active_designers_count || 0;
-        const currentIds = (contractData as any)?.active_designer_ids || [];
+        const contractRow = contractData as { active_designers_count?: number; active_designer_ids?: string[] } | null;
+        const currentCount = contractRow?.active_designers_count || 0;
+        const currentIds = contractRow?.active_designer_ids || [];
 
         // Only increment if this designer hasn't already started
-        if (!currentIds.includes(user.id)) {
+          if (!currentIds.includes(user.id)) {
           const newIds = [...currentIds, user.id];
           const newCount = currentCount + 1;
           await supabase
             .from('job_contracts')
-            .update({ active_designers_count: newCount, active_designer_ids: newIds } as any)
+            .update({ active_designers_count: newCount, active_designer_ids: newIds })
             .eq('id', selectedJob.id);
         }
       }
@@ -241,16 +243,19 @@ const Dashboard = () => {
         if (designerResult.data) setDesigner(designerResult.data);
         if (submissionsResult.data) setSubmissions(submissionsResult.data);
 
-        const profilesMap = new Map((profilesResult.data || []).map((p: any) => [p.id, p.full_name]));
+        const profilesMap = new Map((profilesResult.data || []).map((p: { id: string; full_name?: string }) => [p.id, p.full_name]));
         if (designersResult.data && designersResult.data.length > 0) {
-          const processedLeaderboard: LeaderboardEntry[] = designersResult.data.map((entry: any) => ({
-            user_id: entry.user_id,
-            full_name: profilesMap.get(entry.user_id) || 'Anonymous',
-            total_points: entry.total_points || 0,
-            monthly_points: entry.monthly_points || 0,
-            professional_title: entry.professional_title || 'Designer',
-            talent_score: entry.talent_score || 0,
-          }));
+          const processedLeaderboard: LeaderboardEntry[] = designersResult.data.map((entry: { user_id: string; total_points?: number; monthly_points?: number; professional_title?: string; talent_score?: number }) => {
+            const profTitle = entry.professional_title ? String(entry.professional_title).trim() : '';
+            return {
+              user_id: entry.user_id,
+              full_name: profilesMap.get(entry.user_id) || 'Anonymous',
+              total_points: entry.total_points || 0,
+              monthly_points: entry.monthly_points || 0,
+              professional_title: profTitle || 'Designer',
+              talent_score: entry.talent_score || 0,
+            } as LeaderboardEntry;
+          });
           setLeaderboard(processedLeaderboard);
 
           const userCategory = normalizeCategory(designerResult.data?.professional_title || null);
@@ -261,9 +266,13 @@ const Dashboard = () => {
 
           let monthlyRevenue = 0;
           if (settingsResult.data) {
-            const s: any = {};
-            settingsResult.data.forEach((item: any) => { s[item.key] = item.value; });
-            monthlyRevenue = s.monthly_revenue?.amount || 0;
+            const s: Record<string, unknown> = {};
+            (settingsResult.data as { key: string; value: unknown }[]).forEach((item) => { s[item.key] = item.value; });
+            const mr = s.monthly_revenue;
+            if (mr && typeof mr === 'object' && 'amount' in (mr as Record<string, unknown>)) {
+              const amt = (mr as Record<string, unknown>)['amount'];
+              monthlyRevenue = Number((amt as number) || 0);
+            }
           }
 
           setStats({
@@ -272,7 +281,7 @@ const Dashboard = () => {
             totalDesigners: categoryLeaderboard.length,
             estSalary: designerResult.data?.salary_estimated || 0,
             totalSubmissions: submissionsResult.data?.length || 0,
-            approvedSubmissions: submissionsResult.data?.filter((s: any) => s.status === 'approved' || s.client_accepted).length || 0,
+            approvedSubmissions: submissionsResult.data?.filter((sub: Submission) => sub.status === 'approved' || sub.client_accepted).length || 0,
             monthlyRevenue,
           });
         }

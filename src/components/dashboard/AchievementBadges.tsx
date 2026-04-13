@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Medal, Star, Flame, Target, Trophy, Crown, CheckCircle2 } from 'lucide-react';
-import { SpotlightCard } from '@/components/ui/SpotlightCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AchievementBadgesProps {
@@ -78,20 +77,20 @@ const AchievementBadges = ({ designer, submissions }: AchievementBadgesProps) =>
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: idx * 0.1 }}
-                                    className={`relative w-10 h-10 rounded-full flex flex-col items-center justify-center text-center transition-all duration-300 border cursor-help ${badge.unlocked ? `border-primary/30 ${badge.bg} shadow-[0_0_10px_rgba(255,100,0,0.1)]` : 'border-border/30 bg-muted/50 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                                    transition={{ delay: idx * 0.06 }}
+                                    className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 cursor-help ${badge.unlocked ? `border-primary/20 ${badge.bg}` : 'border-border/20 bg-muted/10 opacity-70 grayscale hover:grayscale-0 hover:opacity-100'}`}
                                 >
                                     {badge.unlocked && (
                                         <div className="absolute -top-1 -right-1 flex items-center justify-center bg-background rounded-full">
-                                            <CheckCircle2 className="w-3.5 h-3.5 text-primary drop-shadow-md" />
+                                            <CheckCircle2 className="w-3 h-3 text-primary drop-shadow-md" />
                                         </div>
                                     )}
-                                    <badge.icon className={`w-4 h-4 ${badge.unlocked ? badge.color : 'text-muted-foreground'}`} />
+                                    <badge.icon className={`w-5 h-5 ${badge.unlocked ? badge.color : 'text-muted-foreground'}`} />
                                 </motion.div>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="flex flex-col gap-1 p-3 max-w-[200px] bg-card border-primary/20 backdrop-blur-xl">
+                            <TooltipContent side="top" className="flex flex-col gap-1 p-3 max-w-[220px] bg-card border-primary/20 backdrop-blur-xl">
                                 <p className={`text-xs font-bold ${badge.unlocked ? 'text-primary' : 'text-foreground'}`}>{badge.title}</p>
-                                <p className="text-[10px] text-muted-foreground">{badge.description}</p>
+                                <p className="text-[11px] text-muted-foreground">{badge.description}</p>
                                 {!badge.unlocked && <p className="text-[9px] text-orange-500/80 font-medium mt-1">Locked (Complete requirements to unlock)</p>}
                             </TooltipContent>
                         </Tooltip>

@@ -89,9 +89,8 @@ const ManagePortfolio = () => {
   const fetchPortfolioItems = async () => {
     try {
       setIsLoading(true);
-      // Using 'any' cast since portfolio_items table is newly created
-      const { data, error } = await (supabase as any)
-        .from('portfolio_items')
+      const { data, error } = await supabase
+        .from<PortfolioItem>('portfolio_items')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -153,8 +152,8 @@ const ManagePortfolio = () => {
         imageUrl = await uploadImage(newImageFile);
       }
 
-      const { data, error } = await (supabase as any)
-        .from('portfolio_items')
+      const { data, error } = await supabase
+        .from<PortfolioItem>('portfolio_items')
         .insert([{ ...newItem, image_url: imageUrl }])
         .select()
         .single();
@@ -184,7 +183,7 @@ const ManagePortfolio = () => {
 
   const handleDeleteItem = async (id: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('portfolio_items')
         .delete()
         .eq('id', id);
@@ -217,8 +216,8 @@ const ManagePortfolio = () => {
       if (editImageFile) {
         imageUrl = await uploadImage(editImageFile);
       }
-      const { error } = await (supabase as any)
-        .from('portfolio_items')
+      const { error } = await supabase
+        .from<PortfolioItem>('portfolio_items')
         .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: imageUrl, project_url: editForm.project_url || null })
         .eq('id', editItem.id);
 

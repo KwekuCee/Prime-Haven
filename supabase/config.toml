@@ -7,46 +7,46 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.verify-payment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-login]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-signed-url]
 verify_jwt = false
 
 [functions.create-discord-invite]
-verify_jwt = false
+verify_jwt = true
 
 [functions.notify-designer]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-monthly-report]
-verify_jwt = false
+verify_jwt = true
 
 [functions.calculate-talent-score]
-verify_jwt = false
+verify_jwt = true
 
 [functions.visitor-chat]
 verify_jwt = false
 
 [functions.post-job-contract]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-blog-newsletter]
-verify_jwt = false
+verify_jwt = true
 
 [functions.public-stats]
 verify_jwt = false
 
 [functions.seed-admin]
-verify_jwt = false
+verify_jwt = true
 
 [functions.notify-project-status]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-welcome-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-sms]
-verify_jwt = false
+verify_jwt = true

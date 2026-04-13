@@ -42,14 +42,16 @@ const Messages = () => {
         const title = myDetails?.professional_title || '';
         setMyTitle(title);
         const { data: allDetails } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
-        if (!allDetails) { setLoading(false); return; }
-        const userIds = allDetails.map(d => d.user_id);
+        if (!allDetails || allDetails.length === 0) { setPeers([]); setConversationMeta(new Map()); setLoading(false); return; }
+        const userIds = allDetails.map(d => d.user_id).filter(Boolean);
         const [profilesRes, settingsRes, messagesRes] = await Promise.all([
           supabase.from('profiles').select('id, full_name').in('id', userIds),
           supabase.from('user_settings').select('user_id, allow_messages').in('user_id', userIds),
           supabase.from('messages').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order('created_at', { ascending: false }),
         ]);
-        const profileMap = new Map(profilesRes.data?.map(p => [p.id, p]) || []);
+        interface ProfileShort { id: string; full_name?: string }
+        const profilesData = (profilesRes.data || []) as ProfileShort[];
+        const profileMap = new Map(profilesData.map((p: ProfileShort) => [p.id, p]));
         const settingsMap = new Map(settingsRes.data?.map(s => [s.user_id, s.allow_messages]) || []);
         const peerList: Designer[] = allDetails.filter(d => settingsMap.get(d.user_id) !== false).map(d => ({
           user_id: d.user_id, full_name: profileMap.get(d.user_id)?.full_name || 'Unknown',
@@ -120,7 +122,7 @@ const Messages = () => {
       const { error } = await supabase.from('messages').insert({ sender_id: user.id, receiver_id: selectedDesigner.user_id, content: newMessage.trim() });
       if (error) throw error;
       setNewMessage(''); inputRef.current?.focus();
-    } catch (error: any) { toast({ title: 'Failed to send', description: error.message, variant: 'destructive' }); }
+    } catch (err) { const error = err as Error; toast({ title: 'Failed to send', description: error?.message || 'Unknown error', variant: 'destructive' }); }
     finally { setSending(false); }
   };
 

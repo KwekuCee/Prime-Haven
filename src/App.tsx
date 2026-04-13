@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +10,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
 import { TechStackLoader } from "./components/ui/TechStackLoader";
+
+// Third-party scripts loader is imported dynamically to defer heavy network work on mobile
+const ThirdPartyLoader = lazy(() => import('./components/ThirdPartyLoader'));
 
 // Lazy-loaded pages for non-dashboard routes
 const Register = lazy(() => import("./pages/Register"));
@@ -72,6 +75,7 @@ const App = () => {
                 <InstallPrompt />
                 <VisitorTracker />
                 <GlobalCommandPalette />
+                <ThirdPartyLoader />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/register" element={<Register />} />

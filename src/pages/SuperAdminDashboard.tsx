@@ -104,7 +104,7 @@ interface User {
     portfolio_url: string;
     skills: string[];
     payment_method: string;
-    payment_details: any;
+    payment_details?: { account?: string; email?: string; [k: string]: any } | string;
     salary_payment_status: string;
     salary_paid_at: string | null;
     created_at?: string;
@@ -183,6 +183,69 @@ interface SystemSettings {
   correction_points?: { value: number } | number;
 }
 
+// Raw DB row types for safer typing of Supabase responses
+interface ProfileRaw {
+  id: string;
+  email?: string;
+  full_name?: string;
+  phone?: string;
+  registration_fee_paid?: boolean;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface DesignerDetailsRaw {
+  user_id: string;
+  monthly_points?: number;
+  professional_title?: string;
+  total_points?: number;
+  salary_payment_status?: string;
+  profile_photo_url?: string;
+  payment_method?: string;
+  payment_details?: any;
+  salary_paid_at?: string | null;
+}
+
+interface SubmissionRaw {
+  id: string;
+  designer_id: string;
+  project_name?: string;
+  service_type?: string;
+  status?: string;
+  points_awarded?: number;
+  created_at?: string;
+  updated_at?: string;
+  final_approval_date?: string;
+  client_ref?: string;
+  files_urls?: string[];
+  ph_approved?: boolean;
+  client_accepted?: boolean;
+  ph_approved_at?: string | null;
+  client_accepted_at?: string | null;
+}
+
+interface PaymentRaw {
+  id: string;
+  user_id: string;
+  amount?: number;
+  type?: string;
+  status?: string;
+  transaction_id?: string;
+  created_at?: string;
+  metadata?: any;
+}
+
+interface LogRaw {
+  id: string;
+  action_type?: string;
+  admin_id?: string;
+  description?: string;
+  timestamp?: string;
+  ip_address?: string;
+  user_agent?: string;
+}
+
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -248,8 +311,8 @@ const SuperAdminDashboard = () => {
         .select('key, value')
         .in('key', ['monthly_revenue_by_category', 'revenue_share_percentage', 'monthly_revenue']);
 
-      const settings: any = {};
-      (settingsData || []).forEach((s: any) => { settings[s.key] = s.value; });
+      const settings: Record<string, any> = {};
+      (settingsData || []).forEach((s: { key: string; value: any }) => { settings[s.key] = s.value; });
 
       // Use category breakdown if available, otherwise fall back to total monthly revenue
       let graphicAmt = 0, uiuxAmt = 0, webAmt = 0;
@@ -268,14 +331,14 @@ const SuperAdminDashboard = () => {
       const nowIso = new Date().toISOString();
 
       const { data: allDesigners } = await supabase
-        .from('designer_details')
+        .from<DesignerDetailsRaw>('designer_details')
         .select('user_id, monthly_points, professional_title');
 
       // Only fetch current month's approved submissions for salary calculation
       const now = new Date();
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const { data: allSubmissions } = await supabase
-        .from('submissions')
+        .from<SubmissionRaw>('submissions')
         .select('designer_id, service_type, points_awarded')
         .in('status', ['ph_approved', 'approved'])
         .gte('created_at', firstOfMonth);
@@ -285,23 +348,23 @@ const SuperAdminDashboard = () => {
 
         // Separate web developers from other designers
         const webDevIds = new Set(
-          allDesigners
-            .filter((d: any) => {
+          (allDesigners || [])
+            .filter((d: DesignerDetailsRaw) => {
               const cat = normalizeCategory(d.professional_title);
               return cat === 'Web Developer';
             })
-            .map((d: any) => d.user_id)
+            .map((d: DesignerDetailsRaw) => d.user_id)
         );
 
         // Non-web designers with monthly points > 0 are eligible for points-based salary
         const eligibleDesignerIds = new Set(
-          allDesigners
-            .filter((d: any) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
-            .map((d: any) => d.user_id)
+          (allDesigners || [])
+            .filter((d: DesignerDetailsRaw) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
+            .map((d: DesignerDetailsRaw) => d.user_id)
         );
 
         const designerCategoryPoints: Record<string, { graphic: number; uiux: number }> = {};
-        allDesigners.forEach((d: any) => {
+        (allDesigners || []).forEach((d: DesignerDetailsRaw) => {
           if (!webDevIds.has(d.user_id)) {
             designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0 };
           }
@@ -311,7 +374,7 @@ const SuperAdminDashboard = () => {
         const webDevSubmissions: Record<string, number> = {};
         let totalWebDevSubmissions = 0;
 
-        allSubmissions.forEach((s: any) => {
+        (allSubmissions || []).forEach((s: SubmissionRaw) => {
           if (s.service_type === 'web' && webDevIds.has(s.designer_id)) {
             webDevSubmissions[s.designer_id] = (webDevSubmissions[s.designer_id] || 0) + 1;
             totalWebDevSubmissions++;
@@ -321,7 +384,7 @@ const SuperAdminDashboard = () => {
           if (!eligibleDesignerIds.has(s.designer_id)) return;
           const pts = Number(s.points_awarded || 0);
           if (pts <= 0) return;
-          if (graphicTypes.includes(s.service_type)) designerCategoryPoints[s.designer_id].graphic += pts;
+          if (graphicTypes.includes(s.service_type || '')) designerCategoryPoints[s.designer_id].graphic += pts;
           else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
         });
 
@@ -329,7 +392,7 @@ const SuperAdminDashboard = () => {
         const designersEffectivePoints: Record<string, { graphic: number; uiux: number }> = {};
         const effectiveTotals = { graphic: 0, uiux: 0 };
 
-        allDesigners.forEach((d: any) => {
+        (allDesigners || []).forEach((d: DesignerDetailsRaw) => {
           if (webDevIds.has(d.user_id)) return;
 
           const totalMonthlyPts = Number(d.monthly_points || 0);
@@ -478,18 +541,18 @@ const SuperAdminDashboard = () => {
         }
         rolesMap.get(r.user_id)!.push({ user_id: r.user_id, role: r.role });
       });
-      const profilesMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+      const profilesMap = new Map((profilesData || []).map((p: ProfileRaw) => [p.id, p]));
 
       // Normalize users by combining data from separate queries
-      const processedUsers: User[] = (profilesData || []).map((u: any) => ({
+      const processedUsers: User[] = (profilesData || []).map((u: ProfileRaw) => ({
         id: u.id,
         email: u.email || '',
         full_name: u.full_name || '',
         phone: u.phone || '',
         registration_fee_paid: u.registration_fee_paid || false,
         is_active: typeof u.is_active === 'boolean' ? u.is_active : true,
-        created_at: u.created_at,
-        updated_at: u.updated_at,
+        created_at: u.created_at || '',
+        updated_at: u.updated_at || '',
         designer_details: designerDetailsMap.get(u.id) || undefined,
         user_roles: rolesMap.get(u.id) || []
       }));
@@ -498,7 +561,7 @@ const SuperAdminDashboard = () => {
       const userMap = new Map(processedUsers.map(u => [u.id, u]));
 
       // Normalize submissions with designer info
-      const processedSubmissions: Submission[] = (submissionsData || []).map((s: any) => {
+      const processedSubmissions: Submission[] = (submissionsData || []).map((s: SubmissionRaw) => {
         const designer = userMap.get(s.designer_id);
         return {
           id: s.id,
@@ -507,17 +570,17 @@ const SuperAdminDashboard = () => {
           service_type: s.service_type || 'unknown',
           status: s.status || 'pending',
           points_awarded: s.points_awarded || 0,
-          created_at: s.created_at,
-          updated_at: s.updated_at,
-          final_approval_date: s.final_approval_date,
+          created_at: s.created_at || '',
+          updated_at: s.updated_at || '',
+          final_approval_date: s.final_approval_date || '',
           designer_name: designer?.full_name || 'Unknown',
           designer_email: designer?.email || 'No email',
           client_ref: s.client_ref || '',
           files_urls: s.files_urls || [],
           ph_approved: s.ph_approved || false,
           client_accepted: s.client_accepted || false,
-          ph_approved_at: s.ph_approved_at,
-          client_accepted_at: s.client_accepted_at,
+          ph_approved_at: s.ph_approved_at || null,
+          client_accepted_at: s.client_accepted_at || null,
           parent_submission_id: s.parent_submission_id || null,
           rejection_reason: s.rejection_reason || null,
           design_link: s.design_link || null
@@ -525,7 +588,7 @@ const SuperAdminDashboard = () => {
       });
 
       // Normalize payments with user lookup
-      const processedPayments: Payment[] = (paymentsData || []).map((p: any) => {
+      const processedPayments: Payment[] = (paymentsData || []).map((p: PaymentRaw) => {
         const profile = profilesMap.get(p.user_id);
         return {
           id: p.id,
@@ -534,22 +597,22 @@ const SuperAdminDashboard = () => {
           type: p.type || 'registration',
           status: p.status || 'pending',
           transaction_id: p.transaction_id || 'N/A',
-          created_at: p.created_at,
+          created_at: p.created_at || '',
           user_name: profile?.full_name || 'Unknown',
           description: '',
-          metadata: {}
+          metadata: p.metadata || {}
         };
       });
 
       // Normalize logs with actor names
-      const processedLogs: SystemLog[] = (logsData || []).map((l: any) => {
-        const actor = profilesMap.get(l.admin_id);
+      const processedLogs: SystemLog[] = (logsData || []).map((l: LogRaw) => {
+        const actor = profilesMap.get(l.admin_id || '');
         return {
           id: l.id,
           action_type: l.action_type || 'unknown',
-          admin_id: l.admin_id,
+          admin_id: l.admin_id || '',
           description: l.description || '',
-          timestamp: l.timestamp,
+          timestamp: l.timestamp || '',
           ip_address: l.ip_address || '',
           user_agent: l.user_agent || '',
           profiles: actor ? { full_name: actor.full_name } : undefined
@@ -868,7 +931,7 @@ const SuperAdminDashboard = () => {
           status: 'rejected',
           rejection_reason: rejectionReason.trim(),
           updated_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', rejectSubmission.id);
 
       if (updateError) throw updateError;
@@ -1054,7 +1117,7 @@ const SuperAdminDashboard = () => {
         status: 'correction_requested',
         rejection_reason: correctionNote.trim(),
         updated_at: new Date().toISOString()
-      } as any).eq('id', correctionRequestSubmission.id);
+      }).eq('id', correctionRequestSubmission.id);
       if (user) {
         await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() });
       }
@@ -1081,7 +1144,7 @@ const SuperAdminDashboard = () => {
         points_awarded: 0,
         rejection_reason: 'Submission revoked by admin',
         updated_at: new Date().toISOString()
-      } as any).eq('id', submissionId);
+      }).eq('id', submissionId);
 
       // Deduct points from designer
       if (pointsToRevoke > 0) {
@@ -1141,7 +1204,7 @@ const SuperAdminDashboard = () => {
       const targetUser = users.find(u => u.id === userId);
       if (!targetUser) throw new Error('User not found');
 
-      let updateData: any = {};
+      const updateData: any = {};
       let description = '';
 
       switch (action) {
@@ -1427,7 +1490,7 @@ const SuperAdminDashboard = () => {
           status: 'client_rejected',
           rejection_reason: clientRejectionReason.trim(),
           updated_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', clientRejectSubmission.id);
 
       if (updateError) throw updateError;
@@ -1484,7 +1547,7 @@ const SuperAdminDashboard = () => {
       // Step 3: Reset active_designers_count on all job contracts
       await supabase
         .from('job_contracts')
-        .update({ active_designers_count: 0, active_designer_ids: [] } as any)
+        .update({ active_designers_count: 0, active_designer_ids: [] })
         .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (user) {
@@ -1948,7 +2011,11 @@ const SuperAdminDashboard = () => {
                           const paymentDetails = userItem.designer_details?.payment_details;
                           const methodLabels: Record<string, string> = { 'mtn_momo': 'MTN MoMo', 'vodafone_cash': 'Vodafone', 'airteltigo_money': 'AirtelTigo', 'bank_transfer': 'Bank', 'crypto': 'Crypto', 'paypal': 'PayPal', 'wise': 'Wise' };
                           const payDisplay = paymentMethod ? (methodLabels[paymentMethod] || paymentMethod) : '—';
-                          const detailDisplay = paymentDetails ? (typeof paymentDetails === 'object' ? (paymentDetails as any).account || (paymentDetails as any).email || '' : String(paymentDetails)) : '';
+                          const detailDisplay = paymentDetails
+                            ? (typeof paymentDetails === 'object' && paymentDetails !== null
+                                ? (paymentDetails as { account?: string; email?: string }).account || (paymentDetails as { account?: string; email?: string }).email || ''
+                                : String(paymentDetails))
+                            : '';
                           const salaryStatus = userItem.designer_details?.salary_payment_status || 'unpaid';
                           const isPaid = salaryStatus === 'paid';
 

@@ -47,27 +47,36 @@ serve(async (req) => {
       });
     }
 
-    // Geo-locate IP using free API
+    // Geo-locate IP using optional provider configured via env.
+    // For privacy and security, we avoid insecure HTTP providers by default.
     let geo: any = {};
     try {
-      if (ip !== "unknown" && ip !== "127.0.0.1") {
-        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,lat,lon`);
+      const GEO_PROVIDER_URL = Deno.env.get('GEO_PROVIDER_URL');
+      const GEO_PROVIDER_KEY = Deno.env.get('GEO_PROVIDER_KEY');
+
+      if (GEO_PROVIDER_URL && ip !== 'unknown' && ip !== '127.0.0.1') {
+        // Example: GEO_PROVIDER_URL=https://api.ipgeolocation.io/ipgeo?apiKey=XXX&ip=
+        const url = `${GEO_PROVIDER_URL}${encodeURIComponent(ip)}`;
+        const headers: Record<string,string> = {};
+        if (GEO_PROVIDER_KEY) headers['Authorization'] = `Bearer ${GEO_PROVIDER_KEY}`;
+
+        const geoRes = await fetch(url, { headers });
         if (geoRes.ok) {
           const geoData = await geoRes.json();
-          if (geoData.status === "success") {
-            geo = {
-              country: geoData.country,
-              country_code: geoData.countryCode,
-              region: geoData.regionName,
-              city: geoData.city,
-              latitude: geoData.lat,
-              longitude: geoData.lon,
-            };
-          }
+          // Map common fields if available
+          geo = {
+            country: geoData.country || geoData.country_name || null,
+            country_code: geoData.country_code || geoData.countryCode || null,
+            region: geoData.region || geoData.region_name || geoData.regionName || null,
+            city: geoData.city || null,
+            latitude: geoData.latitude || geoData.lat || geoData.latitude || null,
+            longitude: geoData.longitude || geoData.lon || geoData.longitude || null,
+          };
         }
       }
+      // If no provider configured, we intentionally skip external geo lookup to avoid plaintext HTTP calls.
     } catch (e) {
-      console.error("Geo lookup failed:", e);
+      console.error('Geo lookup failed:', e);
     }
 
     const userAgent = req.headers.get("user-agent") || null;
