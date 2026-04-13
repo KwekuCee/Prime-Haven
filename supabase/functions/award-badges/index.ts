@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
@@ -27,13 +27,15 @@ serve(async (req) => {
     }
 
     // Gather user metrics
-    const [{ data: approvedCountData }] = await Promise.all([supabase
+    const { data: approvedCountData, count: approvedCountExact } = await supabase
       .from('submissions')
       .select('id', { count: 'exact' })
       .eq('designer_id', user_id)
-      .eq('ph_approved', true)]);
+      .eq('ph_approved', true);
 
-    const approved_count = (approvedCountData && Array.isArray(approvedCountData)) ? approvedCountData.length : 0;
+    const approved_count = typeof approvedCountExact === 'number'
+      ? approvedCountExact
+      : (Array.isArray(approvedCountData) ? approvedCountData.length : 0);
 
     const { data: designer } = await supabase.from('designer_details').select('total_points, talent_score').eq('user_id', user_id).maybeSingle();
     const total_points = designer?.total_points || 0;
@@ -42,7 +44,10 @@ serve(async (req) => {
     let awarded = 0;
 
     for (const b of badges) {
-      const criteria = b.criteria || {};
+      let criteria: any = b.criteria ?? {};
+      if (typeof criteria === 'string') {
+        try { criteria = JSON.parse(criteria); } catch { criteria = {}; }
+      }
       if (criteria.type === 'threshold') {
         const metric = criteria.metric;
         const value = Number(criteria.value || 0);
@@ -52,12 +57,11 @@ serve(async (req) => {
         if (metric === 'talent_score') meets = talent_score >= value;
 
         if (meets) {
-          // Insert if not exists
-          await supabase
+          // Insert if not exists (ignore errors)
+          const { error: insertError } = await supabase
             .from('user_badges')
-            .insert({ user_id, badge_id: b.id, source: 'auto-check', meta: { approved_count, total_points, talent_score } })
-            .then(() => { awarded += 1; })
-            .catch(() => {});
+            .insert({ user_id, badge_id: b.id, source: 'auto-check', meta: { approved_count, total_points, talent_score } });
+          if (!insertError) awarded += 1;
         }
       }
     }
