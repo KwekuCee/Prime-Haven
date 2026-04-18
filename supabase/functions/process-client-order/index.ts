@@ -103,11 +103,25 @@ serve(async (req: Request): Promise<Response> => {
       description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay'
     } = body;
 
-    console.log("Received order request:", { clientName, clientEmail, serviceType, tier, price, paymentReference, gateway });
+    console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
 
-    if (!clientName || !clientEmail || !serviceType || !tier || price === undefined || price === null || !paymentReference) {
-      console.error("Validation failed — missing fields:", { clientName: !!clientName, clientEmail: !!clientEmail, serviceType: !!serviceType, tier: !!tier, price, paymentReference: !!paymentReference });
-      return new Response(JSON.stringify({ success: false, error: "Missing required fields", message: "Missing required fields" }), {
+    // Detect free order early — before strict validation
+    const isFreeOrder = typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-');
+
+    // For free orders, only require basic fields (price can be 0)
+    // For paid orders, all fields including price > 0
+    const missingFields: string[] = [];
+    if (!clientName) missingFields.push("clientName");
+    if (!clientEmail) missingFields.push("clientEmail");
+    if (!serviceType) missingFields.push("serviceType");
+    if (!tier) missingFields.push("tier");
+    if (!paymentReference) missingFields.push("paymentReference");
+    // Only check price for non-free orders
+    if (!isFreeOrder && (price === undefined || price === null)) missingFields.push("price");
+
+    if (missingFields.length > 0) {
+      console.error("Validation failed — missing fields:", missingFields, "Body:", JSON.stringify(body));
+      return new Response(JSON.stringify({ success: false, error: "Missing required fields", message: `Missing: ${missingFields.join(", ")}` }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
@@ -115,11 +129,12 @@ serve(async (req: Request): Promise<Response> => {
     let verifiedAmount: number;
     let verifiedCurrency: string;
 
-    if (paymentReference.startsWith('PH-FREE-')) {
+    if (isFreeOrder) {
       verifiedAmount = 0;
       verifiedCurrency = 'GHS';
       console.log("Processing free order via promo bypass:", paymentReference);
     } else if (gateway === 'paystack') {
+
       console.log("Verifying with Paystack...");
       const paystackResponse = await fetch(
         `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
