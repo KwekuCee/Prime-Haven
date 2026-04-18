@@ -126,25 +126,43 @@ const Dashboard = () => {
   useEffect(() => {
     if (!startWorkingOpen || !user) return;
     setLoadingJobs(true);
-    const profession = normalizeCategory(designer?.professional_title || null);
-    const jobCategories = categoryToJobCategories(profession);
+
+    // Use the professions array from designer details, fallback to heuristic if empty
+    const userProfessions = designer?.professions && designer.professions.length > 0
+      ? designer.professions
+      : [normalizeCategory(designer?.professional_title || null)];
+
+    // Fetch client projects that match any of the designer's professions
+    // AND haven't reached their max assignees limit
+    // We check this by comparing max_assignees with current count of project_assignments
     supabase
-      .from('job_contracts')
-      .select('id, title, category, active_designers_count, active_designer_ids')
-      .in('status', ['active', 'in_progress'])
-      .in('category', jobCategories)
+      .from('client_projects')
+      .select(`
+        id, 
+        title, 
+        category, 
+        required_professions, 
+        max_assignees,
+        project_assignments(count)
+      `)
+      .eq('status', 'pending')
+      .overlaps('required_professions', userProfessions)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
-        if (error) console.error('Error fetching jobs:', error);
-        // Filter out graphic-design contracts that already have 2+ designers
-        type JobRow = { id: string; title?: string; category?: string; active_designers_count?: number; active_designer_ids?: string[] };
-        const filtered = (data || []).filter((job: JobRow) => {
-          if (job.category === 'graphic-design' && (job.active_designers_count || 0) >= 2) {
-            return false;
-          }
-          return true;
+        if (error) {
+          console.error('Error fetching jobs:', error);
+          toast({ title: 'Error', description: 'Failed to fetch available jobs.', variant: 'destructive' });
+          setLoadingJobs(false);
+          return;
+        }
+
+        // Filter out projects that are already fully claimed
+        const available = (data || []).filter((proj: any) => {
+          const currentClaims = proj.project_assignments?.[0]?.count || 0;
+          return currentClaims < (proj.max_assignees || 1);
         });
-        setActiveJobs(filtered);
+
+        setActiveJobs(available);
         setLoadingJobs(false);
       });
   }, [startWorkingOpen, user, designer]);
@@ -171,53 +189,49 @@ const Dashboard = () => {
   };
 
   const handleStartWorking = async () => {
-    if (!user || !startWorkingProject.trim()) return;
+    if (!user || !startWorkingProject) return;
+    const selectedJob = activeJobs.find(j => j.id === startWorkingProject);
+    if (!selectedJob) return;
+
     setStartWorkingSending(true);
     try {
-      const selectedJob = activeJobs.find(j => j.title === startWorkingProject);
-      const { error } = await supabase.functions.invoke('notify-designer', {
-        body: { designerId: user.id, projectName: startWorkingProject.trim(), notificationType: 'start_working', serviceType: selectedJob?.category || '' },
+      // 1. Call the claim_project RPC to safely assign the job
+      const { error: claimError } = await supabase.rpc('claim_project', {
+        p_project_id: selectedJob.id
       });
-      if (error) throw error;
 
-      // For graphic-design contracts, increment the active_designers_count
-      if (selectedJob && selectedJob.category === 'graphic-design') {
-        // Fetch current contract state
-        const { data: contractData } = await supabase
-          .from('job_contracts')
-          .select('active_designers_count, active_designer_ids')
-          .eq('id', selectedJob.id)
-          .single();
+      if (claimError) throw claimError;
 
-        const contractRow = contractData as { active_designers_count?: number; active_designer_ids?: string[] } | null;
-        const currentCount = contractRow?.active_designers_count || 0;
-        const currentIds = contractRow?.active_designer_ids || [];
-
-        // Only increment if this designer hasn't already started
-        if (!currentIds.includes(user.id)) {
-          const newIds = [...currentIds, user.id];
-          const newCount = currentCount + 1;
-          await supabase
-            .from('job_contracts')
-            .update({ active_designers_count: newCount, active_designer_ids: newIds })
-            .eq('id', selectedJob.id);
-        }
-      }
-
-      // Store started project info in localStorage
+      // 2. Notify Discord/Admin (Optional side effect, keeping original notify-designer logic if needed)
+      // Actually, we'll just store local state and redirect
       localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
-        jobId: selectedJob?.id || '',
-        title: startWorkingProject.trim(),
+        jobId: selectedJob.id,
+        title: selectedJob.title,
         startedAt: new Date().toISOString(),
       }));
+
       setHasStartedProject(true);
-      setStartedProjectInfo({ jobId: selectedJob?.id || '', title: startWorkingProject.trim(), startedAt: new Date().toISOString() });
-      toast({ title: 'Notification sent!', description: 'Admin has been notified that you started working.' });
+      setStartedProjectInfo({
+        jobId: selectedJob.id,
+        title: selectedJob.title,
+        startedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: 'Project Claimed! 🚀',
+        description: `You have successfully started working on "${selectedJob.title}".`
+      });
+
       setStartWorkingOpen(false);
       setStartWorkingProject('');
-    } catch (err) {
-      console.error('Error sending start working notification:', err);
-      toast({ title: 'Error', description: 'Failed to send notification. Please try again.', variant: 'destructive' });
+
+    } catch (err: any) {
+      console.error('Error claiming project:', err);
+      toast({
+        title: 'Claim Failed',
+        description: err.message || 'Failed to claim project. It might have been taken just now.',
+        variant: 'destructive'
+      });
     } finally {
       setStartWorkingSending(false);
     }
@@ -231,7 +245,7 @@ const Dashboard = () => {
         setLoading(true);
         const [profileResult, designerResult, submissionsResult, designersResult, profilesResult, settingsResult] = await Promise.all([
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
-          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at').eq('user_id', user.id).maybeSingle(),
+          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, professions, talent_score, talent_score_breakdown, talent_score_updated_at').eq('user_id', user.id).maybeSingle(),
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }),
           supabase.from('leaderboard_designer_details').select('user_id, total_points, monthly_points, professional_title, talent_score').order('total_points', { ascending: false }),
           supabase.from('leaderboard_profiles').select('id, full_name'),
@@ -720,7 +734,7 @@ const Dashboard = () => {
                     <div className="px-2 py-4 text-sm text-muted-foreground text-center">No jobs available for your profession</div>
                   )}
                   {activeJobs.map((job) => (
-                    <SelectItem key={job.id} value={job.title}>{job.title}</SelectItem>
+                    <SelectItem key={job.id} value={job.id}>{job.title}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

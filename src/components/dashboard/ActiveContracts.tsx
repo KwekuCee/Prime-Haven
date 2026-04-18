@@ -44,21 +44,71 @@ const ActiveContracts = () => {
         if (!user) return;
         setLoading(true);
         try {
-            const { data, error } = await (supabase
+            // 1. Fetch from project_assignments (new system)
+            const { data: assignments, error: assignmentError } = await supabase
+                .from('project_assignments')
+                .select(`
+                    id,
+                    project_id,
+                    client_projects (
+                        id,
+                        title,
+                        category,
+                        deadline,
+                        status,
+                        budget
+                    )
+                `)
+                .eq('designer_id', user.id)
+                .neq('status', 'completed');
+
+            if (assignmentError) throw assignmentError;
+
+            // 2. Fetch from client_orders (legacy/direct assignment)
+            const { data: orders, error: orderError } = await (supabase
                 .from('client_orders') as any)
                 .select('id, service_type, tier, deadline_at, project_status, price')
                 .eq('assigned_designer_id', user.id)
-                .neq('project_status', 'completed')
-                .order('deadline_at', { ascending: true });
+                .neq('project_status', 'completed');
 
-            if (error) throw error;
-            setContracts(data || []);
+            if (orderError) throw orderError;
+
+            // 3. Map into a unified ActiveContract interface
+            const unified: ActiveContract[] = [
+                ...(assignments || []).map((a: any) => ({
+                    id: a.client_projects.id,
+                    service_type: a.client_projects.category,
+                    tier: 'Standard', // Client projects don't have explicit tiers like orders
+                    deadline_at: a.client_projects.deadline || new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    project_status: a.client_projects.status,
+                    price: 0, // Budget is a text field in client_projects
+                })),
+                ...(orders || []).map((o: any) => ({
+                    id: o.id,
+                    service_type: o.service_type,
+                    tier: o.tier,
+                    deadline_at: o.deadline_at,
+                    project_status: o.project_status,
+                    price: o.price,
+                }))
+            ];
+
+            // Remove duplicates (just in case)
+            const seen = new Set();
+            const filtered = unified.filter(item => {
+                const isDuplicate = seen.has(item.id);
+                seen.add(item.id);
+                return !isDuplicate;
+            });
+
+            setContracts(filtered.sort((a, b) => new Date(a.deadline_at).getTime() - new Date(b.deadline_at).getTime()));
         } catch (err) {
             console.error('Error loading active contracts:', err);
         } finally {
             setLoading(false);
         }
     };
+
 
     const getDeadlineStatus = (deadline: string) => {
         const d = new Date(deadline);

@@ -217,6 +217,13 @@ serve(async (req: Request): Promise<Response> => {
 
     // 2. Auto-create client project for tracking
     console.log("Creating client project...");
+    const distributionMap: Record<string, { professions: string[], max: number }> = {
+      "graphic-design": { professions: ['Graphic Designer'], max: 2 },
+      "app-design": { professions: ['UI/UX Designer'], max: 1 },
+      "web-dev": { professions: ['UI/UX Designer', 'Web Developer'], max: 1 },
+    };
+    const dist = distributionMap[discordCategory] || { professions: ['Web Developer'], max: 1 };
+
     const categoryMap: Record<string, string> = {
       "graphic-design": "graphic-design",
       "app-design": "ui-ux",
@@ -232,7 +239,11 @@ serve(async (req: Request): Promise<Response> => {
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
       budget: `GH₵${amountInGhs}`,
+      required_professions: dist.professions,
+      max_assignees: dist.max,
     });
+
+
 
     if (projectError) {
       console.error("Failed to create client project (non-critical):", projectError);

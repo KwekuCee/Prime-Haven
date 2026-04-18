@@ -214,6 +214,13 @@ const StartProject = () => {
           throw new Error(orderError.message);
         }
 
+        const distributionMap: Record<string, { professions: string[], max: number }> = {
+          "graphic-design": { professions: ['Graphic Designer'], max: 2 },
+          "app-design": { professions: ['UI/UX Designer'], max: 1 },
+          "web-dev": { professions: ['UI/UX Designer', 'Web Developer'], max: 1 },
+        };
+        const dist = distributionMap[selectedPricing.discord_category] || { professions: ['Web Developer'], max: 1 };
+
         // Also create the client project for tracking
         await supabase.from('client_projects').insert({
           title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
@@ -224,10 +231,31 @@ const StartProject = () => {
           category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
           status: 'pending',
           budget: 'GH₵0 (Promo)',
+          required_professions: dist.professions,
+          max_assignees: dist.max,
         }).then(() => { }).catch(e => console.error('Project tracking insert failed (non-critical):', e));
+
+
+        // 3. Notify Discord via Database RPC (bypassing edge function)
+        try {
+          await supabase.rpc('notify_discord_order', {
+            p_service_label: selectedPricing.service_label,
+            p_service_type: selectedPricing.service_type,
+            p_tier: selectedPricing.tier,
+            p_client_name: form.clientName,
+            p_client_email: form.clientEmail,
+            p_amount: 0,
+            p_discord_category: selectedPricing.discord_category,
+            p_gateway: '100% Promo Code',
+            p_client_whatsapp: form.clientWhatsapp || null
+          });
+        } catch (discordErr) {
+          console.error('Discord rpc notification failed:', discordErr);
+        }
 
         toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
         navigate('/?project=success');
+
       } catch (err: any) {
         console.error('Free order error:', err);
         toast({

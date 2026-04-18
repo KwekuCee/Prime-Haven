@@ -12,12 +12,17 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OpenOrder {
     id: string;
+    source: 'client_projects' | 'client_orders';
     service_type: string;
-    tier: string;
-    price: number;
+    title: string;
+    tier?: string;
+    price?: number;
+    budget?: string;
     description: string;
     created_at: string;
-    deadline_days?: number; // Calculated field if we use the duration logic
+    required_professions?: string[];
+    max_assignees?: number;
+    current_claims?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -47,17 +52,75 @@ const ProjectMarketplace = () => {
         if (!user) return;
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            // Get designer professions to filter pools
+            const { data: designer } = await supabase
+                .from('designer_details')
+                .select('professions, professional_title')
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            const userProfessions = designer?.professions && designer.professions.length > 0
+                ? designer.professions
+                : [designer?.professional_title ? 'Graphic Designer' : 'Graphic Designer']; // Default fallback
+
+            // 1. Fetch from client_projects (new pooling system)
+            const { data: projects, error: projectsError } = await supabase
+                .from('client_projects')
+                .select(`
+                    id,
+                    title,
+                    category,
+                    description,
+                    created_at,
+                    budget,
+                    required_professions,
+                    max_assignees,
+                    project_assignments(count)
+                `)
+                .eq('status', 'pending')
+                .overlaps('required_professions', userProfessions);
+
+            if (projectsError) throw projectsError;
+
+            // 2. Fetch from client_orders (legacy/direct pool)
+            const { data: orders, error: ordersError } = await supabase
                 .from('client_orders')
                 .select('*')
                 .eq('payment_status', 'paid')
-                .eq('project_status', 'unassigned')
-                .order('created_at', { ascending: false });
+                .eq('project_status', 'unassigned');
 
-            if (error) throw error;
-            setOrders(data || []);
+            if (ordersError) throw ordersError;
+
+            // 3. Unify the results
+            const projectMarket: OpenOrder[] = (projects || []).map((p: any) => ({
+                id: p.id,
+                source: 'client_projects',
+                service_type: p.category,
+                title: p.title,
+                description: p.description,
+                created_at: p.created_at,
+                budget: p.budget,
+                required_professions: p.required_professions,
+                max_assignees: p.max_assignees,
+                current_claims: p.project_assignments?.[0]?.count || 0
+            })).filter(p => p.current_claims! < p.max_assignees!);
+
+            const orderMarket: OpenOrder[] = (orders || []).map((o: any) => ({
+                id: o.id,
+                source: 'client_orders',
+                service_type: o.service_type,
+                title: `${CATEGORY_LABELS[o.service_type] || o.service_type} — ${o.tier}`,
+                tier: o.tier,
+                price: o.price,
+                description: o.description,
+                created_at: o.created_at
+            }));
+
+            setOrders([...projectMarket, ...orderMarket].sort((a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            ));
         } catch (err) {
-            console.error('Error loading open orders:', err);
+            console.error('Error loading marketplace:', err);
         } finally {
             setLoading(false);
         }
@@ -67,26 +130,31 @@ const ProjectMarketplace = () => {
         if (!user) return;
         setClaiming(order.id);
         try {
-            // Calculate deadline (defaulting to 2 days if not specified, 
-            // though ideally we'd use the duration chosen in the pricing tool)
-            const deadline = addDays(new Date(), 2).toISOString();
-
-            const { error } = await (supabase
-                .from('client_orders') as any)
-                .update({
-                    assigned_designer_id: user.id,
-                    project_status: 'in_progress',
-                    claimed_at: new Date().toISOString(),
-                    deadline_at: deadline
-                })
-                .eq('id', order.id)
-                .eq('project_status', 'unassigned'); // Double check to avoid race conditions
-
-            if (error) throw error;
+            if (order.source === 'client_projects') {
+                // Use the new RPC system for client_projects
+                const { error } = await supabase.rpc('claim_project', {
+                    p_project_id: order.id
+                });
+                if (error) throw error;
+            } else {
+                // Legacy logic for client_orders
+                const deadline = addDays(new Date(), 2).toISOString();
+                const { error } = await (supabase
+                    .from('client_orders') as any)
+                    .update({
+                        assigned_designer_id: user.id,
+                        project_status: 'in_progress',
+                        claimed_at: new Date().toISOString(),
+                        deadline_at: deadline
+                    })
+                    .eq('id', order.id)
+                    .eq('project_status', 'unassigned');
+                if (error) throw error;
+            }
 
             toast({
                 title: 'Project Claimed! 🚀',
-                description: `You are now the lead designer for "${CATEGORY_LABELS[order.service_type] || order.service_type}". Check your active contracts.`,
+                description: `You have successfully started working on "${order.title}".`,
             });
 
             // Refresh list
@@ -94,14 +162,15 @@ const ProjectMarketplace = () => {
             setSelectedOrder(null);
         } catch (err: any) {
             toast({
-                title: 'Error',
-                description: err.message || 'Failed to claim project.',
+                title: 'Claim Failed',
+                description: err.message || 'Failed to claim project. It might have been taken.',
                 variant: 'destructive',
             });
         } finally {
             setClaiming(null);
         }
     };
+
 
     if (loading) return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -145,11 +214,22 @@ const ProjectMarketplace = () => {
 
                             <CardHeader className="pb-3">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
-                                        {order.tier} PACKAGE
-                                    </p>
-                                    <CardTitle className="text-base font-heading">
-                                        {CATEGORY_LABELS[order.service_type] || order.service_type}
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
+                                            {order.source === 'client_projects' ? 'CLIENT POOL' : `${order.tier} PACKAGE`}
+                                        </p>
+                                        {order.required_professions && (
+                                            <div className="flex gap-1 overflow-hidden">
+                                                {order.required_professions.map(p => (
+                                                    <span key={p} className="text-[8px] bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap opacity-70">
+                                                        {p.charAt(0)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <CardTitle className="text-sm font-heading line-clamp-1">
+                                        {order.title}
                                     </CardTitle>
                                 </div>
                             </CardHeader>
@@ -163,14 +243,14 @@ const ProjectMarketplace = () => {
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-muted-foreground uppercase">Reward</span>
-                                            <span className="text-sm font-bold text-primary flex items-center gap-1">
-                                                <DollarSign className="w-3.5 h-3.5" />
-                                                {order.price.toLocaleString()}
+                                            <span className="text-xs font-bold text-primary flex items-center gap-1">
+                                                <DollarSign className="w-3 h-3" />
+                                                {order.source === 'client_projects' ? (order.budget || '—') : order.price?.toLocaleString()}
                                             </span>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-muted-foreground uppercase">Posted</span>
-                                            <span className="text-[11px] font-medium flex items-center gap-1">
+                                            <span className="text-[10px] font-medium flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {format(new Date(order.created_at), 'MMM d')}
                                             </span>
@@ -204,8 +284,12 @@ const ProjectMarketplace = () => {
                         <div className="space-y-4 py-4">
                             <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
                                 <div>
-                                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Service Type</h4>
-                                    <p className="text-sm font-medium">{CATEGORY_LABELS[selectedOrder.service_type] || selectedOrder.service_type} — <span className="capitalize">{selectedOrder.tier}</span></p>
+                                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Project Name</h4>
+                                    <p className="text-sm font-medium">{selectedOrder.title}</p>
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Category</h4>
+                                    <p className="text-xs">{CATEGORY_LABELS[selectedOrder.service_type] || selectedOrder.service_type}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Client Brief</h4>

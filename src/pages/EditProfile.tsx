@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
+import {
   User, Mail, Phone, Calendar, Link as LinkIcon, Briefcase, Clock,
   Award, Save, Loader2, CheckCircle, Camera
 } from 'lucide-react';
@@ -42,9 +42,10 @@ const EditProfile = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
     full_name: '', email: '', phone: '', dob: '', professional_title: '',
+    professions: [] as string[],
     experience_level: '', available_hours: '', portfolio_url: '', skills: [] as string[], profile_photo_url: '',
   });
   const [newSkill, setNewSkill] = useState('');
@@ -63,7 +64,9 @@ const EditProfile = () => {
           const d = designerResult.data;
           setFormData({
             full_name: p.full_name || '', email: p.email || user.email || '', phone: p.phone || '', dob: p.dob || '',
-            professional_title: d?.professional_title || '', experience_level: d?.experience_level || '',
+            professional_title: d?.professional_title || '',
+            professions: d?.professions || [],
+            experience_level: d?.experience_level || '',
             available_hours: d?.available_hours?.toString() || '', portfolio_url: d?.portfolio_url || '',
             skills: d?.skills || [], profile_photo_url: (d as any)?.profile_photo_url || '',
           });
@@ -108,7 +111,9 @@ const EditProfile = () => {
       const { error: profileError } = await supabase.from('profiles').update({ full_name: formData.full_name, phone: formData.phone, dob: formData.dob || null, updated_at: new Date().toISOString() }).eq('id', user.id);
       if (profileError) throw profileError;
       const { error: designerError } = await supabase.from('designer_details').update({
-        professional_title: formData.professional_title, experience_level: formData.experience_level,
+        professional_title: formData.professional_title,
+        professions: formData.professions,
+        experience_level: formData.experience_level,
         available_hours: formData.available_hours ? parseInt(formData.available_hours) : null,
         portfolio_url: formData.portfolio_url, skills: formData.skills, updated_at: new Date().toISOString(),
       }).eq('user_id', user.id);
@@ -187,10 +192,40 @@ const EditProfile = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Title *</Label>
-                  <Select value={formData.professional_title} onValueChange={(v) => setFormData(p => ({ ...p, professional_title: v }))}>
+                  <Select value={formData.professional_title} onValueChange={(v) => {
+                    // Automatically add corresponding profession if not present
+                    let newProfessions = [...formData.professions];
+                    if (v === 'UI/UX Designer' && !newProfessions.includes('UI/UX Designer')) newProfessions.push('UI/UX Designer');
+                    if (v === 'Graphic Designer' && !newProfessions.includes('Graphic Designer')) newProfessions.push('Graphic Designer');
+                    if (v === 'Web Designer' && !newProfessions.includes('UI/UX Designer')) newProfessions.push('UI/UX Designer');
+
+                    setFormData(p => ({ ...p, professional_title: v, professions: newProfessions }));
+                  }}>
                     <SelectTrigger className="h-9 text-xs bg-muted/20 border-border/40"><SelectValue placeholder="Select title" /></SelectTrigger>
                     <SelectContent>{professionalTitles.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Marketplace Professions * (For job pooling)</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map(prof => (
+                      <Badge
+                        key={prof}
+                        variant={formData.professions.includes(prof) ? "default" : "outline"}
+                        className="cursor-pointer text-[10px]"
+                        onClick={() => {
+                          setFormData(p => ({
+                            ...p,
+                            professions: p.professions.includes(prof)
+                              ? p.professions.filter(item => item !== prof)
+                              : [...p.professions, prof]
+                          }));
+                        }}
+                      >
+                        {prof}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Experience</Label>
