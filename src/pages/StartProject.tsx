@@ -188,14 +188,59 @@ const StartProject = () => {
     const finalPrice = calculateTotal(selectedPricing.price);
     const amount = getPaymentAmount(finalPrice);
 
-    // Bypass payment gateway for 100% discount (0 GHS)
+    // Bypass payment gateway AND edge function for 100% discount (0 GHS)
+    // The edge function is only needed for paid orders to verify payment with gateways
     if (amount === 0) {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
-      await handleOrderProcess(freeReference, amount);
+      try {
+        // Insert order directly — no payment gateway verification needed
+        const { error: orderError } = await supabase
+          .from('client_orders')
+          .insert({
+            client_name: form.clientName,
+            client_email: form.clientEmail,
+            client_whatsapp: form.clientWhatsapp || null,
+            service_type: selectedPricing.service_type,
+            tier: selectedPricing.tier,
+            price: 0,
+            description: form.description || null,
+            payment_status: 'completed',
+            payment_reference: freeReference,
+          });
 
+        if (orderError) {
+          console.error('Free order insert error:', orderError);
+          throw new Error(orderError.message);
+        }
+
+        // Also create the client project for tracking
+        await supabase.from('client_projects').insert({
+          title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
+          client_name: form.clientName,
+          client_email: form.clientEmail,
+          client_whatsapp: form.clientWhatsapp || null,
+          description: form.description,
+          category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
+          status: 'pending',
+          budget: 'GH₵0 (Promo)',
+        }).then(() => { }).catch(e => console.error('Project tracking insert failed (non-critical):', e));
+
+        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
+        navigate('/?project=success');
+      } catch (err: any) {
+        console.error('Free order error:', err);
+        toast({
+          title: 'Order Processing Error',
+          description: `${err.message || 'Could not process your free order'}. Reference: ${freeReference}`,
+          variant: 'destructive'
+        });
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
+
 
 
     if (gateway === 'korapay') {
