@@ -61,6 +61,7 @@ import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
 import AdminSubmissions from '@/components/admin/AdminSubmissions';
 import AdminPayments from '@/components/admin/AdminPayments';
+import PromoCodeManager from '@/components/admin/PromoCodeManager';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -104,7 +105,7 @@ interface User {
     portfolio_url: string;
     skills: string[];
     payment_method: string;
-    payment_details?: { account?: string; email?: string; [k: string]: any } | string;
+    payment_details?: { account?: string; email?: string;[k: string]: any } | string;
     salary_payment_status: string;
     salary_paid_at: string | null;
     created_at?: string;
@@ -2013,8 +2014,8 @@ const SuperAdminDashboard = () => {
                           const payDisplay = paymentMethod ? (methodLabels[paymentMethod] || paymentMethod) : '—';
                           const detailDisplay = paymentDetails
                             ? (typeof paymentDetails === 'object' && paymentDetails !== null
-                                ? (paymentDetails as { account?: string; email?: string }).account || (paymentDetails as { account?: string; email?: string }).email || ''
-                                : String(paymentDetails))
+                              ? (paymentDetails as { account?: string; email?: string }).account || (paymentDetails as { account?: string; email?: string }).email || ''
+                              : String(paymentDetails))
                             : '';
                           const salaryStatus = userItem.designer_details?.salary_payment_status || 'unpaid';
                           const isPaid = salaryStatus === 'paid';
@@ -2184,6 +2185,9 @@ const SuperAdminDashboard = () => {
 
           {/* ========== CONSULTATIONS ========== */}
           <TabsContent value="consultations" className="mt-0"><ManageConsultations /></TabsContent>
+
+          {/* ========== PROMOS ========== */}
+          <TabsContent value="promos" className="mt-0 pt-2"><PromoCodeManager /></TabsContent>
 
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>

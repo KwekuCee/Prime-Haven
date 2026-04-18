@@ -16,10 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
 import { MagneticEffect } from '@/components/ui/MagneticEffect';
 import DashboardLayout from '@/components/DashboardLayout';
-import AvailableJobs from '@/components/AvailableJobs';
-import EarningsChart from '@/components/dashboard/EarningsChart';
-import GoalTracker from '@/components/dashboard/GoalTracker';
-import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
+import ProjectMarketplace from '@/components/dashboard/ProjectMarketplace';
+import ActiveContracts from '@/components/dashboard/ActiveContracts';
 import ContractApplications from '@/components/dashboard/ContractApplications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -196,7 +194,7 @@ const Dashboard = () => {
         const currentIds = contractRow?.active_designer_ids || [];
 
         // Only increment if this designer hasn't already started
-          if (!currentIds.includes(user.id)) {
+        if (!currentIds.includes(user.id)) {
           const newIds = [...currentIds, user.id];
           const newCount = currentCount + 1;
           await supabase
@@ -497,8 +495,13 @@ const Dashboard = () => {
 
         <ActivityStreak submissions={submissions} />
 
-        {/* Available Jobs */}
-        <AvailableJobs />
+        {/* Active Contracts */}
+        <ActiveContracts />
+
+        {/* Project Marketplace */}
+        <div className="mb-8">
+          <ProjectMarketplace />
+        </div>
 
         {/* Earnings Breakdown & Goal Tracker */}
         {user && (

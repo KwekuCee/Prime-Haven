@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, Circle, Download, MessageCircle, Send, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, Circle, Download, MessageCircle, Send, Loader2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Label } from '@/components/ui/label';
 import BrandLogo from '@/components/BrandLogo';
 
 interface Project {
@@ -59,6 +60,8 @@ const TrackProject = () => {
   const [feedbackName, setFeedbackName] = useState('');
   const [feedbackContent, setFeedbackContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -83,20 +86,25 @@ const TrackProject = () => {
   }, [token]);
 
   const handleFeedback = async () => {
-    if (!feedbackName.trim() || !feedbackContent.trim() || !project) return;
+    if (!feedbackContent.trim() || !project) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('project_feedback').insert({
-        project_id: project.id,
-        client_name: feedbackName.trim(),
-        content: feedbackContent.trim(),
-      });
+      // Update the client_orders table with rating and review
+      const { error } = await (supabase
+        .from('client_orders') as any)
+        .update({
+          client_rating: rating > 0 ? rating : null,
+          client_review: feedbackContent.trim(),
+          project_status: rating > 0 ? 'completed' : project.status // Auto-complete if rated? Or just feedback
+        })
+        .eq('id', project.id);
+
       if (error) throw error;
-      toast({ title: 'Feedback sent!', description: 'Thank you for your feedback.' });
-      setFeedbackName('');
+      toast({ title: 'Feedback sent!', description: 'Thank you for your review.' });
       setFeedbackContent('');
-    } catch {
-      toast({ title: 'Error', description: 'Could not send feedback.', variant: 'destructive' });
+      setRating(0);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Could not send feedback.', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -168,9 +176,8 @@ const TrackProject = () => {
                 return (
                   <div key={m.id} className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        done ? 'bg-emerald-500/20 text-emerald-500' : active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-500/20 text-emerald-500' : active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                        }`}>
                         {done ? <CheckCircle className="w-4 h-4" /> : <span className="text-xs font-bold">{i + 1}</span>}
                       </div>
                       {i < milestones.length - 1 && <div className={`w-0.5 h-8 ${done ? 'bg-emerald-500/30' : 'bg-border'}`} />}
@@ -208,20 +215,67 @@ const TrackProject = () => {
           </motion.div>
         )}
 
-        {/* Feedback Form */}
+        {/* Feedback & Rating Form */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass rounded-2xl p-6">
-          <h2 className="text-xl font-heading font-bold mb-4 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-primary" /> Leave Feedback
+          <h2 className="text-xl font-heading font-bold mb-2 flex items-center gap-2">
+            <Star className="w-5 h-5 text-primary" /> Rate & Review Work
           </h2>
-          <div className="space-y-4">
-            <Input placeholder="Your name" value={feedbackName} onChange={(e) => setFeedbackName(e.target.value)} />
-            <Textarea placeholder="Share your thoughts, requests, or feedback..." value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} />
-            <Button onClick={handleFeedback} disabled={submitting || !feedbackName.trim() || !feedbackContent.trim()} variant="primary" className="glow-primary">
+          <p className="text-sm text-muted-foreground mb-6">Your feedback helps us maintain high quality standards.</p>
+
+          <div className="space-y-6">
+            <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-muted/20 border border-border/50">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Overall Rating</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <Star
+                      className={`w-8 h-8 ${star <= (hoverRating || rating)
+                        ? 'fill-primary text-primary'
+                        : 'text-muted-foreground/30'
+                        }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              {rating > 0 && (
+                <p className="text-xs font-semibold text-primary">
+                  {['Poor', 'Fair', 'Good', 'Very Good', 'Exceptional'][rating - 1]}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Your Comments</Label>
+              <Textarea
+                placeholder="Share your thoughts on the quality, communication, and turnaround time..."
+                value={feedbackContent}
+                onChange={(e) => setFeedbackContent(e.target.value)}
+                rows={4}
+                className="glass bg-background/50"
+              />
+            </div>
+
+            <Button onClick={handleFeedback} disabled={submitting || !feedbackContent.trim()} className="w-full h-12 glow-primary font-bold">
               {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              Send Feedback
+              Submit Final Feedback
             </Button>
           </div>
         </motion.div>
+
+        {/* Workspace Link */}
+        <div className="mt-8 text-center p-6 rounded-2xl border border-dashed border-border/60">
+          <p className="text-sm text-muted-foreground mb-4">Need to chat with your designer directly?</p>
+          <Button variant="outline" className="gap-2" onClick={() => window.open(`/workspace/${project.id}`, '_blank')}>
+            <MessageCircle className="w-4 h-4" /> Open Project Workspace
+          </Button>
+        </div>
       </div>
     </div>
   );

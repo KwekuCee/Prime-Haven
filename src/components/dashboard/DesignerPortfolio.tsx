@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Image, ExternalLink } from 'lucide-react';
+import { Image, ExternalLink, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ApprovedWork {
@@ -45,14 +47,21 @@ const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center">
-          <Image className="w-4 h-4 text-purple-500" />
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center">
+            <Image className="w-4 h-4 text-purple-500" />
+          </div>
+          <div>
+            <h2 className="text-sm font-heading font-bold">My Portfolio</h2>
+            <p className="text-[10px] text-muted-foreground">{works.length} approved works</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-sm font-heading font-bold">My Portfolio</h2>
-          <p className="text-[10px] text-muted-foreground">{works.length} approved works</p>
-        </div>
+        <Link to={`/designer/${userId}`}>
+          <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider gap-1.5 opacity-60 hover:opacity-100">
+            View Public Profile <ExternalLink className="w-3 h-3" />
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

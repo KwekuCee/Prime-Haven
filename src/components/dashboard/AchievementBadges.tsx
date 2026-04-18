@@ -27,18 +27,18 @@ const AchievementBadges = ({ designer, submissions }: AchievementBadgesProps) =>
         {
             id: 'rising_star',
             title: 'Rising Star',
-            description: 'Reached 100 total points',
+            description: 'Reached 200 total points',
             icon: Star,
-            unlocked: totalPoints >= 100,
+            unlocked: totalPoints >= 200,
             color: 'text-amber-500',
             bg: 'bg-amber-500/10'
         },
         {
             id: 'elite_earner',
             title: 'Elite Earner',
-            description: 'Reached 500 total points',
+            description: 'Reached 750 total points',
             icon: Crown,
-            unlocked: totalPoints >= 500,
+            unlocked: totalPoints >= 750,
             color: 'text-purple-500',
             bg: 'bg-purple-500/10'
         },
@@ -54,9 +54,9 @@ const AchievementBadges = ({ designer, submissions }: AchievementBadgesProps) =>
         {
             id: 'grind_machine',
             title: 'Grind Machine',
-            description: '10+ approved designs',
+            description: '30+ approved designs',
             icon: Flame,
-            unlocked: approvedCount >= 10,
+            unlocked: approvedCount >= 30,
             color: 'text-orange-500',
             bg: 'bg-orange-500/10'
         }
@@ -69,7 +69,7 @@ const AchievementBadges = ({ designer, submissions }: AchievementBadgesProps) =>
                 <h2 className="text-sm font-heading font-bold">Achievements & Badges</h2>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-4">
                 <TooltipProvider delayDuration={100}>
                     {badges.map((badge, idx) => (
                         <Tooltip key={badge.id}>
@@ -78,20 +78,27 @@ const AchievementBadges = ({ designer, submissions }: AchievementBadgesProps) =>
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: idx * 0.06 }}
-                                    className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 cursor-help ${badge.unlocked ? `border-primary/20 ${badge.bg}` : 'border-border/20 bg-muted/10 opacity-70 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                                    className={`relative flex items-center justify-center transition-all duration-300 cursor-help ${badge.unlocked ? 'opacity-100 hover:scale-110' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-80'}`}
                                 >
                                     {badge.unlocked && (
-                                        <div className="absolute -top-1 -right-1 flex items-center justify-center bg-background rounded-full">
-                                            <CheckCircle2 className="w-3 h-3 text-primary drop-shadow-md" />
+                                        <div className="absolute -top-1 -right-1 flex items-center justify-center bg-background rounded-full p-0.5 border border-primary/20 shadow-sm z-10">
+                                            <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
                                         </div>
                                     )}
-                                    <badge.icon className={`w-5 h-5 ${badge.unlocked ? badge.color : 'text-muted-foreground'}`} />
+                                    <div className={`p-2 rounded-full transition-colors ${badge.unlocked ? badge.bg : 'bg-muted/5'}`}>
+                                        <badge.icon className={`w-5 h-5 ${badge.unlocked ? badge.color : 'text-muted-foreground'}`} />
+                                    </div>
                                 </motion.div>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="flex flex-col gap-1 p-3 max-w-[220px] bg-card border-primary/20 backdrop-blur-xl">
+                            <TooltipContent side="top" className="flex flex-col gap-1 p-3 max-w-[220px] bg-card/95 border-primary/20 backdrop-blur-xl shadow-xl">
                                 <p className={`text-xs font-bold ${badge.unlocked ? 'text-primary' : 'text-foreground'}`}>{badge.title}</p>
-                                <p className="text-[11px] text-muted-foreground">{badge.description}</p>
-                                {!badge.unlocked && <p className="text-[9px] text-orange-500/80 font-medium mt-1">Locked (Complete requirements to unlock)</p>}
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">{badge.description}</p>
+                                {!badge.unlocked && (
+                                    <div className="mt-2 pt-2 border-t border-border/50">
+                                        <p className="text-[9px] text-orange-500/80 font-medium">Locked</p>
+                                        <p className="text-[9px] text-muted-foreground italic">Complete requirements to unlock</p>
+                                    </div>
+                                )}
                             </TooltipContent>
                         </Tooltip>
                     ))}

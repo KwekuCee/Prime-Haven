@@ -6,7 +6,7 @@ import {
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield, ChevronDown,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
-  TrendingUp,
+  TrendingUp, Ticket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -65,8 +65,9 @@ const navSections: NavSection[] = [
       { label: 'Portfolio', icon: Image, path: '/superadmin/portfolio' },
       { label: 'Contracts', icon: Briefcase, path: '/superadmin/contracts' },
       { label: 'Projects', icon: FolderKanban, path: '/superadmin/projects' },
-      { label: 'Pricing', icon: Tag, path: '/superadmin/pricing' },
-      { label: 'Clients', icon: UserSquare, path: '/superadmin/clients' },
+      { label: 'Pricing', icon: Tag, path: '/superadmin', tab: 'pricing' },
+      { label: 'Promos', icon: Ticket, path: '/superadmin', tab: 'promos' },
+      { label: 'Clients', icon: UserSquare, path: '/superadmin', tab: 'clients' },
       { label: 'Forward Work', icon: Send, path: '/superadmin/forward-work' },
     ],
   },

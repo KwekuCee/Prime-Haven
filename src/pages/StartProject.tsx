@@ -17,10 +17,14 @@ declare global {
     Korapay: {
       initialize: (config: any) => void;
     };
+    PaystackPop: {
+      setup: (config: any) => { openIframe: () => void };
+    };
   }
 }
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
+const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb"; // User needs to update this
 
 // Approximate conversion rate: 1 USD ≈ 15.5 GHS
 const GHS_TO_USD = 1 / 15.5;
@@ -56,6 +60,7 @@ const StartProject = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
+  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
 
   const [selectedService, setSelectedService] = useState<string>('');
   const [selectedTier, setSelectedTier] = useState<string>('');
@@ -67,6 +72,11 @@ const StartProject = () => {
     clientWhatsapp: '',
     description: '',
   });
+
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [isPromoValidating, setIsPromoValidating] = useState(false);
+  const [promoRef, setPromoRef] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPricing = async () => {
@@ -113,66 +123,149 @@ const StartProject = () => {
     return priceGhs;
   };
 
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) return;
+    setIsPromoValidating(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('promo_codes')
+        .select('*')
+        .eq('code', promoCode.toUpperCase().trim())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        toast({ title: 'Invalid Code', description: 'This promo code does not exist or is inactive.', variant: 'destructive' });
+        setPromoDiscount(0);
+        return;
+      }
+
+      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
+        toast({ title: 'Expired Code', description: 'This promo code has expired.', variant: 'destructive' });
+        setPromoDiscount(0);
+        return;
+      }
+
+      setPromoDiscount(data.discount_percent);
+      setPromoRef(data.code);
+      toast({ title: 'Code Applied!', description: `You got ${data.discount_percent}% off!` });
+    } catch (err: any) {
+      toast({ title: 'Error', description: 'Could not validate promo code.', variant: 'destructive' });
+    } finally {
+      setIsPromoValidating(false);
+    }
+  };
+
+  const calculateTotal = (basePrice: number) => {
+    const discounted = basePrice * (1 - promoDiscount / 100);
+    return discounted;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.clientName || !form.clientEmail || !form.description) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
     }
-    if (!window.Korapay) {
-      toast({ title: 'Payment Error', description: 'Payment system is loading. Please try again.', variant: 'destructive' });
+
+    if (gateway === 'korapay' && !window.Korapay) {
+      toast({ title: 'System Loading', description: 'Korapay is still initializing. Please wait...', variant: 'default' });
       return;
     }
+
+    if (gateway === 'paystack' && !window.PaystackPop) {
+      toast({ title: 'System Loading', description: 'Paystack is still initializing. Please wait...', variant: 'default' });
+      return;
+    }
+
     if (!selectedPricing) return;
 
     setSubmitting(true);
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const amount = getPaymentAmount(selectedPricing.price);
+    const finalPrice = calculateTotal(selectedPricing.price);
+    const amount = getPaymentAmount(finalPrice);
 
-    window.Korapay.initialize({
-      key: KORAPAY_PUBLIC_KEY,
-      reference,
-      amount,
-      currency,
-      customer: {
-        name: form.clientName,
-        email: form.clientEmail,
-      },
-      onSuccess: async () => {
-        try {
-          const { error } = await supabase.functions.invoke('process-client-order', {
-            body: {
-              clientName: form.clientName,
-              clientEmail: form.clientEmail,
-              clientWhatsapp: form.clientWhatsapp,
-              serviceType: selectedPricing!.service_type,
-              serviceLabel: selectedPricing!.service_label,
-              tier: selectedPricing!.tier,
-              price: selectedPricing!.price,
-              description: form.description,
-              discordCategory: selectedPricing!.discord_category,
-              paymentReference: reference,
-            },
-          });
-          if (error) throw error;
-          toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
-          navigate('/?project=success');
-        } catch (err: any) {
-          toast({ title: 'Error', description: err.message || 'Failed to process order.', variant: 'destructive' });
-        } finally {
-          setSubmitting(false);
-        }
-      },
-      onClose: () => {
+    if (gateway === 'korapay') {
+      try {
+        window.Korapay.initialize({
+          key: KORAPAY_PUBLIC_KEY,
+          reference,
+          amount,
+          currency,
+          customer: {
+            name: form.clientName,
+            email: form.clientEmail,
+          },
+          onSuccess: async () => {
+            await handleOrderProcess(reference);
+          },
+          onClose: () => setSubmitting(false),
+          onFailed: (data: any) => {
+            setSubmitting(false);
+            toast({ title: 'Payment Failed', description: data?.message || 'Payment could not be completed.', variant: 'destructive' });
+          },
+        });
+      } catch (err) {
         setSubmitting(false);
-        toast({ title: 'Payment Cancelled', description: 'You can try again when ready.', variant: 'destructive' });
-      },
-      onFailed: () => {
+        toast({ title: 'Payment System Error', description: 'Could not open Korapay. Please try again.', variant: 'destructive' });
+      }
+    } else {
+      try {
+        const handler = window.PaystackPop.setup({
+          key: PAYSTACK_PUBLIC_KEY,
+          email: form.clientEmail,
+          amount: Math.round(amount * 100), // Paystack uses kobo/pesewas
+          currency: currency === 'USD' ? 'USD' : 'GHS',
+          ref: reference,
+          metadata: {
+            custom_fields: [
+              { display_name: "Client Name", variable_name: "client_name", value: form.clientName }
+            ]
+          },
+          callback: async (response: any) => {
+            await handleOrderProcess(reference);
+          },
+          onClose: () => {
+            setSubmitting(false);
+          }
+        });
+        handler.openIframe();
+      } catch (err) {
         setSubmitting(false);
-        toast({ title: 'Payment Failed', description: 'Payment could not be completed. Please try again.', variant: 'destructive' });
-      },
-    });
+        toast({ title: 'Payment System Error', description: 'Could not open Paystack. Please try again.', variant: 'destructive' });
+      }
+    }
   };
+
+  const handleOrderProcess = async (reference: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('process-client-order', {
+        body: {
+          clientName: form.clientName,
+          clientEmail: form.clientEmail,
+          clientWhatsapp: form.clientWhatsapp,
+          serviceType: selectedPricing!.service_type,
+          serviceLabel: selectedPricing!.service_label,
+          tier: selectedPricing!.tier,
+          price: selectedPricing!.price,
+          description: form.description,
+          discordCategory: selectedPricing!.discord_category,
+          paymentReference: reference,
+          promoCode: promoRef,
+          gateway: gateway // Track which gateway was used
+        },
+      });
+      if (error) throw error;
+      toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
+      navigate('/?project=success');
+    } catch (err: any) {
+      toast({ title: 'Order Processing Error', description: err.message || 'Payment successful but we couldn\'t save your order. Contact support: ' + reference, variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -332,6 +425,48 @@ const StartProject = () => {
                       <Textarea id="description" value={form.description} onChange={e => handleChange('description', e.target.value)} placeholder="Tell us about your project, goals, timeline, and any specific requirements..." className="min-h-[120px]" required />
                     </div>
 
+                    <div className="space-y-3">
+                      <Label>Choose Payment Method</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div
+                          onClick={() => setGateway('korapay')}
+                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
+                        >
+                          <Banknote className={`w-6 h-6 ${gateway === 'korapay' ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <span className="text-xs font-bold uppercase tracking-widest">Korapay</span>
+                        </div>
+                        <div
+                          onClick={() => setGateway('paystack')}
+                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
+                        >
+                          <Globe className={`w-6 h-6 ${gateway === 'paystack' ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <span className="text-xs font-bold uppercase tracking-widest">Paystack</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+
+                      <Label htmlFor="promo">Promo Code</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="promo"
+                          value={promoCode}
+                          onChange={e => setPromoCode(e.target.value)}
+                          placeholder="Enter code (e.g. YOUTHQUAKE)"
+                          className="uppercase"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={applyPromoCode}
+                          disabled={isPromoValidating || !promoCode.trim()}
+                        >
+                          {isPromoValidating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                        </Button>
+                      </div>
+                    </div>
+
                     <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Service</span>
@@ -345,28 +480,37 @@ const StartProject = () => {
                         <span className="text-muted-foreground">Currency</span>
                         <span className="font-medium">{currency === 'USD' ? '🌍 USD (International)' : '🇬🇭 GHS (Local)'}</span>
                       </div>
+                      {promoDiscount > 0 && (
+                        <div className="flex justify-between text-sm text-emerald-500 font-medium">
+                          <span>Discount ({promoDiscount}%)</span>
+                          <span>-{formatPrice(selectedPricing.price * (promoDiscount / 100))}</span>
+                        </div>
+                      )}
                       <div className="border-t border-border pt-2 flex justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span className="text-primary">{formatPrice(selectedPricing.price)}</span>
+                        <span className="text-primary">{formatPrice(calculateTotal(selectedPricing.price))}</span>
                       </div>
                     </div>
 
-                    <Button type="submit" disabled={submitting} className="w-full gap-2 glow-primary text-lg py-6">
-                      {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                      {submitting ? 'Processing...' : `Pay ${formatPrice(selectedPricing.price)} & Submit`}
+                    <Button type="submit" className="w-full h-14 text-lg font-heading glow-primary" disabled={submitting}>
+                      {submitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
+                      Pay & Submit Project
                     </Button>
-
-                    <p className="text-[10px] text-center text-muted-foreground">
-                      Secure payment powered by Korapay. {currency === 'GHS' ? 'Accept Mobile Money, Cards & Bank Transfer.' : 'Pay securely with international cards.'}
-                    </p>
                   </form>
                 </CardContent>
               </Card>
 
-              <div className="flex justify-start">
-                <Button variant="outline" onClick={() => setStep(2)} className="gap-2">
-                  <ArrowLeft className="w-4 h-4" /> Back
+              <div className="flex justify-between items-center px-4">
+                <Button variant="ghost" onClick={() => setStep(2)} className="gap-2 text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="w-4 h-4" /> Change Package
                 </Button>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-bold text-muted-foreground uppercase opacity-50">Pay in</span>
+                  <div className="flex p-1 bg-muted rounded-full border border-border/50">
+                    <button type="button" onClick={() => setCurrency('GHS')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'GHS' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>GHS</button>
+                    <button type="button" onClick={() => setCurrency('USD')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>USD</button>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

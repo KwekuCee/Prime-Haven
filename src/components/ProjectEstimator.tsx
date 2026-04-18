@@ -14,8 +14,18 @@ interface ServiceItem {
 const ProjectEstimator = () => {
     const [services, setServices] = useState<ServiceItem[]>([]);
     const [selectedServices, setSelectedServices] = useState<string[]>([]);
-    const [timeline, setTimeline] = useState<number>(4); // weeks
+    const [timeline, setTimeline] = useState<number>(2); // days
     const [estimatedPrice, setEstimatedPrice] = useState(0);
+
+    const timelines = [
+        { label: '6 Hours', value: 0.25 },
+        { label: '1 Day', value: 1 },
+        { label: '2 Days (Standard)', value: 2 },
+        { label: '3 Days', value: 3 },
+        { label: '4 Days', value: 4 },
+        { label: '5 Days', value: 5 },
+        { label: '1 Week', value: 7 },
+    ];
 
     useEffect(() => {
         const fetchServices = async () => {
@@ -63,12 +73,11 @@ const ProjectEstimator = () => {
             return sum + (srv ? srv.basePrice : 0);
         }, 0);
 
-        // Rush fee logic (less than 3 weeks adds a percentage)
-        if (timeline === 1) total = total * 1.5;
-        else if (timeline === 2) total = total * 1.25;
-
-        // Discount for long timelines
-        if (timeline > 6) total = total * 0.9;
+        // Pricing logic:
+        // Same day / 1 day / 6 hours (< 2 days) -> +40%
+        if (timeline < 2) total = total * 1.4;
+        // More than 4 days -> -20%
+        else if (timeline > 4) total = total * 0.8;
 
         setEstimatedPrice(Math.round(total));
     }, [selectedServices, timeline, services]);
@@ -88,7 +97,7 @@ const ProjectEstimator = () => {
                             viewport={{ once: true }}
                             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium"
                         >
-                            <Calculator className="w-4 h-4" /> Transparent Pricing
+                            <Calculator className="w-4 h-4" /> Fixed Price & Fast Delivery
                         </motion.div>
 
                         <motion.h2
@@ -108,7 +117,7 @@ const ProjectEstimator = () => {
                             transition={{ delay: 0.2 }}
                             className="text-lg text-muted-foreground"
                         >
-                            Select your needs and timeline. We'll generate a realistic starting range. No hidden fees, just straightforward digital excellence.
+                            Select your needs and delivery deadline. Usually, we deliver works in 2 days. Get a discount for longer timelines or choose an ultra-fast rush.
                         </motion.p>
 
                         <motion.ul
@@ -119,10 +128,10 @@ const ProjectEstimator = () => {
                             className="space-y-3 pt-4"
                         >
                             {[
-                                "100% Quality Guarantee",
-                                "Direct communication with elite talent",
-                                "Includes multiple revision rounds",
-                                "Fast, strictly adhered timelines"
+                                "2-Day Standard Delivery",
+                                "40% Rush Surcharge (<24h)",
+                                "20% Discount for 4+ Day Delivery",
+                                "Direct communication with elite talent"
                             ].map((benefit, i) => (
                                 <li key={i} className="flex items-center gap-3 text-muted-foreground">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -174,23 +183,37 @@ const ProjectEstimator = () => {
                             {/* Timeline Slider */}
                             <div>
                                 <label className="flex items-center justify-between text-sm font-semibold mb-4 text-foreground tracking-wide">
-                                    <span>2. HOW FAST DO YOU NEED IT?</span>
-                                    <span className={`px-2 py-0.5 rounded text-xs ${timeline <= 2 ? 'bg-amber-500/20 text-amber-500' : 'bg-muted text-muted-foreground'}`}>
-                                        {timeline} {timeline === 1 ? 'Week' : 'Weeks'}
+                                    <span>2. DELIVERY DEADLINE</span>
+                                    <span className={`px-2 py-0.5 rounded text-xs ${timeline < 2 ? 'bg-amber-500/20 text-amber-500' : timeline > 4 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-muted text-muted-foreground'}`}>
+                                        {timelines.find(t => t.value === timeline)?.label || `${timeline} Days`}
                                     </span>
                                 </label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="12"
-                                    value={timeline}
-                                    onChange={(e) => setTimeline(Number(e.target.value))}
-                                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
-                                <div className="flex justify-between text-[11px] text-muted-foreground mt-2 font-medium uppercase tracking-wider">
-                                    <span>Rush</span>
-                                    <span>Standard</span>
-                                    <span>Relaxed</span>
+                                <div className="space-y-4">
+                                    <input
+                                        type="range"
+                                        min="0.25"
+                                        max="7"
+                                        step="0.25"
+                                        value={timeline}
+                                        onChange={(e) => setTimeline(Number(e.target.value))}
+                                        className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                                    />
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {[0.25, 1, 2, 5].map(val => (
+                                            <button
+                                                key={val}
+                                                onClick={() => setTimeline(val)}
+                                                className={`py-1.5 rounded-lg text-[10px] font-bold border transition-all ${timeline === val ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:border-primary/50'}`}
+                                            >
+                                                {val === 0.25 ? '6H' : val === 1 ? '1D' : val === 2 ? '2D' : '5D'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between text-[11px] text-muted-foreground mt-2 font-medium uppercase tracking-wider">
+                                        <span>Rush (+40%)</span>
+                                        <span>Standard</span>
+                                        <span>Relaxed (-20%)</span>
+                                    </div>
                                 </div>
                             </div>
 

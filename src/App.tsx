@@ -39,6 +39,8 @@ const SubmitWork = lazy(() => import("./pages/SubmitWork"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Install = lazy(() => import("./pages/Install"));
+const ProjectWorkspace = lazy(() => import("./pages/ProjectWorkspace"));
+const DesignerProfile = lazy(() => import("./pages/DesignerProfile"));
 
 // Lazy load admin pages for better initial bundle size
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
@@ -107,6 +109,8 @@ const App = () => {
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
+                  <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
+                  <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

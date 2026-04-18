@@ -4,7 +4,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
+const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -98,8 +100,10 @@ serve(async (req: Request): Promise<Response> => {
     const {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
-      description, discordCategory, paymentReference, referenceFiles
+      description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay'
     } = body;
+
+
 
     if (!clientName || !clientEmail || !serviceType || !tier || !price || !paymentReference) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
@@ -107,22 +111,40 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Verify payment with Korapay
-    const korapayResponse = await fetch(
-      `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
-      { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
-    );
-    const korapayData = await korapayResponse.json();
+    let verifiedAmount: number;
+    let verifiedCurrency: string;
 
-    if (!korapayData.status || korapayData.data?.status !== "success") {
-      return new Response(JSON.stringify({ success: false, error: "Payment verification failed" }), {
-        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    if (gateway === 'paystack') {
+      const paystackResponse = await fetch(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
+        { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
+      );
+      const paystackData = await paystackResponse.json();
+
+      if (!paystackData.status || paystackData.data?.status !== "success") {
+        return new Response(JSON.stringify({ success: false, error: "Payment verification failed" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      verifiedAmount = paystackData.data.amount / 100; // Paystack uses minor units (pesewas/kobo)
+      verifiedCurrency = paystackData.data.currency;
+    } else {
+      // Verify payment with Korapay
+      const korapayResponse = await fetch(
+        `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
+        { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
+      );
+      const korapayData = await korapayResponse.json();
+
+      if (!korapayData.status || korapayData.data?.status !== "success") {
+        return new Response(JSON.stringify({ success: false, error: "Payment verification failed" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      verifiedAmount = korapayData.data.amount;
+      verifiedCurrency = korapayData.data.currency;
     }
 
-    // Use verified amount from Korapay
-    const verifiedAmount = korapayData.data.amount;
-    const verifiedCurrency = korapayData.data.currency;
 
     // Convert to GHS for storage if paid in USD
     const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
@@ -192,7 +214,7 @@ serve(async (req: Request): Promise<Response> => {
     // 3. Add revenue to the respective service category
     const revenueCategoryKey = discordCategory === "graphic-design" ? "graphic"
       : discordCategory === "app-design" ? "uiux"
-      : "web";
+        : "web";
 
     const { data: revenueSetting } = await supabase
       .from("system_settings")
@@ -250,9 +272,10 @@ serve(async (req: Request): Promise<Response> => {
           { name: "💰 Amount Paid", value: displayAmount, inline: true },
           ...(clientWhatsapp ? [{ name: "📱 WhatsApp", value: encodeHtml(clientWhatsapp), inline: true }] : []),
         ],
-        footer: { text: "Prime Haven • Client Order (Paid via Korapay)" },
+        footer: { text: `Prime Haven • Client Order (Paid via ${gateway === 'paystack' ? 'Paystack' : 'Korapay'})` },
         timestamp: new Date().toISOString(),
       };
+
 
       const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
       if (referenceFiles && referenceFiles.length > 0) {

@@ -31,11 +31,16 @@ declare global {
     Korapay: {
       initialize: (config: any) => void;
     };
+    PaystackPop: {
+      setup: (config: any) => { openIframe: () => void };
+    };
   }
 }
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
+const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb"; // User needs to update this
 const REGISTRATION_FEE_GHS = 100;
+
 
 const steps = [
   { id: 1, name: 'Personal', icon: User },
@@ -61,6 +66,13 @@ const Register = () => {
   const navigate = useNavigate();
   const { signUp, user, loading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
+
+
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [isPromoValidating, setIsPromoValidating] = useState(false);
+  const [promoRef, setPromoRef] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) navigate('/dashboard');
@@ -88,70 +100,149 @@ const Register = () => {
   const handleStep3Submit = (data: RegisterAccountData) => { Object.entries(data).forEach(([k, v]) => updateFormData(k, v)); setCurrentStep(4); };
   const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
 
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) return;
+    setIsPromoValidating(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('promo_codes')
+        .select('*')
+        .eq('code', promoCode.toUpperCase().trim())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        toast({ title: 'Invalid Code', description: 'This promo code does not exist or is inactive.', variant: 'destructive' });
+        setPromoDiscount(0);
+        return;
+      }
+
+      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
+        toast({ title: 'Expired Code', description: 'This promo code has expired.', variant: 'destructive' });
+        setPromoDiscount(0);
+        return;
+      }
+
+      setPromoDiscount(data.discount_percent);
+      setPromoRef(data.code);
+      toast({ title: 'Code Applied!', description: `You got ${data.discount_percent}% off your registration fee!` });
+    } catch (err: any) {
+      toast({ title: 'Error', description: 'Could not validate promo code.', variant: 'destructive' });
+    } finally {
+      setIsPromoValidating(false);
+    }
+  };
+
+  const getFinalRegistrationFee = () => {
+    return REGISTRATION_FEE_GHS * (1 - promoDiscount / 100);
+  };
+
   const handlePayNow = () => {
-    if (!window.Korapay) {
-      toast({ variant: 'destructive', title: 'Payment Error', description: 'Payment system is loading. Please try again.' });
+    if (gateway === 'korapay' && !window.Korapay) {
+      toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
       return;
     }
+
+    if (gateway === 'paystack' && !window.PaystackPop) {
+      toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
+      return;
+    }
+
     setIsSubmitting(true);
-    const reference = `PH_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+    const reference = `PH-REG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    window.Korapay.initialize({
-      key: KORAPAY_PUBLIC_KEY,
-      reference,
-      amount: REGISTRATION_FEE_GHS,
-      currency: 'GHS',
-      customer: {
-        name: formData.fullName,
-        email: formData.email,
-      },
-      notification_url: `https://kbxijzsrywcwnyvtbruh.supabase.co/functions/v1/verify-payment`,
-      onSuccess: async (data: any) => {
-        try {
-          const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, { full_name: formData.fullName });
-          if (signUpError) {
-            let msg = 'An error occurred during registration';
-            if (signUpError.message.includes('User already registered')) msg = 'An account with this email already exists.';
-            else if (signUpError.message.includes('Password should be at least')) msg = 'Password is too weak.';
-            else if (signUpError.message.includes('Invalid email')) msg = 'Please enter a valid email address.';
-            else msg = signUpError.message;
-            toast({ variant: 'destructive', title: 'Registration Failed', description: msg });
+    if (gateway === 'korapay') {
+      try {
+        window.Korapay.initialize({
+          key: KORAPAY_PUBLIC_KEY,
+          reference,
+          amount: getFinalRegistrationFee(),
+          currency: "GHS",
+          customer: {
+            name: formData.fullName,
+            email: formData.email,
+          },
+
+          onSuccess: async () => {
+
+            await finalizeRegistration(reference);
+          },
+          onClose: () => {
             setIsSubmitting(false);
-            return;
+          },
+          onFailed: (data: any) => {
+            setIsSubmitting(false);
+            toast({ variant: 'destructive', title: 'Payment Failed', description: data?.message || 'Payment could not be completed.' });
+          },
+        });
+      } catch (err) {
+        setIsSubmitting(false);
+        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Korapay. Please refresh and try again.' });
+      }
+    } else {
+      try {
+        const handler = window.PaystackPop.setup({
+          key: PAYSTACK_PUBLIC_KEY,
+          email: formData.email,
+
+          amount: Math.round(getFinalRegistrationFee() * 100),
+          currency: "GHS",
+          ref: reference,
+          metadata: {
+            custom_fields: [
+              { display_name: "Full Name", variable_name: "full_name", value: formData.fullName }
+            ]
+          },
+
+          callback: async (response: any) => {
+            await finalizeRegistration(reference);
+          },
+          onClose: () => {
+            setIsSubmitting(false);
           }
+        });
+        handler.openIframe();
 
-          const userId = authData?.user?.id;
-          if (!userId) throw new Error('Failed to create user account');
-
-          await supabase.from('profiles').update({ phone: formData.phone, dob: formData.dob ? format(formData.dob, 'yyyy-MM-dd') : null }).eq('id', userId);
-          await supabase.from('designer_details').update({
-            professional_title: formData.professionalTitle,
-            portfolio_url: formData.portfolioUrl || null,
-            experience_level: formData.experience,
-            available_hours: formData.availableHours ? parseInt(formData.availableHours.split('-')[0]) : null,
-          }).eq('user_id', userId);
-
-          await supabase.functions.invoke('verify-payment', { body: { reference } });
-
-          toast({ title: 'Registration Successful!', description: 'Please check your email to verify your account.' });
-          navigate('/login?registered=true');
-        } catch (error) {
-          console.error('Registration error:', error);
-          toast({ variant: 'destructive', title: 'Registration Error', description: 'An unexpected error occurred. Please contact support.' });
-        } finally {
-          setIsSubmitting(false);
-        }
-      },
-      onClose: () => {
+      } catch (err) {
         setIsSubmitting(false);
-        toast({ variant: 'destructive', title: 'Payment Cancelled', description: 'Please try again to complete registration.' });
-      },
-      onFailed: () => {
-        setIsSubmitting(false);
-        toast({ variant: 'destructive', title: 'Payment Failed', description: 'Payment could not be completed. Please try again.' });
-      },
-    });
+        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Paystack. Please refresh and try again.' });
+      }
+    }
   };
+
+  const finalizeRegistration = async (reference: string) => {
+    try {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            professional_title: formData.professionalTitle,
+            registration_fee_paid: true,
+            payment_reference: reference,
+            promo_code: promoRef,
+            gateway: gateway
+          }
+        }
+      });
+
+
+
+      if (signUpError) throw signUpError;
+
+      toast({ title: 'Registration Successful! 🎉', description: 'Please check your email to verify your account.' });
+      navigate('/login?registered=true');
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast({ variant: 'destructive', title: 'Registration Error', description: error.message || 'An unexpected error occurred.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
 
   const getPasswordStrength = (password: string): number => {
     let s = 0;
@@ -404,8 +495,41 @@ const Register = () => {
                     <CreditCard className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-lg font-heading font-bold mb-1">Registration Fee</h3>
-                  <div className="text-3xl font-heading font-bold text-primary mb-1">GH₵100.00</div>
-                  <p className="text-xs text-muted-foreground mb-5">One-time payment to join Prime Haven</p>
+                  <div className="text-3xl font-heading font-bold text-primary mb-1">
+                    {promoDiscount > 0 ? (
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm line-through text-muted-foreground opacity-50">GH₵{REGISTRATION_FEE_GHS.toFixed(2)}</span>
+                        <span>GH₵{getFinalRegistrationFee().toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      `GH₵${REGISTRATION_FEE_GHS.toFixed(2)}`
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">One-time payment to join Prime Haven</p>
+
+                  <div className="mb-4 space-y-2">
+                    <Label htmlFor="promo" className="text-[10px] text-left block text-muted-foreground uppercase tracking-widest">Promo Code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="promo"
+                        value={promoCode}
+                        onChange={e => setPromoCode(e.target.value)}
+                        placeholder="SUMMER24"
+                        className="h-9 text-xs bg-background/40 uppercase"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={applyPromoCode}
+                        disabled={isPromoValidating || !promoCode.trim()}
+                        className="h-9 px-3 text-xs"
+                      >
+                        {isPromoValidating ? <Loader2 className="w-3 h-3 animate-spin shadow-none" /> : 'Apply'}
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="space-y-2 text-left text-xs">
                     {['Access to designer dashboard', 'Join the Discord community', 'Start earning from projects', 'Email verification for security'].map((item) => (
                       <div key={item} className="flex items-center gap-2 text-muted-foreground">

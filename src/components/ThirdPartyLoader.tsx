@@ -8,14 +8,14 @@ export default function ThirdPartyLoader() {
   const adsEnabled = useAdsEnabled();
   const [loaded, setLoaded] = useState(false);
 
-  const insertScript = useCallback((attrs: { src: string; async?: boolean; defer?: boolean; crossorigin?: string; dataset?: Record<string,string> }) => {
+  const insertScript = useCallback((attrs: { src: string; async?: boolean; defer?: boolean; crossorigin?: string; dataset?: Record<string, string> }) => {
     const s = document.createElement('script');
     s.src = attrs.src;
     if (attrs.async) s.async = true;
     if (attrs.defer) s.defer = true;
     if (attrs.crossorigin) s.crossOrigin = attrs.crossorigin as any;
     if (attrs.dataset) {
-      Object.entries(attrs.dataset).forEach(([k,v]) => s.setAttribute(`data-${k}`, v));
+      Object.entries(attrs.dataset).forEach(([k, v]) => s.setAttribute(`data-${k}`, v));
     }
     document.body.appendChild(s);
   }, []);
@@ -35,17 +35,18 @@ export default function ThirdPartyLoader() {
       insertScript({ src: '//ezoicanalytics.com/analytics.js', async: true });
     }
 
-    // Korapay (payments) - load only when not on small mobile to save resources
-    if (!isMobile) {
-      insertScript({ src: 'https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js', async: true });
-    }
-
     setLoaded(true);
   }, [adsEnabled, insertScript, isMobile, loaded]);
 
   useEffect(() => {
-    // Load after short idle period
+    // Load critical payment scripts immediately
+    insertScript({ src: 'https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js', async: false });
+    insertScript({ src: 'https://js.paystack.co/v1/inline.js', async: false });
+
+    // Load other third-party scripts after short idle period
     const timer = window.setTimeout(() => loadAll(), 2500);
+
+
 
     // Or load immediately on first user interaction
     const onInteraction = () => {
