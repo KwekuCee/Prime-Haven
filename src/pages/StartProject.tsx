@@ -106,6 +106,7 @@ const StartProject = () => {
   };
 
   const handleChange = (field: string, value: string) => {
+
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -162,7 +163,8 @@ const StartProject = () => {
     return discounted;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault();
     if (!form.clientName || !form.clientEmail || !form.description) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
@@ -186,6 +188,16 @@ const StartProject = () => {
     const finalPrice = calculateTotal(selectedPricing.price);
     const amount = getPaymentAmount(finalPrice);
 
+    // Bypass payment gateway for 100% discount (0 GHS)
+    if (amount === 0) {
+      const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
+      await handleOrderProcess(freeReference, amount);
+
+      return;
+    }
+
+
     if (gateway === 'korapay') {
       try {
         window.Korapay.initialize({
@@ -197,9 +209,11 @@ const StartProject = () => {
             name: form.clientName,
             email: form.clientEmail,
           },
-          onSuccess: async () => {
-            await handleOrderProcess(reference);
+          onSuccess: () => {
+            handleOrderProcess(reference, finalPrice);
           },
+
+
           onClose: () => setSubmitting(false),
           onFailed: (data: any) => {
             setSubmitting(false);
@@ -223,24 +237,28 @@ const StartProject = () => {
               { display_name: "Client Name", variable_name: "client_name", value: form.clientName }
             ]
           },
-          callback: async (response: any) => {
-            await handleOrderProcess(reference);
+          callback: (response: any) => {
+            handleOrderProcess(reference, finalPrice);
           },
+
+
           onClose: () => {
             setSubmitting(false);
           }
         });
         handler.openIframe();
-      } catch (err) {
+      } catch (err: any) {
         setSubmitting(false);
-        toast({ title: 'Payment System Error', description: 'Could not open Paystack. Please try again.', variant: 'destructive' });
+        toast({ title: 'Payment System Error', description: `Could not open Paystack: ${err.message || 'Unknown error'}. Please try again.`, variant: 'destructive' });
       }
+
     }
   };
 
-  const handleOrderProcess = async (reference: string) => {
+  const handleOrderProcess = async (reference: string, finalPrice: number) => {
+
     try {
-      const { error } = await supabase.functions.invoke('process-client-order', {
+      const { data, error } = await supabase.functions.invoke('process-client-order', {
         body: {
           clientName: form.clientName,
           clientEmail: form.clientEmail,
@@ -248,23 +266,52 @@ const StartProject = () => {
           serviceType: selectedPricing!.service_type,
           serviceLabel: selectedPricing!.service_label,
           tier: selectedPricing!.tier,
-          price: selectedPricing!.price,
+          price: finalPrice,
           description: form.description,
           discordCategory: selectedPricing!.discord_category,
           paymentReference: reference,
           promoCode: promoRef,
-          gateway: gateway // Track which gateway was used
+          gateway: gateway
         },
       });
-      if (error) throw error;
+
+      if (error) {
+        // The supabase client wraps the response — try to read the body
+        let detailMsg = error.message;
+        // For FunctionsHttpError, the context is the Response object
+        if (error.context && typeof error.context.json === 'function') {
+          try {
+            const body = await error.context.json();
+            if (body?.message) detailMsg = body.message;
+            else if (body?.error) detailMsg = body.error;
+          } catch (_) { }
+        }
+        // Also check if data itself has the error info (some versions)
+        if (data && typeof data === 'object' && data.error) {
+          detailMsg = data.message || data.error;
+        }
+        throw new Error(detailMsg);
+      }
+
+      // Check if data indicates failure (edge function returned 200 but with error payload)
+      if (data && data.success === false) {
+        throw new Error(data.error || data.message || 'Order processing failed');
+      }
+
       toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
       navigate('/?project=success');
     } catch (err: any) {
-      toast({ title: 'Order Processing Error', description: err.message || 'Payment successful but we couldn\'t save your order. Contact support: ' + reference, variant: 'destructive' });
+      console.error('Order processing error:', err);
+      toast({
+        title: 'Order Processing Error',
+        description: `${err.message || 'Something went wrong'}. Reference: ${reference}`,
+        variant: 'destructive'
+      });
     } finally {
       setSubmitting(false);
     }
   };
+
 
 
   if (loading) {
@@ -433,14 +480,18 @@ const StartProject = () => {
                           className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                         >
                           <Banknote className={`w-6 h-6 ${gateway === 'korapay' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span className="text-xs font-bold uppercase tracking-widest">Korapay</span>
+                          <span className="text-xs font-bold uppercase tracking-widest text-center">Korapay</span>
+                          <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash Only.</span>
+
                         </div>
                         <div
                           onClick={() => setGateway('paystack')}
                           className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                         >
                           <Globe className={`w-6 h-6 ${gateway === 'paystack' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span className="text-xs font-bold uppercase tracking-widest">Paystack</span>
+                          <span className="text-xs font-bold uppercase tracking-widest text-center">Paystack</span>
+                          <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer, Card</span>
+
                         </div>
                       </div>
                     </div>

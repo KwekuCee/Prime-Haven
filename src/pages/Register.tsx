@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff, CalendarIcon, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff, CalendarIcon, Sparkles, Globe } from 'lucide-react';
+
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -138,7 +139,8 @@ const Register = () => {
     return REGISTRATION_FEE_GHS * (1 - promoDiscount / 100);
   };
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
+
     if (gateway === 'korapay' && !window.Korapay) {
       toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
       return;
@@ -151,6 +153,17 @@ const Register = () => {
 
     setIsSubmitting(true);
     const reference = `PH-REG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const amount = getFinalRegistrationFee();
+
+    // Bypass payment gateway for 100% discount (0 GHS)
+    if (amount === 0) {
+      const freeReference = `PH-FREE-REG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      toast({ title: 'Processing Registration', description: 'Applying your 100% discount...' });
+      await finalizeRegistration(freeReference);
+      return;
+    }
+
+
 
     if (gateway === 'korapay') {
       try {
@@ -195,9 +208,10 @@ const Register = () => {
             ]
           },
 
-          callback: async (response: any) => {
-            await finalizeRegistration(reference);
+          callback: (response: any) => {
+            finalizeRegistration(reference);
           },
+
           onClose: () => {
             setIsSubmitting(false);
           }
@@ -528,37 +542,59 @@ const Register = () => {
                         {isPromoValidating ? <Loader2 className="w-3 h-3 animate-spin shadow-none" /> : 'Apply'}
                       </Button>
                     </div>
-                  </div>
-
-                  <div className="space-y-2 text-left text-xs">
-                    {['Access to designer dashboard', 'Join the Discord community', 'Start earning from projects', 'Email verification for security'].map((item) => (
-                      <div key={item} className="flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                        <span>{item}</span>
+                    <div className="mb-4 space-y-2 text-left">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-widest">Payment Method</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div
+                          onClick={() => setGateway('korapay')}
+                          className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
+                        >
+                          <CreditCard className={`w-5 h-5 ${gateway === 'korapay' ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <span className="text-[10px] font-bold uppercase text-center">Korapay</span>
+                          <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash Only.</span>
+                        </div>
+                        <div
+                          onClick={() => setGateway('paystack')}
+                          className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
+                        >
+                          <Globe className={`w-5 h-5 ${gateway === 'paystack' ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <span className="text-[10px] font-bold uppercase text-center">Paystack</span>
+                          <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer, Card</span>
+                        </div>
                       </div>
-                    ))}
+                    </div>
+
+
+                    <div className="space-y-2 text-left text-xs">
+                      {['Access to designer dashboard', 'Join the Discord community', 'Start earning from projects', 'Email verification for security'].map((item) => (
+                        <div key={item} className="flex items-center gap-2 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <p className="text-[10px] text-center text-muted-foreground">
-                  Secure payment powered by Korapay. Accept Mobile Money, Cards & Bank Transfer.
-                </p>
+                  <p className="text-[10px] text-center text-muted-foreground">
+                    Secure payment powered by Korapay. Accept Mobile Money, Cards & Bank Transfer.
+                  </p>
 
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-11 rounded-xl">Previous</Button>
-                  <Button type="button" onClick={handlePayNow} className="flex-1 h-11 rounded-xl font-semibold text-sm shadow-lg shadow-primary/20" disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : <><Sparkles className="w-4 h-4 mr-2" />Pay & Register</>}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-11 rounded-xl">Previous</Button>
+                    <Button type="button" onClick={handlePayNow} className="flex-1 h-11 rounded-xl font-semibold text-sm shadow-lg shadow-primary/20" disabled={isSubmitting}>
+                      {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : <><Sparkles className="w-4 h-4 mr-2" />Pay & Register</>}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Login link */}
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            Already a member?{' '}
-            <Link to="/login" className="text-primary hover:text-primary/80 font-semibold transition-colors">Sign In</Link>
-          </p>
+            {/* Login link */}
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              Already a member?{' '}
+              <Link to="/login" className="text-primary hover:text-primary/80 font-semibold transition-colors">Sign In</Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

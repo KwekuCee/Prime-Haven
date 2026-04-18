@@ -79,8 +79,14 @@ serve(async (req: Request): Promise<Response> => {
     let paymentChannel: string;
     let paidAt: string;
 
-
-    if (gateway === 'paystack') {
+    if (reference.startsWith('PH-FREE-')) {
+      // Special bypass for 100% discount registration
+      verifiedAmount = 0;
+      verifiedCurrency = 'GHS';
+      paymentChannel = 'promo_code';
+      paidAt = new Date().toISOString();
+      console.log("Processing free registration via promo bypass:", reference);
+    } else if (gateway === 'paystack') {
       const paystackResponse = await fetch(
         `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
         { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
@@ -119,6 +125,7 @@ serve(async (req: Request): Promise<Response> => {
       paymentChannel = korapayData.data.payment_method || korapayData.data.channel || "korapay";
       paidAt = korapayData.data.paid_at || new Date().toISOString();
     }
+
 
     // Convert USD to GHS for storage if needed
     const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * 15.5 : verifiedAmount;
