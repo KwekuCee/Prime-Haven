@@ -36,8 +36,12 @@ const ActiveContracts = () => {
     const [contracts, setContracts] = useState<ActiveContract[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [now, setNow] = useState(new Date());
+
     useEffect(() => {
         loadContracts();
+        const timer = setInterval(() => setNow(new Date()), 60000); // Update every minute for countdown
+        return () => clearInterval(timer);
     }, [user]);
 
     const loadContracts = async () => {
@@ -45,11 +49,13 @@ const ActiveContracts = () => {
         setLoading(true);
         try {
             // 1. Fetch from project_assignments (new system)
-            const { data: assignments, error: assignmentError } = await supabase
+            // @ts-ignore
+            const { data: assignments, error: assignmentError } = await (supabase as any)
                 .from('project_assignments')
                 .select(`
                     id,
                     project_id,
+                    status,
                     client_projects (
                         id,
                         title,
@@ -75,14 +81,16 @@ const ActiveContracts = () => {
 
             // 3. Map into a unified ActiveContract interface
             const unified: ActiveContract[] = [
-                ...(assignments || []).map((a: any) => ({
-                    id: a.client_projects.id,
-                    service_type: a.client_projects.category,
-                    tier: 'Standard', // Client projects don't have explicit tiers like orders
-                    deadline_at: a.client_projects.deadline || new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    project_status: a.client_projects.status,
-                    price: 0, // Budget is a text field in client_projects
-                })),
+                ...(assignments || [])
+                    .filter((a: any) => a.client_projects)
+                    .map((a: any) => ({
+                        id: a.client_projects.id,
+                        service_type: a.client_projects.category,
+                        tier: 'Standard',
+                        deadline_at: a.client_projects.deadline || new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        project_status: a.client_projects.status,
+                        price: 0,
+                    })),
                 ...(orders || []).map((o: any) => ({
                     id: o.id,
                     service_type: o.service_type,
@@ -93,13 +101,17 @@ const ActiveContracts = () => {
                 }))
             ];
 
-            // Remove duplicates (just in case)
+            // Remove duplicates and Filter by deadline
             const seen = new Set();
-            const filtered = unified.filter(item => {
-                const isDuplicate = seen.has(item.id);
-                seen.add(item.id);
-                return !isDuplicate;
-            });
+            const nowTime = new Date();
+            const filtered = unified
+                .filter(item => {
+                    const isDuplicate = seen.has(item.id);
+                    seen.add(item.id);
+                    // Disappear if deadline is passed (as requested)
+                    const isExpired = isAfter(nowTime, new Date(item.deadline_at));
+                    return !isDuplicate && !isExpired;
+                });
 
             setContracts(filtered.sort((a, b) => new Date(a.deadline_at).getTime() - new Date(b.deadline_at).getTime()));
         } catch (err) {
@@ -112,11 +124,10 @@ const ActiveContracts = () => {
 
     const getDeadlineStatus = (deadline: string) => {
         const d = new Date(deadline);
-        const now = new Date();
         const isOverdue = isAfter(now, d);
         return {
             isOverdue,
-            text: isOverdue ? `Overdue by ${formatDistanceToNow(d)}` : `Due in ${formatDistanceToNow(d)}`,
+            text: isOverdue ? `Expired` : `Due in ${formatDistanceToNow(d)}`,
             color: isOverdue ? 'text-destructive' : 'text-primary'
         };
     };

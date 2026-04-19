@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -101,7 +102,20 @@ serve(async (req: Request): Promise<Response> => {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
       description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay'
-    } = body;
+    } = body as {
+      clientName: string;
+      clientEmail: string;
+      clientWhatsapp?: string;
+      serviceType: string;
+      serviceLabel: string;
+      tier: string;
+      price: number;
+      description?: string;
+      discordCategory: string;
+      paymentReference: string;
+      referenceFiles?: string[];
+      gateway?: string;
+    };
 
     console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
 

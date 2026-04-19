@@ -238,7 +238,8 @@ const StartProject = () => {
 
         // 3. Notify Discord via Database RPC (bypassing edge function)
         try {
-          await supabase.rpc('notify_discord_order', {
+          // @ts-ignore
+          await (supabase as any).rpc('notify_discord_order', {
             p_service_label: selectedPricing.service_label,
             p_service_type: selectedPricing.service_type,
             p_tier: selectedPricing.tier,

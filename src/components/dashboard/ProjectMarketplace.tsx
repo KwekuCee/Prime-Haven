@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { format, addDays } from 'date-fns';
+import { format, addDays, isAfter } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 interface OpenOrder {
     id: string;
-    source: 'client_projects' | 'client_orders';
+    source: 'client_projects' | 'client_orders' | 'job_contracts';
     service_type: string;
     title: string;
     tier?: string;
@@ -34,6 +34,23 @@ const CATEGORY_LABELS: Record<string, string> = {
     'print-design': 'Print Design',
     'flyer-design': 'Flyer / Poster Design',
     'social-media': 'Social Media Design',
+    'App/UI/UX Design': 'UI/UX Design',
+    'Graphic Design': 'Graphic Design',
+    'Web Development': 'Web Development',
+};
+
+const PROFESSION_MAPPING: Record<string, string[]> = {
+    'logo-design': ['Graphic Designer'],
+    'brand-identity': ['Graphic Designer'],
+    'print-design': ['Graphic Designer'],
+    'flyer-design': ['Graphic Designer'],
+    'social-media': ['Graphic Designer'],
+    'app-design': ['UI/UX Designer'],
+    'App/UI/UX Design': ['UI/UX Designer'],
+    'web-design': ['Web Developer'],
+    'web-development': ['Web Developer'],
+    'Web Development': ['Web Developer'],
+    'Graphic Design': ['Graphic Designer'],
 };
 
 const ProjectMarketplace = () => {
@@ -72,10 +89,11 @@ const ProjectMarketplace = () => {
                     category,
                     description,
                     created_at,
+                    deadline,
                     budget,
                     required_professions,
                     max_assignees,
-                    project_assignments(count)
+                    project_assignments(count, designer_id)
                 `)
                 .eq('status', 'pending')
                 .overlaps('required_professions', userProfessions);
@@ -83,40 +101,84 @@ const ProjectMarketplace = () => {
             if (projectsError) throw projectsError;
 
             // 2. Fetch from client_orders (legacy/direct pool)
-            const { data: orders, error: ordersError } = await supabase
-                .from('client_orders')
+            const { data: orders, error: ordersError } = await (supabase
+                .from('client_orders') as any)
                 .select('*')
                 .eq('payment_status', 'paid')
                 .eq('project_status', 'unassigned');
 
             if (ordersError) throw ordersError;
 
-            // 3. Unify the results
-            const projectMarket: OpenOrder[] = (projects || []).map((p: any) => ({
-                id: p.id,
-                source: 'client_projects',
-                service_type: p.category,
-                title: p.title,
-                description: p.description,
-                created_at: p.created_at,
-                budget: p.budget,
-                required_professions: p.required_professions,
-                max_assignees: p.max_assignees,
-                current_claims: p.project_assignments?.[0]?.count || 0
-            })).filter(p => p.current_claims! < p.max_assignees!);
+            // 3. Fetch from job_contracts (Available Contracts)
+            const { data: contracts, error: contractsError } = await supabase
+                .from('job_contracts')
+                .select('*')
+                .in('status', ['active', 'in_progress'])
+                .limit(10);
 
-            const orderMarket: OpenOrder[] = (orders || []).map((o: any) => ({
-                id: o.id,
-                source: 'client_orders',
-                service_type: o.service_type,
-                title: `${CATEGORY_LABELS[o.service_type] || o.service_type} — ${o.tier}`,
-                tier: o.tier,
-                price: o.price,
-                description: o.description,
-                created_at: o.created_at
-            }));
+            if (contractsError) throw contractsError;
 
-            setOrders([...projectMarket, ...orderMarket].sort((a, b) =>
+            // 4. Unify and Filter results
+            const now = new Date();
+
+            const projectMarket: OpenOrder[] = (projects || [])
+                .filter((p: any) => {
+                    // Check if user already claimed this
+                    const hasClaimed = p.project_assignments?.some((a: any) => a.designer_id === user.id);
+                    // Check if deadline passed
+                    const deadlinePassed = p.deadline && isAfter(now, new Date(p.deadline));
+                    return !hasClaimed && !deadlinePassed;
+                })
+                .map((p: any) => ({
+                    id: p.id,
+                    source: 'client_projects' as const,
+                    service_type: p.category,
+                    title: p.title || `Project: ${CATEGORY_LABELS[p.category] || p.category || 'Untitled'}`,
+                    description: p.description,
+                    created_at: p.created_at,
+                    budget: p.budget,
+                    required_professions: p.required_professions,
+                    max_assignees: p.max_assignees,
+                    current_claims: p.project_assignments?.[0]?.count || 0
+                }))
+                .filter(p => (p.current_claims || 0) < (p.max_assignees || 1));
+
+            const orderMarket: OpenOrder[] = (orders || [])
+                .filter((o: any) => {
+                    const required = PROFESSION_MAPPING[o.service_type] || ['Graphic Designer'];
+                    const hasMatchingProfession = required.some(p => userProfessions.includes(p));
+                    const deadlinePassed = o.deadline_at && isAfter(now, new Date(o.deadline_at));
+                    return hasMatchingProfession && !deadlinePassed;
+                })
+                .map((o: any) => ({
+                    id: o.id,
+                    source: 'client_orders' as const,
+                    service_type: o.service_type,
+                    title: `${CATEGORY_LABELS[o.service_type] || o.service_type} — ${o.tier || 'Standard'}`,
+                    tier: o.tier || 'Standard',
+                    price: o.price,
+                    description: o.description,
+                    created_at: o.created_at
+                }));
+
+            const jobMarket: OpenOrder[] = (contracts || [])
+                .filter((c: any) => {
+                    const required = PROFESSION_MAPPING[c.category] || ['Graphic Designer'];
+                    const hasMatchingProfession = required.some(p => userProfessions.includes(p));
+                    const deadlinePassed = c.deadline && isAfter(now, new Date(c.deadline));
+                    return hasMatchingProfession && !deadlinePassed;
+                })
+                .map((c: any) => ({
+                    id: c.id,
+                    source: 'job_contracts' as const,
+                    service_type: c.category,
+                    title: c.title || `Contract: ${CATEGORY_LABELS[c.category] || c.category || 'Untitled'}`,
+                    budget: c.budget,
+                    description: c.description,
+                    created_at: c.created_at
+                }));
+
+            setOrders([...projectMarket, ...orderMarket, ...jobMarket].sort((a, b) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             ));
         } catch (err) {
@@ -136,6 +198,17 @@ const ProjectMarketplace = () => {
                     p_project_id: order.id
                 });
                 if (error) throw error;
+            } else if (order.source === 'job_contracts') {
+                // Use the notification system for job_contracts
+                const { error } = await supabase.functions.invoke('notify-designer', {
+                    body: {
+                        designerId: user.id,
+                        projectName: order.title,
+                        notificationType: 'contract_application',
+                    },
+                });
+                if (error) throw error;
+                toast({ title: 'Application Sent!', description: `You've applied for "${order.title}". Admin notified.` });
             } else {
                 // Legacy logic for client_orders
                 const deadline = addDays(new Date(), 2).toISOString();

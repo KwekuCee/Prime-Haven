@@ -18,7 +18,6 @@ import { MagneticEffect } from '@/components/ui/MagneticEffect';
 import DashboardLayout from '@/components/DashboardLayout';
 import ProjectMarketplace from '@/components/dashboard/ProjectMarketplace';
 import ActiveContracts from '@/components/dashboard/ActiveContracts';
-import ContractApplications from '@/components/dashboard/ContractApplications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
@@ -28,6 +27,9 @@ import AchievementBadges from '@/components/dashboard/AchievementBadges';
 import ActivityStreak from '@/components/dashboard/ActivityStreak';
 import LiveFeed from '@/components/dashboard/LiveFeed';
 import ExpectedSalaryModal from '@/components/dashboard/ExpectedSalaryModal';
+import EarningsChart from '@/components/dashboard/EarningsChart';
+import GoalTracker from '@/components/dashboard/GoalTracker';
+import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 
 interface ProfileData {
   full_name: string;
@@ -525,12 +527,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Contract Applications */}
-        {user && (
-          <div className="mb-6">
-            <ContractApplications userId={user.id} professionalTitle={designer?.professional_title || null} />
-          </div>
-        )}
 
         {/* Designer Portfolio */}
         {user && (
@@ -756,7 +752,7 @@ const Dashboard = () => {
         submissions={submissions}
         formatCurrency={formatCurrency}
       />
-    </DashboardLayout>
+    </DashboardLayout >
   );
 };
 

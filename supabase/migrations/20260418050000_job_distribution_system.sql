@@ -24,11 +24,13 @@ CREATE TABLE IF NOT EXISTS public.project_assignments (
 ALTER TABLE public.project_assignments ENABLE ROW LEVEL SECURITY;
 
 -- 5. Policies for assignments
+DROP POLICY IF EXISTS "Designers can view their own assignments" ON public.project_assignments;
 CREATE POLICY "Designers can view their own assignments"
 ON public.project_assignments FOR SELECT
 TO authenticated
 USING (auth.uid() = designer_id);
 
+DROP POLICY IF EXISTS "Admins can manage all assignments" ON public.project_assignments;
 CREATE POLICY "Admins can manage all assignments"
 ON public.project_assignments FOR ALL
 TO authenticated
