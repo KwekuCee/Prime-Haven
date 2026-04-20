@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Globe, Banknote } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Globe, Banknote, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,6 +79,30 @@ const StartProject = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
+  const [isReturningClient, setIsReturningClient] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const checkReturning = async () => {
+      if (user?.email) {
+        const { data: client } = await supabase.from('clients').select('*').eq('email', user.email).maybeSingle();
+        if (client) {
+          setIsReturningClient(true);
+          setForm(prev => ({
+            ...prev,
+            clientName: client.name || '',
+            clientEmail: client.email || user.email || '',
+            clientWhatsapp: client.whatsapp || '',
+            businessName: client.company || '',
+          }));
+          // If we have their data, skip to project details if they haven't picked a service yet
+          // But usually they pick service first. Step 1 is service selection.
+          // Step 1: Service selection. Step 2: Form? No, let's see step counts.
+        }
+      }
+    };
+    checkReturning();
+  }, [user]);
 
   useEffect(() => {
     const fetchPricing = async () => {
@@ -168,7 +192,7 @@ const StartProject = () => {
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault();
-    if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || !form.password) {
+    if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
     }

@@ -43,6 +43,8 @@ const ProjectWorkspace = lazy(() => import("./pages/ProjectWorkspace"));
 const DesignerProfile = lazy(() => import("./pages/DesignerProfile"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 const ClientProjectsReview = lazy(() => import("./pages/ClientProjectsReview"));
+const ClientProfile = lazy(() => import("./pages/ClientProfile"));
+const ClientSettings = lazy(() => import("./pages/ClientSettings"));
 const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
 
 // Lazy load admin pages for better initial bundle size
@@ -121,6 +123,8 @@ const App = () => {
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/client/projects" element={<ClientProjectsReview />} />
+                  <Route path="/client/profile" element={<ClientProfile />} />
+                  <Route path="/client/settings" element={<ClientSettings />} />
                   <Route path="/affiliate/dashboard" element={<AffiliateDashboard />} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="*" element={<NotFound />} />

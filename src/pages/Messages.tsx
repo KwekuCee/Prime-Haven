@@ -38,39 +38,91 @@ const Messages = () => {
     const load = async () => {
       setLoading(true);
       try {
+        // 0. Check if user is a client
+        const { data: clientData } = await supabase.from('clients').select('id, name').eq('email', user.email).maybeSingle();
+        const isClientUser = !!clientData;
+
+        // 1. Get my own title (for fallback/sorting)
         const { data: myDetails } = await supabase.from('designer_details').select('professional_title').eq('user_id', user.id).maybeSingle();
-        const title = myDetails?.professional_title || '';
+        const title = myDetails?.professional_title || (isClientUser ? 'Client' : '');
         setMyTitle(title);
-        const { data: allDetails } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
-        if (!allDetails || allDetails.length === 0) { setPeers([]); setConversationMeta(new Map()); setLoading(false); return; }
-        const userIds = allDetails.map(d => d.user_id).filter(Boolean);
-        const [profilesRes, settingsRes, messagesRes] = await Promise.all([
-          supabase.from('profiles').select('id, full_name').in('id', userIds),
-          supabase.from('user_settings').select('user_id, allow_messages').in('user_id', userIds),
-          supabase.from('messages').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order('created_at', { ascending: false }),
-        ]);
-        interface ProfileShort { id: string; full_name?: string }
-        const profilesData = (profilesRes.data || []) as ProfileShort[];
-        const profileMap = new Map(profilesData.map((p: ProfileShort) => [p.id, p]));
-        const settingsMap = new Map(settingsRes.data?.map(s => [s.user_id, s.allow_messages]) || []);
-        const peerList: Designer[] = allDetails.filter(d => settingsMap.get(d.user_id) !== false).map(d => ({
-          user_id: d.user_id, full_name: profileMap.get(d.user_id)?.full_name || 'Unknown',
-          professional_title: d.professional_title || 'Designer', profile_photo_url: d.profile_photo_url || null,
-        })).sort((a, b) => {
-          const aMatch = title && a.professional_title?.toLowerCase() === title.toLowerCase();
-          const bMatch = title && b.professional_title?.toLowerCase() === title.toLowerCase();
-          if (aMatch && !bMatch) return -1; if (!aMatch && bMatch) return 1;
-          return a.full_name.localeCompare(b.full_name);
-        });
-        setPeers(peerList);
-        const allMsgs = messagesRes.data || [];
+
+        let finalPeers: Designer[] = [];
+
+        if (isClientUser) {
+          // 2. Client Mode: Find designers linked to their projects
+          // Get designer IDs from submissions belonging to this client's orders
+          const { data: myOrders } = await supabase.from('client_orders').select('id').eq('client_email', user.email);
+          const orderIds = (myOrders || []).map(o => o.id);
+
+          const { data: submissions } = await supabase.from('submissions').select('designer_id').in('client_ref', orderIds);
+          const designerIds = Array.from(new Set((submissions || []).map(s => s.designer_id)));
+
+          if (designerIds.length > 0) {
+            const { data: designers } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').in('user_id', designerIds);
+            const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', designerIds);
+
+            const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+            finalPeers = (designers || []).map(d => ({
+              user_id: d.user_id,
+              full_name: profileMap.get(d.user_id) || 'Unknown Designer',
+              professional_title: d.professional_title || 'Designer',
+              profile_photo_url: d.profile_photo_url || null
+            }));
+          }
+        } else {
+          // 3. Designer Mode: Show other designers + their own clients
+          // Fetch all designers (existing behavior)
+          const { data: allDesigners } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
+          const { data: designerProfiles } = await supabase.from('profiles').select('id, full_name').in('id', allDesigners?.map(d => d.user_id) || []);
+
+          const dProfileMap = new Map(designerProfiles?.map(p => [p.id, p.full_name]) || []);
+          const designerList: Designer[] = (allDesigners || []).map(d => ({
+            user_id: d.user_id,
+            full_name: dProfileMap.get(d.user_id) || 'Unknown',
+            professional_title: d.professional_title || 'Designer',
+            profile_photo_url: d.profile_photo_url || null,
+          }));
+
+          // Fetch clients this designer has worked for
+          const { data: mySubmissions } = await supabase.from('submissions').select('client_ref').eq('designer_id', user.id);
+          const clientRefs = Array.from(new Set((mySubmissions || []).map(s => s.client_ref)));
+
+          let clientList: Designer[] = [];
+          if (clientRefs.length > 0) {
+            const { data: orders } = await supabase.from('client_orders').select('client_email').in('id', clientRefs);
+            const clientEmails = Array.from(new Set((orders || []).map(o => o.client_email)));
+
+            if (clientEmails.length > 0) {
+              const { data: clients } = await supabase.from('clients').select('id, name, company, email').in('email', clientEmails);
+              // Need to map client auth IDs
+              const { data: authUsers } = await supabase.from('profiles').select('id, email').in('email', clientEmails);
+              const authMap = new Map(authUsers?.map(a => [a.email, a.id]) || []);
+
+              clientList = (clients || []).map(c => ({
+                user_id: authMap.get(c.email) || '',
+                full_name: c.name || 'Client',
+                professional_title: c.company || 'Business',
+                profile_photo_url: (c as any).profile_photo_url || null
+              })).filter(c => c.user_id !== '');
+            }
+          }
+          finalPeers = [...designerList, ...clientList];
+        }
+
+        setPeers(finalPeers);
+
+        // 4. Load messages and metadata
+        const peerIds = finalPeers.map(p => p.user_id);
+        const { data: allMsgs } = await supabase.from('messages').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order('created_at', { ascending: false });
+
         const metaMap = new Map<string, ConversationMeta>();
-        for (const peer of peerList) {
-          const peerMsgs = allMsgs.filter(m => m.sender_id === peer.user_id || m.receiver_id === peer.user_id);
+        for (const peer of finalPeers) {
+          const peerMsgs = (allMsgs || []).filter(m => m.sender_id === peer.user_id || m.receiver_id === peer.user_id);
           metaMap.set(peer.user_id, { partnerId: peer.user_id, lastMessage: peerMsgs[0] || null, unreadCount: peerMsgs.filter(m => m.receiver_id === user.id && !m.read).length });
         }
         setConversationMeta(metaMap);
-      } catch (error) { console.error('Error loading peers:', error); }
+      } catch (error) { console.error('Error loading messaging peers:', error); }
       finally { setLoading(false); }
     };
     load();
@@ -195,7 +247,7 @@ const Messages = () => {
         <div className={`w-56 border-r border-border/60 bg-card/20 flex flex-col flex-shrink-0 ${selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-3 border-b border-border/40 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-primary" />
-            <h2 className="text-xs font-heading font-bold">Messages</h2>
+            <h2 className="text-xs font-heading font-bold">{myTitle === 'Client' ? 'Talk to the Designer' : 'Conversations'}</h2>
           </div>
           <ScrollArea className="flex-1">
             {loading ? (
@@ -304,7 +356,7 @@ const Messages = () => {
                   <MessageSquare className="w-6 h-6 text-muted" />
                 </div>
                 <h3 className="text-sm font-heading font-bold mb-1">No conversation selected</h3>
-                <p className="text-[10px] text-muted-foreground">Pick a designer to start chatting</p>
+                <p className="text-[10px] text-muted-foreground">{myTitle === 'Client' ? 'Pick a designer to start chatting' : 'Select a person to message'}</p>
               </div>
             </div>
           )}
