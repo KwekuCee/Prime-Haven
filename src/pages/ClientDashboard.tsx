@@ -34,6 +34,7 @@ const ClientDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<ClientOrder[]>([]);
     const [submissions, setSubmissions] = useState<any[]>([]);
+    const [clientProfile, setClientProfile] = useState<any>(null);
     const [stats, setStats] = useState({ totalSpent: 0, activeProjects: 0, completedProjects: 0, pendingPayments: 0 });
 
     useEffect(() => {
@@ -74,6 +75,15 @@ const ClientDashboard = () => {
             );
 
             setSubmissions(fetchedSubmissions);
+
+            // Fetch client profile for personalization
+            const { data: profileData } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('email', user?.email)
+                .maybeSingle();
+
+            if (profileData) setClientProfile(profileData);
 
             const totalSpent = fetchedOrders.filter(o => o.payment_status === 'paid' || o.payment_status === 'completed').reduce((sum, o) => sum + Number(o.price || 0), 0);
             const activeProjects = fetchedOrders.filter(o => o.project_status && o.project_status !== 'delivered' && o.project_status !== 'cancelled').length;
@@ -120,9 +130,11 @@ const ClientDashboard = () => {
             <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div>
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Client Portal</p>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                            {clientProfile?.company ? `${clientProfile.company} Portal` : 'Client Portal'}
+                        </p>
                         <h1 className="text-2xl sm:text-3xl font-heading font-bold">
-                            Your Dashboard <span className="text-gradient">✦</span>
+                            Welcome Back, {clientProfile?.name?.split(' ')[0] || user?.email?.split('@')[0]} <span className="text-gradient">✦</span>
                         </h1>
                     </div>
                     <MagneticEffect intensity={0.1}>
@@ -132,47 +144,66 @@ const ClientDashboard = () => {
                     </MagneticEffect>
                 </motion.div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="h-full">
-                        <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
-                            <div className="flex items-center justify-between mb-3">
-                                <Wallet className="w-5 h-5 text-primary" />
+                {/* Business Overview & Stats */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="lg:col-span-1">
+                        <SpotlightCard className="h-full rounded-2xl border border-primary/20 bg-primary/5 p-6 flex flex-col justify-between">
+                            <div>
+                                <div className="p-2 bg-primary/20 rounded-xl w-fit mb-4">
+                                    <Badge variant="outline" className="border-primary/30 text-primary text-[10px] uppercase font-bold tracking-widest">Business Account</Badge>
+                                </div>
+                                <h2 className="text-xl font-heading font-bold mb-1">{clientProfile?.company || 'Your Project Hub'}</h2>
+                                <p className="text-xs text-muted-foreground">{user?.email}</p>
                             </div>
-                            <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{stats.totalSpent.toLocaleString()}</p>
-                            <p className="text-[11px] text-muted-foreground mt-1">Total Spent</p>
+                            <div className="mt-8 pt-4 border-t border-primary/10">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="text-muted-foreground">Projects Handled</span>
+                                    <span className="font-bold text-primary">{stats.completedProjects + stats.activeProjects}</span>
+                                </div>
+                            </div>
                         </SpotlightCard>
                     </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="h-full">
-                        <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
-                            <div className="flex items-center justify-between mb-3">
-                                <Clock className="w-5 h-5 text-amber-500" />
-                            </div>
-                            <p className="text-2xl sm:text-3xl font-heading font-bold">{stats.activeProjects}</p>
-                            <p className="text-[11px] text-muted-foreground mt-1">Active Projects</p>
-                        </SpotlightCard>
-                    </motion.div>
+                    <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="h-full">
+                            <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                        <Wallet className="w-5 h-5 text-emerald-500" />
+                                    </div>
+                                    <Badge variant="outline" className="text-[9px] uppercase border-emerald-500/20 text-emerald-500">Paid Out</Badge>
+                                </div>
+                                <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{stats.totalSpent.toLocaleString()}</p>
+                                <p className="text-[11px] text-muted-foreground mt-1 tracking-wider uppercase opacity-70">Investment in Growth</p>
+                            </SpotlightCard>
+                        </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="h-full">
-                        <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
-                            <div className="flex items-center justify-between mb-3">
-                                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                            </div>
-                            <p className="text-2xl sm:text-3xl font-heading font-bold">{stats.completedProjects}</p>
-                            <p className="text-[11px] text-muted-foreground mt-1">Delivered Projects</p>
-                        </SpotlightCard>
-                    </motion.div>
+                        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="h-full">
+                            <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2 bg-amber-500/10 rounded-lg">
+                                        <Clock className="w-5 h-5 text-amber-500" />
+                                    </div>
+                                    <Badge variant="outline" className="text-[9px] uppercase border-amber-500/20 text-amber-500">In Progress</Badge>
+                                </div>
+                                <p className="text-2xl sm:text-3xl font-heading font-bold">{stats.activeProjects}</p>
+                                <p className="text-[11px] text-muted-foreground mt-1 tracking-wider uppercase opacity-70">Active Project Flows</p>
+                            </SpotlightCard>
+                        </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="h-full">
-                        <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
-                            <div className="flex items-center justify-between mb-3">
-                                <ShoppingBag className="w-5 h-5 text-blue-500" />
-                            </div>
-                            <p className="text-2xl sm:text-3xl font-heading font-bold">{stats.pendingPayments}</p>
-                            <p className="text-[11px] text-muted-foreground mt-1">Pending Payments</p>
-                        </SpotlightCard>
-                    </motion.div>
+                        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="h-full">
+                            <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 hover:border-primary/20 transition-all">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                                        <CheckCircle className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <Badge variant="outline" className="text-[9px] uppercase border-blue-500/20 text-blue-500">Success Rate</Badge>
+                                </div>
+                                <p className="text-2xl sm:text-3xl font-heading font-bold">{stats.completedProjects > 0 ? "100%" : "0%"}</p>
+                                <p className="text-[11px] text-muted-foreground mt-1 tracking-wider uppercase opacity-70">Deliverables Handled</p>
+                            </SpotlightCard>
+                        </motion.div>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

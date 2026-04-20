@@ -101,7 +101,8 @@ serve(async (req: Request): Promise<Response> => {
     const {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
-      description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay'
+      description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay',
+      clientPassword, businessName
     } = body as {
       clientName: string;
       clientEmail: string;
@@ -115,6 +116,8 @@ serve(async (req: Request): Promise<Response> => {
       paymentReference: string;
       referenceFiles?: string[];
       gateway?: string;
+      clientPassword?: string;
+      businessName?: string;
     };
 
     console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
@@ -227,6 +230,45 @@ serve(async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ success: false, error: "database_error", message: `Failed to create order: ${orderError.message}` }), {
         status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
+    }
+
+    // 1b. Create/Update Client User & Profile
+    console.log("Setting up client account...");
+    if (clientPassword) {
+      try {
+        // Use admin client to create user to bypass confirmation if possible or just handle it cleanly
+        const { data: userData, error: authError } = await supabase.auth.admin.createUser({
+          email: clientEmail,
+          password: clientPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: clientName,
+            business_name: businessName,
+            whatsapp: clientWhatsapp,
+            role: 'client'
+          }
+        });
+
+        if (authError && authError.status !== 422) { // 422 usually means user already exists
+          console.error("Auth creation error:", authError);
+        }
+      } catch (e) {
+        console.error("Auth catch error:", e);
+      }
+    }
+
+    // 1c. Upsert into clients table
+    const { error: clientRecordError } = await supabase
+      .from("clients")
+      .upsert({
+        email: clientEmail,
+        name: clientName,
+        company: businessName || null,
+        whatsapp: clientWhatsapp || null,
+      }, { onConflict: 'email' });
+
+    if (clientRecordError) {
+      console.error("Client record update error:", clientRecordError);
     }
 
     // 2. Auto-create client project for tracking

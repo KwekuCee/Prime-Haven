@@ -70,6 +70,8 @@ const StartProject = () => {
     clientName: '',
     clientEmail: '',
     clientWhatsapp: '',
+    businessName: '',
+    password: '',
     description: '',
   });
 
@@ -166,7 +168,7 @@ const StartProject = () => {
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault();
-    if (!form.clientName || !form.clientEmail || !form.description) {
+    if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || !form.password) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
     }
@@ -214,6 +216,36 @@ const StartProject = () => {
           throw new Error(orderError.message);
         }
 
+        // 1b. Create Client Account (Automatic for free orders)
+        try {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email: form.clientEmail,
+            password: form.password,
+            options: {
+              data: {
+                full_name: form.clientName,
+                business_name: form.businessName,
+                whatsapp: form.clientWhatsapp,
+              }
+            }
+          });
+
+          if (signUpError && signUpError.message !== 'User already registered') {
+            console.error('Auto-registration failed:', signUpError);
+          }
+
+          // Ensure client exists in clients table
+          await supabase.from('clients').upsert({
+            email: form.clientEmail,
+            name: form.clientName,
+            company: form.businessName,
+            whatsapp: form.clientWhatsapp,
+          }, { onConflict: 'email' });
+
+        } catch (authErr) {
+          console.error('Auth/Client record error:', authErr);
+        }
+
         const distributionMap: Record<string, { professions: string[], max: number }> = {
           "graphic-design": { professions: ['Graphic Designer'], max: 2 },
           "app-design": { professions: ['UI/UX Designer'], max: 1 },
@@ -222,18 +254,22 @@ const StartProject = () => {
         const dist = distributionMap[selectedPricing.discord_category] || { professions: ['Web Developer'], max: 1 };
 
         // Also create the client project for tracking
-        await supabase.from('client_projects').insert({
-          title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
-          client_name: form.clientName,
-          client_email: form.clientEmail,
-          client_whatsapp: form.clientWhatsapp || null,
-          description: form.description,
-          category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
-          status: 'pending',
-          budget: 'GH₵0 (Promo)',
-          required_professions: dist.professions,
-          max_assignees: dist.max,
-        }).then(() => { }).catch(e => console.error('Project tracking insert failed (non-critical):', e));
+        try {
+          await supabase.from('client_projects').insert({
+            title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
+            client_name: form.clientName,
+            client_email: form.clientEmail,
+            client_whatsapp: form.clientWhatsapp || null,
+            description: form.description,
+            category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
+            status: 'pending',
+            budget: 'GH₵0 (Promo)',
+            required_professions: dist.professions,
+            max_assignees: dist.max,
+          });
+        } catch (e) {
+          console.error('Project tracking insert failed (non-critical):', e);
+        }
 
 
         // 3. Notify Discord via Database RPC (bypassing edge function)
@@ -345,7 +381,9 @@ const StartProject = () => {
           discordCategory: selectedPricing!.discord_category,
           paymentReference: reference,
           promoCode: promoRef,
-          gateway: gateway
+          gateway: gateway,
+          clientPassword: form.password,
+          businessName: form.businessName
         },
       });
 
@@ -535,6 +573,16 @@ const StartProject = () => {
                       <div className="space-y-2">
                         <Label htmlFor="clientEmail">Email *</Label>
                         <Input id="clientEmail" type="email" value={form.clientEmail} onChange={e => handleChange('clientEmail', e.target.value)} placeholder="john@example.com" required />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="businessName">Business Name *</Label>
+                        <Input id="businessName" value={form.businessName} onChange={e => handleChange('businessName', e.target.value)} placeholder="Acme Corp" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Set Dashboard Password *</Label>
+                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="••••••••" required />
                       </div>
                     </div>
                     <div className="space-y-2">
