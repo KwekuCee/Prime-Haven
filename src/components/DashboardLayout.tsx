@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User,
-  MessageSquare, Download, Shield, ChevronLeft
+  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -16,14 +16,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Submit Work', icon: Upload, path: '/submit-work' },
-  { label: 'Messages', icon: MessageSquare, path: '/messages' },
-  { label: 'Payments', icon: Wallet, path: '/payments' },
-  { label: 'Settings', icon: Settings, path: '/settings' },
-  { label: 'Install App', icon: Download, path: '/install' },
-];
+// navItems logic moved inside component
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
@@ -33,11 +26,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string; professional_title: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const unreadMessages = useUnreadMessages();
 
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
+
+      const { data: clientOrder } = await supabase.from('client_orders').select('id').eq('client_email', user.email).limit(1).maybeSingle();
+      const { data: clientRecord } = await supabase.from('clients').select('id').eq('email', user.email).limit(1).maybeSingle();
+      if (clientOrder || clientRecord) {
+        setIsClient(true);
+      }
+
       const [profileResult, designerResult, roleResult] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
         supabase.from('designer_details').select('professional_title').eq('user_id', user.id).maybeSingle(),
@@ -64,6 +65,21 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
+
+  const navItems = isClient ? [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/client/dashboard' },
+    { label: 'Projects Submitted', icon: CheckCircle, path: '/client/projects' },
+    { label: 'Start a Project', icon: PlusCircle, path: '/start-project' },
+    { label: 'Talk to the Designer', icon: MessageSquare, path: '/messages' },
+    { label: 'Settings', icon: Settings, path: '/settings' },
+  ] : [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Submit Work', icon: Upload, path: '/submit-work' },
+    { label: 'Messages', icon: MessageSquare, path: '/messages' },
+    { label: 'Payments', icon: Wallet, path: '/payments' },
+    { label: 'Settings', icon: Settings, path: '/settings' },
+    { label: 'Install App', icon: Download, path: '/install' },
+  ];
 
   const pageTitle = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 

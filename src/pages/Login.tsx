@@ -82,7 +82,31 @@ const Login = () => {
       if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
         navigate('/superadmin');
       } else {
-        navigate('/dashboard');
+        // Check if user is a client
+        const { data: clientOrder } = await supabase
+          .from('client_orders')
+          .select('id')
+          .eq('client_email', data.email)
+          .limit(1)
+          .maybeSingle();
+
+        if (clientOrder) {
+          navigate('/client/dashboard');
+        } else {
+          // Check manual clients table
+          const { data: clientRecord } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('email', data.email)
+            .limit(1)
+            .maybeSingle();
+
+          if (clientRecord) {
+            navigate('/client/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       }
     }
   };

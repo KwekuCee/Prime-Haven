@@ -41,12 +41,18 @@ const Messages = lazy(() => import("./pages/Messages"));
 const Install = lazy(() => import("./pages/Install"));
 const ProjectWorkspace = lazy(() => import("./pages/ProjectWorkspace"));
 const DesignerProfile = lazy(() => import("./pages/DesignerProfile"));
+const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const ClientProjectsReview = lazy(() => import("./pages/ClientProjectsReview"));
+const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
 
 // Lazy load admin pages for better initial bundle size
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const UIUXAdminDashboard = lazy(() => import("./pages/UIUXAdminDashboard"));
 const WebDevAdminDashboard = lazy(() => import("./pages/WebDevAdminDashboard"));
 const ManagePortfolio = lazy(() => import("./pages/ManagePortfolio"));
+const GraphicDesignAdminDashboard = lazy(() => import("./pages/GraphicDesignAdminDashboard"));
+const FinanceDashboard = lazy(() => import("./pages/FinanceDashboard"));
+const QADashboard = lazy(() => import("./pages/QADashboard"));
 const JobContracts = lazy(() => import("./pages/JobContracts"));
 const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const ManagePricing = lazy(() => import("./pages/ManagePricing"));
@@ -96,6 +102,9 @@ const App = () => {
                   <Route path="/superadmin" element={<SuperAdminDashboard />} />
                   <Route path="/superadmin/uiux" element={<UIUXAdminDashboard />} />
                   <Route path="/superadmin/web" element={<WebDevAdminDashboard />} />
+                  <Route path="/superadmin/graphic-design" element={<GraphicDesignAdminDashboard />} />
+                  <Route path="/superadmin/finance" element={<FinanceDashboard />} />
+                  <Route path="/superadmin/qa-reviewer" element={<QADashboard />} />
                   <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
                   <Route path="/superadmin/contracts" element={<JobContracts />} />
                   <Route path="/messages" element={<Messages />} />
@@ -110,6 +119,9 @@ const App = () => {
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
+                  <Route path="/client/dashboard" element={<ClientDashboard />} />
+                  <Route path="/client/projects" element={<ClientProjectsReview />} />
+                  <Route path="/affiliate/dashboard" element={<AffiliateDashboard />} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
