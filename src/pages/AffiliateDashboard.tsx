@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, Copy, CheckCircle2, Users, DollarSign, TrendingUp, Presentation, Loader2 } from 'lucide-react';
+import { Link, Copy, CheckCircle2, Users, DollarSign, TrendingUp, Presentation, Loader2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
