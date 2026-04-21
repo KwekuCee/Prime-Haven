@@ -20,7 +20,9 @@ const ClientSettings = () => {
     const [settings, setSettings] = useState({
         projectUpdates: true,
         messageNotifications: true,
-        emailMarketing: false,
+        invoiceAutoGeneration: true,
+        approvalNotifications: true,
+        defaultCurrencyGHS: true,
         twoFactor: false,
         darkMode: true
     });
@@ -93,10 +95,24 @@ const ClientSettings = () => {
                                 />
                                 <SettingRow
                                     icon={Smartphone}
-                                    title="Push Notifications"
-                                    desc="Receive alerts directly on your browser or mobile device."
-                                    active={settings.emailMarketing}
-                                    onToggle={() => handleToggle('emailMarketing')}
+                                    title="Approval Notifications"
+                                    desc="Get notified when a designer submits work for your review."
+                                    active={settings.approvalNotifications}
+                                    onToggle={() => handleToggle('approvalNotifications')}
+                                />
+                                <SettingRow
+                                    icon={Globe}
+                                    title="Invoice Auto-Generation"
+                                    desc="Automatically email me PDF invoices upon payment completion."
+                                    active={settings.invoiceAutoGeneration}
+                                    onToggle={() => handleToggle('invoiceAutoGeneration')}
+                                />
+                                <SettingRow
+                                    icon={Shield}
+                                    title="Default Currency (GHS)"
+                                    desc="Show prices in GHS by default instead of USD."
+                                    active={settings.defaultCurrencyGHS}
+                                    onToggle={() => handleToggle('defaultCurrencyGHS')}
                                 />
                             </div>
                         </SpotlightCard>

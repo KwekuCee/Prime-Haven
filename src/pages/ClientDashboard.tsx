@@ -138,7 +138,7 @@ const ClientDashboard = () => {
                         </h1>
                     </div>
                     <MagneticEffect intensity={0.1}>
-                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-xs" onClick={() => navigate('/start-project')}>
+                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-xs" onClick={() => navigate('/client/start-project')}>
                             <CreditCard className="w-4 h-4" /> Start New Project
                         </Button>
                     </MagneticEffect>
@@ -278,7 +278,7 @@ const ClientDashboard = () => {
                             <ShoppingBag className="w-12 h-12 text-muted mx-auto mb-4" />
                             <h3 className="text-lg font-heading font-bold mb-1">No orders yet</h3>
                             <p className="text-sm text-muted-foreground mb-4">Start your first project to see it here.</p>
-                            <Button onClick={() => navigate('/start-project')}>Start a Project</Button>
+                            <Button onClick={() => navigate('/client/start-project')}>Start a Project</Button>
                         </div>
                     )}
                 </motion.div>

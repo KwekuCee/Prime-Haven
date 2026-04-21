@@ -18,7 +18,6 @@ const InstallPrompt = () => {
     const dismissed = sessionStorage.getItem('install-prompt-dismissed');
     if (dismissed) return;
     if (window.matchMedia('(display-mode: standalone)').matches) return;
-    // @ts-ignore - navigator.standalone is iOS Safari specific
     if ((navigator as any).standalone === true) return;
 
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));

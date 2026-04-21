@@ -63,6 +63,7 @@ import AdminSubmissions from '@/components/admin/AdminSubmissions';
 import AdminPayments from '@/components/admin/AdminPayments';
 import PromoCodeManager from '@/components/admin/PromoCodeManager';
 import ManageClients from '@/components/admin/ManageClients';
+import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 
@@ -2195,6 +2196,9 @@ const SuperAdminDashboard = () => {
 
           {/* ========== TEAM ========== */}
           <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
+
+          {/* ========== MARKETING ASSETS ========== */}
+          <TabsContent value="marketing_assets" className="mt-0"><ManageMarketingAssets /></TabsContent>
 
           {/* ========== LOGS ========== */}
           <TabsContent value="logs" className="mt-0 space-y-4">

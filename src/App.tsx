@@ -3,13 +3,24 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
 import { TechStackLoader } from "./components/ui/TechStackLoader";
+
+const ReferralHandler = () => {
+  const { code } = useParams();
+  useEffect(() => {
+    if (code) {
+      localStorage.setItem('primehaven_ref_code', code);
+    }
+    window.location.href = '/login?mode=signup';
+  }, [code]);
+  return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+};
 
 // Third-party scripts loader is imported dynamically to defer heavy network work on mobile
 const ThirdPartyLoader = lazy(() => import('./components/ThirdPartyLoader'));
@@ -45,6 +56,9 @@ const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 const ClientProjectsReview = lazy(() => import("./pages/ClientProjectsReview"));
 const ClientProfile = lazy(() => import("./pages/ClientProfile"));
 const ClientSettings = lazy(() => import("./pages/ClientSettings"));
+const ClientStartProject = lazy(() => import("./pages/ClientStartProject"));
+const ClientPayments = lazy(() => import("./pages/ClientPayments"));
+const ClientSupport = lazy(() => import("./pages/ClientSupport"));
 const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
 
 // Lazy load admin pages for better initial bundle size
@@ -94,6 +108,7 @@ const App = () => {
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/auth/confirm" element={<AuthConfirm />} />
+                  <Route path="/ref/:code" element={<ReferralHandler />} />
                   <Route path="/portfolio" element={<Portfolio />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/payments" element={<Payments />} />
@@ -125,6 +140,10 @@ const App = () => {
                   <Route path="/client/projects" element={<ClientProjectsReview />} />
                   <Route path="/client/profile" element={<ClientProfile />} />
                   <Route path="/client/settings" element={<ClientSettings />} />
+                  <Route path="/client/start-project" element={<ClientStartProject />} />
+                  <Route path="/client/payments" element={<ClientPayments />} />
+                  <Route path="/client/support" element={<ClientSupport />} />
+                  <Route path="/client/messages" element={<Messages />} />
                   <Route path="/affiliate/dashboard" element={<AffiliateDashboard />} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="*" element={<NotFound />} />

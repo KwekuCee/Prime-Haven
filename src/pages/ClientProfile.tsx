@@ -74,10 +74,9 @@ const ClientProfile = () => {
             const { data: { publicUrl } } = supabase.storage.from('profile-pictures').getPublicUrl(fileName);
             setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
             await supabase.from('clients').update({
-                // @ts-ignore
                 profile_photo_url: publicUrl,
                 updated_at: new Date().toISOString()
-            }).eq('email', user.email);
+            } as any).eq('email', user.email);
             toast({ title: "Photo uploaded!" });
         } catch (error: any) {
             toast({ title: "Upload failed", description: error.message, variant: "destructive" });

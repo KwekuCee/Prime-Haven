@@ -49,7 +49,6 @@ const ActiveContracts = () => {
         setLoading(true);
         try {
             // 1. Fetch from project_assignments (new system)
-            // @ts-ignore
             const { data: assignments, error: assignmentError } = await (supabase as any)
                 .from('project_assignments')
                 .select(`

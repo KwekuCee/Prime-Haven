@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User,
-  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle
+  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -66,20 +66,40 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
 
-  const navItems = isClient ? [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/client/dashboard' },
-    { label: 'Projects Submitted', icon: CheckCircle, path: '/client/projects' },
-    { label: 'Start a Project', icon: PlusCircle, path: '/start-project' },
-    { label: 'Talk to the Designer', icon: MessageSquare, path: '/messages' },
-    { label: 'Settings', icon: Settings, path: '/client/settings' },
-  ] : [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Submit Work', icon: Upload, path: '/submit-work' },
-    { label: 'Talk to the Client', icon: MessageSquare, path: '/messages' },
-    { label: 'Payments', icon: Wallet, path: '/payments' },
-    { label: 'Settings', icon: Settings, path: '/settings' },
-    { label: 'Install App', icon: Download, path: '/install' },
-  ];
+  const effectiveIsClient = isClient || location.pathname.startsWith('/client');
+  const isAffiliateMode = location.pathname.startsWith('/affiliate');
+
+  let navItems = [];
+  if (isAffiliateMode) {
+    navItems = [
+      { label: 'Overview', icon: LayoutDashboard, path: '/affiliate/dashboard' },
+      { label: 'Referrals', icon: Users, path: '/affiliate/dashboard#referrals' },
+      { label: 'Payouts', icon: Wallet, path: '/affiliate/dashboard#payouts' },
+      { label: 'Marketing Assets', icon: Presentation, path: '/affiliate/dashboard#assets' },
+      { label: 'Back to App', icon: ArrowLeft, path: effectiveIsClient ? '/client/dashboard' : '/dashboard' },
+    ];
+  } else if (effectiveIsClient) {
+    navItems = [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/client/dashboard' },
+      { label: 'Projects Submitted', icon: CheckCircle, path: '/client/projects' },
+      { label: 'Start a Project', icon: PlusCircle, path: '/client/start-project' },
+      { label: 'Partner Program', icon: TrendingUp, path: '/affiliate/dashboard' },
+      { label: 'Talk to the Designer', icon: MessageSquare, path: '/client/messages' },
+      { label: 'Payments', icon: Wallet, path: '/client/payments' },
+      { label: 'Support Desk', icon: LifeBuoy, path: '/client/support' },
+      { label: 'Settings', icon: Settings, path: '/client/settings' },
+    ];
+  } else {
+    navItems = [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'Submit Work', icon: Upload, path: '/submit-work' },
+      { label: 'Partner Program', icon: TrendingUp, path: '/affiliate/dashboard' },
+      { label: 'Talk to the Client', icon: MessageSquare, path: '/messages' },
+      { label: 'Payments', icon: Wallet, path: '/payments' },
+      { label: 'Settings', icon: Settings, path: '/settings' },
+      { label: 'Install App', icon: Download, path: '/install' },
+    ];
+  }
 
   const pageTitle = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 
@@ -195,7 +215,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             )}
 
             <Link
-              to={isClient ? "/client/profile" : "/edit-profile"}
+              to={effectiveIsClient ? "/client/profile" : "/edit-profile"}
               className={`
                 flex items-center gap-3 rounded-xl hover:bg-sidebar-accent transition-colors
                 ${collapsed ? 'justify-center p-2' : 'p-2.5'}
@@ -209,7 +229,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-xs truncate text-sidebar-foreground">{profile?.full_name || 'User'}</p>
                   <p className="text-[10px] text-muted-foreground truncate">
-                    {isClient ? 'Client Account' : (profile?.professional_title || 'Designer')}
+                    {effectiveIsClient ? 'Client Account' : (profile?.professional_title || 'Designer')}
                   </p>
                 </div>
               )}
@@ -245,7 +265,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Link
               to="/messages"
               className="relative group"
-              title={isClient ? "Talk to the Designer" : "Talk to the Client"}
+              title={effectiveIsClient ? "Talk to the Designer" : "Talk to the Client"}
             >
               <Button variant="ghost" size="icon" className="w-8 h-8">
                 <MessageSquare className="w-4 h-4" />
@@ -256,10 +276,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </span>
               )}
               <span className="absolute top-10 right-0 px-2 py-1 bg-popover text-[10px] text-popover-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-border shadow-sm">
-                {isClient ? "Talk to the Designer" : "Talk to the Client"}
+                {effectiveIsClient ? "Talk to the Designer" : "Talk to the Client"}
               </span>
             </Link>
-            <Link to={isClient ? "/client/profile" : "/edit-profile"}>
+            <Link to={effectiveIsClient ? "/client/profile" : "/edit-profile"}>
               <Button variant="ghost" size="icon" className="w-8 h-8">
                 <User className="w-4 h-4" />
               </Button>

@@ -26,6 +26,11 @@ const ClientProjectsReview = () => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
+    // Revision Dialog state
+    const [isRevisionOpen, setIsRevisionOpen] = useState(false);
+    const [revisionFeedback, setRevisionFeedback] = useState('');
+    const [processingRevision, setProcessingRevision] = useState(false);
+
     useEffect(() => {
         if (!authLoading && user?.email) {
             loadSubmissions();
@@ -49,13 +54,13 @@ const ClientProjectsReview = () => {
             // We use maybe bypass logic if RLS blocks, but we assume RLS allows or RPC
             const { data: subData, error } = await supabase
                 .from('submissions')
-                .select('*, profiles!designer_id(full_name)')
-                .eq('ph_approved', true) // Must be approved by PH first
+                .select('*')
+                .eq('ph_approved', true)
                 .order('ph_approved_at', { ascending: false });
 
             if (error) {
-                console.warn('Submissions fetch error (likely RLS):', error);
-                toast({ title: "Authorization Error", description: "You don't have permission to view submissions directly without the updated SQL schema.", variant: 'destructive' });
+                console.warn('Submissions fetch error:', error);
+                toast({ title: "Error", description: error.message || "Failed to load submissions.", variant: 'destructive' });
                 setLoading(false);
                 return;
             }
@@ -142,6 +147,49 @@ const ClientProjectsReview = () => {
             toast({ title: 'Failed to accept', description: error.message, variant: 'destructive' });
         } finally {
             setProcessing(false);
+        }
+    };
+
+    const handleRevisionClick = (id: string) => {
+        setSelectedId(id);
+        setRevisionFeedback('');
+        setIsRevisionOpen(true);
+    };
+
+    const executeRevision = async () => {
+        if (!selectedId || !revisionFeedback.trim()) return;
+        setProcessingRevision(true);
+        try {
+            const submission = submissions.find(s => s.id === selectedId);
+            if (!submission) throw new Error('Submission not found');
+
+            // Insert the revision request
+            const { error: revError } = await supabase.from('project_revisions').insert({
+                submission_id: selectedId,
+                client_email: user?.email,
+                feedback: revisionFeedback
+            });
+
+            if (revError) {
+                if (revError.code === '42P01') {
+                    throw new Error("The revisions database isn't initialized yet. Please run the SQL migration.");
+                }
+                throw revError;
+            }
+
+            // Update submission status
+            await supabase.from('submissions').update({
+                status: 'revision_requested',
+                updated_at: new Date().toISOString()
+            }).eq('id', selectedId);
+
+            toast({ title: 'Revision Requested', description: 'Your feedback has been sent to the designer.' });
+            setIsRevisionOpen(false);
+            loadSubmissions();
+        } catch (error: any) {
+            toast({ title: 'Failed to request revision', description: error.message, variant: 'destructive' });
+        } finally {
+            setProcessingRevision(false);
         }
     };
 
@@ -256,9 +304,14 @@ const ClientProjectsReview = () => {
                                         )}
 
                                         {!sub.client_accepted && (
-                                            <Button size="sm" className="flex-1 text-xs" onClick={() => handleAcceptClick(sub.id)}>
-                                                <CheckCircle className="w-3 h-3 mr-1" /> Accept Project
-                                            </Button>
+                                            <div className="flex gap-2 flex-1">
+                                                <Button variant="destructive" size="sm" className="flex-1 text-xs" onClick={() => handleRevisionClick(sub.id)}>
+                                                    <XCircle className="w-3 h-3 mr-1" /> Revision
+                                                </Button>
+                                                <Button size="sm" className="flex-1 text-xs" onClick={() => handleAcceptClick(sub.id)}>
+                                                    <CheckCircle className="w-3 h-3 mr-1" /> Accept
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
                                 </motion.div>
@@ -280,6 +333,31 @@ const ClientProjectsReview = () => {
                         <Button variant="ghost" onClick={() => setIsAcceptOpen(false)}>Cancel</Button>
                         <Button onClick={executeAcceptance} disabled={processing}>
                             {processing ? "Accepting..." : "Yes, Accept Project"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isRevisionOpen} onOpenChange={setIsRevisionOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Request a Revision</DialogTitle>
+                        <DialogDescription>
+                            Please describe exactly what needs to be changed. The designer will receive this feedback and resume work.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4">
+                        <textarea
+                            className="w-full min-h-[120px] p-3 text-sm rounded-md border border-border/50 bg-background focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="E.g. The logo font needs to be slightly bolder, and the blue color is too dark..."
+                            value={revisionFeedback}
+                            onChange={(e) => setRevisionFeedback(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="ghost" onClick={() => setIsRevisionOpen(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={executeRevision} disabled={processingRevision || !revisionFeedback.trim()}>
+                            {processingRevision ? "Sending..." : "Submit Revision Request"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

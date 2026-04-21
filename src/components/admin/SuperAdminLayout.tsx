@@ -6,7 +6,7 @@ import {
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield, ChevronDown,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
-  TrendingUp, Ticket,
+  TrendingUp, Ticket, Presentation
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -82,6 +82,7 @@ const navSections: NavSection[] = [
       { label: 'Blog', icon: Newspaper, path: '/superadmin', tab: 'blog' },
       { label: 'Reviews', icon: Star, path: '/superadmin', tab: 'testimonials' },
       { label: 'Reports', icon: Download, path: '/superadmin', tab: 'reports' },
+      { label: 'Marketing Assets', icon: Presentation, path: '/superadmin', tab: 'marketing_assets' },
       { label: 'Logs', icon: Activity, path: '/superadmin', tab: 'logs' },
     ],
   },

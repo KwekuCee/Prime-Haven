@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Globe, Banknote, LayoutDashboard } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Star, Globe, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Link, useNavigate } from 'react-router-dom';
-import BrandLogo from '@/components/BrandLogo';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/DashboardLayout';
 
 declare global {
   interface Window {
@@ -25,7 +25,7 @@ declare global {
 }
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
-const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb"; // User needs to update this
+const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb"; 
 
 // Approximate conversion rate: 1 USD ≈ 15.5 GHS
 const GHS_TO_USD = 1 / 15.5;
@@ -53,9 +53,11 @@ const tierLabels: Record<string, string> = {
   premium: 'Premium',
 };
 
-const StartProject = () => {
+const ClientStartProject = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [step, setStep] = useState(1);
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,6 @@ const StartProject = () => {
     clientEmail: '',
     clientWhatsapp: '',
     businessName: '',
-    password: '',
     description: '',
   });
 
@@ -80,29 +81,29 @@ const StartProject = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
-  const [isReturningClient, setIsReturningClient] = useState(false);
-  const { user } = useAuth();
 
   useEffect(() => {
-    const checkReturning = async () => {
+    const fetchClientProfile = async () => {
       if (user?.email) {
         const { data: client } = await supabase.from('clients').select('*').eq('email', user.email).maybeSingle();
         if (client) {
-          setIsReturningClient(true);
           setForm(prev => ({
             ...prev,
-            clientName: client.name || '',
+            clientName: client.name || user?.user_metadata?.full_name || '',
             clientEmail: client.email || user.email || '',
             clientWhatsapp: client.whatsapp || '',
             businessName: client.company || '',
           }));
-          // If we have their data, skip to project details if they haven't picked a service yet
-          // But usually they pick service first. Step 1 is service selection.
-          // Step 1: Service selection. Step 2: Form? No, let's see step counts.
+        } else {
+           setForm(prev => ({
+            ...prev,
+            clientName: user?.user_metadata?.full_name || '',
+            clientEmail: user.email || '',
+          }));
         }
       }
     };
-    checkReturning();
+    fetchClientProfile();
   }, [user]);
 
   useEffect(() => {
@@ -133,7 +134,6 @@ const StartProject = () => {
   };
 
   const handleChange = (field: string, value: string) => {
-
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -146,7 +146,7 @@ const StartProject = () => {
 
   const getPaymentAmount = (priceGhs: number) => {
     if (currency === 'USD') {
-      return Math.ceil(priceGhs * GHS_TO_USD * 100) / 100; // round up to nearest cent
+      return Math.ceil(priceGhs * GHS_TO_USD * 100) / 100;
     }
     return priceGhs;
   };
@@ -191,10 +191,9 @@ const StartProject = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-
     e.preventDefault();
-    if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
-      toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
+    if (!form.description) {
+      toast({ title: 'Missing fields', description: 'Please provide a project description.', variant: 'destructive' });
       return;
     }
 
@@ -215,13 +214,10 @@ const StartProject = () => {
     const finalPrice = calculateTotal(selectedPricing.price);
     const amount = getPaymentAmount(finalPrice);
 
-    // Bypass payment gateway AND edge function for 100% discount (0 GHS)
-    // The edge function is only needed for paid orders to verify payment with gateways
     if (amount === 0) {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
       try {
-        // Insert order directly — no payment gateway verification needed
         const { error: orderError } = await supabase
           .from('client_orders')
           .insert({
@@ -236,40 +232,7 @@ const StartProject = () => {
             payment_reference: freeReference,
           });
 
-        if (orderError) {
-          console.error('Free order insert error:', orderError);
-          throw new Error(orderError.message);
-        }
-
-        // 1b. Create Client Account (Automatic for free orders)
-        try {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email: form.clientEmail,
-            password: form.password,
-            options: {
-              data: {
-                full_name: form.clientName,
-                business_name: form.businessName,
-                whatsapp: form.clientWhatsapp,
-              }
-            }
-          });
-
-          if (signUpError && signUpError.message !== 'User already registered') {
-            console.error('Auto-registration failed:', signUpError);
-          }
-
-          // Ensure client exists in clients table
-          await supabase.from('clients').upsert({
-            email: form.clientEmail,
-            name: form.clientName,
-            company: form.businessName,
-            whatsapp: form.clientWhatsapp,
-          }, { onConflict: 'email' });
-
-        } catch (authErr) {
-          console.error('Auth/Client record error:', authErr);
-        }
+        if (orderError) throw new Error(orderError.message);
 
         const distributionMap: Record<string, { professions: string[], max: number }> = {
           "graphic-design": { professions: ['Graphic Designer'], max: 2 },
@@ -278,7 +241,6 @@ const StartProject = () => {
         };
         const dist = distributionMap[selectedPricing.discord_category] || { professions: ['Web Developer'], max: 1 };
 
-        // Also create the client project for tracking
         try {
           await supabase.from('client_projects').insert({
             title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
@@ -296,8 +258,6 @@ const StartProject = () => {
           console.error('Project tracking insert failed (non-critical):', e);
         }
 
-
-        // 3. Notify Discord via Database RPC (bypassing edge function)
         try {
           await (supabase as any).rpc('notify_discord_order', {
             p_service_label: selectedPricing.service_label,
@@ -315,10 +275,22 @@ const StartProject = () => {
         }
 
         toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
-        navigate('/?project=success');
+
+        // Process Affiliate Commission for free orders (commission is 0, but good for tracking signups)
+        const refCode = localStorage.getItem('primehaven_ref_code');
+        if (refCode) {
+           await supabase.rpc('process_affiliate_commission', {
+              p_ref_code: refCode,
+              p_client_name: form.clientName,
+              p_service: selectedPricing.service_label,
+              p_commission: 0
+           });
+           localStorage.removeItem('primehaven_ref_code');
+        }
+
+        navigate('/client/dashboard');
 
       } catch (err: any) {
-        console.error('Free order error:', err);
         toast({
           title: 'Order Processing Error',
           description: `${err.message || 'Could not process your free order'}. Reference: ${freeReference}`,
@@ -329,8 +301,6 @@ const StartProject = () => {
       }
       return;
     }
-
-
 
     if (gateway === 'korapay') {
       try {
@@ -346,8 +316,6 @@ const StartProject = () => {
           onSuccess: () => {
             handleOrderProcess(reference, finalPrice);
           },
-
-
           onClose: () => setSubmitting(false),
           onFailed: (data: any) => {
             setSubmitting(false);
@@ -363,7 +331,7 @@ const StartProject = () => {
         const handler = window.PaystackPop.setup({
           key: PAYSTACK_PUBLIC_KEY,
           email: form.clientEmail,
-          amount: Math.round(amount * 100), // Paystack uses kobo/pesewas
+          amount: Math.round(amount * 100), 
           currency: currency === 'USD' ? 'USD' : 'GHS',
           ref: reference,
           metadata: {
@@ -374,8 +342,6 @@ const StartProject = () => {
           callback: (response: any) => {
             handleOrderProcess(reference, finalPrice);
           },
-
-
           onClose: () => {
             setSubmitting(false);
           }
@@ -385,12 +351,10 @@ const StartProject = () => {
         setSubmitting(false);
         toast({ title: 'Payment System Error', description: `Could not open Paystack: ${err.message || 'Unknown error'}. Please try again.`, variant: 'destructive' });
       }
-
     }
   };
 
   const handleOrderProcess = async (reference: string, finalPrice: number) => {
-
     try {
       const { data, error } = await supabase.functions.invoke('process-client-order', {
         body: {
@@ -406,15 +370,13 @@ const StartProject = () => {
           paymentReference: reference,
           promoCode: promoRef,
           gateway: gateway,
-          clientPassword: form.password,
-          businessName: form.businessName
+          clientPassword: "dashboard-client", // Dummy password since they are already authenticated
+          businessName: form.businessName || "Client Business"
         },
       });
 
       if (error) {
-        // The supabase client wraps the response — try to read the body
         let detailMsg = error.message;
-        // For FunctionsHttpError, the context is the Response object
         if (error.context && typeof error.context.json === 'function') {
           try {
             const body = await error.context.json();
@@ -422,22 +384,34 @@ const StartProject = () => {
             else if (body?.error) detailMsg = body.error;
           } catch (_) { }
         }
-        // Also check if data itself has the error info (some versions)
         if (data && typeof data === 'object' && data.error) {
           detailMsg = data.message || data.error;
         }
         throw new Error(detailMsg);
       }
 
-      // Check if data indicates failure (edge function returned 200 but with error payload)
       if (data && data.success === false) {
         throw new Error(data.error || data.message || 'Order processing failed');
       }
 
       toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
-      navigate('/?project=success');
+
+      // Process Affiliate Commission (5% of final price)
+      const refCode = localStorage.getItem('primehaven_ref_code');
+      if (refCode) {
+         const commission = finalPrice * 0.05;
+         await supabase.rpc('process_affiliate_commission', {
+            p_ref_code: refCode,
+            p_client_name: form.clientName,
+            p_service: selectedPricing!.service_label,
+            p_commission: commission
+         });
+         // Clear the code after successful use
+         localStorage.removeItem('primehaven_ref_code');
+      }
+
+      navigate('/client/dashboard');
     } catch (err: any) {
-      console.error('Order processing error:', err);
       toast({
         title: 'Order Processing Error',
         description: `${err.message || 'Something went wrong'}. Reference: ${reference}`,
@@ -448,26 +422,26 @@ const StartProject = () => {
     }
   };
 
-
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
+      <DashboardLayout>
+        <div className="min-h-[80vh] flex items-center justify-center bg-background/50">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogo className="h-8" />
-          </Link>
+    <DashboardLayout>
+      <div className="px-4 py-8 max-w-6xl mx-auto space-y-6">
+        {/* Dashboard Header */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card/40 border border-border/60 rounded-2xl p-4 backdrop-blur-sm">
+          <Button variant="outline" onClick={() => navigate('/client/dashboard')} className="gap-2 shrink-0">
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          </Button>
+          
           <div className="flex items-center gap-4">
-            {/* Currency Toggle */}
             <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
               <button
                 onClick={() => setCurrency('GHS')}
@@ -482,7 +456,7 @@ const StartProject = () => {
                 <Globe className="w-3 h-3" /> USD
               </button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               {[1, 2, 3].map(s => (
                 <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                   {step > s ? <Check className="w-4 h-4" /> : s}
@@ -491,22 +465,20 @@ const StartProject = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <AnimatePresence mode="wait">
           {/* Step 1: Select Service */}
           {step === 1 && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-              <div className="text-center space-y-3">
-                <h1 className="text-3xl sm:text-4xl font-heading font-bold">What do you need?</h1>
-                <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8 py-4">
+              <div className="space-y-3">
+                <h1 className="text-3xl font-heading font-bold">What do you need?</h1>
+                <p className="text-muted-foreground">Select the service that fits your new project.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {serviceTypes.map(type => (
                   <Card
                     key={type}
-                    className={`cursor-pointer transition-all hover:border-primary/60 hover:shadow-lg ${selectedService === type ? 'border-primary ring-2 ring-primary/20 shadow-lg' : ''}`}
+                    className={`cursor-pointer transition-all bg-card/60 hover:border-primary/60 hover:shadow-lg ${selectedService === type ? 'border-primary ring-2 ring-primary/20 shadow-lg' : ''}`}
                     onClick={() => setSelectedService(type)}
                   >
                     <CardHeader>
@@ -519,7 +491,7 @@ const StartProject = () => {
                 ))}
               </div>
               <div className="flex justify-end">
-                <Button disabled={!selectedService} onClick={() => setStep(2)} className="gap-2">
+                <Button disabled={!selectedService} onClick={() => setStep(2)} className="gap-2 px-8">
                   Continue <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -528,16 +500,16 @@ const StartProject = () => {
 
           {/* Step 2: Select Tier */}
           {step === 2 && (
-            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-              <div className="text-center space-y-3">
-                <h1 className="text-3xl sm:text-4xl font-heading font-bold">Choose Your Package</h1>
-                <p className="text-muted-foreground text-lg">{serviceLabels[selectedService]}</p>
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8 py-4">
+              <div className="space-y-3">
+                <h1 className="text-3xl font-heading font-bold">Choose Your Package</h1>
+                <p className="text-muted-foreground">{serviceLabels[selectedService]}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {tiersForService.map(pricing => (
                   <Card
                     key={pricing.id}
-                    className={`cursor-pointer transition-all hover:shadow-xl relative ${selectedTier === pricing.tier ? tierColors[pricing.tier] : 'hover:border-primary/40'} ${pricing.tier === 'standard' ? 'md:-mt-2 md:mb-[-8px]' : ''}`}
+                    className={`cursor-pointer transition-all bg-card/60 hover:shadow-xl relative ${selectedTier === pricing.tier ? tierColors[pricing.tier] : 'hover:border-primary/40'} ${pricing.tier === 'standard' ? 'md:-mt-2 md:mb-[-8px]' : ''}`}
                     onClick={() => handleSelectTier(pricing)}
                   >
                     {pricing.tier === 'standard' && (
@@ -546,7 +518,7 @@ const StartProject = () => {
                       </div>
                     )}
                     <CardHeader className="text-center pb-2">
-                      <Badge variant="outline" className="w-fit mx-auto mb-2">{tierLabels[pricing.tier]}</Badge>
+                      <Badge variant="outline" className="w-fit mx-auto mb-2 bg-background">{tierLabels[pricing.tier]}</Badge>
                       <CardTitle className="text-3xl font-bold">
                         {formatPrice(pricing.price)}
                       </CardTitle>
@@ -569,7 +541,7 @@ const StartProject = () => {
                 <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </Button>
-                <Button disabled={!selectedTier} onClick={() => setStep(3)} className="gap-2">
+                <Button disabled={!selectedTier} onClick={() => setStep(3)} className="gap-2 px-8">
                   Continue <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -578,44 +550,27 @@ const StartProject = () => {
 
           {/* Step 3: Details & Payment */}
           {step === 3 && selectedPricing && (
-            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8 py-4">
               <div className="text-center space-y-3">
-                <h1 className="text-3xl sm:text-4xl font-heading font-bold">Project Details</h1>
+                <h1 className="text-3xl font-heading font-bold">Final Details</h1>
                 <p className="text-muted-foreground">
                   {selectedPricing.service_label} — {tierLabels[selectedPricing.tier]} ({formatPrice(selectedPricing.price)})
                 </p>
               </div>
 
-              <Card>
+              <Card className="bg-card/60">
                 <CardContent className="pt-6">
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="clientName">Full Name *</Label>
-                        <Input id="clientName" value={form.clientName} onChange={e => handleChange('clientName', e.target.value)} placeholder="John Doe" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="clientEmail">Email *</Label>
-                        <Input id="clientEmail" type="email" value={form.clientEmail} onChange={e => handleChange('clientEmail', e.target.value)} placeholder="john@example.com" required />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="businessName">Business Name *</Label>
-                        <Input id="businessName" value={form.businessName} onChange={e => handleChange('businessName', e.target.value)} placeholder="Acme Corp" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Set Dashboard Password *</Label>
-                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="••••••••" required />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="clientWhatsapp">WhatsApp Number</Label>
-                      <Input id="clientWhatsapp" type="tel" value={form.clientWhatsapp} onChange={e => handleChange('clientWhatsapp', e.target.value)} placeholder="+233 XX XXX XXXX" />
-                    </div>
+                  <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="description">Project Description *</Label>
-                      <Textarea id="description" value={form.description} onChange={e => handleChange('description', e.target.value)} placeholder="Tell us about your project, goals, timeline, and any specific requirements..." className="min-h-[120px]" required />
+                      <Textarea 
+                        id="description" 
+                        value={form.description} 
+                        onChange={e => handleChange('description', e.target.value)} 
+                        placeholder="Tell us about your project, goals, timeline, and any specific requirements..." 
+                        className="min-h-[120px] bg-background" 
+                        required 
+                      />
                     </div>
 
                     <div className="space-y-3">
@@ -623,35 +578,32 @@ const StartProject = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div
                           onClick={() => setGateway('korapay')}
-                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
+                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all bg-background flex flex-col items-center gap-2 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                         >
                           <Banknote className={`w-6 h-6 ${gateway === 'korapay' ? 'text-primary' : 'text-muted-foreground'}`} />
                           <span className="text-xs font-bold uppercase tracking-widest text-center">Korapay</span>
                           <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash Only.</span>
-
                         </div>
                         <div
                           onClick={() => setGateway('paystack')}
-                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
+                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all bg-background flex flex-col items-center gap-2 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                         >
                           <Globe className={`w-6 h-6 ${gateway === 'paystack' ? 'text-primary' : 'text-muted-foreground'}`} />
                           <span className="text-xs font-bold uppercase tracking-widest text-center">Paystack</span>
                           <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer, Card</span>
-
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-
-                      <Label htmlFor="promo">Promo Code</Label>
+                      <Label htmlFor="promo">Promo Code (Optional)</Label>
                       <div className="flex gap-2">
                         <Input
                           id="promo"
                           value={promoCode}
                           onChange={e => setPromoCode(e.target.value)}
-                          placeholder="Enter code (e.g. YOUTHQUAKE)"
-                          className="uppercase"
+                          placeholder="Enter code"
+                          className="uppercase bg-background"
                         />
                         <Button
                           type="button"
@@ -664,7 +616,12 @@ const StartProject = () => {
                       </div>
                     </div>
 
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2 border border-border/50">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Account</span>
+                        <span className="font-medium text-right">{form.clientName}<br/><span className="text-xs opacity-70">{form.clientEmail}</span></span>
+                      </div>
+                      <div className="border-t border-border/50 my-2"></div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Service</span>
                         <span className="font-medium">{selectedPricing.service_label}</span>
@@ -701,20 +658,13 @@ const StartProject = () => {
                 <Button variant="ghost" onClick={() => setStep(2)} className="gap-2 text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="w-4 h-4" /> Change Package
                 </Button>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs font-bold text-muted-foreground uppercase opacity-50">Pay in</span>
-                  <div className="flex p-1 bg-muted rounded-full border border-border/50">
-                    <button type="button" onClick={() => setCurrency('GHS')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'GHS' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>GHS</button>
-                    <button type="button" onClick={() => setCurrency('USD')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>USD</button>
-                  </div>
-                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
-export default StartProject;
+export default ClientStartProject;
