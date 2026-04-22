@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Loader2, Image as ImageIcon, Presentation } from 'lucide-react';
+import { Trash2, Loader2, Image as ImageIcon, Presentation, Upload } from 'lucide-react';
+import { useRef } from 'react';
 
 interface MarketingAsset {
   id: string;
@@ -23,6 +24,10 @@ export default function ManageMarketingAssets() {
   const [assets, setAssets] = useState<MarketingAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -59,23 +64,58 @@ export default function ManageMarketingAssets() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.asset_url) {
-      toast({ title: 'Validation Error', description: 'Title and URL are required', variant: 'destructive' });
+    if (!formData.title) {
+      toast({ title: 'Validation Error', description: 'Title is required', variant: 'destructive' });
       return;
+    }
+    if (formData.asset_type === 'copy' && !formData.asset_url) {
+      toast({ title: 'Validation Error', description: 'Content is required for copy assets', variant: 'destructive' });
+      return;
+    }
+    if (formData.asset_type !== 'copy' && !selectedFile && !formData.asset_url) {
+       toast({ title: 'Validation Error', description: 'Please select a file to upload or provide a URL', variant: 'destructive' });
+       return;
     }
     
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('marketing_assets').insert([formData]);
+      let finalUrl = formData.asset_url;
+
+      if (selectedFile && formData.asset_type !== 'copy') {
+        setUploadingFile(true);
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `marketing-assets/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('blog-images') // Using existing public bucket
+          .upload(filePath, selectedFile, { contentType: selectedFile.type });
+
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('blog-images')
+          .getPublicUrl(filePath);
+
+        finalUrl = publicUrl;
+      }
+
+      const { error } = await supabase.from('marketing_assets').insert([{
+          ...formData,
+          asset_url: finalUrl
+      }]);
       if (error) throw error;
       
       toast({ title: 'Success', description: 'Marketing asset added successfully' });
       setFormData({ title: '', description: '', asset_url: '', asset_type: 'image' });
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       fetchAssets();
     } catch (error: any) {
       toast({ title: 'Error adding asset', description: error.message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
+      setUploadingFile(false);
     }
   };
 
@@ -124,12 +164,29 @@ export default function ManageMarketingAssets() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Asset URL / Content</label>
-              <Input 
-                placeholder={formData.asset_type === 'copy' ? "Enter the copy text here" : "https://link-to-your-image.com/banner.png"} 
-                value={formData.asset_url}
-                onChange={(e) => setFormData({...formData, asset_url: e.target.value})}
-              />
+              <label className="text-sm font-medium">
+                  {formData.asset_type === 'copy' ? 'Copy Content' : 'Upload File'}
+              </label>
+              {formData.asset_type === 'copy' ? (
+                  <Textarea 
+                      placeholder="Enter the copy text here..." 
+                      value={formData.asset_url}
+                      onChange={(e) => setFormData({...formData, asset_url: e.target.value})}
+                      className="min-h-[100px]"
+                  />
+              ) : (
+                  <div className="flex items-center gap-4">
+                      <div className="flex-1 flex items-center gap-2 border rounded-md px-3 py-2 bg-background">
+                          <input 
+                              type="file" 
+                              ref={fileInputRef}
+                              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                              accept={formData.asset_type === 'image' ? 'image/*' : '.pdf,.doc,.docx,.zip'}
+                              className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                          />
+                      </div>
+                  </div>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -141,9 +198,9 @@ export default function ManageMarketingAssets() {
               />
             </div>
 
-            <Button type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Add Asset
+            <Button type="submit" disabled={submitting || uploadingFile}>
+              {(submitting || uploadingFile) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {uploadingFile ? 'Uploading...' : 'Add Asset'}
             </Button>
           </form>
         </CardContent>
