@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import BrandLogo from '@/components/BrandLogo';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import NotificationBell from '@/components/NotificationBell';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -279,6 +280,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 {effectiveIsClient ? "Talk to the Designer" : "Talk to the Client"}
               </span>
             </Link>
+            <NotificationBell />
             <Link to={effectiveIsClient ? "/client/profile" : "/edit-profile"}>
               <Button variant="ghost" size="icon" className="w-8 h-8">
                 <User className="w-4 h-4" />

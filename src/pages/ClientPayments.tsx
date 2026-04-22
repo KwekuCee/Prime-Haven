@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { generateInvoicePDF } from '@/lib/invoicePDF';
 
 interface PaymentRecord {
     id: string;
@@ -20,6 +21,8 @@ interface PaymentRecord {
     payment_status: string;
     created_at: string;
     payment_reference?: string;
+    client_name?: string;
+    client_email?: string;
 }
 
 const ClientPayments = () => {
@@ -153,8 +156,25 @@ const ClientPayments = () => {
                                                 {format(new Date(payment.created_at), 'MMM d, yyyy')}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Download Receipt (Coming Soon)">
-                                                    <Download className="w-4 h-4" />
+                                                <Button
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                  title="Download Invoice PDF"
+                                                  onClick={() => generateInvoicePDF({
+                                                    id: payment.id,
+                                                    clientEmail: user?.email || undefined,
+                                                    clientName: user?.email?.split('@')[0] || 'Client',
+                                                    serviceType: payment.service_type,
+                                                    tier: payment.tier,
+                                                    amount: payment.price,
+                                                    paymentReference: payment.payment_reference,
+                                                    paymentStatus: payment.payment_status,
+                                                    createdAt: payment.created_at,
+                                                    currency: 'GH₵',
+                                                  })}
+                                                >
+                                                  <Download className="w-4 h-4" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>

@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
 import ResendVerificationEmail from '@/components/auth/ResendVerificationEmail';
+import GoogleOAuthButton from '@/components/auth/GoogleOAuthButton';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -221,6 +222,8 @@ const Login = () => {
               <span className="bg-card/50 px-3 text-xs text-muted-foreground">or</span>
             </div>
           </div>
+
+          <GoogleOAuthButton className="mb-4" />
 
           <div className="space-y-3 text-center">
             <p className="text-sm text-muted-foreground">

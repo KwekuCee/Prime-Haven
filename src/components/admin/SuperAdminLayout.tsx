@@ -65,13 +65,31 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'People',
+    defaultOpen: false,
+    items: [
+      { label: 'Team', icon: UserCheck, path: '/superadmin', tab: 'team' },
+      { label: 'Clients DB', icon: UserSquare, path: '/superadmin', tab: 'clients' },
+    ],
+  },
+  {
+    title: 'Operations',
+    defaultOpen: false,
+    items: [
+      { label: 'Submissions', icon: FileCheck, path: '/superadmin', tab: 'submissions' },
+      { label: 'Orders', icon: ShoppingCart, path: '/superadmin', tab: 'orders' },
+      { label: 'Payments', icon: DollarSign, path: '/superadmin', tab: 'payments' },
+      { label: 'Consultations', icon: Calendar, path: '/superadmin', tab: 'consultations' },
+      { label: 'Promo Codes', icon: Ticket, path: '/superadmin', tab: 'promos' },
+    ],
+  },
+  {
     title: 'Management',
     defaultOpen: false,
     items: [
       { label: 'Projects', icon: FolderKanban, path: '/superadmin/projects' },
       { label: 'Contracts', icon: Briefcase, path: '/superadmin/contracts' },
       { label: 'Portfolio', icon: Image, path: '/superadmin/portfolio' },
-      { label: 'Clients DB', icon: UserSquare, path: '/superadmin/clients' },
       { label: 'Pricing', icon: Tag, path: '/superadmin/pricing' },
     ],
   },
@@ -84,6 +102,7 @@ const navSections: NavSection[] = [
       { label: 'Reports', icon: Download, path: '/superadmin', tab: 'reports' },
       { label: 'Ads Dashboard', icon: MonitorPlay, path: '/superadmin', tab: 'adsterra' },
       { label: 'Marketing Assets', icon: Presentation, path: '/superadmin', tab: 'marketing_assets' },
+      { label: 'Communications', icon: Send, path: '/superadmin', tab: 'communications' },
       { label: 'Logs', icon: Activity, path: '/superadmin', tab: 'logs' },
     ],
   },

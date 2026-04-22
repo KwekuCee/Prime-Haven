@@ -30,6 +30,7 @@ import ExpectedSalaryModal from '@/components/dashboard/ExpectedSalaryModal';
 import EarningsChart from '@/components/dashboard/EarningsChart';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
+import RankBadge from '@/components/dashboard/RankBadge';
 
 interface ProfileData {
   full_name: string;
@@ -398,6 +399,9 @@ const Dashboard = () => {
               <h1 className="text-2xl sm:text-3xl font-heading font-bold">
                 {getFirstName()} <span className="text-gradient">✦</span>
               </h1>
+              <div className="mt-2">
+                <RankBadge points={designer?.total_points || 0} size="sm" showProgress />
+              </div>
             </div>
             <div className="flex gap-2">
               <MagneticEffect intensity={0.1}>

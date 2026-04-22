@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 import { SERVICE_TYPES } from '@/lib/serviceTypes';
+import DropZoneUpload from '@/components/ui/DropZoneUpload';
 
 const serviceTypes = SERVICE_TYPES;
 
@@ -159,40 +160,7 @@ const SubmitWork = () => {
 
   const isLinkOnlyService = formData.serviceType === 'uiux' || formData.serviceType === 'web';
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !user) return;
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'application/pdf', 'application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed', 'application/vnd.rar', 'application/octet-stream'];
-    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.pdf', '.zip', '.rar'];
-    const maxSize = 50 * 1024 * 1024;
-
-    for (const file of Array.from(files)) {
-      const ext = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
-      if (!validTypes.includes(file.type) && !validExtensions.includes(ext)) { setUploadError(`Invalid file type: ${file.name}`); continue; }
-      if (file.size > maxSize) { setUploadError(`File too large: ${file.name}. Max 50MB`); continue; }
-      const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
-      const newFile: UploadedFile = { file, preview, uploading: true };
-      setUploadedFiles(prev => [...prev, newFile]);
-      setUploadError('');
-      try {
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-        const { error } = await supabase.storage.from('submissions').upload(filePath, file, { contentType: file.type || 'application/octet-stream', cacheControl: '3600' });
-        if (error) throw error;
-        setUploadedFiles(prev => prev.map(f => f.file === file ? { ...f, uploading: false, url: filePath } : f));
-      } catch (error: any) {
-        setUploadedFiles(prev => prev.map(f => f.file === file ? { ...f, uploading: false, error: error.message || 'Upload failed' } : f));
-      }
-    }
-    e.target.value = '';
-  };
-
-  const removeFile = async (index: number) => {
-    const f = uploadedFiles[index];
-    if (f.url && user) { try { await supabase.storage.from('submissions').remove([f.url]); } catch {} }
-    if (f.preview) URL.revokeObjectURL(f.preview);
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  // DropZoneUpload handles files now
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,10 +200,6 @@ const SubmitWork = () => {
   const getSelectedService = () => serviceTypes.find(s => s.id === formData.serviceType);
   const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
   const uploadingFiles = uploadedFiles.filter(f => f.uploading);
-  const getFileIcon = (file: File) => {
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    return (ext === 'zip' || ext === 'rar') ? <Archive className="w-8 h-8 text-muted-foreground" /> : <FileText className="w-8 h-8 text-muted-foreground" />;
-  };
 
   return (
     <DashboardLayout>
@@ -315,42 +279,14 @@ const SubmitWork = () => {
 
               {/* File Upload */}
               <SectionCard icon={Upload} title={`File Upload ${isLinkOnlyService ? '(Optional)' : ''}`} desc="JPG, PNG, PDF, ZIP, RAR — Max 50MB" delay={0.2}>
-                <div className="border border-dashed border-border/60 rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
-                  <Input id="file-upload" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.svg,.pdf,.zip,.rar" onChange={handleFileUpload} className="hidden" disabled={uploadingFiles.length > 0} />
-                  <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                      {uploadingFiles.length > 0 ? <Loader2 className="w-5 h-5 text-primary animate-spin" /> : <Upload className="w-5 h-5 text-primary" />}
-                    </div>
-                    <p className="text-xs font-medium">{uploadingFiles.length > 0 ? `Uploading ${uploadingFiles.length} file(s)...` : 'Click to upload'}</p>
-                  </Label>
-                </div>
+                <DropZoneUpload
+                  files={uploadedFiles as any}
+                  onFilesChange={(files) => setUploadedFiles(files as any)}
+                  maxSizeMB={50}
+                />
                 {uploadError && (
                   <div className="mt-3 p-2.5 rounded-lg bg-destructive/5 border border-destructive/10">
                     <p className="text-[10px] text-destructive flex items-center gap-1.5"><XCircle className="w-3 h-3" />{uploadError}</p>
-                  </div>
-                )}
-                {uploadedFiles.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
-                    {uploadedFiles.map((file, index) => (
-                      <div key={index} className="relative group rounded-xl border border-border/40 overflow-hidden bg-muted/10">
-                        {file.preview ? (
-                          <img src={file.preview} alt={file.file.name} className="w-full h-24 object-cover" />
-                        ) : (
-                          <div className="w-full h-24 flex items-center justify-center">{getFileIcon(file.file)}</div>
-                        )}
-                        <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Button type="button" variant="destructive" size="sm" onClick={() => removeFile(index)} disabled={file.uploading} className="h-7 text-[10px]">
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        {file.uploading && <div className="absolute inset-0 bg-background/80 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>}
-                        {file.url && !file.error && <div className="absolute top-1.5 right-1.5"><CheckCircle className="w-4 h-4 text-emerald-500" /></div>}
-                        <div className="p-1.5">
-                          <p className="text-[9px] truncate">{file.file.name}</p>
-                          <p className="text-[8px] text-muted-foreground">{(file.file.size / 1024 / 1024).toFixed(1)} MB</p>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
               </SectionCard>

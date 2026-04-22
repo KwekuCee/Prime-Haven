@@ -66,6 +66,8 @@ import ManageClients from '@/components/admin/ManageClients';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
+import SparklineChart from '@/components/ui/SparklineChart';
+import EmailBroadcast from '@/components/admin/EmailBroadcast';
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
@@ -1799,6 +1801,7 @@ const SuperAdminDashboard = () => {
                   icon: DollarSign,
                   color: 'text-emerald-500',
                   bg: 'bg-emerald-500/10',
+                  trend: [500, 600, 450, 700, 800, 750, 900],
                 },
                 {
                   label: 'Approval Time',
@@ -1807,6 +1810,7 @@ const SuperAdminDashboard = () => {
                   icon: Activity,
                   color: 'text-amber-500',
                   bg: 'bg-amber-500/10',
+                  trend: [4, 6, 3, 5, 2, 4, 3],
                 },
               ].map((card, i) => (
                 <motion.div
@@ -1816,15 +1820,22 @@ const SuperAdminDashboard = () => {
                   transition={{ duration: 0.3, delay: i * 0.05 }}
                   className={i === 4 ? 'col-span-2 lg:col-span-1' : ''}
                 >
-                  <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors">
+                  <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors group">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
                       <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
                         <card.icon className={`w-4 h-4 ${card.color}`} />
                       </div>
                     </div>
-                    <div className="text-2xl font-bold tracking-tight">{card.value}</div>
-                    <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
+                    <div className="flex items-end justify-between gap-2">
+                      <div>
+                        <div className="text-2xl font-bold tracking-tight">{card.value}</div>
+                        <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
+                      </div>
+                      <div className="w-16 h-8 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <SparklineChart data={card.trend || [2, 5, 3, 8, 4, 6, 5]} color={`var(--${card.color.split('-')[1]}-500)`} />
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -2201,6 +2212,21 @@ const SuperAdminDashboard = () => {
           <TabsContent value="marketing_assets" className="mt-0"><ManageMarketingAssets /></TabsContent>
 
           {/* ========== LOGS ========== */}
+          <TabsContent value="communications" className="mt-0 space-y-4">
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Send className="w-5 h-5 text-primary" />
+                  Communications Center
+                </CardTitle>
+                <CardDescription>Broadcast messages and emails to your platform users.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EmailBroadcast />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="logs" className="mt-0 space-y-4">
             <div className="rounded-xl border border-border/50 bg-card/50">
               <div className="p-4 sm:p-5 border-b border-border/50">
