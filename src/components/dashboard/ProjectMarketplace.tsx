@@ -37,20 +37,33 @@ const CATEGORY_LABELS: Record<string, string> = {
     'App/UI/UX Design': 'UI/UX Design',
     'Graphic Design': 'Graphic Design',
     'Web Development': 'Web Development',
+    'graphic-design': 'Graphic Design',
+    'web-dev': 'Web Development',
 };
 
+// Maps job contract category IDs → which profession labels can see them
 const PROFESSION_MAPPING: Record<string, string[]> = {
     'logo-design': ['Graphic Designer'],
     'brand-identity': ['Graphic Designer'],
     'print-design': ['Graphic Designer'],
     'flyer-design': ['Graphic Designer'],
     'social-media': ['Graphic Designer'],
+    'graphic-design': ['Graphic Designer'],
+    'Graphic Design': ['Graphic Designer'],
     'app-design': ['UI/UX Designer'],
     'App/UI/UX Design': ['UI/UX Designer'],
     'web-design': ['Web Developer'],
     'web-development': ['Web Developer'],
     'Web Development': ['Web Developer'],
-    'Graphic Design': ['Graphic Designer'],
+    'web-dev': ['Web Developer'],
+};
+
+// Derives a canonical profession label from designer_details.professional_title
+const deriveProfession = (title: string | null | undefined): string => {
+    const t = (title || '').toLowerCase();
+    if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+    if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+    return 'Graphic Designer';
 };
 
 const ProjectMarketplace = () => {
@@ -69,18 +82,19 @@ const ProjectMarketplace = () => {
         if (!user) return;
         setLoading(true);
         try {
-            // Get designer professions to filter pools
+            // Get designer profession from professional_title (professions column doesn't exist in DB)
             const { data: designer } = await supabase
                 .from('designer_details')
-                .select('professions, professional_title')
+                .select('professional_title')
                 .eq('user_id', user.id)
                 .maybeSingle();
 
-            const userProfessions = designer?.professions && designer.professions.length > 0
-                ? designer.professions
-                : [designer?.professional_title ? 'Graphic Designer' : 'Graphic Designer']; // Default fallback
+            const userProfession = deriveProfession(designer?.professional_title);
+            // Build set of professions the user qualifies for
+            const userProfessions = [userProfession];
 
-            // 1. Fetch from client_projects (new pooling system)
+            // 1. Fetch from client_projects (new pooling system) — no profession filter in DB since
+            //    required_professions may be null/empty; we filter client-side below
             const { data: projects, error: projectsError } = await supabase
                 .from('client_projects')
                 .select(`
@@ -95,8 +109,7 @@ const ProjectMarketplace = () => {
                     max_assignees,
                     project_assignments(count, designer_id)
                 `)
-                .eq('status', 'pending')
-                .overlaps('required_professions', userProfessions);
+                .eq('status', 'pending');
 
             if (projectsError) throw projectsError;
 
@@ -123,11 +136,14 @@ const ProjectMarketplace = () => {
 
             const projectMarket: OpenOrder[] = (projects || [])
                 .filter((p: any) => {
+                    // If required_professions is set, check match; otherwise show to everyone
+                    const reqProfs: string[] = p.required_professions || [];
+                    const profMatch = reqProfs.length === 0 || reqProfs.some((rp: string) => userProfessions.includes(rp));
                     // Check if user already claimed this
                     const hasClaimed = p.project_assignments?.some((a: any) => a.designer_id === user.id);
                     // Check if deadline passed
                     const deadlinePassed = p.deadline && isAfter(now, new Date(p.deadline));
-                    return !hasClaimed && !deadlinePassed;
+                    return profMatch && !hasClaimed && !deadlinePassed;
                 })
                 .map((p: any) => ({
                     id: p.id,

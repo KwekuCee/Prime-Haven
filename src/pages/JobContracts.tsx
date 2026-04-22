@@ -223,6 +223,7 @@ const JobContracts = () => {
           special_instructions: form.specialInstructions || null,
           reference_files: fileUrls.length > 0 ? fileUrls : null,
           posted_by: user?.id,
+          status: 'active',
         })
         .select()
         .single();
