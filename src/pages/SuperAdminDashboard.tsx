@@ -30,7 +30,8 @@ import {
   Trash2,
   AlertTriangle,
   Banknote,
-  Newspaper
+  Newspaper,
+  Send as SendIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1833,7 +1834,10 @@ const SuperAdminDashboard = () => {
                         <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
                       </div>
                       <div className="w-16 h-8 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <SparklineChart data={card.trend || [2, 5, 3, 8, 4, 6, 5]} color={`var(--${card.color.split('-')[1]}-500)`} />
+                        <SparklineChart 
+                          data={card.trend || [2, 5, 3, 8, 4, 6, 5]} 
+                          color={card.color === 'text-primary' ? 'hsl(var(--primary))' : `var(--${card.color.split('-')[1]}-500)`} 
+                        />
                       </div>
                     </div>
                   </div>
@@ -2216,7 +2220,7 @@ const SuperAdminDashboard = () => {
             <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Send className="w-5 h-5 text-primary" />
+                  <SendIcon className="w-5 h-5 text-primary" />
                   Communications Center
                 </CardTitle>
                 <CardDescription>Broadcast messages and emails to your platform users.</CardDescription>
