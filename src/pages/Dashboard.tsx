@@ -271,12 +271,12 @@ const Dashboard = () => {
               talent_score: entry.talent_score || 0,
             } as LeaderboardEntry;
           });
-          setLeaderboard(processedLeaderboard);
-
           const userCategory = normalizeCategory(designerResult.data?.professional_title || null);
           const categoryLeaderboard = processedLeaderboard
             .filter(e => normalizeCategory(e.professional_title) === userCategory)
             .sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+          
+          setLeaderboard(categoryLeaderboard);
           const userRank = categoryLeaderboard.findIndex(e => e.user_id === user.id) + 1;
 
           let monthlyRevenue = 0;

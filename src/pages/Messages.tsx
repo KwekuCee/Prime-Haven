@@ -29,6 +29,7 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [myTitle, setMyTitle] = useState('');
+  const [myProfile, setMyProfile] = useState<{ full_name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollToBottom = useCallback(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, []);
@@ -43,6 +44,9 @@ const Messages = () => {
         const isClientUser = !!clientData;
 
         // 1. Get my own title (for fallback/sorting)
+        const { data: myProfileData } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+        setMyProfile(myProfileData);
+
         const { data: myDetails } = await supabase.from('designer_details').select('professional_title').eq('user_id', user.id).maybeSingle();
         const title = myDetails?.professional_title || (isClientUser ? 'Client' : '');
         setMyTitle(title);
@@ -71,18 +75,22 @@ const Messages = () => {
             }));
           }
         } else {
-          // 3. Designer Mode: Show other designers + their own clients
-          // Fetch all designers (existing behavior)
+          // 3. Designer Mode: Show other designers in SAME CATEGORY + their own clients
+          const myCategory = normalizeCategory(title);
+
+          // Fetch all designers
           const { data: allDesigners } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
           const { data: designerProfiles } = await supabase.from('profiles').select('id, full_name').in('id', allDesigners?.map(d => d.user_id) || []);
 
           const dProfileMap = new Map(designerProfiles?.map(p => [p.id, p.full_name]) || []);
-          const designerList: Designer[] = (allDesigners || []).map(d => ({
-            user_id: d.user_id,
-            full_name: dProfileMap.get(d.user_id) || 'Unknown',
-            professional_title: d.professional_title || 'Designer',
-            profile_photo_url: d.profile_photo_url || null,
-          }));
+          const designerList: Designer[] = (allDesigners || [])
+            .filter(d => normalizeCategory(d.professional_title) === myCategory)
+            .map(d => ({
+              user_id: d.user_id,
+              full_name: dProfileMap.get(d.user_id) || 'Unknown',
+              professional_title: d.professional_title || 'Designer',
+              profile_photo_url: d.profile_photo_url || null,
+            }));
 
           // Fetch clients this designer has worked for
           const { data: mySubmissions } = await supabase.from('submissions').select('client_ref').eq('designer_id', user.id);
@@ -95,7 +103,6 @@ const Messages = () => {
 
             if (clientEmails.length > 0) {
               const { data: clients } = await supabase.from('clients').select('id, name, company, email').in('email', clientEmails);
-              // Need to map client auth IDs
               const { data: authUsers } = await supabase.from('profiles').select('id, email').in('email', clientEmails);
               const authMap = new Map(authUsers?.map(a => [a.email, a.id]) || []);
 
@@ -109,6 +116,13 @@ const Messages = () => {
           }
           finalPeers = [...designerList, ...clientList];
         }
+
+        const normalizeCategory = (title: string | null): string => {
+          const t = (title || '').toLowerCase();
+          if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+          if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+          return 'Graphic Designer';
+        };
 
         setPeers(finalPeers);
 
@@ -173,6 +187,17 @@ const Messages = () => {
     try {
       const { error } = await supabase.from('messages').insert({ sender_id: user.id, receiver_id: selectedDesigner.user_id, content: newMessage.trim() });
       if (error) throw error;
+
+      // 2. Notify recipient via email
+      supabase.functions.invoke('notify-new-message', {
+        body: {
+          senderId: user.id,
+          senderName: myProfile?.full_name || 'Someone',
+          receiverId: selectedDesigner.user_id,
+          content: newMessage.trim().slice(0, 100) + (newMessage.length > 100 ? '...' : '')
+        }
+      }).catch(err => console.error('Failed to send message email notification:', err));
+
       setNewMessage(''); inputRef.current?.focus();
     } catch (err) { const error = err as Error; toast({ title: 'Failed to send', description: error?.message || 'Unknown error', variant: 'destructive' }); }
     finally { setSending(false); }

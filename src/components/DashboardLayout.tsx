@@ -95,7 +95,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
       { label: 'Submit Work', icon: Upload, path: '/submit-work' },
       { label: 'Partner Program', icon: TrendingUp, path: '/affiliate/dashboard' },
-      { label: 'Talk to the Client', icon: MessageSquare, path: '/messages' },
+      { label: 'Talk to the Designer', icon: MessageSquare, path: '/messages' },
       { label: 'Payments', icon: Wallet, path: '/payments' },
       { label: 'Settings', icon: Settings, path: '/settings' },
       { label: 'Install App', icon: Download, path: '/install' },
@@ -266,7 +266,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Link
               to="/messages"
               className="relative group"
-              title={effectiveIsClient ? "Talk to the Designer" : "Talk to the Client"}
+              title="Talk to the Designer"
             >
               <Button variant="ghost" size="icon" className="w-8 h-8">
                 <MessageSquare className="w-4 h-4" />
@@ -277,7 +277,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </span>
               )}
               <span className="absolute top-10 right-0 px-2 py-1 bg-popover text-[10px] text-popover-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-border shadow-sm">
-                {effectiveIsClient ? "Talk to the Designer" : "Talk to the Client"}
+                Talk to the Designer
               </span>
             </Link>
             <NotificationBell />

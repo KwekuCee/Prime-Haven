@@ -30,6 +30,15 @@ const CATEGORY_SKILLS: Record<string, string[]> = {
   "web-dev": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
 };
 
+function getCategoryLabel(id: string): string {
+  const categories: Record<string, string> = {
+    "graphic-design": "Graphic Design",
+    "app-design": "UI/UX Design",
+    "web-dev": "Web Development",
+  };
+  return categories[id] || id;
+}
+
 function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
@@ -273,8 +282,21 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     console.log(`Found ${targetDesigners.length} designers for category ${category}`);
+    
+    // Create in-app notifications
+    const notifications = targetDesigners.map(d => ({
+      user_id: d.id,
+      title: '💼 New Job Available',
+      message: `A new ${getCategoryLabel(category)} job was just posted: "${title}"`,
+      type: 'info',
+      link: '/dashboard',
+    }));
 
-    const emailTargets = targetDesigners.slice(0, 20);
+    if (notifications.length > 0) {
+      await supabase.from('notifications').insert(notifications);
+    }
+
+    const emailTargets = targetDesigners; // Notify all relevant designers
     const safeTitle = encodeHtml((title || "").slice(0, 200));
     const safeDesc = encodeHtml((description || "").slice(0, 500));
 
