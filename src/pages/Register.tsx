@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import GoogleOAuthButton from '@/components/auth/GoogleOAuthButton';
 import {
   registerPersonalSchema,
   registerSkillsSchema,
@@ -335,15 +334,7 @@ const Register = () => {
           <div className="space-y-5">
             {currentStep === 1 && (
               <div className="space-y-4">
-                <GoogleOAuthButton mode="signup" />
-                <div className="relative py-2">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border/40" />
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="bg-card/50 px-3 text-[10px] text-muted-foreground uppercase tracking-widest">or register manually</span>
-                  </div>
-                </div>
+
                 <form onSubmit={personalForm.handleSubmit(handleStep1Submit)} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="fullName" className={labelClass}>Full Name *</Label>

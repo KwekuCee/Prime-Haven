@@ -85,13 +85,15 @@ const ProjectMarketplace = () => {
             // Get designer profession from professional_title (professions column doesn't exist in DB)
             const { data: designer } = await supabase
                 .from('designer_details')
-                .select('professional_title')
+                .select('professional_title, professions')
                 .eq('user_id', user.id)
                 .maybeSingle();
 
-            const userProfession = deriveProfession(designer?.professional_title);
-            // Build set of professions the user qualifies for
-            const userProfessions = [userProfession];
+            const derivedProf = deriveProfession(designer?.professional_title);
+            // Use the professions array if it has items, otherwise fallback to derived
+            const userProfessions = designer?.professions && designer.professions.length > 0
+                ? designer.professions
+                : [derivedProf];
 
             // 1. Fetch from client_projects (new pooling system) — no profession filter in DB since
             //    required_professions may be null/empty; we filter client-side below
