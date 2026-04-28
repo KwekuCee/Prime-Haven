@@ -129,6 +129,7 @@ const ProjectMarketplace = () => {
                 .from('job_contracts')
                 .select('*')
                 .in('status', ['active', 'in_progress'])
+                .order('created_at', { ascending: false })
                 .limit(10);
 
             if (contractsError) throw contractsError;

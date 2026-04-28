@@ -97,7 +97,7 @@ const Dashboard = () => {
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
-  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string; category: string }[]>([]);
+  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string; category: string; source: 'client_projects' | 'job_contracts' }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [hasStartedProject, setHasStartedProject] = useState(false);
   const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
@@ -128,46 +128,81 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!startWorkingOpen || !user) return;
-    setLoadingJobs(true);
+    let isMounted = true;
 
     // Use the professions array from designer details, fallback to heuristic if empty
     const userProfessions = designer?.professions && designer.professions.length > 0
       ? designer.professions
       : [normalizeCategory(designer?.professional_title || null)];
 
-    // Fetch client projects that match any of the designer's professions
-    // AND haven't reached their max assignees limit
-    // We check this by comparing max_assignees with current count of project_assignments
-    supabase
-      .from('client_projects')
-      .select(`
-        id, 
-        title, 
-        category, 
-        required_professions, 
-        max_assignees,
-        project_assignments(count)
-      `)
-      .eq('status', 'pending')
-      .overlaps('required_professions', userProfessions)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Error fetching jobs:', error);
-          toast({ title: 'Error', description: 'Failed to fetch available jobs.', variant: 'destructive' });
-          setLoadingJobs(false);
-          return;
-        }
+    const loadJobs = async () => {
+      setLoadingJobs(true);
 
-        // Filter out projects that are already fully claimed
-        const available = (data || []).filter((proj: any) => {
-          const currentClaims = proj.project_assignments?.[0]?.count || 0;
-          return currentClaims < (proj.max_assignees || 1);
-        });
+      // 1. Fetch client_projects
+      const { data: cpData, error: cpError } = await supabase
+        .from('client_projects')
+        .select(`
+          id, 
+          title, 
+          category, 
+          required_professions, 
+          max_assignees,
+          project_assignments(count),
+          created_at
+        `)
+        .eq('status', 'pending')
+        .overlaps('required_professions', userProfessions)
+        .order('created_at', { ascending: false });
 
-        setActiveJobs(available);
+      if (cpError) {
+        console.error('Error fetching client projects:', cpError);
+        if (isMounted) toast({ title: 'Error', description: 'Failed to fetch some active jobs.', variant: 'destructive' });
+      }
+
+      // Filter out projects that are already fully claimed
+      const availableCP = (cpData || []).filter((proj: any) => {
+        const currentClaims = proj.project_assignments?.[0]?.count || 0;
+        return currentClaims < (proj.max_assignees || 1);
+      }).map((proj: any) => ({
+        id: proj.id,
+        title: proj.title,
+        category: proj.category,
+        source: 'client_projects' as const,
+        created_at: proj.created_at
+      }));
+
+      // 2. Fetch job_contracts
+      const jobCategories = userProfessions.flatMap(p => categoryToJobCategories(p));
+      const { data: jcData, error: jcError } = await supabase
+        .from('job_contracts')
+        .select('id, title, category, created_at')
+        .in('status', ['active', 'in_progress'])
+        .in('category', jobCategories)
+        .order('created_at', { ascending: false });
+
+      if (jcError) {
+        console.error('Error fetching job contracts:', jcError);
+      }
+
+      const availableJC = (jcData || []).map((job: any) => ({
+        id: job.id,
+        title: job.title,
+        category: job.category,
+        source: 'job_contracts' as const,
+        created_at: job.created_at
+      }));
+
+      if (isMounted) {
+        const combined = [...availableCP, ...availableJC].sort((a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setActiveJobs(combined);
         setLoadingJobs(false);
-      });
+      }
+    };
+
+    loadJobs();
+    return () => { isMounted = false; };
   }, [startWorkingOpen, user, designer]);
 
   const recalculateTalentScore = async () => {
@@ -198,15 +233,28 @@ const Dashboard = () => {
 
     setStartWorkingSending(true);
     try {
-      // 1. Call the claim_project RPC to safely assign the job
-      const { error: claimError } = await supabase.rpc('claim_project', {
-        p_project_id: selectedJob.id
-      });
+      if (selectedJob.source === 'client_projects') {
+        // 1. Call the claim_project RPC to safely assign the job
+        const { error: claimError } = await supabase.rpc('claim_project', {
+          p_project_id: selectedJob.id
+        });
 
-      if (claimError) throw claimError;
+        if (claimError) throw claimError;
+      } else {
+        // For job_contracts, notify admin that designer is starting
+        const { error: notifyError } = await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: user.id,
+            projectName: selectedJob.title,
+            notificationType: 'contract_application',
+          },
+        });
+        if (notifyError) {
+          console.error('Failed to notify admin:', notifyError);
+        }
+      }
 
-      // 2. Notify Discord/Admin (Optional side effect, keeping original notify-designer logic if needed)
-      // Actually, we'll just store local state and redirect
+      // 2. Store local state
       localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
         jobId: selectedJob.id,
         title: selectedJob.title,
@@ -275,7 +323,7 @@ const Dashboard = () => {
           const categoryLeaderboard = processedLeaderboard
             .filter(e => normalizeCategory(e.professional_title) === userCategory)
             .sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
-          
+
           setLeaderboard(categoryLeaderboard);
           const userRank = categoryLeaderboard.findIndex(e => e.user_id === user.id) + 1;
 
