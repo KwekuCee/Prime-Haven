@@ -46,6 +46,7 @@ interface DesignerData {
   talent_score: number;
   talent_score_breakdown: Record<string, unknown> | null;
   talent_score_updated_at: string;
+  professions?: string[];
 }
 
 interface Submission {
@@ -160,10 +161,10 @@ const Dashboard = () => {
       }
 
       // Filter out projects that are already fully claimed
-      const availableCP = (cpData || []).filter((proj: any) => {
+      const availableCP = (cpData || []).filter((proj) => {
         const currentClaims = proj.project_assignments?.[0]?.count || 0;
         return currentClaims < (proj.max_assignees || 1);
-      }).map((proj: any) => ({
+      }).map((proj) => ({
         id: proj.id,
         title: proj.title,
         category: proj.category,
@@ -184,7 +185,7 @@ const Dashboard = () => {
         console.error('Error fetching job contracts:', jcError);
       }
 
-      const availableJC = (jcData || []).map((job: any) => ({
+      const availableJC = (jcData || []).map((job) => ({
         id: job.id,
         title: job.title,
         category: job.category,
@@ -203,7 +204,7 @@ const Dashboard = () => {
 
     loadJobs();
     return () => { isMounted = false; };
-  }, [startWorkingOpen, user, designer]);
+  }, [startWorkingOpen, user, designer, toast]);
 
   const recalculateTalentScore = async () => {
     if (!user) return;
@@ -276,11 +277,12 @@ const Dashboard = () => {
       setStartWorkingOpen(false);
       setStartWorkingProject('');
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error claiming project:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       toast({
         title: 'Claim Failed',
-        description: err.message || 'Failed to claim project. It might have been taken just now.',
+        description: errorMessage || 'Failed to claim project. It might have been taken just now.',
         variant: 'destructive'
       });
     } finally {

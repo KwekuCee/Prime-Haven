@@ -4,13 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
-  Star, Download, Activity, LogOut, Menu, X, Shield, ChevronDown,
+  Star, Download, Activity, LogOut, Menu, X, Shield,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
   TrendingUp, Ticket, Presentation, MonitorPlay
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import NotificationCenter from '@/components/admin/NotificationCenter';
@@ -89,6 +88,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Projects', icon: FolderKanban, path: '/superadmin/projects' },
       { label: 'Contracts', icon: Briefcase, path: '/superadmin/contracts' },
+      { label: 'Forward Work', icon: Send, path: '/superadmin/forward-work' },
       { label: 'Portfolio', icon: Image, path: '/superadmin/portfolio' },
       { label: 'Pricing', icon: Tag, path: '/superadmin/pricing' },
     ],
@@ -248,17 +248,16 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                     ))}
                   </div>
                 ) : (
-                  <Collapsible key={section.title} defaultOpen={section.defaultOpen}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors group">
+                  <div key={section.title} className="mb-4">
+                    <div className="flex items-center w-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
                       {section.title}
-                      <ChevronDown className="w-3 h-3 transition-transform group-data-[state=closed]:-rotate-90" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-0.5 mt-1">
+                    </div>
+                    <div className="space-y-0.5 mt-1">
                       {section.items.map((item) => (
                         <NavButton key={item.label + (item.tab || '')} item={item} />
                       ))}
-                    </CollapsibleContent>
-                  </Collapsible>
+                    </div>
+                  </div>
                 )
               ))}
             </nav>
