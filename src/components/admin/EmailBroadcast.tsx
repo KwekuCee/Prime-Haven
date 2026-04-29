@@ -52,7 +52,7 @@ const EmailBroadcast = () => {
           .select('*', { count: 'exact', head: true });
         setRecipientCount(count || 0);
       }
-    } catch {}
+    } catch { }
   };
 
   const handleAudienceChange = (a: Audience) => {
@@ -68,32 +68,37 @@ const EmailBroadcast = () => {
     }
     setSending(true);
     try {
-      // Log the broadcast in system_logs
+      // Log the intent in system_logs
       await supabase.from('system_logs').insert({
-        action_type: 'email_broadcast',
-        description: `Broadcast to ${audience}: "${subject}"`,
+        action_type: 'email_broadcast_initiated',
+        description: `Broadcast initiated to ${audience}: "${subject}"`,
         timestamp: new Date().toISOString(),
       });
 
-      // Invoke edge function if it exists, otherwise show success (graceful degradation)
-      try {
-        await supabase.functions.invoke('send-broadcast-email', {
-          body: { audience, subject, body },
-        });
-      } catch {
-        // Edge function may not exist yet — that's OK, we still log it
-      }
+      // Invoke edge function
+      const { data, error } = await supabase.functions.invoke('send-broadcast-email', {
+        body: { audience, subject, body },
+      });
+
+      if (error) throw error;
 
       setSent(true);
       toast({
-        title: 'Broadcast Scheduled! ✉️',
-        description: `Your email has been queued for ${recipientCount ? recipientCount + ' recipients' : 'all ' + audience}.`,
+        title: 'Broadcast Sent! ✉️',
+        description: data?.recipientsCount
+          ? `Successfully sent to ${data.recipientsCount} recipients.`
+          : `Your email has been broadcasted to the ${audience} group.`,
       });
       setSubject('');
       setBody('');
       setTimeout(() => setSent(false), 4000);
     } catch (err: any) {
-      toast({ title: 'Broadcast Failed', description: err.message || 'Could not send email broadcast.', variant: 'destructive' });
+      console.error('Broadcast error:', err);
+      toast({
+        title: 'Broadcast Failed',
+        description: err.message || 'Could not send email broadcast. Please verify connectivity.',
+        variant: 'destructive'
+      });
     } finally {
       setSending(false);
     }
