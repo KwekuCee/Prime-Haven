@@ -229,6 +229,9 @@ interface SubmissionRaw {
   client_accepted?: boolean;
   ph_approved_at?: string | null;
   client_accepted_at?: string | null;
+  parent_submission_id?: string | null;
+  rejection_reason?: string | null;
+  design_link?: string | null;
 }
 
 interface PaymentRaw {
@@ -248,7 +251,7 @@ interface LogRaw {
   admin_id?: string;
   description?: string;
   timestamp?: string;
-  ip_address?: string;
+  ip_address?: any;
   user_agent?: string;
 }
 
@@ -336,15 +339,15 @@ const SuperAdminDashboard = () => {
       const shareRatio = revenueShare / 100;
       const nowIso = new Date().toISOString();
 
-      const { data: allDesigners } = await supabase
-        .from<DesignerDetailsRaw>('designer_details')
+      const { data: allDesigners } = await (supabase as any)
+        .from('designer_details')
         .select('user_id, monthly_points, professional_title');
 
       // Only fetch current month's approved submissions for salary calculation
       const now = new Date();
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { data: allSubmissions } = await supabase
-        .from<SubmissionRaw>('submissions')
+      const { data: allSubmissions } = await (supabase as any)
+        .from('submissions')
         .select('designer_id, service_type, points_awarded')
         .in('status', ['ph_approved', 'approved'])
         .gte('created_at', firstOfMonth);
@@ -354,7 +357,7 @@ const SuperAdminDashboard = () => {
 
         // Separate web developers from other designers
         const webDevIds = new Set(
-          (allDesigners || [])
+          (allDesigners as any[] || [])
             .filter((d: DesignerDetailsRaw) => {
               const cat = normalizeCategory(d.professional_title);
               return cat === 'Web Developer';
@@ -364,13 +367,13 @@ const SuperAdminDashboard = () => {
 
         // Non-web designers with monthly points > 0 are eligible for points-based salary
         const eligibleDesignerIds = new Set(
-          (allDesigners || [])
+          (allDesigners as any[] || [])
             .filter((d: DesignerDetailsRaw) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
             .map((d: DesignerDetailsRaw) => d.user_id)
         );
 
         const designerCategoryPoints: Record<string, { graphic: number; uiux: number }> = {};
-        (allDesigners || []).forEach((d: DesignerDetailsRaw) => {
+        (allDesigners as any[] || []).forEach((d: DesignerDetailsRaw) => {
           if (!webDevIds.has(d.user_id)) {
             designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0 };
           }
@@ -380,7 +383,7 @@ const SuperAdminDashboard = () => {
         const webDevSubmissions: Record<string, number> = {};
         let totalWebDevSubmissions = 0;
 
-        (allSubmissions || []).forEach((s: SubmissionRaw) => {
+        (allSubmissions as any[] || []).forEach((s: SubmissionRaw) => {
           if (s.service_type === 'web' && webDevIds.has(s.designer_id)) {
             webDevSubmissions[s.designer_id] = (webDevSubmissions[s.designer_id] || 0) + 1;
             totalWebDevSubmissions++;
@@ -398,7 +401,7 @@ const SuperAdminDashboard = () => {
         const designersEffectivePoints: Record<string, { graphic: number; uiux: number }> = {};
         const effectiveTotals = { graphic: 0, uiux: 0 };
 
-        (allDesigners || []).forEach((d: DesignerDetailsRaw) => {
+        (allDesigners as any[] || []).forEach((d: DesignerDetailsRaw) => {
           if (webDevIds.has(d.user_id)) return;
 
           const totalMonthlyPts = Number(d.monthly_points || 0);
@@ -426,13 +429,13 @@ const SuperAdminDashboard = () => {
         });
 
         await Promise.all(
-          allDesigners.map((designer: any) => {
+          (allDesigners as any[]).map((designer: any) => {
             // Web developers: 60% of web revenue split by their submissions
             if (webDevIds.has(designer.user_id)) {
               const devSubs = webDevSubmissions[designer.user_id] || 0;
               const webSalary = totalWebDevSubmissions > 0 ? (devSubs / totalWebDevSubmissions) * (webAmt * 0.6) : 0;
               const safeSalary = Number.isFinite(webSalary) && webSalary > 0 ? Number(webSalary.toFixed(2)) : 0;
-              return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
+              return (supabase as any).from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
             }
 
             const ep = designersEffectivePoints[designer.user_id] || { graphic: 0, uiux: 0 };
@@ -440,12 +443,12 @@ const SuperAdminDashboard = () => {
             const uiuxSalary = effectiveTotals.uiux > 0 ? (ep.uiux / effectiveTotals.uiux) * (uiuxAmt * shareRatio) : 0;
             const totalSalary = graphicSalary + uiuxSalary;
             const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
-            return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
+            return (supabase as any).from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
           })
         );
 
         // Hard guard for non-web designers with no points
-        await supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
+        await (supabase as any).from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
       }
 
       if (user) {
@@ -1834,9 +1837,9 @@ const SuperAdminDashboard = () => {
                         <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
                       </div>
                       <div className="w-16 h-8 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <SparklineChart 
-                          data={card.trend || [2, 5, 3, 8, 4, 6, 5]} 
-                          color={card.color === 'text-primary' ? 'hsl(var(--primary))' : `var(--${card.color.split('-')[1]}-500)`} 
+                        <SparklineChart
+                          data={card.trend || [2, 5, 3, 8, 4, 6, 5]}
+                          color={card.color === 'text-primary' ? 'hsl(var(--primary))' : `var(--${card.color.split('-')[1]}-500)`}
                         />
                       </div>
                     </div>

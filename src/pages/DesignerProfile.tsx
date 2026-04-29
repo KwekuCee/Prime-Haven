@@ -67,8 +67,8 @@ const DesignerProfile = () => {
             setProfile(profData);
 
             // 2. Load Portfolio
-            const { data: portData } = await supabase
-                .from('portfolio_items')
+            const { data: portData } = await (supabase
+                .from('portfolio_items') as any)
                 .select('*')
                 .eq('designer_id', id);
             setPortfolio(portData || []);
@@ -79,11 +79,11 @@ const DesignerProfile = () => {
                 .select('*, badges(*)')
                 .eq('user_id', id);
 
-            const formattedBadges = badgeData?.map(b => ({
+            const formattedBadges = (badgeData as any[])?.map(b => ({
                 id: b.id,
-                badge_name: b.badges.name,
-                badge_icon: b.badges.icon_url,
-                badge_description: b.badges.description
+                badge_name: b.badges?.name || 'Badge',
+                badge_icon: b.badges?.icon_url || '',
+                badge_description: b.badges?.description || ''
             })) || [];
             setBadges(formattedBadges);
 

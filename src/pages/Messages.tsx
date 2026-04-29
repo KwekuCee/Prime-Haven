@@ -53,6 +53,15 @@ const Messages = () => {
 
         let finalPeers: Designer[] = [];
 
+        const normalizeCategory = (title: string | null): string => {
+          const t = (title || '').toLowerCase();
+          if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+          if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+          return 'Graphic Designer';
+        };
+
+        const myCategory = normalizeCategory(title);
+
         if (isClientUser) {
           // 2. Client Mode: Find designers linked to their projects
           // Get designer IDs from submissions belonging to this client's orders
@@ -76,8 +85,6 @@ const Messages = () => {
           }
         } else {
           // 3. Designer Mode: Show other designers in SAME CATEGORY + their own clients
-          const myCategory = normalizeCategory(title);
-
           // Fetch all designers
           const { data: allDesigners } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
           const { data: designerProfiles } = await supabase.from('profiles').select('id, full_name').in('id', allDesigners?.map(d => d.user_id) || []);
@@ -116,13 +123,6 @@ const Messages = () => {
           }
           finalPeers = [...designerList, ...clientList];
         }
-
-        const normalizeCategory = (title: string | null): string => {
-          const t = (title || '').toLowerCase();
-          if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
-          if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
-          return 'Graphic Designer';
-        };
 
         setPeers(finalPeers);
 

@@ -42,6 +42,7 @@ interface JobContract {
   reference_files: string[] | null;
   active_designers_count: number;
   active_designer_ids: string[];
+  status: string;
   created_at: string;
 }
 

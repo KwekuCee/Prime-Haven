@@ -15,6 +15,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      project_messages: {
+        Row: Record<string, any>
+        Insert: Record<string, any>
+        Update: Record<string, any>
+        Relationships: []
+      }
       client_debts: {
         Row: Record<string, any>
         Insert: Record<string, any>
@@ -1223,7 +1229,7 @@ export type Database = {
     }
     Functions: {
       process_affiliate_commission: {
-        Args: { payment_id: string; p_ref_code?: string; p_client_name?: string }
+        Args: { payment_id?: string; p_ref_code?: string; p_client_name?: string; p_service?: string; p_commission?: number }
         Returns: void
       }
       claim_project: {

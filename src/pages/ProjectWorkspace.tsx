@@ -82,8 +82,8 @@ const ProjectWorkspace = () => {
 
     const loadOrderData = async () => {
         try {
-            const { data, error } = await (supabase
-                .from('client_orders') as any)
+            const { data, error } = await (supabase as any)
+                .from('client_orders')
                 .select('*')
                 .eq('id', orderId)
                 .single();
@@ -92,8 +92,8 @@ const ProjectWorkspace = () => {
             setOrder(data);
 
             // Load messages
-            const { data: msgData, error: msgError } = await (supabase
-                .from('project_messages') as any)
+            const { data: msgData, error: msgError } = await (supabase as any)
+                .from('project_messages')
                 .select('*')
                 .eq('order_id', orderId)
                 .order('created_at', { ascending: true });
@@ -132,8 +132,8 @@ const ProjectWorkspace = () => {
 
         setSending(true);
         try {
-            const { error } = await (supabase
-                .from('project_messages') as any)
+            const { error } = await (supabase as any)
+                .from('project_messages')
                 .insert({
                     order_id: orderId,
                     sender_id: user.id,

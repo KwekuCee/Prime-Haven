@@ -89,8 +89,8 @@ const ManagePortfolio = () => {
   const fetchPortfolioItems = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from<PortfolioItem>('portfolio_items')
+      const { data, error } = await (supabase as any)
+        .from('portfolio_items')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -152,8 +152,8 @@ const ManagePortfolio = () => {
         imageUrl = await uploadImage(newImageFile);
       }
 
-      const { data, error } = await supabase
-        .from<PortfolioItem>('portfolio_items')
+      const { data, error } = await (supabase as any)
+        .from('portfolio_items')
         .insert([{ ...newItem, image_url: imageUrl }])
         .select()
         .single();
@@ -216,8 +216,8 @@ const ManagePortfolio = () => {
       if (editImageFile) {
         imageUrl = await uploadImage(editImageFile);
       }
-      const { error } = await supabase
-        .from<PortfolioItem>('portfolio_items')
+      const { error } = await (supabase as any)
+        .from('portfolio_items')
         .update({ title: editForm.title, client: editForm.client, category: editForm.category, image_url: imageUrl, project_url: editForm.project_url || null })
         .eq('id', editItem.id);
 
@@ -242,234 +242,234 @@ const ManagePortfolio = () => {
     <SuperAdminLayout>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-heading font-bold">Manage Portfolio</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Add and manage company works displayed on the website</p>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-heading font-bold">Manage Portfolio</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Add and manage company works displayed on the website</p>
+            </div>
+            <Button onClick={() => setShowForm(!showForm)} size="sm" className="gap-2">
+              <Plus className="w-4 h-4" />
+              Add New Work
+            </Button>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add New Work
-          </Button>
-        </div>
 
-        {/* Add New Item Form */}
-        {showForm && (
-          <Card className="glass mb-8">
-            <CardHeader>
-              <CardTitle>Add New Portfolio Item</CardTitle>
-              <CardDescription>Fill in the details for the new work</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
+          {/* Add New Item Form */}
+          {showForm && (
+            <Card className="glass mb-8">
+              <CardHeader>
+                <CardTitle>Add New Portfolio Item</CardTitle>
+                <CardDescription>Fill in the details for the new work</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Project Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., TechFlow Dashboard"
+                      value={newItem.title}
+                      onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="client">Client Name</Label>
+                    <Input
+                      id="client"
+                      placeholder="e.g., TechFlow Inc."
+                      value={newItem.client}
+                      onChange={(e) => setNewItem({ ...newItem, client: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={newItem.category}
+                      onValueChange={(value) => setNewItem({ ...newItem, category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Image</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleNewImageSelect}
+                        className="flex-1"
+                      />
+                    </div>
+                    {!newImageFile && (
+                      <Input
+                        placeholder="Or paste image URL"
+                        value={newItem.image_url}
+                        onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+                      />
+                    )}
+                    {newImagePreview && (
+                      <img src={newImagePreview} alt="Preview" className="w-full h-32 object-cover rounded-md mt-2" />
+                    )}
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="project_url">Project Link (Optional)</Label>
+                    <Input
+                      id="project_url"
+                      placeholder="e.g., https://www.figma.com/... or https://example.com"
+                      value={newItem.project_url}
+                      onChange={(e) => setNewItem({ ...newItem, project_url: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <Button onClick={handleAddItem} disabled={isSaving} className="gap-2">
+                    {isSaving ? (
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    Save Item
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Portfolio Items Grid */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            </div>
+          ) : portfolioItems.length === 0 ? (
+            <Card className="glass">
+              <CardContent className="flex flex-col items-center justify-center py-20">
+                <ImageIcon className="w-16 h-16 text-muted-foreground/50 mb-4" />
+                <h3 className="text-xl font-heading font-bold mb-2">No Portfolio Items Yet</h3>
+                <p className="text-muted-foreground mb-6">Add your first work to display on the website</p>
+                <Button onClick={() => setShowForm(true)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add First Work
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {portfolioItems.map((item) => (
+                <Card key={item.id} className="glass overflow-hidden group">
+                  <div className="aspect-[4/3] overflow-hidden relative">
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <span className="text-primary text-sm font-medium">{item.category}</span>
+                      <h3 className="text-lg font-heading font-bold">{item.title}</h3>
+                      <p className="text-muted-foreground text-sm">{item.client}</p>
+                    </div>
+                  </div>
+                  <CardContent className="p-4 flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">
+                      Added {new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => window.open(item.image_url, '_blank')}>
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteItem(item.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Edit Dialog */}
+          <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Portfolio Item</DialogTitle>
+                <DialogDescription>Update the details for this work</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Project Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., TechFlow Dashboard"
-                    value={newItem.title}
-                    onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                  />
+                  <Label>Project Title</Label>
+                  <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="client">Client Name</Label>
-                  <Input
-                    id="client"
-                    placeholder="e.g., TechFlow Inc."
-                    value={newItem.client}
-                    onChange={(e) => setNewItem({ ...newItem, client: e.target.value })}
-                  />
+                  <Label>Client Name</Label>
+                  <Input value={editForm.client} onChange={(e) => setEditForm({ ...editForm, client: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={newItem.category}
-                    onValueChange={(value) => setNewItem({ ...newItem, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
+                  <Label>Category</Label>
+                  <Select value={editForm.category} onValueChange={(v) => setEditForm({ ...editForm, category: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Image</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleNewImageSelect}
-                      className="flex-1"
-                    />
-                  </div>
-                  {!newImageFile && (
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditImageSelect}
+                  />
+                  {!editImageFile && (
                     <Input
                       placeholder="Or paste image URL"
-                      value={newItem.image_url}
-                      onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+                      value={editForm.image_url}
+                      onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })}
                     />
                   )}
-                  {newImagePreview && (
-                    <img src={newImagePreview} alt="Preview" className="w-full h-32 object-cover rounded-md mt-2" />
+                  {(editImagePreview || editForm.image_url) && (
+                    <img
+                      src={editImagePreview || editForm.image_url}
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-md mt-2"
+                    />
                   )}
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="project_url">Project Link (Optional)</Label>
+                <div className="space-y-2">
+                  <Label>Project Link (Optional)</Label>
                   <Input
-                    id="project_url"
                     placeholder="e.g., https://www.figma.com/... or https://example.com"
-                    value={newItem.project_url}
-                    onChange={(e) => setNewItem({ ...newItem, project_url: e.target.value })}
+                    value={editForm.project_url}
+                    onChange={(e) => setEditForm({ ...editForm, project_url: e.target.value })}
                   />
                 </div>
               </div>
-              <div className="flex gap-2 mt-6">
-                <Button onClick={handleAddItem} disabled={isSaving} className="gap-2">
-                  {isSaving ? (
-                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  ) : (
-                    <Upload className="w-4 h-4" />
-                  )}
-                  Save Item
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+                <Button onClick={handleUpdateItem} disabled={isEditing}>
+                  {isEditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Changes
                 </Button>
-                <Button variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Portfolio Items Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-          </div>
-        ) : portfolioItems.length === 0 ? (
-          <Card className="glass">
-            <CardContent className="flex flex-col items-center justify-center py-20">
-              <ImageIcon className="w-16 h-16 text-muted-foreground/50 mb-4" />
-              <h3 className="text-xl font-heading font-bold mb-2">No Portfolio Items Yet</h3>
-              <p className="text-muted-foreground mb-6">Add your first work to display on the website</p>
-              <Button onClick={() => setShowForm(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add First Work
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {portfolioItems.map((item) => (
-              <Card key={item.id} className="glass overflow-hidden group">
-                <div className="aspect-[4/3] overflow-hidden relative">
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <span className="text-primary text-sm font-medium">{item.category}</span>
-                    <h3 className="text-lg font-heading font-bold">{item.title}</h3>
-                    <p className="text-muted-foreground text-sm">{item.client}</p>
-                  </div>
-                </div>
-                <CardContent className="p-4 flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    Added {new Date(item.created_at).toLocaleDateString()}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => window.open(item.image_url, '_blank')}>
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteItem(item.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Edit Dialog */}
-        <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Portfolio Item</DialogTitle>
-              <DialogDescription>Update the details for this work</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label>Project Title</Label>
-                <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Client Name</Label>
-                <Input value={editForm.client} onChange={(e) => setEditForm({ ...editForm, client: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={editForm.category} onValueChange={(v) => setEditForm({ ...editForm, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Image</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleEditImageSelect}
-                />
-                {!editImageFile && (
-                  <Input
-                    placeholder="Or paste image URL"
-                    value={editForm.image_url}
-                    onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })}
-                  />
-                )}
-                {(editImagePreview || editForm.image_url) && (
-                  <img
-                    src={editImagePreview || editForm.image_url}
-                    alt="Preview"
-                    className="w-full h-32 object-cover rounded-md mt-2"
-                  />
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Project Link (Optional)</Label>
-                <Input
-                  placeholder="e.g., https://www.figma.com/... or https://example.com"
-                  value={editForm.project_url}
-                  onChange={(e) => setEditForm({ ...editForm, project_url: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
-              <Button onClick={handleUpdateItem} disabled={isEditing}>
-                {isEditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </SuperAdminLayout>
   );
