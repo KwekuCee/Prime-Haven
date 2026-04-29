@@ -15,7 +15,7 @@ export interface UploadedFile {
 }
 
 interface DropZoneUploadProps {
-  onFilesChange: (files: UploadedFile[]) => void;
+  onFilesChange: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
   files: UploadedFile[];
   bucket?: string;
   maxSizeMB?: number;
@@ -115,7 +115,7 @@ const DropZoneUpload = ({
 
   const removeFile = async (f: UploadedFile) => {
     if (f.url && user) {
-      try { await supabase.storage.from(bucket).remove([f.url]); } catch {}
+      try { await supabase.storage.from(bucket).remove([f.url]); } catch { }
     }
     if (f.preview) URL.revokeObjectURL(f.preview);
     onFilesChange(files.filter(x => x.id !== f.id));

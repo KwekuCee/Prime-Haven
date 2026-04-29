@@ -49,12 +49,12 @@ export default function ManageMarketingAssets() {
 
       if (error) {
         if (error.code === '42P01') {
-            console.warn("Marketing assets table not created yet.");
-            return;
+          console.warn("Marketing assets table not created yet.");
+          return;
         }
         throw error;
       }
-      setAssets(data || []);
+      setAssets((data as MarketingAsset[]) || []);
     } catch (error: any) {
       toast({ title: 'Error loading assets', description: error.message, variant: 'destructive' });
     } finally {
@@ -73,10 +73,10 @@ export default function ManageMarketingAssets() {
       return;
     }
     if (formData.asset_type !== 'copy' && !selectedFile && !formData.asset_url) {
-       toast({ title: 'Validation Error', description: 'Please select a file to upload or provide a URL', variant: 'destructive' });
-       return;
+      toast({ title: 'Validation Error', description: 'Please select a file to upload or provide a URL', variant: 'destructive' });
+      return;
     }
-    
+
     setSubmitting(true);
     try {
       let finalUrl = formData.asset_url;
@@ -101,11 +101,11 @@ export default function ManageMarketingAssets() {
       }
 
       const { error } = await supabase.from('marketing_assets').insert([{
-          ...formData,
-          asset_url: finalUrl
+        ...formData,
+        asset_url: finalUrl
       }]);
       if (error) throw error;
-      
+
       toast({ title: 'Success', description: 'Marketing asset added successfully' });
       setFormData({ title: '', description: '', asset_url: '', asset_type: 'image' });
       setSelectedFile(null);
@@ -121,7 +121,7 @@ export default function ManageMarketingAssets() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this asset?')) return;
-    
+
     try {
       const { error } = await supabase.from('marketing_assets').delete().eq('id', id);
       if (error) throw error;
@@ -144,15 +144,15 @@ export default function ManageMarketingAssets() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Asset Title</label>
-                <Input 
-                  placeholder="e.g. Summer Promo Banner" 
+                <Input
+                  placeholder="e.g. Summer Promo Banner"
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Asset Type</label>
-                <Select value={formData.asset_type} onValueChange={(val) => setFormData({...formData, asset_type: val})}>
+                <Select value={formData.asset_type} onValueChange={(val) => setFormData({ ...formData, asset_type: val })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="image">Image / Banner</SelectItem>
@@ -162,39 +162,39 @@ export default function ManageMarketingAssets() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                  {formData.asset_type === 'copy' ? 'Copy Content' : 'Upload File'}
+                {formData.asset_type === 'copy' ? 'Copy Content' : 'Upload File'}
               </label>
               {formData.asset_type === 'copy' ? (
-                  <Textarea 
-                      placeholder="Enter the copy text here..." 
-                      value={formData.asset_url}
-                      onChange={(e) => setFormData({...formData, asset_url: e.target.value})}
-                      className="min-h-[100px]"
-                  />
+                <Textarea
+                  placeholder="Enter the copy text here..."
+                  value={formData.asset_url}
+                  onChange={(e) => setFormData({ ...formData, asset_url: e.target.value })}
+                  className="min-h-[100px]"
+                />
               ) : (
-                  <div className="flex items-center gap-4">
-                      <div className="flex-1 flex items-center gap-2 border rounded-md px-3 py-2 bg-background">
-                          <input 
-                              type="file" 
-                              ref={fileInputRef}
-                              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                              accept={formData.asset_type === 'image' ? 'image/*' : '.pdf,.doc,.docx,.zip'}
-                              className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                          />
-                      </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 flex items-center gap-2 border rounded-md px-3 py-2 bg-background">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      accept={formData.asset_type === 'image' ? 'image/*' : '.pdf,.doc,.docx,.zip'}
+                      className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                    />
                   </div>
+                </div>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Description (Optional)</label>
-              <Textarea 
-                placeholder="Instructions on how to use this asset..." 
+              <Textarea
+                placeholder="Instructions on how to use this asset..."
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </div>
 

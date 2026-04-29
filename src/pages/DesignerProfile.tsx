@@ -16,12 +16,15 @@ import Footer from '@/components/Footer';
 
 interface Profile {
     id: string;
-    full_name: string;
-    avatar_url: string;
-    bio: string;
-    location: string;
-    specialty: string;
-    total_points: number;
+    full_name?: string | null;
+    avatar_url?: string;
+    bio?: string;
+    location?: string;
+    specialty?: string;
+    total_points?: number;
+    email?: string;
+    created_at?: string;
+    [key: string]: any;
 }
 
 interface PortfolioItem {
@@ -71,8 +74,8 @@ const DesignerProfile = () => {
             setPortfolio(portData || []);
 
             // 3. Load Badges
-            const { data: badgeData } = await supabase
-                .from('user_badges')
+            const { data: badgeData } = await (supabase
+                .from('user_badges') as any)
                 .select('*, badges(*)')
                 .eq('user_id', id);
 

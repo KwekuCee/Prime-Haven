@@ -44,7 +44,7 @@ interface DesignerData {
   salary_estimated: number;
   professional_title: string;
   talent_score: number;
-  talent_score_breakdown: Record<string, unknown> | null;
+  talent_score_breakdown: any | null; // using any since Json might need import
   talent_score_updated_at: string;
   professions?: string[];
 }
@@ -161,10 +161,10 @@ const Dashboard = () => {
       }
 
       // Filter out projects that are already fully claimed
-      const availableCP = (cpData || []).filter((proj) => {
+      const availableCP = (cpData || []).filter((proj: any) => {
         const currentClaims = proj.project_assignments?.[0]?.count || 0;
         return currentClaims < (proj.max_assignees || 1);
-      }).map((proj) => ({
+      }).map((proj: any) => ({
         id: proj.id,
         title: proj.title,
         category: proj.category,

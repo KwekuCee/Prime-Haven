@@ -59,8 +59,8 @@ const FinanceDashboard = () => {
                 { data: clientsData },
                 { data: submissionsData }
             ] = await Promise.all([
-                supabase.from('client_orders').select('*').order('created_at', { ascending: false }),
-                supabase.from('payments').select('*, profiles(full_name)').order('created_at', { ascending: false }),
+                (supabase.from('client_orders') as any).select('*').order('created_at', { ascending: false }),
+                (supabase.from('payments') as any).select('*, profiles(full_name)').order('created_at', { ascending: false }),
                 supabase.from('designer_details').select('*'),
                 supabase.from('profiles').select('id, full_name, email'),
                 supabase.from('system_settings').select('key, value').eq('key', 'monthly_revenue'),
@@ -75,7 +75,7 @@ const FinanceDashboard = () => {
             // System Settings (SuperAdmin dashboard defined revenue config)
             let customMonthlyRevenue = 0;
             if (settingsData && settingsData.length > 0) {
-                const revSettings = settingsData[0].value;
+                const revSettings = settingsData[0].value as any;
                 customMonthlyRevenue = Number(revSettings.amount) || 0;
             }
 
@@ -88,7 +88,7 @@ const FinanceDashboard = () => {
 
             // Escrow calculations from Client Debts
             let escrow = 0;
-            (debtsData || []).forEach(debt => {
+            (debtsData || []).forEach((debt: any) => {
                 if (debt.status === 'pending') escrow += Number(debt.amount_owed);
             });
             setClientDebts(debtsData || []);
@@ -98,7 +98,7 @@ const FinanceDashboard = () => {
             const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
 
             const mappedDesigners = (designerDetailsData || []).map(detail => {
-                const profile = profilesMap.get(detail.user_id) || {};
+                const profile = (profilesMap.get(detail.user_id) || {}) as any;
                 const activeSalary = detail.salary_estimated > 0 ? Number(detail.salary_estimated) : (detail.monthly_points || 0) * 10;
                 pendingPayouts += activeSalary;
                 return {
