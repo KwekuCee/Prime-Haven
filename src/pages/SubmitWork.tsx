@@ -87,10 +87,14 @@ const SubmitWork = () => {
         try {
           const parsed = JSON.parse(stored);
           setStartedProject(parsed);
+          // Auto-select the started project in the dropdown
+          if (parsed?.jobId && !correctionId) {
+            setFormData(prev => ({ ...prev, selectedJobId: parsed.jobId, projectName: prev.projectName || parsed.title || '' }));
+          }
         } catch {}
       }
     }
-  }, [user]);
+  }, [user, correctionId]);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -238,11 +242,18 @@ const SubmitWork = () => {
                           <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableJobs.length === 0 && !jobsLoading ? (
-                            <SelectItem value="none" disabled>No active jobs</SelectItem>
-                          ) : availableJobs.map(job => (
-                            <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
-                          ))}
+                          {(() => {
+                            // If a project has been started, only show that one
+                            const visibleJobs = (startedProject && !correctionId)
+                              ? availableJobs.filter(j => j.id === startedProject.jobId)
+                              : availableJobs;
+                            if (visibleJobs.length === 0 && !jobsLoading) {
+                              return <SelectItem value="none" disabled>{startedProject ? 'Started project not found in active list' : 'No active jobs — start one first'}</SelectItem>;
+                            }
+                            return visibleJobs.map(job => (
+                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
+                            ));
+                          })()}
                         </SelectContent>
                       </Select>
                     </div>

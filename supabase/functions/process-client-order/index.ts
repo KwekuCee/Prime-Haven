@@ -5,7 +5,6 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
-const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 
 
@@ -150,22 +149,6 @@ serve(async (req: Request): Promise<Response> => {
       verifiedAmount = 0;
       verifiedCurrency = 'GHS';
       console.log("Processing free order via promo bypass:", paymentReference);
-    } else if (gateway === 'paystack') {
-
-      console.log("Verifying with Paystack...");
-      const paystackResponse = await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
-        { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
-      );
-      const paystackData = await paystackResponse.json();
-
-      if (!paystackData.status || paystackData.data?.status !== "success") {
-        return new Response(JSON.stringify({ success: false, error: "Payment verification failed", message: "Paystack payment verification failed" }), {
-          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-      verifiedAmount = paystackData.data.amount / 100;
-      verifiedCurrency = paystackData.data.currency;
     } else {
       console.log("Verifying with Korapay...");
       const korapayResponse = await fetch(
@@ -374,7 +357,7 @@ serve(async (req: Request): Promise<Response> => {
             { name: "💰 Amount Paid", value: displayAmount, inline: true },
             ...(clientWhatsapp ? [{ name: "📱 WhatsApp", value: encodeHtml(clientWhatsapp), inline: true }] : []),
           ],
-          footer: { text: `Prime Haven • Client Order (Paid via ${gateway === 'paystack' ? 'Paystack' : 'Korapay'})` },
+          footer: { text: `Prime Haven • Client Order (Paid via Korapay)` },
           timestamp: new Date().toISOString(),
         };
 
