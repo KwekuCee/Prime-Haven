@@ -15,11 +15,11 @@ const normalizeCategory = (title: string | null): string => {
   return 'Graphic Designer';
 };
 
-const categoryToJobCategories = (profession: string): string[] => {
+const professionToJobCategory = (profession: string): string => {
   switch (profession) {
-    case 'UI/UX Designer': return ['app-design'];
-    case 'Web Developer': return ['web-dev'];
-    default: return ['graphic-design'];
+    case 'UI/UX Designer': return 'app-design';
+    case 'Web Developer': return 'web-dev';
+    default: return 'graphic-design';
   }
 };
 
