@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Globe, Banknote, LayoutDashboard } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,14 +18,10 @@ declare global {
     Korapay: {
       initialize: (config: any) => void;
     };
-    PaystackPop: {
-      setup: (config: any) => { openIframe: () => void };
-    };
   }
 }
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
-const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb"; // User needs to update this
 
 // Approximate conversion rate: 1 USD ≈ 15.5 GHS
 const GHS_TO_USD = 1 / 15.5;
@@ -61,7 +57,7 @@ const StartProject = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
-  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
+  // Korapay is the only payment gateway
 
   const [selectedService, setSelectedService] = useState<string>('');
   const [selectedTier, setSelectedTier] = useState<string>('');
@@ -198,13 +194,8 @@ const StartProject = () => {
       return;
     }
 
-    if (gateway === 'korapay' && !window.Korapay) {
+    if (!window.Korapay) {
       toast({ title: 'System Loading', description: 'Korapay is still initializing. Please wait...', variant: 'default' });
-      return;
-    }
-
-    if (gateway === 'paystack' && !window.PaystackPop) {
-      toast({ title: 'System Loading', description: 'Paystack is still initializing. Please wait...', variant: 'default' });
       return;
     }
 
