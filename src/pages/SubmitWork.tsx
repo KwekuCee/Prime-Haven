@@ -87,10 +87,14 @@ const SubmitWork = () => {
         try {
           const parsed = JSON.parse(stored);
           setStartedProject(parsed);
+          // Auto-select the started project in the dropdown
+          if (parsed?.jobId && !correctionId) {
+            setFormData(prev => ({ ...prev, selectedJobId: parsed.jobId, projectName: prev.projectName || parsed.title || '' }));
+          }
         } catch {}
       }
     }
-  }, [user]);
+  }, [user, correctionId]);
 
   useEffect(() => {
     const loadJobs = async () => {
