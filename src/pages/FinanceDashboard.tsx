@@ -131,7 +131,7 @@ const FinanceDashboard = () => {
                     user: order.client_name,
                     status: order.payment_status === 'success' ? 'completed' : order.payment_status,
                     date: order.created_at,
-                    gateway: order.payment_reference ? 'Paystack/Korapay' : 'Manual'
+                    gateway: order.payment_reference ? 'Korapay' : 'Manual'
                 });
             });
 
