@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff, CalendarIcon, Sparkles, Globe } from 'lucide-react';
+import { ArrowLeft, CheckCircle, User, Briefcase, Lock, CreditCard, Loader2, Eye, EyeOff, CalendarIcon, Sparkles } from 'lucide-react';
 
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -32,14 +32,10 @@ declare global {
     Korapay: {
       initialize: (config: any) => void;
     };
-    PaystackPop: {
-      setup: (config: any) => { openIframe: () => void };
-    };
   }
 }
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
-const PAYSTACK_PUBLIC_KEY = "pk_live_4c60eef11210f3101a756799825004c3145d5edb"; // User needs to update this
 const REGISTRATION_FEE_GHS = 100;
 
 
@@ -67,7 +63,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { signUp, user, loading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
+  // Korapay is the only payment gateway
 
 
   const [promoCode, setPromoCode] = useState('');
@@ -141,12 +137,7 @@ const Register = () => {
 
   const handlePayNow = async () => {
 
-    if (gateway === 'korapay' && !window.Korapay) {
-      toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
-      return;
-    }
-
-    if (gateway === 'paystack' && !window.PaystackPop) {
+    if (!window.Korapay) {
       toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
       return;
     }
@@ -163,65 +154,30 @@ const Register = () => {
       return;
     }
 
-
-
-    if (gateway === 'korapay') {
-      try {
-        window.Korapay.initialize({
-          key: KORAPAY_PUBLIC_KEY,
-          reference,
-          amount: getFinalRegistrationFee(),
-          currency: "GHS",
-          customer: {
-            name: formData.fullName,
-            email: formData.email,
-          },
-
-          onSuccess: async () => {
-
-            await finalizeRegistration(reference);
-          },
-          onClose: () => {
-            setIsSubmitting(false);
-          },
-          onFailed: (data: any) => {
-            setIsSubmitting(false);
-            toast({ variant: 'destructive', title: 'Payment Failed', description: data?.message || 'Payment could not be completed.' });
-          },
-        });
-      } catch (err) {
-        setIsSubmitting(false);
-        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Korapay. Please refresh and try again.' });
-      }
-    } else {
-      try {
-        const handler = window.PaystackPop.setup({
-          key: PAYSTACK_PUBLIC_KEY,
+    try {
+      window.Korapay.initialize({
+        key: KORAPAY_PUBLIC_KEY,
+        reference,
+        amount: getFinalRegistrationFee(),
+        currency: "GHS",
+        customer: {
+          name: formData.fullName,
           email: formData.email,
-
-          amount: Math.round(getFinalRegistrationFee() * 100),
-          currency: "GHS",
-          ref: reference,
-          metadata: {
-            custom_fields: [
-              { display_name: "Full Name", variable_name: "full_name", value: formData.fullName }
-            ]
-          },
-
-          callback: (response: any) => {
-            finalizeRegistration(reference);
-          },
-
-          onClose: () => {
-            setIsSubmitting(false);
-          }
-        });
-        handler.openIframe();
-
-      } catch (err) {
-        setIsSubmitting(false);
-        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Paystack. Please refresh and try again.' });
-      }
+        },
+        onSuccess: async () => {
+          await finalizeRegistration(reference);
+        },
+        onClose: () => {
+          setIsSubmitting(false);
+        },
+        onFailed: (data: any) => {
+          setIsSubmitting(false);
+          toast({ variant: 'destructive', title: 'Payment Failed', description: data?.message || 'Payment could not be completed.' });
+        },
+      });
+    } catch (err) {
+      setIsSubmitting(false);
+      toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Korapay. Please refresh and try again.' });
     }
   };
 
