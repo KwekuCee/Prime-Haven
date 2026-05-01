@@ -333,7 +333,7 @@ const ClientStartProject = () => {
           discordCategory: selectedPricing!.discord_category,
           paymentReference: reference,
           promoCode: promoRef,
-          gateway: gateway,
+          gateway: 'korapay',
           clientPassword: "dashboard-client", // Dummy password since they are already authenticated
           businessName: form.businessName || "Client Business"
         },
@@ -417,7 +417,7 @@ const ClientStartProject = () => {
                 onClick={() => setCurrency('USD')}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'USD' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                <Globe className="w-3 h-3" /> USD
+                <Banknote className="w-3 h-3" /> USD
               </button>
             </div>
             <div className="hidden sm:flex items-center gap-2">
@@ -538,24 +538,11 @@ const ClientStartProject = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <Label>Choose Payment Method</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div
-                          onClick={() => setGateway('korapay')}
-                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all bg-background flex flex-col items-center gap-2 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
-                        >
-                          <Banknote className={`w-6 h-6 ${gateway === 'korapay' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span className="text-xs font-bold uppercase tracking-widest text-center">Korapay</span>
-                          <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash Only.</span>
-                        </div>
-                        <div
-                          onClick={() => setGateway('paystack')}
-                          className={`cursor-pointer p-4 rounded-xl border-2 transition-all bg-background flex flex-col items-center gap-2 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
-                        >
-                          <Globe className={`w-6 h-6 ${gateway === 'paystack' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span className="text-xs font-bold uppercase tracking-widest text-center">Paystack</span>
-                          <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer, Card</span>
-                        </div>
+                      <Label>Payment Method</Label>
+                      <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-2">
+                        <Banknote className="w-6 h-6 text-primary" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-center">Korapay</span>
+                        <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer & Card.</span>
                       </div>
                     </div>
 
