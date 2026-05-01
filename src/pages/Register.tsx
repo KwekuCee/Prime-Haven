@@ -193,7 +193,7 @@ const Register = () => {
             registration_fee_paid: true,
             payment_reference: reference,
             promo_code: promoRef,
-            gateway: gateway
+            gateway: 'korapay'
           }
         }
       });
@@ -503,23 +503,10 @@ const Register = () => {
                     </div>
                     <div className="mb-4 space-y-2 text-left">
                       <Label className="text-[10px] text-muted-foreground uppercase tracking-widest">Payment Method</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div
-                          onClick={() => setGateway('korapay')}
-                          className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${gateway === 'korapay' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
-                        >
-                          <CreditCard className={`w-5 h-5 ${gateway === 'korapay' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span className="text-[10px] font-bold uppercase text-center">Korapay</span>
-                          <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash Only.</span>
-                        </div>
-                        <div
-                          onClick={() => setGateway('paystack')}
-                          className={`cursor-pointer p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${gateway === 'paystack' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
-                        >
-                          <Globe className={`w-5 h-5 ${gateway === 'paystack' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span className="text-[10px] font-bold uppercase text-center">Paystack</span>
-                          <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer, Card</span>
-                        </div>
+                      <div className="p-3 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-1">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <span className="text-[10px] font-bold uppercase text-center">Korapay</span>
+                        <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer & Card.</span>
                       </div>
                     </div>
 
