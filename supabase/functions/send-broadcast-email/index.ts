@@ -68,24 +68,36 @@ serve(async (req) => {
         const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
         if (audience === "designers") {
-            const { data } = await adminClient
-                .from("profiles")
-                .select("email, full_name, user_roles!inner(role)")
-                .eq("user_roles.role", "designer");
-
-            recipients = (data || [])
-                .filter((p: any) => p.email)
-                .map((p: any) => ({ email: p.email, name: p.full_name || "Designer" }));
+            const { data: roleRows } = await adminClient
+                .from("user_roles")
+                .select("user_id")
+                .eq("role", "designer");
+            const ids = (roleRows || []).map((r: any) => r.user_id);
+            if (ids.length > 0) {
+                const { data } = await adminClient
+                    .from("profiles")
+                    .select("email, full_name")
+                    .in("id", ids);
+                recipients = (data || [])
+                    .filter((p: any) => p.email)
+                    .map((p: any) => ({ email: p.email, name: p.full_name || "Designer" }));
+            }
 
         } else if (audience === "admins") {
-            const { data } = await adminClient
-                .from("profiles")
-                .select("email, full_name, user_roles!inner(role)")
-                .in("user_roles.role", ["superadmin", "masteradmin"]);
-
-            recipients = (data || [])
-                .filter((p: any) => p.email)
-                .map((p: any) => ({ email: p.email, name: p.full_name || "Admin" }));
+            const { data: roleRows } = await adminClient
+                .from("user_roles")
+                .select("user_id")
+                .in("role", ["superadmin", "masteradmin"]);
+            const ids = (roleRows || []).map((r: any) => r.user_id);
+            if (ids.length > 0) {
+                const { data } = await adminClient
+                    .from("profiles")
+                    .select("email, full_name")
+                    .in("id", ids);
+                recipients = (data || [])
+                    .filter((p: any) => p.email)
+                    .map((p: any) => ({ email: p.email, name: p.full_name || "Admin" }));
+            }
 
         } else if (audience === "clients") {
             const { data } = await adminClient
