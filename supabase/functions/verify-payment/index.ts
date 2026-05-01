@@ -20,7 +20,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
     const reference = body?.reference;
-    const gateway = body?.gateway || 'korapay';
+    const gateway = 'korapay';
 
 
     // Input validation for reference
