@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type Json =
   | string
   | number
@@ -15,58 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
-      project_messages: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
-      }
-      client_debts: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
-      }
-      user_badges: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
-      }
-      client_support_tickets: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
-      }
-      project_revisions: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
-      }
-      marketing_assets: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
+      affiliate_payouts: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          id: string
+          status: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       affiliate_profiles: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
+        Row: {
+          clicks: number | null
+          created_at: string
+          id: string
+          referral_code: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clicks?: number | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clicks?: number | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: []
       }
       affiliate_referrals: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: []
+        Row: {
+          affiliate_id: string
+          client_name: string
+          commission: number
+          created_at: string
+          id: string
+          service_booked: string
+          status: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          client_name: string
+          commission?: number
+          created_at?: string
+          id?: string
+          service_booked: string
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          client_name?: string
+          commission?: number
+          created_at?: string
+          id?: string
+          service_booked?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      affiliate_payouts: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
+      badges: {
+        Row: {
+          created_at: string | null
+          criteria: Json
+          description: string
+          icon_name: string | null
+          id: string
+          key: string
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          criteria?: Json
+          description: string
+          icon_name?: string | null
+          id?: string
+          key: string
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          criteria?: Json
+          description?: string
+          icon_name?: string | null
+          id?: string
+          key?: string
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
         Relationships: []
       }
       blog_posts: {
@@ -123,12 +201,47 @@ export type Database = {
         }
         Relationships: []
       }
+      client_debts: {
+        Row: {
+          amount_owed: number
+          client_name: string
+          created_at: string
+          id: string
+          project_name: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_owed?: number
+          client_name: string
+          created_at?: string
+          id?: string
+          project_name?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_owed?: number
+          client_name?: string
+          created_at?: string
+          id?: string
+          project_name?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_orders: {
         Row: {
+          assigned_designer_id: string | null
+          claimed_at: string | null
           client_email: string
           client_name: string
+          client_rating: number | null
+          client_review: string | null
           client_whatsapp: string | null
           created_at: string
+          deadline_at: string | null
           description: string | null
           discord_message_id: string | null
           discord_posted: boolean | null
@@ -136,15 +249,21 @@ export type Database = {
           payment_reference: string | null
           payment_status: string
           price: number
+          project_status: string | null
           service_type: string
           tier: string
           updated_at: string
         }
         Insert: {
+          assigned_designer_id?: string | null
+          claimed_at?: string | null
           client_email: string
           client_name: string
+          client_rating?: number | null
+          client_review?: string | null
           client_whatsapp?: string | null
           created_at?: string
+          deadline_at?: string | null
           description?: string | null
           discord_message_id?: string | null
           discord_posted?: boolean | null
@@ -152,15 +271,21 @@ export type Database = {
           payment_reference?: string | null
           payment_status?: string
           price: number
+          project_status?: string | null
           service_type: string
           tier: string
           updated_at?: string
         }
         Update: {
+          assigned_designer_id?: string | null
+          claimed_at?: string | null
           client_email?: string
           client_name?: string
+          client_rating?: number | null
+          client_review?: string | null
           client_whatsapp?: string | null
           created_at?: string
+          deadline_at?: string | null
           description?: string | null
           discord_message_id?: string | null
           discord_posted?: boolean | null
@@ -168,6 +293,7 @@ export type Database = {
           payment_reference?: string | null
           payment_status?: string
           price?: number
+          project_status?: string | null
           service_type?: string
           tier?: string
           updated_at?: string
@@ -205,6 +331,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          max_assignees?: number | null
           progress_percentage?: number
           required_professions?: string[] | null
           status?: string
@@ -223,11 +350,42 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          max_assignees?: number | null
           progress_percentage?: number
           required_professions?: string[] | null
           status?: string
           title?: string
           tracking_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_support_tickets: {
+        Row: {
+          client_email: string
+          created_at: string
+          description: string
+          id: string
+          status: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          client_email: string
+          created_at?: string
+          description: string
+          id?: string
+          status?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          client_email?: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string | null
+          subject?: string
           updated_at?: string
         }
         Relationships: []
@@ -469,6 +627,33 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_assets: {
+        Row: {
+          asset_type: string | null
+          asset_url: string
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          asset_type?: string | null
+          asset_url: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          asset_type?: string | null
+          asset_url?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -544,6 +729,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          link: string | null
+          message: string
+          read: boolean | null
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean | null
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -595,6 +813,7 @@ export type Database = {
           client: string
           created_at: string
           created_by: string | null
+          designer_id: string | null
           id: string
           image_url: string
           project_url: string | null
@@ -605,6 +824,7 @@ export type Database = {
           client: string
           created_at?: string
           created_by?: string | null
+          designer_id?: string | null
           id?: string
           image_url: string
           project_url?: string | null
@@ -615,6 +835,7 @@ export type Database = {
           client?: string
           created_at?: string
           created_by?: string | null
+          designer_id?: string | null
           id?: string
           image_url?: string
           project_url?: string | null
@@ -624,6 +845,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string
           discord_invite_sent: boolean | null
           dob: string | null
@@ -635,10 +857,12 @@ export type Database = {
           join_date: string | null
           phone: string | null
           registration_fee_paid: boolean | null
+          specialty: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           discord_invite_sent?: boolean | null
           dob?: string | null
@@ -650,10 +874,12 @@ export type Database = {
           join_date?: string | null
           phone?: string | null
           registration_fee_paid?: boolean | null
+          specialty?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
+          bio?: string | null
           created_at?: string
           discord_invite_sent?: boolean | null
           dob?: string | null
@@ -665,10 +891,43 @@ export type Database = {
           join_date?: string | null
           phone?: string | null
           registration_fee_paid?: boolean | null
+          specialty?: string | null
           updated_at?: string
           username?: string | null
         }
         Relationships: []
+      }
+      project_assignments: {
+        Row: {
+          created_at: string | null
+          designer_id: string
+          id: string
+          project_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          designer_id: string
+          id?: string
+          project_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          designer_id?: string
+          id?: string
+          project_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_deliverables: {
         Row: {
@@ -737,6 +996,41 @@ export type Database = {
           },
         ]
       }
+      project_messages: {
+        Row: {
+          attachments: string[] | null
+          content: string
+          created_at: string | null
+          id: string
+          order_id: string
+          sender_id: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          content: string
+          created_at?: string | null
+          id?: string
+          order_id: string
+          sender_id: string
+        }
+        Update: {
+          attachments?: string[] | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "client_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_milestones: {
         Row: {
           completed_at: string | null
@@ -777,6 +1071,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_revisions: {
+        Row: {
+          client_email: string
+          created_at: string
+          feedback: string
+          id: string
+          submission_id: string
+        }
+        Insert: {
+          client_email: string
+          created_at?: string
+          feedback: string
+          id?: string
+          submission_id: string
+        }
+        Update: {
+          client_email?: string
+          created_at?: string
+          feedback?: string
+          id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_revisions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          discount_percent: number
+          expiry_date: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          discount_percent: number
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          discount_percent?: number
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       service_pricing: {
         Row: {
@@ -1050,6 +1406,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_id: string
+          id: string
+          meta: Json | null
+          source: string | null
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          id?: string
+          meta?: Json | null
+          source?: string | null
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          id?: string
+          meta?: Json | null
+          source?: string | null
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1228,14 +1619,11 @@ export type Database = {
       }
     }
     Functions: {
-      process_affiliate_commission: {
-        Args: { payment_id?: string; p_ref_code?: string; p_client_name?: string; p_service?: string; p_commission?: number }
-        Returns: void
+      allocate_client_acceptance_points: {
+        Args: { p_designer_id: string; p_points: number }
+        Returns: undefined
       }
-      claim_project: {
-        Args: { p_project_id: string }
-        Returns: void
-      }
+      claim_project: { Args: { p_project_id: string }; Returns: undefined }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1246,6 +1634,29 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      notify_discord_order: {
+        Args: {
+          p_amount: number
+          p_client_email: string
+          p_client_name: string
+          p_client_whatsapp?: string
+          p_discord_category: string
+          p_gateway?: string
+          p_service_label: string
+          p_service_type: string
+          p_tier: string
+        }
+        Returns: undefined
+      }
+      process_affiliate_commission: {
+        Args: {
+          p_client_name: string
+          p_commission: number
+          p_ref_code: string
+          p_service: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1263,116 +1674,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {

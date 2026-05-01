@@ -15,11 +15,11 @@ const normalizeCategory = (title: string | null): string => {
   return 'Graphic Designer';
 };
 
-const categoryToJobCategories = (profession: string): string[] => {
+const professionToJobCategory = (profession: string): string => {
   switch (profession) {
-    case 'UI/UX Designer': return ['app-design'];
-    case 'Web Developer': return ['web-dev'];
-    default: return ['graphic-design'];
+    case 'UI/UX Designer': return 'app-design';
+    case 'Web Developer': return 'web-dev';
+    default: return 'graphic-design';
   }
 };
 
@@ -52,15 +52,21 @@ const AvailableJobs = () => {
     const loadJobs = async () => {
       if (!user) { setLoading(false); return; }
       try {
-        // Get designer's profession
+        // Get designer's professions (multi) and professional_title (fallback)
         const { data: designerData } = await supabase
           .from('designer_details')
-          .select('professional_title')
+          .select('professional_title, professions')
           .eq('user_id', user.id)
           .maybeSingle();
-        
-        const profession = normalizeCategory(designerData?.professional_title || null);
-        const jobCategories = categoryToJobCategories(profession);
+
+        const userProfessions: string[] =
+          designerData?.professions && designerData.professions.length > 0
+            ? designerData.professions
+            : [normalizeCategory(designerData?.professional_title || null)];
+
+        const jobCategories = Array.from(
+          new Set(userProfessions.map((p) => professionToJobCategory(p)))
+        );
 
         const { data, error } = await supabase
           .from('job_contracts')
