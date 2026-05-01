@@ -39,9 +39,8 @@ export default function ThirdPartyLoader() {
   }, [adsEnabled, insertScript, isMobile, loaded]);
 
   useEffect(() => {
-    // Load critical payment scripts immediately
+    // Load critical payment script immediately (Korapay only)
     insertScript({ src: 'https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js', async: false });
-    insertScript({ src: 'https://js.paystack.co/v1/inline.js', async: false });
 
     // Load other third-party scripts after short idle period
     const timer = window.setTimeout(() => loadAll(), 2500);
