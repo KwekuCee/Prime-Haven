@@ -85,26 +85,8 @@ serve(async (req: Request): Promise<Response> => {
       paymentChannel = 'promo_code';
       paidAt = new Date().toISOString();
       console.log("Processing free registration via promo bypass:", reference);
-    } else if (gateway === 'paystack') {
-      const paystackResponse = await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-        { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
-      );
-      const paystackData = await paystackResponse.json();
-
-      if (!paystackData.status || paystackData.data?.status !== "success") {
-        console.error("Paystack verification failed:", paystackData);
-        return new Response(
-          JSON.stringify({ success: false, error: "payment_failed", message: "Payment verification failed" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-      verifiedAmount = paystackData.data.amount / 100;
-      verifiedCurrency = paystackData.data.currency;
-      paymentChannel = paystackData.data.channel || "paystack";
-      paidAt = paystackData.data.paid_at || new Date().toISOString();
     } else {
-      // Verify payment with Korapay
+      // Verify payment with Korapay (only supported gateway)
       const korapayResponse = await fetch(
         `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(reference)}`,
         { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
