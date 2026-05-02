@@ -68,7 +68,11 @@ const deriveProfession = (title: string | null | undefined): string => {
 
 
 
-const ProjectMarketplace = () => {
+interface ProjectMarketplaceProps {
+    fullWidth?: boolean;
+}
+
+const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
     const { user } = useAuth();
     const { toast } = useToast();
     const [orders, setOrders] = useState<OpenOrder[]>([]);

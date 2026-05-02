@@ -53,18 +53,17 @@ import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog'
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
 import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
-import AdsterraStats from '@/components/admin/AdsterraStats';
-import ManageTeam from '@/components/admin/ManageTeam';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
-import TrafficMap from '@/components/admin/TrafficMap';
 import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
 import AdminSubmissions from '@/components/admin/AdminSubmissions';
 import AdminPayments from '@/components/admin/AdminPayments';
-import PromoCodeManager from '@/components/admin/PromoCodeManager';
 import ManageClients from '@/components/admin/ManageClients';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
+import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
+import AdminMessagingHub from '@/components/admin/AdminMessagingHub';
+import DisputeMediator from '@/components/admin/DisputeMediator';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import SparklineChart from '@/components/ui/SparklineChart';
@@ -1966,8 +1965,7 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
 
-            {/* Traffic Map */}
-            <TrafficMap />
+            {/* Activity log moved below widgets for better flow */}
           </TabsContent>
 
           {/* ========== SUBMISSIONS TAB ========== */}
@@ -2195,10 +2193,30 @@ const SuperAdminDashboard = () => {
           <TabsContent value="blog" className="mt-0"><ManageBlog /></TabsContent>
 
           {/* ========== AD REVENUE ========== */}
-          <TabsContent value="adsterra" className="mt-0"><AdsterraStats /></TabsContent>
+          <TabsContent value="finance" className="space-y-6 mt-0">
+            <MonthlyReports />
+          </TabsContent>
 
-          {/* ========== ANALYTICS ========== */}
-          <TabsContent value="analytics" className="mt-0"><PerformanceAnalytics /></TabsContent>
+          <TabsContent value="messages" className="space-y-6 mt-0">
+            <AdminMessagingHub />
+          </TabsContent>
+
+          <TabsContent value="disputes" className="space-y-6 mt-0">
+            <DisputeMediator
+              submissions={submissions}
+              onResolve={(id, action) => {
+                if (action === 'approve') onClientAcceptance(id);
+                else if (action === 'correction') {
+                  const sub = submissions.find(s => s.id === id);
+                  if (sub) onCorrectionRequest(sub);
+                }
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6 mt-0">
+            <PerformanceAnalytics />
+          </TabsContent>
 
           {/* ========== CLIENT ORDERS ========== */}
           <TabsContent value="orders" className="mt-0"><ManageClientOrders /></TabsContent>
@@ -2213,7 +2231,7 @@ const SuperAdminDashboard = () => {
           <TabsContent value="promos" className="mt-0 pt-2"><PromoCodeManager /></TabsContent>
 
           {/* ========== TEAM ========== */}
-          <TabsContent value="team" className="mt-0"><ManageTeam /></TabsContent>
+          <TabsContent value="team" className="mt-0 pt-2"><ManageTeam /></TabsContent>
 
           {/* ========== MARKETING ASSETS ========== */}
           <TabsContent value="marketing_assets" className="mt-0"><ManageMarketingAssets /></TabsContent>

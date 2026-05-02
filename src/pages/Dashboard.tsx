@@ -575,8 +575,23 @@ const Dashboard = () => {
         {/* Active Contracts */}
         <ActiveContracts />
 
-        {/* Project Marketplace */}
-        <div className="mb-8">
+        {/* Project Marketplace Section */}
+        <div className="mb-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-heading font-bold">Project Marketplace</h2>
+              <p className="text-xs text-muted-foreground mt-1">Claim active contracts matching your skills</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/marketplace')}
+              className="group border-primary/20 hover:border-primary/40 bg-primary/5"
+            >
+              View Full Marketplace
+              <ArrowUpRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Button>
+          </div>
           <ProjectMarketplace />
         </div>
 

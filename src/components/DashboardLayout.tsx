@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User,
-  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp
+  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp, ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -93,6 +93,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   } else {
     navItems = [
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'Marketplace', icon: ShoppingBag, path: '/marketplace' },
       { label: 'Submit Work', icon: Upload, path: '/submit-work' },
       { label: 'Partner Program', icon: TrendingUp, path: '/affiliate/dashboard' },
       { label: 'Talk to the Designer', icon: MessageSquare, path: '/messages' },

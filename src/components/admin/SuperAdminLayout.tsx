@@ -6,7 +6,7 @@ import {
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
-  TrendingUp, Ticket, Presentation, MonitorPlay
+  TrendingUp, Ticket, Presentation, MonitorPlay, MessageSquare, Gavel
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +83,14 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Support',
+    defaultOpen: true,
+    items: [
+      { label: 'Messaging Hub', icon: MessageSquare, path: '/superadmin', tab: 'messages' },
+      { label: 'Dispute Mediator', icon: Gavel, path: '/superadmin', tab: 'disputes' },
+    ],
+  },
+  {
     title: 'Management',
     defaultOpen: false,
     items: [
@@ -100,7 +108,6 @@ const navSections: NavSection[] = [
       { label: 'Blog', icon: Newspaper, path: '/superadmin', tab: 'blog' },
       { label: 'Reviews', icon: Star, path: '/superadmin', tab: 'testimonials' },
       { label: 'Reports', icon: Download, path: '/superadmin', tab: 'reports' },
-      { label: 'Ads Dashboard', icon: MonitorPlay, path: '/superadmin', tab: 'adsterra' },
       { label: 'Marketing Assets', icon: Presentation, path: '/superadmin', tab: 'marketing_assets' },
       { label: 'Communications', icon: Send, path: '/superadmin', tab: 'communications' },
       { label: 'Logs', icon: Activity, path: '/superadmin', tab: 'logs' },
