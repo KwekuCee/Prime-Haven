@@ -69,15 +69,16 @@ const EditProfile = () => {
         ]);
         if (profileResult.data) {
           const p = profileResult.data;
-          const d = designerResult.data;
+          const d = designerResult.data as any;
           setFormData({
             full_name: p.full_name || '', email: p.email || user.email || '', phone: p.phone || '', dob: p.dob || '',
             professional_title: d?.professional_title || '',
             professions: d?.professions || [],
             experience_level: d?.experience_level || '',
             available_hours: d?.available_hours?.toString() || '', portfolio_url: d?.portfolio_url || '',
-            skills: d?.skills || [], profile_photo_url: (d as any)?.profile_photo_url || '',
+            skills: d?.skills || [], profile_photo_url: d?.profile_photo_url || '',
           });
+          setExtraProfessionPaid(!!d?.extra_profession_paid);
         }
       } catch { toast({ title: "Error loading profile", variant: "destructive" }); }
       finally { setLoading(false); }
