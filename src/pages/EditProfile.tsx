@@ -52,6 +52,10 @@ const EditProfile = () => {
     professions: [] as string[],
     experience_level: '', available_hours: '', portfolio_url: '', skills: [] as string[], profile_photo_url: '',
   });
+  const [extraProfessionPaid, setExtraProfessionPaid] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradePending, setUpgradePending] = useState<string | null>(null);
+  const [upgradePaying, setUpgradePaying] = useState(false);
   const [newSkill, setNewSkill] = useState('');
 
   useEffect(() => {
