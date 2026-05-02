@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserSettings } from '@/contexts/UserSettingsContext';
 import DashboardLayout from '@/components/DashboardLayout';
 
 declare global {
@@ -23,8 +24,7 @@ declare global {
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
 
-// Approximate conversion rate: 1 USD ≈ 15.5 GHS
-const GHS_TO_USD = 1 / 15.5;
+
 
 interface ServicePricing {
   id: string;
@@ -53,7 +53,8 @@ const ClientStartProject = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+  const { exchangeRate } = useUserSettings();
+
   const [step, setStep] = useState(1);
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +92,7 @@ const ClientStartProject = () => {
             businessName: client.company || '',
           }));
         } else {
-           setForm(prev => ({
+          setForm(prev => ({
             ...prev,
             clientName: user?.user_metadata?.full_name || '',
             clientEmail: user.email || '',
@@ -135,14 +136,14 @@ const ClientStartProject = () => {
 
   const formatPrice = (priceGhs: number) => {
     if (currency === 'USD') {
-      return `$${(priceGhs * GHS_TO_USD).toFixed(2)}`;
+      return `$${(priceGhs / exchangeRate).toFixed(2)}`;
     }
     return `GH₵${priceGhs.toLocaleString()}`;
   };
 
   const getPaymentAmount = (priceGhs: number) => {
     if (currency === 'USD') {
-      return Math.ceil(priceGhs * GHS_TO_USD * 100) / 100;
+      return Math.ceil((priceGhs / exchangeRate) * 100) / 100;
     }
     return priceGhs;
   };
@@ -270,13 +271,13 @@ const ClientStartProject = () => {
         // Process Affiliate Commission for free orders (commission is 0, but good for tracking signups)
         const refCode = localStorage.getItem('primehaven_ref_code');
         if (refCode) {
-           await supabase.rpc('process_affiliate_commission', {
-              p_ref_code: refCode,
-              p_client_name: form.clientName,
-              p_service: selectedPricing.service_label,
-              p_commission: 0
-           });
-           localStorage.removeItem('primehaven_ref_code');
+          await supabase.rpc('process_affiliate_commission', {
+            p_ref_code: refCode,
+            p_client_name: form.clientName,
+            p_service: selectedPricing.service_label,
+            p_commission: 0
+          });
+          localStorage.removeItem('primehaven_ref_code');
         }
 
         navigate('/client/dashboard');
@@ -363,15 +364,15 @@ const ClientStartProject = () => {
       // Process Affiliate Commission (5% of final price)
       const refCode = localStorage.getItem('primehaven_ref_code');
       if (refCode) {
-         const commission = finalPrice * 0.05;
-         await supabase.rpc('process_affiliate_commission', {
-            p_ref_code: refCode,
-            p_client_name: form.clientName,
-            p_service: selectedPricing!.service_label,
-            p_commission: commission
-         });
-         // Clear the code after successful use
-         localStorage.removeItem('primehaven_ref_code');
+        const commission = finalPrice * 0.05;
+        await supabase.rpc('process_affiliate_commission', {
+          p_ref_code: refCode,
+          p_client_name: form.clientName,
+          p_service: selectedPricing!.service_label,
+          p_commission: commission
+        });
+        // Clear the code after successful use
+        localStorage.removeItem('primehaven_ref_code');
       }
 
       navigate('/client/dashboard');
@@ -404,7 +405,7 @@ const ClientStartProject = () => {
           <Button variant="outline" onClick={() => navigate('/client/dashboard')} className="gap-2 shrink-0">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Button>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
               <button
@@ -527,13 +528,13 @@ const ClientStartProject = () => {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="description">Project Description *</Label>
-                      <Textarea 
-                        id="description" 
-                        value={form.description} 
-                        onChange={e => handleChange('description', e.target.value)} 
-                        placeholder="Tell us about your project, goals, timeline, and any specific requirements..." 
-                        className="min-h-[120px] bg-background" 
-                        required 
+                      <Textarea
+                        id="description"
+                        value={form.description}
+                        onChange={e => handleChange('description', e.target.value)}
+                        placeholder="Tell us about your project, goals, timeline, and any specific requirements..."
+                        className="min-h-[120px] bg-background"
+                        required
                       />
                     </div>
 
@@ -570,7 +571,7 @@ const ClientStartProject = () => {
                     <div className="bg-muted/50 rounded-lg p-4 space-y-2 border border-border/50">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Account</span>
-                        <span className="font-medium text-right">{form.clientName}<br/><span className="text-xs opacity-70">{form.clientEmail}</span></span>
+                        <span className="font-medium text-right">{form.clientName}<br /><span className="text-xs opacity-70">{form.clientEmail}</span></span>
                       </div>
                       <div className="border-t border-border/50 my-2"></div>
                       <div className="flex justify-between text-sm">

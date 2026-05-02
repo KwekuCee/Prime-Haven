@@ -37,12 +37,12 @@ interface UserSettingsContextType {
   saveSettings: () => Promise<void>;
   loading: boolean;
   formatCurrency: (amount: number) => string;
+  exchangeRate: number;
 }
 
 const UserSettingsContext = createContext<UserSettingsContextType | undefined>(undefined);
 
-// Conversion rate: 1 USD ≈ 15.5 GHS (approximate)
-const GHS_TO_USD = 1 / 15.5;
+
 
 export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
@@ -50,9 +50,29 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [hasRecord, setHasRecord] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState(10); // Default to user requested 10
 
   useEffect(() => {
     const loadSettings = async () => {
+      // Fetch exchange rate first (system setting)
+      try {
+        const { data: rateData } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'usd_to_ghs_rate')
+          .maybeSingle();
+
+        if (rateData && typeof rateData.value === 'number') {
+          setExchangeRate(rateData.value);
+        } else if (rateData && typeof rateData.value === 'string') {
+          setExchangeRate(parseFloat(rateData.value) || 10);
+        } else if (rateData && typeof rateData.value === 'object' && (rateData.value as any).rate) {
+          setExchangeRate(parseFloat((rateData.value as any).rate) || 10);
+        }
+      } catch (err) {
+        console.error('Error fetching exchange rate:', err);
+      }
+
       if (!user) {
         setLoading(false);
         return;
@@ -119,13 +139,14 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
 
   const formatCurrency = useCallback((amountInGhs: number) => {
     if (settings.currency === 'usd') {
-      return `$${(amountInGhs * GHS_TO_USD).toFixed(2)}`;
+      const ghsToUsd = 1 / exchangeRate;
+      return `$${(amountInGhs * ghsToUsd).toFixed(2)}`;
     }
     return `GH₵${amountInGhs.toFixed(2)}`;
-  }, [settings.currency]);
+  }, [settings.currency, exchangeRate]);
 
   return (
-    <UserSettingsContext.Provider value={{ settings, updateSetting, saveSettings, loading, formatCurrency }}>
+    <UserSettingsContext.Provider value={{ settings, updateSetting, saveSettings, loading, formatCurrency, exchangeRate }}>
       {children}
     </UserSettingsContext.Provider>
   );

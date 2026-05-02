@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/BrandLogo';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserSettings } from '@/contexts/UserSettingsContext';
 
 declare global {
   interface Window {
@@ -23,8 +24,7 @@ declare global {
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
 
-// Approximate conversion rate: 1 USD ≈ 15.5 GHS
-const GHS_TO_USD = 1 / 15.5;
+
 
 interface ServicePricing {
   id: string;
@@ -52,6 +52,7 @@ const tierLabels: Record<string, string> = {
 const StartProject = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { exchangeRate } = useUserSettings();
   const [step, setStep] = useState(1);
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,14 +136,14 @@ const StartProject = () => {
 
   const formatPrice = (priceGhs: number) => {
     if (currency === 'USD') {
-      return `$${(priceGhs * GHS_TO_USD).toFixed(2)}`;
+      return `$${(priceGhs / exchangeRate).toFixed(2)}`;
     }
     return `GH₵${priceGhs.toLocaleString()}`;
   };
 
   const getPaymentAmount = (priceGhs: number) => {
     if (currency === 'USD') {
-      return Math.ceil(priceGhs * GHS_TO_USD * 100) / 100; // round up to nearest cent
+      return Math.ceil((priceGhs / exchangeRate) * 100) / 100; // round up to nearest cent
     }
     return priceGhs;
   };

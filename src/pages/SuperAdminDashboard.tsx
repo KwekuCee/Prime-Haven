@@ -61,7 +61,8 @@ import AdminSubmissions from '@/components/admin/AdminSubmissions';
 import AdminPayments from '@/components/admin/AdminPayments';
 import ManageClients from '@/components/admin/ManageClients';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
-import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
+import ManageTeam from '@/components/admin/ManageTeam';
+import PromoCodeManager from '@/components/admin/PromoCodeManager';
 import AdminMessagingHub from '@/components/admin/AdminMessagingHub';
 import DisputeMediator from '@/components/admin/DisputeMediator';
 import { Textarea } from '@/components/ui/textarea';
@@ -186,6 +187,7 @@ interface SystemSettings {
   revenue_share_percentage: { value: number };
   monthly_revenue_by_category?: { graphic: number; uiux: number; web: number };
   correction_points?: { value: number } | number;
+  usd_to_ghs_rate?: { value: number } | number;
 }
 
 // Raw DB row types for safer typing of Supabase responses
@@ -285,6 +287,7 @@ const SuperAdminDashboard = () => {
   });
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const [revenueInput, setRevenueInput] = useState('');
+  const [exchangeRateInput, setExchangeRateInput] = useState('10');
   const [revenueByCategory, setRevenueByCategory] = useState({ graphic: '', uiux: '', web: '' });
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
@@ -301,6 +304,7 @@ const SuperAdminDashboard = () => {
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [submissionsPage, setSubmissionsPage] = useState(1);
   const [logsPage, setLogsPage] = useState(1);
   const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
@@ -484,6 +488,10 @@ const SuperAdminDashboard = () => {
           settings[item.key] = item.value;
         });
         setSystemSettings(prev => ({ ...prev, ...settings }));
+        if (settings.usd_to_ghs_rate) {
+          const rate = typeof settings.usd_to_ghs_rate === 'object' ? settings.usd_to_ghs_rate.value : settings.usd_to_ghs_rate;
+          setExchangeRateInput(String(rate || 10));
+        }
       }
     } catch (error) {
       console.error('Error loading system settings:', error);
@@ -964,6 +972,36 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  // Fetch live international exchange rate (USD to GHS)
+  const handleFetchLiveRate = async () => {
+    try {
+      setIsFetchingRate(true);
+      const response = await fetch('https://open.er-api.com/v6/latest/USD');
+      const data = await response.json();
+
+      if (data && data.rates && data.rates.GHS) {
+        const liveRate = data.rates.GHS;
+        setExchangeRateInput(liveRate.toFixed(2));
+        toast({
+          title: 'Live Rate Fetched',
+          description: `Current international rate: 1 USD = ${liveRate.toFixed(2)} GHS`
+        });
+      } else {
+        throw new Error('Could not parse exchange rate data');
+      }
+    } catch (error: any) {
+      console.error('Fetch rate error:', error);
+      toast({
+        title: 'Fetch Failed',
+        description: 'Using fallback rate (10.00). Please check your internet connection.',
+        variant: 'destructive'
+      });
+      setExchangeRateInput('10.00');
+    } finally {
+      setIsFetchingRate(false);
+    }
+  };
+
   // Update monthly revenue by category
   const handleUpdateRevenue = async () => {
     try {
@@ -971,6 +1009,7 @@ const SuperAdminDashboard = () => {
       const uiuxAmt = parseFloat(revenueByCategory.uiux) || 0;
       const webAmt = parseFloat(revenueByCategory.web) || 0;
       const totalAmount = graphicAmt + uiuxAmt + webAmt;
+      const rateAmount = parseFloat(exchangeRateInput) || 10;
 
       if (totalAmount < 0) {
         toast({ title: 'Invalid Amount', description: 'Revenue amounts must be positive.', variant: 'destructive' });
@@ -981,22 +1020,23 @@ const SuperAdminDashboard = () => {
       const revenueData = { amount: totalAmount, currency: 'GHS', month: currentDate.getMonth() + 1, year: currentDate.getFullYear() };
       const categoryData = { graphic: graphicAmt, uiux: uiuxAmt, web: webAmt };
 
-      // Upsert both settings
+      // Upsert settings
       await Promise.all([
         supabase.from('system_settings').upsert({ key: 'monthly_revenue', value: revenueData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
         supabase.from('system_settings').upsert({ key: 'monthly_revenue_by_category', value: categoryData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
+        supabase.from('system_settings').upsert({ key: 'usd_to_ghs_rate', value: rateAmount, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
       ]);
 
       if (user) {
         await supabase.from('system_logs').insert({
           action_type: 'revenue_updated',
           admin_id: user.id,
-          description: `Revenue updated — Graphic: GH₵${graphicAmt.toFixed(2)}, UI/UX: GH₵${uiuxAmt.toFixed(2)}, Web: GH₵${webAmt.toFixed(2)}, Total: GH₵${totalAmount.toFixed(2)}`,
+          description: `Revenue & Rate updated — Rate: ${rateAmount}, Graphic: GH₵${graphicAmt.toFixed(2)}, UI/UX: GH₵${uiuxAmt.toFixed(2)}, Web: GH₵${webAmt.toFixed(2)}`,
           timestamp: new Date().toISOString(),
         });
       }
 
-      setSystemSettings(prev => ({ ...prev, monthly_revenue: revenueData, monthly_revenue_by_category: categoryData }));
+      setSystemSettings(prev => ({ ...prev, monthly_revenue: revenueData, monthly_revenue_by_category: categoryData, usd_to_ghs_rate: rateAmount }));
 
       // Recalculate salaries by category (web devs get 60% of web revenue)
       const revenueShare = systemSettings.revenue_share_percentage?.value || 50;
@@ -2332,6 +2372,16 @@ const SuperAdminDashboard = () => {
             <div><Label className="text-xs font-medium">Graphic Design (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.graphic} onChange={e => setRevenueByCategory(p => ({ ...p, graphic: e.target.value }))} className="mt-1 h-9" /></div>
             <div><Label className="text-xs font-medium">UI/UX Design (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.uiux} onChange={e => setRevenueByCategory(p => ({ ...p, uiux: e.target.value }))} className="mt-1 h-9" /></div>
             <div><Label className="text-xs font-medium">Web Development (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.web} onChange={e => setRevenueByCategory(p => ({ ...p, web: e.target.value }))} className="mt-1 h-9" /></div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium flex justify-between items-center">
+                System Exchange Rate (1 USD = ? GHS)
+                <Button variant="ghost" className="h-5 px-1.5 text-[10px] text-primary" onClick={handleFetchLiveRate} disabled={isFetchingRate}>
+                  {isFetchingRate ? <RefreshCw className="w-2.5 h-2.5 animate-spin mr-1" /> : <TrendingUp className="w-2.5 h-2.5 mr-1" />}
+                  Fetch International
+                </Button>
+              </Label>
+              <Input type="number" placeholder="10.00" value={exchangeRateInput} onChange={e => setExchangeRateInput(e.target.value)} className="mt-1 h-9 border-primary/30" />
+            </div>
             <div className="p-3 rounded-lg bg-muted/50 text-xs">
               <span className="text-muted-foreground">Total: </span>
               <span className="font-bold">GH₵{((parseFloat(revenueByCategory.graphic) || 0) + (parseFloat(revenueByCategory.uiux) || 0) + (parseFloat(revenueByCategory.web) || 0)).toFixed(2)}</span>
