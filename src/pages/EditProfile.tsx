@@ -113,6 +113,46 @@ const EditProfile = () => {
     finally { setUploadingPhoto(false); }
   };
 
+  const handleUpgradePay = async () => {
+    if (!user || !upgradePending) return;
+    if (!(window as any).Korapay) {
+      toast({ title: 'Payment system loading', description: 'Please try again in a moment.' });
+      return;
+    }
+    setUpgradePaying(true);
+    const reference = `PH-PROF-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+    try {
+      (window as any).Korapay.initialize({
+        key: KORAPAY_PUBLIC_KEY,
+        reference,
+        amount: PROFESSION_UPGRADE_FEE,
+        currency: 'GHS',
+        customer: { name: formData.full_name || 'Designer', email: formData.email },
+        onSuccess: async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke('verify-profession-upgrade', { body: { reference } });
+            if (error || !data?.success) throw new Error(data?.error || error?.message || 'verification_failed');
+            setExtraProfessionPaid(true);
+            setFormData(p => ({ ...p, professions: [...p.professions, upgradePending!] }));
+            toast({ title: 'Profession unlocked! 🎉', description: `${upgradePending} added to your profile.` });
+            setUpgradeOpen(false);
+            setUpgradePending(null);
+          } catch (e: any) {
+            toast({ title: 'Could not verify payment', description: e.message, variant: 'destructive' });
+          } finally { setUpgradePaying(false); }
+        },
+        onClose: () => setUpgradePaying(false),
+        onFailed: (d: any) => {
+          setUpgradePaying(false);
+          toast({ title: 'Payment failed', description: d?.message || 'Please try again.', variant: 'destructive' });
+        },
+      });
+    } catch (e: any) {
+      setUpgradePaying(false);
+      toast({ title: 'Payment system error', description: e.message, variant: 'destructive' });
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
