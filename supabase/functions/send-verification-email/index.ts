@@ -28,6 +28,8 @@ const ALLOWED_REDIRECT_DOMAINS = [
   "lovable.dev",
   "lovableproject.com",
   "youthquake-forge.lovable.app",
+  "primehaven.tech",
+  "primehaven.lovable.app",
 ];
 
 const isAllowedRedirectUrl = (url: string): boolean => {
