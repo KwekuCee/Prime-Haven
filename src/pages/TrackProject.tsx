@@ -18,6 +18,7 @@ interface Project {
   id: string;
   title: string;
   client_name: string;
+  client_email?: string;
   description: string;
   category: string;
   status: string;
@@ -25,6 +26,24 @@ interface Project {
   deadline: string | null;
   created_at: string;
   updated_at: string;
+  accepted_designer_id?: string | null;
+  tip_total?: number;
+}
+
+interface AcceptedDesigner {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  professional_title?: string | null;
+  profile_photo_url?: string | null;
+}
+
+interface ChatMessage {
+  id: string;
+  sender_role: string;
+  sender_name: string | null;
+  content: string;
+  created_at: string;
 }
 
 interface Milestone {
