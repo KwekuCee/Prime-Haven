@@ -938,6 +938,36 @@ export type Database = {
           },
         ]
       }
+      project_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          sender_id: string | null
+          sender_name: string | null
+          sender_role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          sender_id?: string | null
+          sender_name?: string | null
+          sender_role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          sender_id?: string | null
+          sender_name?: string | null
+          sender_role?: string
+        }
+        Relationships: []
+      }
       project_deliverables: {
         Row: {
           description: string | null
