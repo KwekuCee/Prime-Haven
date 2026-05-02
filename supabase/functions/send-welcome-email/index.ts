@@ -77,7 +77,7 @@ function buildWelcomeHtml(name: string): string {
 <td width="40" valign="top"><span style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;background-color:rgba(254,76,24,0.3);color:#fe4c18;border-radius:50%;font-weight:800;font-size:14px;">2</span></td>
 <td style="padding-left:12px;">
 <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#ffffff;">Log In & Explore Your Dashboard</p>
-<p style="margin:0;font-size:14px;color:#999999;">After verification, log in at <a href="https://primehaven.lovable.app/login" style="color:#fe4c18;text-decoration:none;">primehaven.lovable.app/login</a>. Your dashboard shows your points, rank, leaderboard, and quick actions.</p>
+<p style="margin:0;font-size:14px;color:#999999;">After verification, log in at <a href="https://primehaven.tech/login" style="color:#fe4c18;text-decoration:none;">primehaven.tech/login</a>. Your dashboard shows your points, rank, leaderboard, and quick actions.</p>
 </td>
 </tr></table>
 </td></tr></table>
@@ -149,7 +149,7 @@ function buildWelcomeHtml(name: string): string {
 
 <!-- CTA -->
 <tr><td align="center" style="padding:0 40px 28px;">
-<a href="https://primehaven.lovable.app/dashboard" target="_blank" style="display:inline-block;background-color:#fe4c18;color:#000000;text-decoration:none;padding:16px 40px;border-radius:10px;font-weight:700;font-size:16px;letter-spacing:0.5px;">Go to Dashboard</a>
+<a href="https://primehaven.tech/dashboard" target="_blank" style="display:inline-block;background-color:#fe4c18;color:#000000;text-decoration:none;padding:16px 40px;border-radius:10px;font-weight:700;font-size:16px;letter-spacing:0.5px;">Go to Dashboard</a>
 </td></tr>
 
 <!-- Divider -->
@@ -178,7 +178,7 @@ function buildPlainText(name: string): string {
     '   Check your inbox for the verification email and click the link to activate your account.',
     '',
     '2. LOG IN & EXPLORE YOUR DASHBOARD',
-    '   After verification, log in at https://primehaven.lovable.app/login',
+    '   After verification, log in at https://primehaven.tech/login',
     '   Your dashboard shows your points, rank, leaderboard, and quick actions.',
     '',
     '3. JOIN OUR DISCORD COMMUNITY',

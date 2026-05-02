@@ -106,7 +106,7 @@ serve(async (req) => {
                 <!-- CTA -->
                 <tr>
                   <td align="center" style="padding:0 40px 40px;">
-                    <a href="https://primehaven.lovable.app/messages" target="_blank" style="display:inline-block;background-color:#fe4c18;color:#000000;text-decoration:none;padding:16px 40px;border-radius:10px;font-weight:700;font-size:16px;letter-spacing:0.5px;">Reply Now</a>
+                    <a href="https://primehaven.tech/messages" target="_blank" style="display:inline-block;background-color:#fe4c18;color:#000000;text-decoration:none;padding:16px 40px;border-radius:10px;font-weight:700;font-size:16px;letter-spacing:0.5px;">Reply Now</a>
                   </td>
                 </tr>
 
@@ -134,7 +134,7 @@ serve(async (req) => {
       to: profile.email,
       subject: `New Message from ${senderName}`,
       html: html,
-      text: `Hi ${profile.full_name}, you have a new message from ${senderName}: "${content}". Reply at https://primehaven.lovable.app/messages`,
+      text: `Hi ${profile.full_name}, you have a new message from ${senderName}: "${content}". Reply at https://primehaven.tech/messages`,
     });
 
     return new Response(JSON.stringify({ success: true }), {

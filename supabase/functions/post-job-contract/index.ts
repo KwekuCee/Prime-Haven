@@ -258,7 +258,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // 5. Send emails to relevant designers
     const skills = CATEGORY_SKILLS[category] || [];
-    
+
     const { data: allDesigners } = await supabase
       .from("profiles")
       .select("id, email, full_name, is_active")
@@ -275,14 +275,14 @@ serve(async (req: Request): Promise<Response> => {
       if (!detail) return false;
       const designerSkills = (detail.skills || []).map((s: string) => s.toLowerCase());
       const designerTitle = (detail.professional_title || "").toLowerCase();
-      return skills.some(skill => 
+      return skills.some(skill =>
         designerSkills.some((ds: string) => ds.includes(skill.toLowerCase())) ||
         designerTitle.includes(skill.toLowerCase())
       );
     });
 
     console.log(`Found ${targetDesigners.length} designers for category ${category}`);
-    
+
     // Create in-app notifications
     const notifications = targetDesigners.map(d => ({
       user_id: d.id,
@@ -301,7 +301,7 @@ serve(async (req: Request): Promise<Response> => {
     const safeDesc = encodeHtml((description || "").slice(0, 500));
 
     const emailSubject = `🎨 New Job Opportunity: ${(title || "").slice(0, 100)}`;
-    
+
     for (const designer of emailTargets) {
       const safeName = encodeHtml((designer.full_name || "Designer").slice(0, 100));
       const emailHtml = `<!DOCTYPE html>
@@ -347,11 +347,11 @@ serve(async (req: Request): Promise<Response> => {
     </div>
     ${referenceFiles && referenceFiles.length > 0 ? `<div style="text-align:center;margin:20px 0;"><img src="${referenceFiles[0]}" alt="Reference" style="max-width:100%;border-radius:12px;border:1px solid rgba(254,76,24,0.2);" /></div>` : ""}
     <div style="text-align:center;">
-      <a href="https://primehaven.lovable.app/dashboard" class="cta">View Dashboard</a>
+      <a href="https://primehaven.tech/dashboard" class="cta">View Dashboard</a>
     </div>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Prime Haven. All rights reserved.</p>
-      <p><a href="https://primehaven.lovable.app">primehaven.lovable.app</a></p>
+      <p><a href="https://primehaven.tech">primehaven.tech</a></p>
     </div>
   </div>
 </body>
@@ -365,10 +365,10 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       discordMessageId,
-      emailsSent: emailTargets.length 
+      emailsSent: emailTargets.length
     }), {
       status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
     });

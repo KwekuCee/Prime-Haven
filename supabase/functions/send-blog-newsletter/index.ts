@@ -65,7 +65,7 @@ serve(async (req) => {
       });
     }
 
-    const siteUrl = "https://primehaven.lovable.app";
+    const siteUrl = "https://primehaven.tech";
 
     const encodeHtml = (str: string) =>
       str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
