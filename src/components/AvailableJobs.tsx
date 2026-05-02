@@ -22,7 +22,6 @@ const professionToJobCategory = (profession: string): string => {
     default: return 'graphic-design';
   }
 };
-
 interface JobContract {
   id: string;
   title: string;

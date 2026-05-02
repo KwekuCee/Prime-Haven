@@ -66,6 +66,8 @@ const deriveProfession = (title: string | null | undefined): string => {
     return 'Graphic Designer';
 };
 
+
+
 const ProjectMarketplace = () => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -129,8 +131,7 @@ const ProjectMarketplace = () => {
                 .from('job_contracts')
                 .select('*')
                 .in('status', ['active', 'in_progress'])
-                .order('created_at', { ascending: false })
-                .limit(10);
+                .order('created_at', { ascending: false });
 
             if (contractsError) throw contractsError;
 
