@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     ]);
 
     return new Response(
-      JSON.stringify({ project, milestones: milestones || [], deliverables: deliverables || [] }),
+      JSON.stringify({ project, milestones: milestones || [], deliverables: deliverables || [], acceptedDesigner }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
