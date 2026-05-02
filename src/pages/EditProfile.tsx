@@ -202,12 +202,20 @@ const EditProfile = () => {
                 <div className="space-y-1.5">
                   <Label className="text-xs">Title *</Label>
                   <Select value={formData.professional_title} onValueChange={(v) => {
-                    // Automatically add corresponding profession if not present
+                    // Map title -> implied profession
+                    const titleToProfession: Record<string, string> = {
+                      'UI/UX Designer': 'UI/UX Designer',
+                      'Graphic Designer': 'Graphic Designer',
+                      'Web Designer': 'UI/UX Designer',
+                    };
+                    const implied = titleToProfession[v];
                     let newProfessions = [...formData.professions];
-                    if (v === 'UI/UX Designer' && !newProfessions.includes('UI/UX Designer')) newProfessions.push('UI/UX Designer');
-                    if (v === 'Graphic Designer' && !newProfessions.includes('Graphic Designer')) newProfessions.push('Graphic Designer');
-                    if (v === 'Web Designer' && !newProfessions.includes('UI/UX Designer')) newProfessions.push('UI/UX Designer');
-
+                    if (implied && !newProfessions.includes(implied)) {
+                      // Only auto-add if room exists (free slot or already paid for 2nd)
+                      if (newProfessions.length === 0 || (newProfessions.length === 1 && extraProfessionPaid)) {
+                        newProfessions.push(implied);
+                      }
+                    }
                     setFormData(p => ({ ...p, professional_title: v, professions: newProfessions }));
                   }}>
                     <SelectTrigger className="h-9 text-xs bg-muted/20 border-border/40"><SelectValue placeholder="Select title" /></SelectTrigger>
