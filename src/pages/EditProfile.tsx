@@ -215,25 +215,46 @@ const EditProfile = () => {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Marketplace Professions * (For job pooling)</Label>
+                  <Label className="text-xs flex items-center gap-2">
+                    Marketplace Professions * (For job pooling)
+                    {extraProfessionPaid && <Badge variant="outline" className="text-[8px] text-primary border-primary/40">2-PROFESSION ACCESS</Badge>}
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    You can have one profession for free. Adding a second one is a one-time GH₵{PROFESSION_UPGRADE_FEE} payment.
+                  </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map(prof => (
-                      <Badge
-                        key={prof}
-                        variant={formData.professions.includes(prof) ? "default" : "outline"}
-                        className="cursor-pointer text-[10px]"
-                        onClick={() => {
-                          setFormData(p => ({
-                            ...p,
-                            professions: p.professions.includes(prof)
-                              ? p.professions.filter(item => item !== prof)
-                              : [...p.professions, prof]
-                          }));
-                        }}
-                      >
-                        {prof}
-                      </Badge>
-                    ))}
+                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map(prof => {
+                      const selected = formData.professions.includes(prof);
+                      const lockedAdd = !selected && formData.professions.length >= 1 && !extraProfessionPaid;
+                      return (
+                        <Badge
+                          key={prof}
+                          variant={selected ? "default" : "outline"}
+                          className={`cursor-pointer text-[10px] ${lockedAdd ? 'opacity-60' : ''}`}
+                          onClick={() => {
+                            if (selected) {
+                              setFormData(p => ({ ...p, professions: p.professions.filter(item => item !== prof) }));
+                              return;
+                            }
+                            // Adding a profession
+                            if (formData.professions.length >= 1 && !extraProfessionPaid) {
+                              setUpgradePending(prof);
+                              setUpgradeOpen(true);
+                              return;
+                            }
+                            // Cap at 2 professions even if paid
+                            if (formData.professions.length >= 2) {
+                              toast({ title: 'Limit reached', description: 'You can hold up to 2 professions.', variant: 'destructive' });
+                              return;
+                            }
+                            setFormData(p => ({ ...p, professions: [...p.professions, prof] }));
+                          }}
+                        >
+                          {lockedAdd && <Lock className="w-2.5 h-2.5 mr-1 inline" />}
+                          {prof}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="space-y-1.5">
