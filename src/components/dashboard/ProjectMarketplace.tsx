@@ -111,7 +111,7 @@ const ProjectMarketplace = () => {
                     budget,
                     required_professions,
                     max_assignees,
-                    project_assignments(count, designer_id)
+                    project_assignments(designer_id)
                 `)
                 .eq('status', 'pending');
 
@@ -159,7 +159,7 @@ const ProjectMarketplace = () => {
                     budget: p.budget,
                     required_professions: p.required_professions,
                     max_assignees: p.max_assignees,
-                    current_claims: p.project_assignments?.[0]?.count || 0
+                    current_claims: p.project_assignments?.length || 0
                 }))
                 .filter(p => (p.current_claims || 0) < (p.max_assignees || 1));
 
