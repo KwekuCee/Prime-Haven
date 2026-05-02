@@ -302,6 +302,7 @@ export type Database = {
       }
       client_projects: {
         Row: {
+          accepted_designer_id: string | null
           budget: string | null
           category: string
           client_email: string | null
@@ -316,11 +317,13 @@ export type Database = {
           progress_percentage: number
           required_professions: string[] | null
           status: string
+          tip_total: number
           title: string
           tracking_token: string
           updated_at: string
         }
         Insert: {
+          accepted_designer_id?: string | null
           budget?: string | null
           category?: string
           client_email?: string | null
@@ -335,11 +338,13 @@ export type Database = {
           progress_percentage?: number
           required_professions?: string[] | null
           status?: string
+          tip_total?: number
           title: string
           tracking_token?: string
           updated_at?: string
         }
         Update: {
+          accepted_designer_id?: string | null
           budget?: string | null
           category?: string
           client_email?: string | null
@@ -354,6 +359,7 @@ export type Database = {
           progress_percentage?: number
           required_professions?: string[] | null
           status?: string
+          tip_total?: number
           title?: string
           tracking_token?: string
           updated_at?: string
@@ -470,6 +476,7 @@ export type Database = {
           available_hours: number | null
           created_at: string
           experience_level: string | null
+          extra_profession_paid: boolean
           id: string
           monthly_points: number | null
           payment_details: Json | null
@@ -494,6 +501,7 @@ export type Database = {
           available_hours?: number | null
           created_at?: string
           experience_level?: string | null
+          extra_profession_paid?: boolean
           id?: string
           monthly_points?: number | null
           payment_details?: Json | null
@@ -518,6 +526,7 @@ export type Database = {
           available_hours?: number | null
           created_at?: string
           experience_level?: string | null
+          extra_profession_paid?: boolean
           id?: string
           monthly_points?: number | null
           payment_details?: Json | null
@@ -929,6 +938,36 @@ export type Database = {
           },
         ]
       }
+      project_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          sender_id: string | null
+          sender_name: string | null
+          sender_role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          sender_id?: string | null
+          sender_name?: string | null
+          sender_role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          sender_id?: string | null
+          sender_name?: string | null
+          sender_role?: string
+        }
+        Relationships: []
+      }
       project_deliverables: {
         Row: {
           description: string | null
@@ -1103,6 +1142,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_tips: {
+        Row: {
+          amount: number
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          currency: string
+          designer_id: string | null
+          id: string
+          message: string | null
+          project_id: string
+          status: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          currency?: string
+          designer_id?: string | null
+          id?: string
+          message?: string | null
+          project_id: string
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          currency?: string
+          designer_id?: string | null
+          id?: string
+          message?: string | null
+          project_id?: string
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       promo_codes: {
         Row: {

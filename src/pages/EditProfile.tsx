@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, Mail, Phone, Calendar, Link as LinkIcon, Briefcase, Clock,
-  Award, Save, Loader2, CheckCircle, Camera
+  Award, Save, Loader2, CheckCircle, Camera, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
+
+const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
+const PROFESSION_UPGRADE_FEE = 80;
 
 const experienceLevels = [
   { value: 'beginner', label: 'Beginner (0-1 years)' },
@@ -48,6 +52,10 @@ const EditProfile = () => {
     professions: [] as string[],
     experience_level: '', available_hours: '', portfolio_url: '', skills: [] as string[], profile_photo_url: '',
   });
+  const [extraProfessionPaid, setExtraProfessionPaid] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradePending, setUpgradePending] = useState<string | null>(null);
+  const [upgradePaying, setUpgradePaying] = useState(false);
   const [newSkill, setNewSkill] = useState('');
 
   useEffect(() => {
@@ -61,15 +69,16 @@ const EditProfile = () => {
         ]);
         if (profileResult.data) {
           const p = profileResult.data;
-          const d = designerResult.data;
+          const d = designerResult.data as any;
           setFormData({
             full_name: p.full_name || '', email: p.email || user.email || '', phone: p.phone || '', dob: p.dob || '',
             professional_title: d?.professional_title || '',
             professions: d?.professions || [],
             experience_level: d?.experience_level || '',
             available_hours: d?.available_hours?.toString() || '', portfolio_url: d?.portfolio_url || '',
-            skills: d?.skills || [], profile_photo_url: (d as any)?.profile_photo_url || '',
+            skills: d?.skills || [], profile_photo_url: d?.profile_photo_url || '',
           });
+          setExtraProfessionPaid(!!d?.extra_profession_paid);
         }
       } catch { toast({ title: "Error loading profile", variant: "destructive" }); }
       finally { setLoading(false); }
@@ -102,6 +111,46 @@ const EditProfile = () => {
       toast({ title: "Photo uploaded!" });
     } catch (error: any) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); }
     finally { setUploadingPhoto(false); }
+  };
+
+  const handleUpgradePay = async () => {
+    if (!user || !upgradePending) return;
+    if (!(window as any).Korapay) {
+      toast({ title: 'Payment system loading', description: 'Please try again in a moment.' });
+      return;
+    }
+    setUpgradePaying(true);
+    const reference = `PH-PROF-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+    try {
+      (window as any).Korapay.initialize({
+        key: KORAPAY_PUBLIC_KEY,
+        reference,
+        amount: PROFESSION_UPGRADE_FEE,
+        currency: 'GHS',
+        customer: { name: formData.full_name || 'Designer', email: formData.email },
+        onSuccess: async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke('verify-profession-upgrade', { body: { reference } });
+            if (error || !data?.success) throw new Error(data?.error || error?.message || 'verification_failed');
+            setExtraProfessionPaid(true);
+            setFormData(p => ({ ...p, professions: [...p.professions, upgradePending!] }));
+            toast({ title: 'Profession unlocked! 🎉', description: `${upgradePending} added to your profile.` });
+            setUpgradeOpen(false);
+            setUpgradePending(null);
+          } catch (e: any) {
+            toast({ title: 'Could not verify payment', description: e.message, variant: 'destructive' });
+          } finally { setUpgradePaying(false); }
+        },
+        onClose: () => setUpgradePaying(false),
+        onFailed: (d: any) => {
+          setUpgradePaying(false);
+          toast({ title: 'Payment failed', description: d?.message || 'Please try again.', variant: 'destructive' });
+        },
+      });
+    } catch (e: any) {
+      setUpgradePaying(false);
+      toast({ title: 'Payment system error', description: e.message, variant: 'destructive' });
+    }
   };
 
   const handleSave = async () => {
@@ -193,12 +242,20 @@ const EditProfile = () => {
                 <div className="space-y-1.5">
                   <Label className="text-xs">Title *</Label>
                   <Select value={formData.professional_title} onValueChange={(v) => {
-                    // Automatically add corresponding profession if not present
+                    // Map title -> implied profession
+                    const titleToProfession: Record<string, string> = {
+                      'UI/UX Designer': 'UI/UX Designer',
+                      'Graphic Designer': 'Graphic Designer',
+                      'Web Designer': 'UI/UX Designer',
+                    };
+                    const implied = titleToProfession[v];
                     let newProfessions = [...formData.professions];
-                    if (v === 'UI/UX Designer' && !newProfessions.includes('UI/UX Designer')) newProfessions.push('UI/UX Designer');
-                    if (v === 'Graphic Designer' && !newProfessions.includes('Graphic Designer')) newProfessions.push('Graphic Designer');
-                    if (v === 'Web Designer' && !newProfessions.includes('UI/UX Designer')) newProfessions.push('UI/UX Designer');
-
+                    if (implied && !newProfessions.includes(implied)) {
+                      // Only auto-add if room exists (free slot or already paid for 2nd)
+                      if (newProfessions.length === 0 || (newProfessions.length === 1 && extraProfessionPaid)) {
+                        newProfessions.push(implied);
+                      }
+                    }
                     setFormData(p => ({ ...p, professional_title: v, professions: newProfessions }));
                   }}>
                     <SelectTrigger className="h-9 text-xs bg-muted/20 border-border/40"><SelectValue placeholder="Select title" /></SelectTrigger>
@@ -206,25 +263,46 @@ const EditProfile = () => {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Marketplace Professions * (For job pooling)</Label>
+                  <Label className="text-xs flex items-center gap-2">
+                    Marketplace Professions * (For job pooling)
+                    {extraProfessionPaid && <Badge variant="outline" className="text-[8px] text-primary border-primary/40">2-PROFESSION ACCESS</Badge>}
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    You can have one profession for free. Adding a second one is a one-time GH₵{PROFESSION_UPGRADE_FEE} payment.
+                  </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map(prof => (
-                      <Badge
-                        key={prof}
-                        variant={formData.professions.includes(prof) ? "default" : "outline"}
-                        className="cursor-pointer text-[10px]"
-                        onClick={() => {
-                          setFormData(p => ({
-                            ...p,
-                            professions: p.professions.includes(prof)
-                              ? p.professions.filter(item => item !== prof)
-                              : [...p.professions, prof]
-                          }));
-                        }}
-                      >
-                        {prof}
-                      </Badge>
-                    ))}
+                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map(prof => {
+                      const selected = formData.professions.includes(prof);
+                      const lockedAdd = !selected && formData.professions.length >= 1 && !extraProfessionPaid;
+                      return (
+                        <Badge
+                          key={prof}
+                          variant={selected ? "default" : "outline"}
+                          className={`cursor-pointer text-[10px] ${lockedAdd ? 'opacity-60' : ''}`}
+                          onClick={() => {
+                            if (selected) {
+                              setFormData(p => ({ ...p, professions: p.professions.filter(item => item !== prof) }));
+                              return;
+                            }
+                            // Adding a profession
+                            if (formData.professions.length >= 1 && !extraProfessionPaid) {
+                              setUpgradePending(prof);
+                              setUpgradeOpen(true);
+                              return;
+                            }
+                            // Cap at 2 professions even if paid
+                            if (formData.professions.length >= 2) {
+                              toast({ title: 'Limit reached', description: 'You can hold up to 2 professions.', variant: 'destructive' });
+                              return;
+                            }
+                            setFormData(p => ({ ...p, professions: [...p.professions, prof] }));
+                          }}
+                        >
+                          {lockedAdd && <Lock className="w-2.5 h-2.5 mr-1 inline" />}
+                          {prof}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -337,6 +415,31 @@ const EditProfile = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={upgradeOpen} onOpenChange={(o) => { setUpgradeOpen(o); if (!o) setUpgradePending(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" /> Unlock a 2nd Profession
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              You're about to add <span className="text-primary font-semibold">{upgradePending}</span> as a second profession.
+              This is a one-time payment of <span className="text-primary font-semibold">GH₵{PROFESSION_UPGRADE_FEE}</span> and unlocks
+              curated jobs from this profession in your marketplace forever.
+            </p>
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-xs space-y-2">
+              <div className="flex justify-between"><span className="text-muted-foreground">Fee</span><span className="font-bold">GH₵{PROFESSION_UPGRADE_FEE}.00</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span>Korapay (Mobile Money / Card / Bank)</span></div>
+            </div>
+            <Button className="w-full glow-primary" disabled={upgradePaying} onClick={handleUpgradePay}>
+              {upgradePaying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Pay GH₵{PROFESSION_UPGRADE_FEE} & Unlock
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

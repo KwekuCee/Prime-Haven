@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     // Fetch project by token
     const { data: project, error: projectError } = await supabase
       .from("client_projects")
-      .select("id, title, client_name, description, category, status, progress_percentage, deadline, created_at, updated_at")
+      .select("id, title, client_name, client_email, description, category, status, progress_percentage, deadline, created_at, updated_at, accepted_designer_id, tip_total")
       .eq("tracking_token", token)
       .single();
 
@@ -38,6 +38,22 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Resolve accepted designer profile (if any)
+    let acceptedDesigner: any = null;
+    if (project.accepted_designer_id) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("id", project.accepted_designer_id)
+        .maybeSingle();
+      const { data: dd } = await supabase
+        .from("designer_details")
+        .select("professional_title, profile_photo_url")
+        .eq("user_id", project.accepted_designer_id)
+        .maybeSingle();
+      if (prof) acceptedDesigner = { ...prof, ...(dd || {}) };
     }
 
     // Fetch milestones and deliverables
@@ -55,7 +71,7 @@ Deno.serve(async (req) => {
     ]);
 
     return new Response(
-      JSON.stringify({ project, milestones: milestones || [], deliverables: deliverables || [] }),
+      JSON.stringify({ project, milestones: milestones || [], deliverables: deliverables || [], acceptedDesigner }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
