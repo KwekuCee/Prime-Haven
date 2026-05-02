@@ -69,9 +69,8 @@ const AvailableJobs = () => {
 
         const { data, error } = await supabase
           .from('job_contracts')
-          .select('id, title, description, category, deadline, budget, client_name, status, created_at, active_designers_count')
+          .select('id, title, description, category, deadline, budget, client_name, status, created_at, active_designers_count, target_professions')
           .in('status', ['active', 'in_progress'])
-          .in('category', jobCategories)
           .order('created_at', { ascending: false });
         if (!error && data) {
           // Filter out graphic-design contracts with 2+ active designers
@@ -79,7 +78,14 @@ const AvailableJobs = () => {
             if (job.category === 'graphic-design' && (job.active_designers_count || 0) >= 2) {
               return false;
             }
-            return true;
+
+            const targetProfs: string[] = job.target_professions || [];
+            if (targetProfs.length > 0) {
+              return targetProfs.some(p => userProfessions.includes(p));
+            }
+
+            // Legacy fallback using existing categories logic
+            return jobCategories.includes(job.category);
           });
           setJobs(filtered as JobContract[]);
         }

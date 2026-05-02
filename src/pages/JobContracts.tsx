@@ -43,6 +43,7 @@ interface JobContract {
   active_designers_count: number;
   active_designer_ids: string[];
   status: string;
+  target_professions: string[] | null;
   created_at: string;
 }
 
@@ -71,6 +72,11 @@ const JobContracts = () => {
   const [newClientForm, setNewClientForm] = useState({ name: '', email: '', whatsapp: '', company: '' });
   const [addingClient, setAddingClient] = useState(false);
   const [designerNames, setDesignerNames] = useState<Record<string, string>>({});
+
+  const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
+  const [selectedContractForPush, setSelectedContractForPush] = useState<JobContract | null>(null);
+  const [pushProfessions, setPushProfessions] = useState<string[]>([]);
+  const [pushing, setPushing] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -337,6 +343,43 @@ const JobContracts = () => {
     }
   };
 
+  const handlePushToMarketplace = async () => {
+    if (!selectedContractForPush || pushProfessions.length === 0) return;
+
+    setPushing(true);
+    try {
+      const { error } = await supabase
+        .from('job_contracts')
+        .update({
+          status: 'active',
+          target_professions: pushProfessions
+        })
+        .eq('id', selectedContractForPush.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Pushed to Marketplace!',
+        description: `Contract is now visible to: ${pushProfessions.join(', ')}`
+      });
+
+      setIsPushDialogOpen(false);
+      setSelectedContractForPush(null);
+      await loadContracts();
+    } catch (err: any) {
+      console.error('Push error:', err);
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setPushing(false);
+    }
+  };
+
+  const openPushDialog = (contract: JobContract) => {
+    setSelectedContractForPush(contract);
+    setPushProfessions(contract.target_professions || [contract.category]);
+    setIsPushDialogOpen(true);
+  };
+
   const getCategoryLabel = (id: string) => JOB_CATEGORIES.find(c => c.id === id)?.label || id;
 
   if (authLoading || loading) {
@@ -480,9 +523,19 @@ const JobContracts = () => {
                           {format(new Date(c.created_at), 'dd MMM yyyy')}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Push to Marketplace"
+                              onClick={() => openPushDialog(c)}
+                            >
+                              <Send className="w-4 h-4 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -712,6 +765,67 @@ const JobContracts = () => {
             <Button onClick={handleAddNewClient} disabled={addingClient || !newClientForm.name.trim()}>
               {addingClient ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
               Add & Select
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Push to Marketplace Dialog */}
+      <Dialog open={isPushDialogOpen} onOpenChange={setIsPushDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Push to Marketplace
+            </DialogTitle>
+            <DialogDescription>
+              Select which professions should be able to see and claim this job.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-3">
+              <Label>Target Professions</Label>
+              <div className="space-y-2">
+                {[
+                  { id: 'Graphic Designer', label: 'Graphic Designers' },
+                  { id: 'UI/UX Designer', label: 'UI/UX Designers' },
+                  { id: 'Web Developer', label: 'Web Developers' },
+                ].map((prof) => (
+                  <div key={prof.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-white/5 transition-colors cursor-pointer"
+                    onClick={() => {
+                      if (pushProfessions.includes(prof.id)) {
+                        setPushProfessions(prev => prev.filter(p => p !== prof.id));
+                      } else {
+                        setPushProfessions(prev => [...prev, prof.id]);
+                      }
+                    }}
+                  >
+                    <div className={`w-5 h-5 rounded border ${pushProfessions.includes(prof.id) ? 'bg-primary border-primary' : 'border-border'} flex items-center justify-center`}>
+                      {pushProfessions.includes(prof.id) && <CheckCircle className="w-3.5 h-3.5 text-primary-foreground" />}
+                    </div>
+                    <span className="text-sm font-medium">{prof.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {selectedContractForPush && (
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Contract</p>
+                <p className="text-sm font-bold truncate">{selectedContractForPush.title}</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPushDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handlePushToMarketplace}
+              disabled={pushing || pushProfessions.length === 0}
+              className="gap-2"
+            >
+              {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Push to Marketplace
             </Button>
           </DialogFooter>
         </DialogContent>

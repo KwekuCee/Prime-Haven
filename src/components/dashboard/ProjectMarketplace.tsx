@@ -129,7 +129,7 @@ const ProjectMarketplace = () => {
             // 3. Fetch from job_contracts (Available Contracts)
             const { data: contracts, error: contractsError } = await supabase
                 .from('job_contracts')
-                .select('*')
+                .select('*, target_professions')
                 .in('status', ['active', 'in_progress'])
                 .order('created_at', { ascending: false });
 
@@ -183,8 +183,17 @@ const ProjectMarketplace = () => {
 
             const jobMarket: OpenOrder[] = (contracts || [])
                 .filter((c: any) => {
-                    const required = PROFESSION_MAPPING[c.category] || ['Graphic Designer'];
-                    const hasMatchingProfession = required.some(p => userProfessions.includes(p));
+                    const targetProfs: string[] = c.target_professions || [];
+                    let hasMatchingProfession = false;
+
+                    if (targetProfs.length > 0) {
+                        hasMatchingProfession = targetProfs.some(p => userProfessions.includes(p));
+                    } else {
+                        // Legacy fallback
+                        const required = PROFESSION_MAPPING[c.category] || ['Graphic Designer'];
+                        hasMatchingProfession = required.some(p => userProfessions.includes(p));
+                    }
+
                     const deadlinePassed = c.deadline && isAfter(now, new Date(c.deadline));
                     return hasMatchingProfession && !deadlinePassed;
                 })
