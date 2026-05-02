@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, Mail, Phone, Calendar, Link as LinkIcon, Briefcase, Clock,
-  Award, Save, Loader2, CheckCircle, Camera
+  Award, Save, Loader2, CheckCircle, Camera, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
+
+const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
+const PROFESSION_UPGRADE_FEE = 80;
 
 const experienceLevels = [
   { value: 'beginner', label: 'Beginner (0-1 years)' },
