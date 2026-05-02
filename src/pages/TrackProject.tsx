@@ -410,13 +410,116 @@ const TrackProject = () => {
           </div>
         </motion.div>
 
-        {/* Workspace Link */}
-        <div className="mt-8 text-center p-6 rounded-2xl border border-dashed border-border/60">
-          <p className="text-sm text-muted-foreground mb-4">Need to chat with your designer directly?</p>
-          <Button variant="outline" className="gap-2" onClick={() => window.open(`/workspace/${project.id}`, '_blank')}>
-            <MessageCircle className="w-4 h-4" /> Open Project Workspace
-          </Button>
-        </div>
+        {/* Accepted Designer + Chat + Tip */}
+        {acceptedDesigner ? (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="mt-8 glass rounded-2xl p-6">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                {acceptedDesigner.profile_photo_url ? (
+                  <img src={acceptedDesigner.profile_photo_url} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-primary/30" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <UserIcon className="w-6 h-6 text-primary" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Your designer</p>
+                  <p className="text-base font-heading font-bold">{acceptedDesigner.full_name || 'Prime Haven Designer'}</p>
+                  {acceptedDesigner.professional_title && (
+                    <p className="text-xs text-muted-foreground">{acceptedDesigner.professional_title}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => setChatOpen(true)}>
+                  <MessageCircle className="w-4 h-4" /> Chat
+                </Button>
+                <Button className="gap-2 glow-primary" onClick={() => setTipOpen(true)}>
+                  <Heart className="w-4 h-4" /> Tip Designer
+                </Button>
+              </div>
+            </div>
+            {project.tip_total && project.tip_total > 0 ? (
+              <p className="mt-4 text-xs text-muted-foreground">
+                Total tipped on this project: <span className="text-primary font-semibold">GH₵{Number(project.tip_total).toFixed(2)}</span>
+              </p>
+            ) : null}
+          </motion.div>
+        ) : (
+          <div className="mt-8 text-center p-6 rounded-2xl border border-dashed border-border/60">
+            <p className="text-sm text-muted-foreground">A designer will be assigned to your project soon.</p>
+          </div>
+        )}
+
+        {/* Tip Dialog */}
+        <Dialog open={tipOpen} onOpenChange={setTipOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-primary" /> Tip your designer
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-4 gap-2">
+                {['20', '50', '100', '200'].map(v => (
+                  <Button key={v} type="button" variant={tipAmount === v ? 'default' : 'outline'}
+                    onClick={() => setTipAmount(v)} className="text-xs">
+                    GH₵{v}
+                  </Button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Custom amount (min GH₵5)</Label>
+                <Input type="number" min={5} value={tipAmount} onChange={(e) => setTipAmount(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Message (optional)</Label>
+                <Textarea value={tipMessage} onChange={(e) => setTipMessage(e.target.value)}
+                  rows={3} placeholder="Add a kind note..." />
+              </div>
+              <Button className="w-full glow-primary" disabled={tipSubmitting} onClick={handleTip}>
+                {tipSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Heart className="w-4 h-4 mr-2" />}
+                Pay GH₵{tipAmount || 0} via Korapay
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Chat Dialog */}
+        <Dialog open={chatOpen} onOpenChange={setChatOpen}>
+          <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                Chat with {acceptedDesigner?.full_name || 'your designer'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto py-3 space-y-3 min-h-[300px] max-h-[50vh]">
+              {messages.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-10">No messages yet — send the first one!</p>
+              ) : (
+                messages.map((m) => (
+                  <div key={m.id} className={`flex ${m.sender_role === 'client' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${m.sender_role === 'client' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                      <p className="text-[10px] opacity-70 mb-0.5">{m.sender_name || m.sender_role}</p>
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="flex gap-2 pt-2 border-t border-border">
+              <Input value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Type a message..."
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChat(); } }} />
+              <Button onClick={handleSendChat} disabled={chatSending || !chatInput.trim()}>
+                {chatSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
