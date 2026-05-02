@@ -190,7 +190,6 @@ const Register = () => {
           data: {
             full_name: formData.fullName,
             professional_title: formData.professionalTitle,
-            registration_fee_paid: true,
             payment_reference: reference,
             promo_code: promoRef,
             gateway: 'korapay'
@@ -198,9 +197,32 @@ const Register = () => {
         }
       });
 
-
-
       if (signUpError) throw signUpError;
+
+      // Sign in to obtain a session, then call verify-payment so the payment row
+      // is recorded and verification + Discord emails are dispatched.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (signInError) {
+        console.error('Auto sign-in after signup failed:', signInError);
+      } else {
+        const { error: verifyError } = await supabase.functions.invoke('verify-payment', {
+          body: { reference, gateway: 'korapay' },
+        });
+        if (verifyError) {
+          console.error('verify-payment failed:', verifyError);
+          toast({
+            variant: 'destructive',
+            title: 'Payment recorded, but follow-up failed',
+            description: 'Please contact support so we can finalize your account.',
+          });
+        }
+        // Sign the user back out so they go through the standard verify-then-login flow.
+        await supabase.auth.signOut();
+      }
 
       toast({ title: 'Registration Successful! 🎉', description: 'Please check your email to verify your account.' });
       navigate('/login?registered=true');
