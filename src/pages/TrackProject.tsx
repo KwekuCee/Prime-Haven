@@ -77,35 +77,154 @@ const TrackProject = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [acceptedDesigner, setAcceptedDesigner] = useState<AcceptedDesigner | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [feedbackName, setFeedbackName] = useState('');
   const [feedbackContent, setFeedbackContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
 
+  const [tipOpen, setTipOpen] = useState(false);
+  const [tipAmount, setTipAmount] = useState('20');
+  const [tipMessage, setTipMessage] = useState('');
+  const [tipSubmitting, setTipSubmitting] = useState(false);
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatSenderName, setChatSenderName] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const refetchProject = async () => {
+    if (!token) return;
+    const resp = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-project-tracking?token=${token}`,
+      { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+    );
+    if (resp.ok) {
+      const data = await resp.json();
+      setProject(data.project);
+      setMilestones(data.milestones);
+      setDeliverables(data.deliverables);
+      setAcceptedDesigner(data.acceptedDesigner || null);
+      if (data.project?.client_name && !chatSenderName) setChatSenderName(data.project.client_name);
+    }
+  };
+
   useEffect(() => {
     const fetchProject = async () => {
       if (!token) { setError(true); setLoading(false); return; }
-      try {
-        const resp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-project-tracking?token=${token}`,
-          { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
-        );
-        if (!resp.ok) throw new Error('Not found');
-        const data = await resp.json();
-        setProject(data.project);
-        setMilestones(data.milestones);
-        setDeliverables(data.deliverables);
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
+      try { await refetchProject(); }
+      catch { setError(true); }
+      finally { setLoading(false); }
     };
     fetchProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    if (!chatOpen || !token) return;
+    let cancelled = false;
+    const load = async () => {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/project-chat?token=${token}`,
+        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+      );
+      if (!cancelled && resp.ok) {
+        const d = await resp.json();
+        setMessages(d.messages || []);
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
+    };
+    load();
+    const i = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [chatOpen, token]);
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim() || !token) return;
+    setChatSending(true);
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/project-chat`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ token, content: chatInput.trim(), senderName: chatSenderName || project?.client_name }),
+        }
+      );
+      if (!resp.ok) throw new Error('send failed');
+      setChatInput('');
+      const r = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/project-chat?token=${token}`,
+        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+      );
+      if (r.ok) { const d = await r.json(); setMessages(d.messages || []); }
+    } catch (e: any) {
+      toast({ title: 'Could not send', description: e.message, variant: 'destructive' });
+    } finally { setChatSending(false); }
+  };
+
+  const handleTip = async () => {
+    if (!project) return;
+    const amt = Number(tipAmount);
+    if (!amt || amt < 5) {
+      toast({ title: 'Minimum tip is GH₵5', variant: 'destructive' });
+      return;
+    }
+    if (!(window as any).Korapay) {
+      toast({ title: 'Payment system loading', description: 'Please try again in a moment.' });
+      return;
+    }
+    setTipSubmitting(true);
+    const reference = `PH-TIP-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+    try {
+      (window as any).Korapay.initialize({
+        key: KORAPAY_PUBLIC_KEY,
+        reference,
+        amount: amt,
+        currency: 'GHS',
+        customer: {
+          name: project.client_name || 'Client',
+          email: project.client_email || 'client@primehaven.tech',
+        },
+        onSuccess: async () => {
+          try {
+            const resp = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-tip`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                body: JSON.stringify({
+                  reference, projectId: project.id,
+                  clientName: project.client_name, clientEmail: project.client_email,
+                  message: tipMessage, amount: amt,
+                }),
+              }
+            );
+            const j = await resp.json();
+            if (j.success) {
+              toast({ title: 'Tip sent! 💖', description: `Thank you for tipping GH₵${amt}.` });
+              setTipOpen(false); setTipMessage('');
+              await refetchProject();
+            } else throw new Error(j.error || 'verification_failed');
+          } catch (err: any) {
+            toast({ title: 'Tip not recorded', description: err.message, variant: 'destructive' });
+          } finally { setTipSubmitting(false); }
+        },
+        onClose: () => setTipSubmitting(false),
+        onFailed: (d: any) => {
+          setTipSubmitting(false);
+          toast({ title: 'Payment failed', description: d?.message || 'Please try again.', variant: 'destructive' });
+        },
+      });
+    } catch (e: any) {
+      setTipSubmitting(false);
+      toast({ title: 'Payment system error', description: e.message, variant: 'destructive' });
+    }
+  };
 
   const handleFeedback = async () => {
     if (!feedbackContent.trim() || !project) return;
