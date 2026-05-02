@@ -415,6 +415,31 @@ const EditProfile = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={upgradeOpen} onOpenChange={(o) => { setUpgradeOpen(o); if (!o) setUpgradePending(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" /> Unlock a 2nd Profession
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              You're about to add <span className="text-primary font-semibold">{upgradePending}</span> as a second profession.
+              This is a one-time payment of <span className="text-primary font-semibold">GH₵{PROFESSION_UPGRADE_FEE}</span> and unlocks
+              curated jobs from this profession in your marketplace forever.
+            </p>
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-xs space-y-2">
+              <div className="flex justify-between"><span className="text-muted-foreground">Fee</span><span className="font-bold">GH₵{PROFESSION_UPGRADE_FEE}.00</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span>Korapay (Mobile Money / Card / Bank)</span></div>
+            </div>
+            <Button className="w-full glow-primary" disabled={upgradePaying} onClick={handleUpgradePay}>
+              {upgradePaying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Pay GH₵{PROFESSION_UPGRADE_FEE} & Unlock
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
