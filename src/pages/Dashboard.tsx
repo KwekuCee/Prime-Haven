@@ -173,19 +173,26 @@ const Dashboard = () => {
       }));
 
       // 2. Fetch job_contracts
-      const jobCategories = userProfessions.flatMap(p => categoryToJobCategories(p));
       const { data: jcData, error: jcError } = await supabase
         .from('job_contracts')
-        .select('id, title, category, created_at')
+        .select('id, title, category, created_at, target_professions')
         .in('status', ['active', 'in_progress'])
-        .in('category', jobCategories)
         .order('created_at', { ascending: false });
 
       if (jcError) {
         console.error('Error fetching job contracts:', jcError);
       }
 
-      const availableJC = (jcData || []).map((job) => ({
+      const availableJC = (jcData || []).filter((job: any) => {
+        const targetProfs: string[] = job.target_professions || [];
+        if (targetProfs.length > 0) {
+          return targetProfs.some(p => userProfessions.includes(p));
+        }
+
+        // Legacy fallback
+        const jobCategories = userProfessions.flatMap(p => categoryToJobCategories(p));
+        return jobCategories.includes(job.category);
+      }).map((job) => ({
         id: job.id,
         title: job.title,
         category: job.category,

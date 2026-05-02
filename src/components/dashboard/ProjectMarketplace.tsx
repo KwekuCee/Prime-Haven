@@ -185,8 +185,9 @@ const ProjectMarketplace = () => {
                 .filter((c: any) => {
                     const targetProfs: string[] = c.target_professions || [];
                     let hasMatchingProfession = false;
+                    let isPushed = targetProfs.length > 0;
 
-                    if (targetProfs.length > 0) {
+                    if (isPushed) {
                         hasMatchingProfession = targetProfs.some(p => userProfessions.includes(p));
                     } else {
                         // Legacy fallback
@@ -194,7 +195,8 @@ const ProjectMarketplace = () => {
                         hasMatchingProfession = required.some(p => userProfessions.includes(p));
                     }
 
-                    const deadlinePassed = c.deadline && isAfter(now, new Date(c.deadline));
+                    // If explicitly pushed by admin, ignore deadline
+                    const deadlinePassed = !isPushed && c.deadline && isAfter(now, new Date(c.deadline));
                     return hasMatchingProfession && !deadlinePassed;
                 })
                 .map((c: any) => ({
