@@ -54,8 +54,8 @@ const ResetPassword = () => {
       return;
     }
     setResetComplete(true);
-    toast({ title: 'Password Reset Successful', description: 'Your password has been updated.' });
-    setTimeout(async () => { await supabase.auth.signOut(); navigate('/login'); }, 3000);
+    toast({ title: 'Password Updated', description: 'Your password has been changed successfully.' });
+    setTimeout(() => { navigate('/dashboard'); }, 2000);
   };
 
   const getPasswordStrength = (password: string): number => {

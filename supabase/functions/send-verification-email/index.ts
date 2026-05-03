@@ -255,19 +255,12 @@ serve(async (req: Request): Promise<Response> => {
     const body = await req.json();
     const email = body?.email;
     const fullName = body?.fullName;
-    const userId = body?.userId;
+    let userId = body?.userId;
     const redirectUrl = body?.redirectUrl;
+    const lookupByEmail = body?.lookupByEmail === true;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || typeof email !== 'string' || email.length > 255 || !emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ success: false, error: "invalid_request" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -281,16 +274,82 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    const supabaseLookup = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    if (lookupByEmail) {
+      const { data: lookup } = await supabaseLookup
+        .from("profiles")
+        .select("id, full_name")
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
+      if (!lookup) {
+        // Generic success to avoid email enumeration
+        return new Response(
+          JSON.stringify({ success: true, message: "If the account exists, an email has been sent." }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      userId = lookup.id;
+      if (!body?.fullName && lookup.full_name) {
+        (body as any).fullName = lookup.full_name;
+      }
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "invalid_request" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const sanitizedName = typeof fullName === 'string'
       ? fullName.slice(0, 100).trim()
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
       : "Designer";
 
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Verify the user has paid the registration fee and is not already verified
+    const { data: profile, error: profileLookupError } = await supabase
+      .from("profiles")
+      .select("id, email_verified, registration_fee_paid")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileLookupError) {
+      console.error("Profile lookup error:", profileLookupError);
+      return new Response(
+        JSON.stringify({ success: false, error: "lookup_failed" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!profile) {
+      // Don't reveal whether the account exists
+      return new Response(
+        JSON.stringify({ success: true, message: "If the account exists, an email has been sent." }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (profile.email_verified) {
+      return new Response(
+        JSON.stringify({ success: false, error: "already_verified" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!profile.registration_fee_paid) {
+      return new Response(
+        JSON.stringify({ success: false, error: "payment_required" }),
+        { status: 402, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const token = generateToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const { error: tokenError } = await supabase
       .from("email_verification_tokens")

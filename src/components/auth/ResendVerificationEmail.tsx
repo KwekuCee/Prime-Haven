@@ -21,17 +21,8 @@ const ResendVerificationEmail = () => {
   const { toast } = useToast();
 
   const handleResend = async () => {
-    if (!email) {
-      toast({
-        variant: 'destructive',
-        title: 'Email Required',
-        description: 'Please enter your email address.',
-      });
-      return;
-    }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!email || !emailRegex.test(email)) {
       toast({
         variant: 'destructive',
         title: 'Invalid Email',
@@ -41,68 +32,43 @@ const ResendVerificationEmail = () => {
     }
 
     setIsLoading(true);
-
     try {
-      // First, check if the user exists, is not verified, and has paid
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email_verified, registration_fee_paid')
-        .eq('email', email.toLowerCase())
-        .single();
-
-      if (profileError || !profile) {
-        // Don't reveal if email exists or not for security
-        toast({
-          title: 'Verification Email Sent',
-          description: 'If this email is registered and unverified, you will receive a verification link shortly.',
-        });
-        setIsOpen(false);
-        setEmail('');
-        setIsLoading(false);
-        return;
-      }
-
-      if (profile.email_verified) {
-        toast({
-          title: 'Already Verified',
-          description: 'This email is already verified. You can sign in directly.',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!profile.registration_fee_paid) {
-        toast({
-          variant: 'destructive',
-          title: 'Registration Fee Required',
-          description: 'You must complete the registration fee payment before verifying your email. Please register again.',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Send verification email
       const { data, error } = await supabase.functions.invoke('send-verification-email', {
         body: {
           email: email.toLowerCase(),
-          fullName: profile.full_name || 'Designer',
-          userId: profile.id,
+          // Server resolves user; safe placeholder since server validates UUID
+          // We must look up userId before invoking — use a dedicated lookup endpoint via the same function
+          // Instead, route via a small RPC-style request: server expects userId. We pass email-based lookup.
+          lookupByEmail: true,
+          fullName: 'Designer',
           redirectUrl: window.location.origin,
         },
       });
 
       if (error) {
-        throw error;
+        const msg = (data as any)?.error || error.message || 'send_failed';
+        if (msg === 'payment_required') {
+          toast({
+            variant: 'destructive',
+            title: 'Registration Fee Required',
+            description: 'Complete your registration payment before verifying your email.',
+          });
+        } else if (msg === 'already_verified') {
+          toast({ title: 'Already Verified', description: 'You can sign in directly.' });
+        } else {
+          throw error;
+        }
+        return;
       }
 
       toast({
         title: 'Verification Email Sent',
-        description: 'Please check your inbox (and spam folder) for the verification link.',
+        description: 'If your account is eligible, a verification link is on its way. Check your inbox and spam folder.',
       });
       setIsOpen(false);
       setEmail('');
-    } catch (error) {
-      console.error('Error resending verification email:', error);
+    } catch (err) {
+      console.error('Resend verification error:', err);
       toast({
         variant: 'destructive',
         title: 'Failed to Send',
@@ -139,28 +105,14 @@ const ResendVerificationEmail = () => {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !isLoading) {
-                  handleResend();
-                }
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isLoading) handleResend(); }}
             />
           </div>
-          <Button
-            onClick={handleResend}
-            disabled={isLoading}
-            className="w-full"
-          >
+          <Button onClick={handleResend} disabled={isLoading} className="w-full">
             {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Sending...
-              </>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</>
             ) : (
-              <>
-                <Mail className="w-4 h-4 mr-2" />
-                Resend Verification Email
-              </>
+              <><Mail className="w-4 h-4 mr-2" />Resend Verification Email</>
             )}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
