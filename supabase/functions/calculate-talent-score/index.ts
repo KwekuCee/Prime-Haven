@@ -18,7 +18,18 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Auth check: only admins or the designer themselves
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authErr || !user) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+    const isAdmin = (roleRow || []).some((r: any) => r.role === 'masteradmin' || r.role === 'superadmin');
+
     const { designer_id } = await req.json();
+    if (!isAdmin && (!designer_id || designer_id !== user.id)) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // If no specific designer, recalculate all
     const designerIds: string[] = [];

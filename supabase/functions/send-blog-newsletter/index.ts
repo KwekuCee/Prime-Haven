@@ -86,7 +86,7 @@ serve(async (req) => {
     <h2 style="color:#fff;margin:0 0 12px;font-size:22px;">${encodeHtml(post.title)}</h2>
     <p style="color:#999;font-size:12px;margin:0 0 16px;">Category: ${encodeHtml(post.category)} | ${new Date(post.published_at).toLocaleDateString()}</p>
     <div style="color:#ccc;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      ${post.content}
+      ${encodeHtml(post.excerpt || '').slice(0, 1000)}
     </div>
     <a href="${siteUrl}/blog/${encodeHtml(post.slug)}" style="display:inline-block;background:linear-gradient(135deg,#e8530e,#f59e0b);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">View on Website</a>
   </td></tr>
