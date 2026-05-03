@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logAuthEvent } from '@/lib/authLogger';
 
 const superAdminLoginSchema = z.object({
   username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
