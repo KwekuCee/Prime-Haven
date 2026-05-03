@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { logAuthEvent } from '@/lib/authLogger';
 import { cn } from '@/lib/utils';
 import {
   registerPersonalSchema,
