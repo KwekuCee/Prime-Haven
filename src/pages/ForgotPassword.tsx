@@ -38,6 +38,7 @@ const ForgotPassword = () => {
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to send reset email.' });
       return;
     }
+    logAuthEvent('password_reset_requested', { email: data.email });
     setEmailSent(true);
     toast({ title: 'Reset Email Sent', description: 'Check your inbox for password reset instructions.' });
   };
