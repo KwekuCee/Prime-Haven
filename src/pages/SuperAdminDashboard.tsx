@@ -2308,6 +2308,7 @@ const SuperAdminDashboard = () => {
                           <TableHead className="text-xs font-semibold">Action</TableHead>
                           <TableHead className="text-xs font-semibold">Actor</TableHead>
                           <TableHead className="text-xs font-semibold">Description</TableHead>
+                          <TableHead className="text-xs font-semibold">IP</TableHead>
                           <TableHead className="text-xs font-semibold">Time</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -2319,6 +2320,7 @@ const SuperAdminDashboard = () => {
                             </TableCell>
                             <TableCell className="text-sm font-medium">{log.profiles?.full_name || 'System'}</TableCell>
                             <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">{log.description}</TableCell>
+                            <TableCell className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">{log.ip_address || '—'}</TableCell>
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(log.timestamp), 'MMM d, HH:mm')}</TableCell>
                           </TableRow>
                         ))}
