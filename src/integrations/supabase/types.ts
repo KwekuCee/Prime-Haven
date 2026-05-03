@@ -591,6 +591,7 @@ export type Database = {
           requirements: string | null
           special_instructions: string | null
           status: string
+          target_professions: string[] | null
           title: string
           updated_at: string
         }
@@ -611,6 +612,7 @@ export type Database = {
           requirements?: string | null
           special_instructions?: string | null
           status?: string
+          target_professions?: string[] | null
           title: string
           updated_at?: string
         }
@@ -631,6 +633,7 @@ export type Database = {
           requirements?: string | null
           special_instructions?: string | null
           status?: string
+          target_professions?: string[] | null
           title?: string
           updated_at?: string
         }
