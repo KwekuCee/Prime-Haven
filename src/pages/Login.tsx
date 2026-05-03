@@ -49,6 +49,7 @@ const Login = () => {
       } else {
         errorMessage = error.message;
       }
+      logAuthEvent('login_failed', { email: data.email, description: `Failed login: ${errorMessage}` });
       toast({ variant: 'destructive', title: 'Sign In Failed', description: errorMessage });
       return;
     }
@@ -61,6 +62,7 @@ const Login = () => {
         .single();
 
       if (profileData && !profileData.email_verified) {
+        logAuthEvent('login_blocked_unverified', { email: data.email, user_id: authData.user.id });
         await signOut();
         toast({
           variant: 'destructive',
@@ -70,6 +72,7 @@ const Login = () => {
         return;
       }
 
+      logAuthEvent('login_success', { email: data.email, user_id: authData.user.id });
       toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
 
       const { data: roleData } = await supabase
