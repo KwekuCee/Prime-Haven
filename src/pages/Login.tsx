@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
 import ResendVerificationEmail from '@/components/auth/ResendVerificationEmail';
+import { logAuthEvent } from '@/lib/authLogger';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
