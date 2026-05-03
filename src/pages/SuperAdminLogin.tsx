@@ -55,6 +55,7 @@ const SuperAdminLogin = () => {
           ? 'You do not have admin access.'
           : 'Invalid username or password.';
 
+        logAuthEvent('admin_login_failed', { description: `Admin login failed for "${data.username}": ${errorMessage}` });
         toast({
           variant: 'destructive',
           title: 'Access Denied',
@@ -63,6 +64,7 @@ const SuperAdminLogin = () => {
         return;
       }
 
+      logAuthEvent('admin_login_success', { user_id: response.user?.id, description: `Admin login: ${data.username}` });
       // Set the session from the response and wait for auth state to update
       if (response.session) {
         // Set up a one-time listener for the auth state change
