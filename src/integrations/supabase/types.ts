@@ -1658,6 +1658,7 @@ export type Database = {
           experience_level: string | null
           monthly_points: number | null
           professional_title: string | null
+          professions: string[] | null
           profile_photo_url: string | null
           skills: string[] | null
           talent_score: number | null
@@ -1668,6 +1669,7 @@ export type Database = {
           experience_level?: string | null
           monthly_points?: number | null
           professional_title?: string | null
+          professions?: string[] | null
           profile_photo_url?: string | null
           skills?: string[] | null
           talent_score?: number | null
@@ -1678,6 +1680,7 @@ export type Database = {
           experience_level?: string | null
           monthly_points?: number | null
           professional_title?: string | null
+          professions?: string[] | null
           profile_photo_url?: string | null
           skills?: string[] | null
           talent_score?: number | null
