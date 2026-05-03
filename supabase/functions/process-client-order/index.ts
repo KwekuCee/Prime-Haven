@@ -121,10 +121,14 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
 
-    // Detect free order early — before strict validation
-    const isFreeOrder = typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-');
+    // PH-FREE-* references are no longer accepted as valid free orders.
+    // Free orders must come from a server-verified 100% promo applied via verify-payment first.
+    if (typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-')) {
+      return new Response(JSON.stringify({ success: false, error: "invalid_reference" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
-    // For free orders, only require basic fields (price can be 0)
     // For paid orders, all fields including price > 0
     const missingFields: string[] = [];
     if (!clientName) missingFields.push("clientName");
@@ -132,12 +136,11 @@ serve(async (req: Request): Promise<Response> => {
     if (!serviceType) missingFields.push("serviceType");
     if (!tier) missingFields.push("tier");
     if (!paymentReference) missingFields.push("paymentReference");
-    // Only check price for non-free orders
-    if (!isFreeOrder && (price === undefined || price === null)) missingFields.push("price");
+    if (price === undefined || price === null) missingFields.push("price");
 
     if (missingFields.length > 0) {
-      console.error("Validation failed — missing fields:", missingFields, "Body:", JSON.stringify(body));
-      return new Response(JSON.stringify({ success: false, error: "Missing required fields", message: `Missing: ${missingFields.join(", ")}` }), {
+      console.error("Validation failed — missing fields:", missingFields);
+      return new Response(JSON.stringify({ success: false, error: "missing_fields" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
@@ -145,26 +148,20 @@ serve(async (req: Request): Promise<Response> => {
     let verifiedAmount: number;
     let verifiedCurrency: string;
 
-    if (isFreeOrder) {
-      verifiedAmount = 0;
-      verifiedCurrency = 'GHS';
-      console.log("Processing free order via promo bypass:", paymentReference);
-    } else {
-      console.log("Verifying with Korapay...");
-      const korapayResponse = await fetch(
-        `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
-        { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
-      );
-      const korapayData = await korapayResponse.json();
+    console.log("Verifying with Korapay...");
+    const korapayResponse = await fetch(
+      `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
+      { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
+    );
+    const korapayData = await korapayResponse.json();
 
-      if (!korapayData.status || korapayData.data?.status !== "success") {
-        return new Response(JSON.stringify({ success: false, error: "Payment verification failed", message: "Korapay payment verification failed" }), {
-          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-      verifiedAmount = korapayData.data.amount;
-      verifiedCurrency = korapayData.data.currency;
+    if (!korapayData.status || korapayData.data?.status !== "success") {
+      return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
+    verifiedAmount = korapayData.data.amount;
+    verifiedCurrency = korapayData.data.currency;
 
     const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
 
