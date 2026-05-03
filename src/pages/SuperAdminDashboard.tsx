@@ -2245,10 +2245,10 @@ const SuperAdminDashboard = () => {
             <DisputeMediator
               submissions={submissions}
               onResolve={(id, action) => {
-                if (action === 'approve') onClientAcceptance(id);
+                if (action === 'approve') handleClientAcceptance(id);
                 else if (action === 'correction') {
                   const sub = submissions.find(s => s.id === id);
-                  if (sub) onCorrectionRequest(sub);
+                  if (sub) { setCorrectionRequestSubmission(sub); setCorrectionNote(''); }
                 }
               }}
             />
