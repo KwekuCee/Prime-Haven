@@ -398,12 +398,7 @@ serve(async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in process-client-order:", error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: "server_error",
-      message: error.message || "Unknown internal error",
-      details: error.details || error.hint || null
-    }), {
+    return new Response(JSON.stringify({ success: false, error: "server_error" }), {
       status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
