@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logAuthEvent } from '@/lib/authLogger';
 
 const superAdminLoginSchema = z.object({
   username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
@@ -54,6 +55,7 @@ const SuperAdminLogin = () => {
           ? 'You do not have admin access.'
           : 'Invalid username or password.';
 
+        logAuthEvent('admin_login_failed', { description: `Admin login failed for "${data.username}": ${errorMessage}` });
         toast({
           variant: 'destructive',
           title: 'Access Denied',
@@ -62,6 +64,7 @@ const SuperAdminLogin = () => {
         return;
       }
 
+      logAuthEvent('admin_login_success', { user_id: response.user?.id, description: `Admin login: ${data.username}` });
       // Set the session from the response and wait for auth state to update
       if (response.session) {
         // Set up a one-time listener for the auth state change

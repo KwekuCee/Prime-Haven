@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { logAuthEvent } from '@/lib/authLogger';
 import { cn } from '@/lib/utils';
 import {
   registerPersonalSchema,
@@ -198,6 +199,7 @@ const Register = () => {
       });
 
       if (signUpError) throw signUpError;
+      logAuthEvent('signup', { email: formData.email, description: `New designer signup: ${formData.fullName}` });
 
       // Sign in to obtain a session, then call verify-payment so the payment row
       // is recorded and verification + Discord emails are dispatched.
