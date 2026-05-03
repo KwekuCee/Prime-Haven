@@ -199,6 +199,7 @@ const Register = () => {
       });
 
       if (signUpError) throw signUpError;
+      logAuthEvent('signup', { email: formData.email, description: `New designer signup: ${formData.fullName}` });
 
       // Sign in to obtain a session, then call verify-payment so the payment row
       // is recorded and verification + Discord emails are dispatched.
