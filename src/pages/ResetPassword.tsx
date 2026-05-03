@@ -49,11 +49,12 @@ const ResetPassword = () => {
   }, [toast]);
 
   const onSubmit = async (data: ResetPasswordData) => {
-    const { error } = await supabase.auth.updateUser({ password: data.password });
+    const { data: userData, error } = await supabase.auth.updateUser({ password: data.password });
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to reset password.' });
       return;
     }
+    logAuthEvent('password_changed', { user_id: userData?.user?.id, email: userData?.user?.email || undefined });
     setResetComplete(true);
     toast({ title: 'Password Updated', description: 'Your password has been changed successfully.' });
     setTimeout(() => { navigate('/dashboard'); }, 2000);
