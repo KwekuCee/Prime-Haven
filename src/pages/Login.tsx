@@ -28,22 +28,11 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // If user already has a valid session, route them to their dashboard
-    // (Sessions persist via localStorage so they don't need to log in again.)
-    if (authLoading || !user) return;
-    (async () => {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
-        navigate('/superadmin', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
-    })();
-  }, [authLoading, user, navigate]);
+    // Always require fresh credentials on the login page.
+    // Sign out any existing session so users must re-enter email/password.
+    signOut().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = async (data: LoginFormData) => {
     const { error, data: authData } = await signIn(data.email, data.password);
