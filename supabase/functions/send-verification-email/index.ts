@@ -287,10 +287,47 @@ serve(async (req: Request): Promise<Response> => {
         .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
       : "Designer";
 
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Verify the user has paid the registration fee and is not already verified
+    const { data: profile, error: profileLookupError } = await supabase
+      .from("profiles")
+      .select("id, email_verified, registration_fee_paid")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileLookupError) {
+      console.error("Profile lookup error:", profileLookupError);
+      return new Response(
+        JSON.stringify({ success: false, error: "lookup_failed" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!profile) {
+      // Don't reveal whether the account exists
+      return new Response(
+        JSON.stringify({ success: true, message: "If the account exists, an email has been sent." }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (profile.email_verified) {
+      return new Response(
+        JSON.stringify({ success: false, error: "already_verified" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!profile.registration_fee_paid) {
+      return new Response(
+        JSON.stringify({ success: false, error: "payment_required" }),
+        { status: 402, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const token = generateToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const { error: tokenError } = await supabase
       .from("email_verification_tokens")
