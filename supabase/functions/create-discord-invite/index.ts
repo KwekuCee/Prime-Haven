@@ -45,7 +45,20 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Auth check: only authenticated admins or self may request invite
+    const supabaseAuth = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ success: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    const { data: { user: caller }, error: callerErr } = await supabaseAuth.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (callerErr || !caller) return new Response(JSON.stringify({ success: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    const { data: roleRow } = await supabaseAuth.from('user_roles').select('role').eq('user_id', caller.id);
+    const isAdmin = (roleRow || []).some((r: any) => r.role === 'masteradmin' || r.role === 'superadmin');
+
     const { userId, email, fullName }: CreateInviteRequest = await req.json();
+
+    if (!isAdmin && userId !== caller.id) {
+      return new Response(JSON.stringify({ success: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
 
     // Validate inputs
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
