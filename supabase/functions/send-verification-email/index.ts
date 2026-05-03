@@ -255,8 +255,9 @@ serve(async (req: Request): Promise<Response> => {
     const body = await req.json();
     const email = body?.email;
     const fullName = body?.fullName;
-    const userId = body?.userId;
+    let userId = body?.userId;
     const redirectUrl = body?.redirectUrl;
+    const lookupByEmail = body?.lookupByEmail === true;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || typeof email !== 'string' || email.length > 255 || !emailRegex.test(email)) {
@@ -266,15 +267,36 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
+    if (!redirectUrl || typeof redirectUrl !== 'string' || !isAllowedRedirectUrl(redirectUrl)) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (!redirectUrl || typeof redirectUrl !== 'string' || !isAllowedRedirectUrl(redirectUrl)) {
+    const supabaseLookup = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    if (lookupByEmail) {
+      const { data: lookup } = await supabaseLookup
+        .from("profiles")
+        .select("id, full_name")
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
+      if (!lookup) {
+        // Generic success to avoid email enumeration
+        return new Response(
+          JSON.stringify({ success: true, message: "If the account exists, an email has been sent." }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      userId = lookup.id;
+      if (!body?.fullName && lookup.full_name) {
+        (body as any).fullName = lookup.full_name;
+      }
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || typeof userId !== 'string' || !uuidRegex.test(userId)) {
       return new Response(
         JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
