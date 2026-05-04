@@ -165,24 +165,45 @@ serve(async (req) => {
     if (supabaseUrl && supabaseKey) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey);
-        const { count: totalMembers } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_active", true);
-        const { count: totalSubmissions } = await supabase.from("submissions").select("*", { count: "exact", head: true });
-        const { count: activeProjects } = await supabase.from("submissions").select("*", { count: "exact", head: true }).in('status', ['pending']);
+        const [
+          membersRes, submissionsRes, pendingRes, approvedRes,
+          topDesignersRes, teamRes, blogRes, portfolioRes,
+          testimonialsRes, faqRes, pricingRes,
+        ] = await Promise.all([
+          supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_active", true),
+          supabase.from("submissions").select("*", { count: "exact", head: true }),
+          supabase.from("submissions").select("*", { count: "exact", head: true }).in('status', ['pending']),
+          supabase.from("submissions").select("*", { count: "exact", head: true }).eq('status', 'approved'),
+          supabase.from("designer_details").select("total_points, professional_title, profiles(full_name)").order("total_points", { ascending: false }).limit(5),
+          supabase.from("team_members").select("name, role, bio").eq("is_visible", true).limit(25),
+          supabase.from("blog_posts").select("title, slug, excerpt, published_at").eq("is_published", true).order("published_at", { ascending: false }).limit(6),
+          supabase.from("portfolio_items").select("title, description, category, project_url").order("created_at", { ascending: false }).limit(8),
+          supabase.from("client_testimonials").select("client_name, content, rating").eq("is_visible", true).limit(5),
+          supabase.from("faqs").select("question, answer").eq("is_visible", true).limit(20),
+          supabase.from("service_pricing").select("service_name, tier_name, price_ghs, description, is_active").eq("is_active", true).limit(30),
+        ]);
 
-        const { data: topDesigners } = await supabase
-          .from("designer_details")
-          .select("total_points, professional_title, profiles(full_name)")
-          .order("total_points", { ascending: false })
-          .limit(3);
+        const topDesignersStr = topDesignersRes.data?.map((d: any) => `${d.profiles?.full_name || 'Anonymous'} (${d.professional_title || 'Designer'} — ${d.total_points} pts)`).join('; ') || 'N/A';
+        const teamStr = (teamRes.data as any)?.map((m: any) => `- **${m.name}** — ${m.role}${m.bio ? `: ${String(m.bio).slice(0, 120)}` : ''}`).join('\n') || 'N/A';
+        const blogStr = blogRes.data?.map((b: any) => `- **${b.title}** (/blog/${b.slug})${b.excerpt ? ` — ${String(b.excerpt).slice(0, 140)}` : ''}`).join('\n') || 'N/A';
+        const portfolioStr = portfolioRes.data?.map((p: any) => `- **${p.title}** (${p.category || 'Project'})${p.description ? ` — ${String(p.description).slice(0, 120)}` : ''}`).join('\n') || 'N/A';
+        const testimonialsStr = testimonialsRes.data?.map((t: any) => `- "${String(t.content).slice(0, 160)}" — ${t.client_name} (${t.rating || 5}★)`).join('\n') || 'N/A';
+        const faqStr = faqRes.data?.map((f: any) => `**Q: ${f.question}**\nA: ${f.answer}`).join('\n\n') || 'N/A';
+        const pricingStr = pricingRes.data?.map((p: any) => `- ${p.service_name} (${p.tier_name}): GH₵${p.price_ghs}${p.description ? ` — ${String(p.description).slice(0, 120)}` : ''}`).join('\n') || 'N/A';
 
-        const topDesignersStr = topDesigners?.map((d: any) => `${d.profiles?.full_name || 'Anonymous'} (${d.professional_title || 'Designer'} with ${d.total_points} total points)`).join(', ') || 'N/A';
-
-        dynamicContext = `\n\n## Live System Context (Real-time Platform Data)\n` +
-          `- Total Active Platform Members: ${totalMembers || 0}\n` +
-          `- Total Submissions Received: ${totalSubmissions || 0}\n` +
-          `- Currently Pending Projects: ${activeProjects || 0}\n` +
-          `- Current Top 3 Designers on Leaderboard: ${topDesignersStr}\n` +
-          `Use these live stats to answer questions about platform engagement, the community size, or the best designers on the platform.`;
+        dynamicContext = `\n\n---\n\n## 📊 LIVE PLATFORM DATA (real-time, use freely)\n` +
+          `- **Active members**: ${membersRes.count || 0}\n` +
+          `- **Total submissions**: ${submissionsRes.count || 0}\n` +
+          `- **Currently pending**: ${pendingRes.count || 0}\n` +
+          `- **Approved projects**: ${approvedRes.count || 0}\n` +
+          `- **Top designers**: ${topDesignersStr}\n\n` +
+          `### 🧑‍💼 Team Members\n${teamStr}\n\n` +
+          `### 💵 Live Service Pricing (GHS)\n${pricingStr}\n\n` +
+          `### 🖼️ Recent Portfolio Highlights\n${portfolioStr}\n\n` +
+          `### 📝 Latest Blog Posts\n${blogStr}\n\n` +
+          `### ⭐ Client Testimonials\n${testimonialsStr}\n\n` +
+          `### ❓ Official FAQs\n${faqStr}\n\n` +
+          `Treat all of the above as authoritative and use it to answer questions in detail.`;
       } catch (err) {
         console.error("Error fetching dynamic stats:", err);
       }
