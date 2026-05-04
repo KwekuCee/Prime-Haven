@@ -11,7 +11,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/visitor-chat
 const VisitorChatbot = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "👋 Hi there! I'm Prime Haven's AI assistant. How can I help you today? Whether you need a project quote, want to learn about our services, or are interested in joining our team — I'm here to help!" },
+    { role: 'assistant', content: "👋 Hi! I'm **Haven AI** — Prime Haven's virtual concierge. Ask me anything about our **services, pricing, projects, the team, how to join, payments, the platform**, or anything else about Prime Haven. I've got you covered!" },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
