@@ -82,7 +82,7 @@ Use the **Project Estimator** on the homepage for a tailored estimate. Final pri
 - **Settings**: theme (light/dark), currency display (GHS/USD), privacy controls, notification preferences, password change, email re-verification (only after payment is confirmed).
 
 ### Compensation lifecycle
-- Monthly resets create snapshots in `monthly_records`.
+- Monthly resets create snapshots in monthly_records.
 - Designers see **estimated salary** based on current pool share + points.
 - Payouts processed monthly by Finance/Masteradmin.
 
