@@ -78,15 +78,10 @@ serve(async (req: Request): Promise<Response> => {
     let paymentChannel: string;
     let paidAt: string;
 
-    if (reference.startsWith('PH-FREE-')) {
-      // Special bypass for 100% discount registration
-      verifiedAmount = 0;
-      verifiedCurrency = 'GHS';
-      paymentChannel = 'promo_code';
-      paidAt = new Date().toISOString();
-      console.log("Processing free registration via promo bypass:", reference);
-    } else {
-      // Verify payment with Korapay (only supported gateway)
+    {
+      // Verify payment with Korapay (only supported gateway). The previous
+      // PH-FREE-* bypass has been removed: free registrations must be granted
+      // server-side via verified promo codes, not by client-supplied references.
       const korapayResponse = await fetch(
         `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(reference)}`,
         { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }

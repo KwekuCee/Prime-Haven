@@ -207,7 +207,7 @@ serve(async (req: Request): Promise<Response> => {
 
     if (orderError) {
       console.error("Failed to create order:", orderError);
-      return new Response(JSON.stringify({ success: false, error: "database_error", message: `Failed to create order: ${orderError.message}` }), {
+      return new Response(JSON.stringify({ success: false, error: "order_creation_failed" }), {
         status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
