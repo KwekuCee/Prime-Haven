@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     if (project.accepted_designer_id) {
       const { data: prof } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name")
         .eq("id", project.accepted_designer_id)
         .maybeSingle();
       const { data: dd } = await supabase
