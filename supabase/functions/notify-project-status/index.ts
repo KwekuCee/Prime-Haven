@@ -158,11 +158,7 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
     }
-      return new Response(
-        JSON.stringify({ success: false, error: "project_id_required" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+
 
     // Fetch project details
     const { data: project, error: projectError } = await supabase
