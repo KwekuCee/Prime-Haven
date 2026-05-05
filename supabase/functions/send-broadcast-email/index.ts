@@ -53,7 +53,7 @@ serve(async (req) => {
             });
         }
 
-        const { audience, subject, body } = await req.json();
+        const { audience, subject, body, userId } = await req.json();
 
         if (!audience || !subject || !body) {
             return new Response(JSON.stringify({ error: "Missing required fields: audience, subject, body" }), {
@@ -67,7 +67,30 @@ serve(async (req) => {
         const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-        if (audience === "designers") {
+        if (audience === "individual") {
+            if (!userId || typeof userId !== "string") {
+                return new Response(JSON.stringify({ error: "userId is required for individual audience" }), {
+                    status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+            }
+            // Try profiles first
+            const { data: prof } = await adminClient
+                .from("profiles")
+                .select("email, full_name")
+                .eq("id", userId)
+                .maybeSingle();
+            if (prof?.email) {
+                recipients = [{ email: prof.email, name: prof.full_name || "User" }];
+            } else {
+                // Fall back to clients table (id is uuid here too)
+                const { data: cli } = await adminClient
+                    .from("clients")
+                    .select("email, name")
+                    .eq("id", userId)
+                    .maybeSingle();
+                if (cli?.email) recipients = [{ email: cli.email, name: cli.name || "Client" }];
+            }
+        } else if (audience === "designers") {
             const { data: roleRows } = await adminClient
                 .from("user_roles")
                 .select("user_id")
