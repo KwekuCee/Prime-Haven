@@ -101,25 +101,28 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                 ? designer.professions
                 : [derivedProf];
 
-            // 1. Fetch from client_projects (new pooling system) — no profession filter in DB since
-            //    required_professions may be null/empty; we filter client-side below
-            const { data: projects, error: projectsError } = await supabase
-                .from('client_projects')
-                .select(`
-                    id,
-                    title,
-                    category,
-                    description,
-                    created_at,
-                    deadline,
-                    budget,
-                    required_professions,
-                    max_assignees,
-                    project_assignments(designer_id)
-                `)
-                .eq('status', 'pending');
+            // 1. Fetch from client_projects via secure RPC (excludes client PII)
+            const { data: projectsRaw, error: projectsError } = await (supabase as any)
+                .rpc('get_pending_client_projects');
 
             if (projectsError) throw projectsError;
+
+            // Fetch assignments for those projects so we can compute hasClaimed
+            const projectIds: string[] = (projectsRaw || []).map((p: any) => p.id);
+            const { data: assignmentsData } = projectIds.length
+                ? await supabase
+                    .from('project_assignments')
+                    .select('project_id, designer_id')
+                    .in('project_id', projectIds)
+                : { data: [] as any[] };
+            const assignmentsByProject: Record<string, any[]> = {};
+            (assignmentsData || []).forEach((a: any) => {
+                (assignmentsByProject[a.project_id] ||= []).push(a);
+            });
+            const projects = (projectsRaw || []).map((p: any) => ({
+                ...p,
+                project_assignments: assignmentsByProject[p.id] || [],
+            }));
 
             // 2. Fetch from client_orders (legacy/direct pool)
             const { data: orders, error: ordersError } = await (supabase
