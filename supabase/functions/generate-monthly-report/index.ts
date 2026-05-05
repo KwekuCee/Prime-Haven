@@ -8,8 +8,8 @@ const corsHeaders = {
 };
 
 const RequestSchema = z.object({
-  month: z.number().int().min(1).max(12),
-  year: z.number().int().min(2020).max(2100),
+  month: z.number().int().min(1).max(12).optional(),
+  year: z.number().int().min(2020).max(2100).optional(),
 });
 
 serve(async (req) => {
@@ -22,29 +22,36 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify caller is an authenticated admin
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-    if (!roleData || !['masteradmin', 'superadmin'].includes(roleData.role)) {
-      return new Response(JSON.stringify({ error: 'access_denied' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Auth: allow either an authenticated admin OR a service-role bearer (cron)
+    const authHeader = req.headers.get('Authorization') || '';
+    const bearer = authHeader.replace('Bearer ', '').trim();
+    const isCron = bearer && bearer === serviceRoleKey;
+
+    if (!isCron) {
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const { data: { user }, error: authError } = await supabase.auth.getUser(bearer);
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
+      if (!roleData || !['masteradmin', 'superadmin'].includes(roleData.role)) {
+        return new Response(JSON.stringify({ error: 'access_denied' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
-    // Validate input
-    const rawBody = await req.json();
+    // Validate input (default to current month/year for cron calls)
+    const rawBody = await req.json().catch(() => ({}));
     const parsed = RequestSchema.safeParse(rawBody);
     if (!parsed.success) {
       return new Response(JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { month, year } = parsed.data;
+    const now = new Date();
+    const month = parsed.data.month ?? (now.getMonth() + 1);
+    const year = parsed.data.year ?? now.getFullYear();
 
     // Fetch all data for the month
     const startDate = new Date(year, month - 1, 1).toISOString();
