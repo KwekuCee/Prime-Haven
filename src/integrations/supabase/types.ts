@@ -939,6 +939,13 @@ export type Database = {
             referencedRelation: "client_projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "project_assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_projects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       project_chat_messages: {
@@ -1004,6 +1011,13 @@ export type Database = {
             referencedRelation: "client_projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "project_deliverables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_projects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       project_feedback: {
@@ -1034,6 +1048,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_feedback_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1110,6 +1131,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1704,6 +1732,45 @@ export type Database = {
           full_name?: string | null
           id?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      marketplace_projects: {
+        Row: {
+          budget: string | null
+          category: string | null
+          created_at: string | null
+          deadline: string | null
+          description: string | null
+          id: string | null
+          max_assignees: number | null
+          required_professions: string[] | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          budget?: string | null
+          category?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          max_assignees?: number | null
+          required_professions?: string[] | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          budget?: string | null
+          category?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          max_assignees?: number | null
+          required_professions?: string[] | null
+          status?: string | null
+          title?: string | null
         }
         Relationships: []
       }
