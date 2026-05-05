@@ -134,6 +134,36 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    if (!isAdmin) {
+      // Verify the caller is the accepted/assigned designer for this project
+      const { data: cp } = await supabase
+        .from("client_projects")
+        .select("accepted_designer_id")
+        .eq("id", projectId)
+        .maybeSingle();
+      let isAssigned = cp?.accepted_designer_id === callerId;
+      if (!isAssigned) {
+        const { data: assign } = await supabase
+          .from("project_assignments")
+          .select("id")
+          .eq("project_id", projectId)
+          .eq("designer_id", callerId)
+          .maybeSingle();
+        isAssigned = !!assign;
+      }
+      if (!isAssigned) {
+        return new Response(
+          JSON.stringify({ success: false, error: "forbidden" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+      return new Response(
+        JSON.stringify({ success: false, error: "project_id_required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Fetch project details
     const { data: project, error: projectError } = await supabase
       .from("client_projects")
