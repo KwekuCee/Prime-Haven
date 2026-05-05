@@ -8,20 +8,63 @@ const corsHeaders = {
 };
 
 interface Body {
-  event: string; // e.g. login_success, login_failed, password_reset_requested, password_changed, signup
+  event: string;
   email?: string;
   user_id?: string;
   description?: string;
 }
+
+// Allowlist to prevent arbitrary action_type injection
+const ALLOWED_EVENTS = new Set([
+  "login_success",
+  "login_failed",
+  "login_blocked_unverified",
+  "logout",
+  "signup",
+  "password_reset_requested",
+  "password_changed",
+  "admin_login_success",
+  "admin_login_failed",
+]);
+
+// Events allowed without auth (failed attempts can't have a session)
+const PRE_AUTH_EVENTS = new Set([
+  "login_failed",
+  "login_blocked_unverified",
+  "password_reset_requested",
+  "signup",
+  "admin_login_failed",
+]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const body = (await req.json()) as Body;
-    if (!body?.event || typeof body.event !== "string") {
-      return new Response(JSON.stringify({ error: "event required" }), {
+    if (!body?.event || typeof body.event !== "string" || !ALLOWED_EVENTS.has(body.event)) {
+      return new Response(JSON.stringify({ error: "invalid_event" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Resolve authenticated caller (if any). Required for post-auth events.
+    let authedUserId: string | null = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data } = await supabase.auth.getUser(token);
+      if (data?.user?.id) authedUserId = data.user.id;
+    }
+
+    if (!authedUserId && !PRE_AUTH_EVENTS.has(body.event)) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -33,13 +76,9 @@ Deno.serve(async (req) => {
       null;
     const userAgent = req.headers.get("user-agent") || "";
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
-    let userId: string | null = body.user_id || null;
-    if (!userId && body.email) {
+    // Trust the authed user id over any client-supplied value
+    let userId: string | null = authedUserId;
+    if (!userId && body.email && PRE_AUTH_EVENTS.has(body.event)) {
       const { data } = await supabase
         .from("profiles")
         .select("id")
@@ -50,9 +89,7 @@ Deno.serve(async (req) => {
 
     const description =
       body.description ||
-      (body.email
-        ? `${body.event} for ${body.email}`
-        : body.event);
+      (body.email ? `${body.event} for ${body.email}` : body.event);
 
     const insertPayload: Record<string, unknown> = {
       action_type: body.event,

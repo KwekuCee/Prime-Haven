@@ -139,30 +139,29 @@ const Dashboard = () => {
     const loadJobs = async () => {
       setLoadingJobs(true);
 
-      // 1. Fetch client_projects
-      const { data: cpData, error: cpError } = await supabase
-        .from('client_projects')
-        .select(`
-          id, 
-          title, 
-          category, 
-          required_professions, 
-          max_assignees,
-          project_assignments(count),
-          created_at
-        `)
-        .eq('status', 'pending')
-        .overlaps('required_professions', userProfessions)
-        .order('created_at', { ascending: false });
+      // 1. Fetch client_projects via secure RPC (excludes client PII)
+      const { data: cpRaw, error: cpError } = await (supabase as any).rpc('get_pending_client_projects');
 
       if (cpError) {
         console.error('Error fetching client projects:', cpError);
         if (isMounted) toast({ title: 'Error', description: 'Failed to fetch some active jobs.', variant: 'destructive' });
       }
 
-      // Filter out projects that are already fully claimed
-      const availableCP = (cpData || []).filter((proj: any) => {
-        const currentClaims = proj.project_assignments?.[0]?.count || 0;
+      const cpFiltered = (cpRaw || []).filter((proj: any) => {
+        const reqProfs: string[] = proj.required_professions || [];
+        return reqProfs.length === 0 || reqProfs.some((rp: string) => userProfessions.includes(rp));
+      });
+
+      // Get assignment counts
+      const cpIds = cpFiltered.map((p: any) => p.id);
+      const { data: assignCounts } = cpIds.length
+        ? await supabase.from('project_assignments').select('project_id').in('project_id', cpIds)
+        : { data: [] as any[] };
+      const countByProject: Record<string, number> = {};
+      (assignCounts || []).forEach((a: any) => { countByProject[a.project_id] = (countByProject[a.project_id] || 0) + 1; });
+
+      const availableCP = cpFiltered.filter((proj: any) => {
+        const currentClaims = countByProject[proj.id] || 0;
         return currentClaims < (proj.max_assignees || 1);
       }).map((proj: any) => ({
         id: proj.id,

@@ -1714,6 +1714,21 @@ export type Database = {
         Returns: undefined
       }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
+      get_pending_client_projects: {
+        Args: never
+        Returns: {
+          budget: string
+          category: string
+          created_at: string
+          deadline: string
+          description: string
+          id: string
+          max_assignees: number
+          required_professions: string[]
+          status: string
+          title: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
