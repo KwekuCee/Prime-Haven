@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Gavel, AlertCircle, CheckCircle2, XCircle, Clock, Eye, MessageSquare, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,16 +26,35 @@ const DisputeMediator = ({
     submissions: any[],
     onResolve: (id: string, action: 'approve' | 'reject' | 'correction') => void
 }) => {
+    const navigate = useNavigate();
     const disputes = submissions.filter(s => s.status === 'client_rejected').map(s => ({
         id: s.id,
         project_name: s.project_name,
         designer_name: s.designer_name,
-        client_name: 'Client', // Placeholder if not directly attached
+        designer_id: s.designer_id,
+        design_link: s.design_link,
+        client_name: 'Client',
         rejection_reason: s.rejection_reason || 'No reason provided by client.',
         created_at: s.updated_at || s.created_at,
         status: s.status,
         points: s.points_awarded || 0
     }));
+
+    const handleViewSubmission = (d: typeof disputes[number]) => {
+        if (d.design_link) {
+            window.open(d.design_link, '_blank', 'noopener,noreferrer');
+        } else {
+            navigate(`/superadmin?tab=submissions&submission=${d.id}`);
+        }
+    };
+
+    const handleTalkToDesigner = (d: typeof disputes[number]) => {
+        if (d.designer_id) {
+            navigate(`/messages?to=${d.designer_id}`);
+        } else {
+            navigate('/messages');
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -95,10 +115,10 @@ const DisputeMediator = ({
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 pt-2">
-                                            <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={() => { }}>
+                                            <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={() => handleViewSubmission(d)}>
                                                 <Eye className="w-3.5 h-3.5" /> View Submission
                                             </Button>
-                                            <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={() => { }}>
+                                            <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={() => handleTalkToDesigner(d)}>
                                                 <MessageSquare className="w-3.5 h-3.5" /> Talk to Designer
                                             </Button>
                                             <div className="flex-1" />
