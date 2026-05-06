@@ -1714,6 +1714,10 @@ export type Database = {
         Returns: undefined
       }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
+      generate_monthly_report_now: {
+        Args: { p_month?: number; p_year?: number }
+        Returns: undefined
+      }
       get_pending_client_projects: {
         Args: never
         Returns: {
