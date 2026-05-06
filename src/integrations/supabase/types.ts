@@ -1221,6 +1221,83 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_email_signups: {
+        Row: {
+          captured_at: string
+          email: string
+          id: string
+          ip: string | null
+          popup_id: string | null
+        }
+        Insert: {
+          captured_at?: string
+          email: string
+          id?: string
+          ip?: string | null
+          popup_id?: string | null
+        }
+        Update: {
+          captured_at?: string
+          email?: string
+          id?: string
+          ip?: string | null
+          popup_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_email_signups_popup_id_fkey"
+            columns: ["popup_id"]
+            isOneToOne: false
+            referencedRelation: "promo_popups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_popups: {
+        Row: {
+          accent_color: string | null
+          background_color: string | null
+          collect_email: boolean
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          background_color?: string | null
+          collect_email?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          background_color?: string | null
+          collect_email?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_pricing: {
         Row: {
           created_at: string
