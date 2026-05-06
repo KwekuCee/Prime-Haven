@@ -19,6 +19,7 @@ import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import VisitorChatbot from '@/components/VisitorChatbot';
+import PromoPopup from '@/components/PromoPopup';
 import AdUnit from '@/components/AdUnit';
 import EzoicAd from '@/components/EzoicAd';
 import { supabase } from '@/integrations/supabase/client';
