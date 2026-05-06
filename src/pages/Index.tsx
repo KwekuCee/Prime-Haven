@@ -78,6 +78,7 @@ const Index = () => {
       </main>
       <Footer />
       <VisitorChatbot />
+      <PromoPopup />
     </div>
   );
 };
