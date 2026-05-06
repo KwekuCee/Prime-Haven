@@ -137,6 +137,7 @@ const App = () => {
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
+                  <Route path="/superadmin/promo" element={<ManagePromoPopup />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/client/projects" element={<ClientProjectsReview />} />
