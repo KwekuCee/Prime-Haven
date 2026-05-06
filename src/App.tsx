@@ -75,6 +75,7 @@ const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const ManagePricing = lazy(() => import("./pages/ManagePricing"));
 const ManageClients = lazy(() => import("./pages/ManageClients"));
 const ForwardWork = lazy(() => import("./pages/ForwardWork"));
+const ManagePromoPopup = lazy(() => import("./pages/ManagePromoPopup"));
 
 const queryClient = new QueryClient();
 
