@@ -60,9 +60,16 @@ const AdsterraStats = () => {
 
       const url = `https://${projectId}.supabase.co/functions/v1/adsterra-stats?endpoint=stats&start_date=${startDate}&finish_date=${finishDate}&group_by=date`;
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error('You must be logged in to view stats');
+      }
+
       const res = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${anonKey}`,
+          'Authorization': `Bearer ${token}`,
           'apikey': anonKey,
         },
       });

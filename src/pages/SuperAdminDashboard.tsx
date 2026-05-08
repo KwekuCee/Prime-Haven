@@ -57,14 +57,12 @@ import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
 import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
-import AdminSubmissions from '@/components/admin/AdminSubmissions';
 import AdminPayments from '@/components/admin/AdminPayments';
 import ManageClients from '@/components/admin/ManageClients';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
 import ManageTeam from '@/components/admin/ManageTeam';
 import PromoCodeManager from '@/components/admin/PromoCodeManager';
 import AdminMessagingHub from '@/components/admin/AdminMessagingHub';
-import DisputeMediator from '@/components/admin/DisputeMediator';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import SparklineChart from '@/components/ui/SparklineChart';
@@ -2008,22 +2006,6 @@ const SuperAdminDashboard = () => {
             {/* Activity log moved below widgets for better flow */}
           </TabsContent>
 
-          {/* ========== SUBMISSIONS TAB ========== */}
-          <TabsContent value="submissions" className="mt-0">
-            <AdminSubmissions
-              submissions={submissions}
-              systemSettings={systemSettings}
-              onPHApproval={handlePHApproval}
-              onClientAcceptance={handleClientAcceptance}
-              onReject={(s) => { setRejectSubmission(s); setRejectionReason(''); }}
-              onClientReject={(s) => { setClientRejectSubmission(s); setClientRejectionReason(''); }}
-              onCorrectionRequest={(s) => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}
-              onRevoke={handleRevokeSubmission}
-              onViewFiles={setViewFilesSubmission}
-              onPreviewLink={setPreviewLinkUrl}
-              onExport={() => exportData('submissions')}
-            />
-          </TabsContent>
 
           {/* ========== USERS TAB ========== */}
           <TabsContent value="users" className="mt-0 space-y-4">
@@ -2241,18 +2223,6 @@ const SuperAdminDashboard = () => {
             <AdminMessagingHub />
           </TabsContent>
 
-          <TabsContent value="disputes" className="space-y-6 mt-0">
-            <DisputeMediator
-              submissions={submissions}
-              onResolve={(id, action) => {
-                if (action === 'approve') handleClientAcceptance(id);
-                else if (action === 'correction') {
-                  const sub = submissions.find(s => s.id === id);
-                  if (sub) { setCorrectionRequestSubmission(sub); setCorrectionNote(''); }
-                }
-              }}
-            />
-          </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6 mt-0">
             <PerformanceAnalytics />

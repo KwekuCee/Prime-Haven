@@ -4,7 +4,12 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const PROFESSION_UPGRADE_FEE = 80; // GHS
+
+const PROFESSION_FEES: Record<string, number> = {
+  "Web Developer": 150,
+  "UI/UX Designer": 120,
+  "Graphic Designer": 90,
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,12 +21,13 @@ serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { reference } = await req.json();
-    if (!reference || !/^[a-zA-Z0-9_\-]+$/.test(String(reference))) {
+    const { reference, profession } = await req.json();
+    if (!reference || !profession || !PROFESSION_FEES[profession]) {
       return new Response(JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
+    const requiredFee = PROFESSION_FEES[profession];
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const authHeader = req.headers.get("Authorization");
@@ -35,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    // Idempotency
+    // Idempotency check
     const { data: existing } = await supabase
       .from("payments")
       .select("id")
@@ -61,12 +67,12 @@ serve(async (req: Request): Promise<Response> => {
     const currency = krData.data.currency || "GHS";
     const amountInGhs = currency === "USD" ? verifiedAmount * 15.5 : verifiedAmount;
 
-    if (amountInGhs + 0.5 < PROFESSION_UPGRADE_FEE) {
+    if (amountInGhs + 1 < requiredFee) { // Adding small buffer for rounding
       return new Response(JSON.stringify({ success: false, error: "insufficient_amount" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    // Record payment + flip flag
+    // Record payment
     await supabase.from("payments").insert({
       user_id: user.id,
       amount: amountInGhs,
@@ -74,13 +80,27 @@ serve(async (req: Request): Promise<Response> => {
       status: "completed",
       payment_gateway: "korapay",
       transaction_id: reference,
-      payment_details: { channel: krData.data.payment_method || "korapay", currency },
+      payment_details: { channel: krData.data.payment_method || "korapay", currency, unlocked_profession: profession },
     });
 
-    await supabase
+    // Update paid_professions array in designer_details
+    const { data: designer } = await supabase
       .from("designer_details")
-      .update({ extra_profession_paid: true, updated_at: new Date().toISOString() })
-      .eq("user_id", user.id);
+      .select("paid_professions")
+      .eq("user_id", user.id)
+      .single();
+
+    const currentPaid = designer?.paid_professions || [];
+    if (!currentPaid.includes(profession)) {
+      await supabase
+        .from("designer_details")
+        .update({ 
+          paid_professions: [...currentPaid, profession],
+          extra_profession_paid: true, // Keep legacy flag for safety
+          updated_at: new Date().toISOString() 
+        })
+        .eq("user_id", user.id);
+    }
 
     return new Response(JSON.stringify({ success: true }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });

@@ -41,6 +41,7 @@ const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
 const VisitorTracker = lazy(() => import("./components/VisitorTracker"));
+const GlobalPromoManager = lazy(() => import("./components/GlobalPromoManager"));
 
 // Lazy load dashboard pages for better initial bundle size
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -75,6 +76,8 @@ const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const ManagePricing = lazy(() => import("./pages/ManagePricing"));
 const ManageClients = lazy(() => import("./pages/ManageClients"));
 const ForwardWork = lazy(() => import("./pages/ForwardWork"));
+const Promo = lazy(() => import("./pages/Promo"));
+const ManageMarketingAssets = lazy(() => import("./components/admin/ManageMarketingAssets"));
 
 const queryClient = new QueryClient();
 
@@ -99,6 +102,7 @@ const App = () => {
               <Suspense fallback={<TechStackLoader />}>
                 <InstallPrompt />
                 <VisitorTracker />
+                <GlobalPromoManager />
                 <GlobalCommandPalette />
                 <ThirdPartyLoader />
                 <Routes>
@@ -136,6 +140,7 @@ const App = () => {
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
+                  <Route path="/superadmin/promo" element={<Promo />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/client/projects" element={<ClientProjectsReview />} />

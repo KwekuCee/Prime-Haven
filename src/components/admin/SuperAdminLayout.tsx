@@ -6,7 +6,7 @@ import {
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
-  TrendingUp, Ticket, Presentation, MonitorPlay, MessageSquare, Gavel
+  TrendingUp, Ticket, Presentation, MonitorPlay, MessageSquare, Gavel, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ const navSections: NavSection[] = [
       { label: 'Overview', icon: LayoutDashboard, path: '/superadmin' },
       { label: 'QA Review Queue', icon: FileCheck, path: '/superadmin/qa-reviewer' },
       { label: 'Finance Hub', icon: DollarSign, path: '/superadmin/finance' },
+      { label: 'Promo', icon: Zap, path: '/superadmin/promo' },
       { label: 'Users', icon: Users, path: '/superadmin', tab: 'users' },
       { label: 'Analytics', icon: TrendingUp, path: '/superadmin', tab: 'analytics' },
     ],
@@ -75,7 +76,6 @@ const navSections: NavSection[] = [
     title: 'Operations',
     defaultOpen: false,
     items: [
-      { label: 'Submissions', icon: FileCheck, path: '/superadmin', tab: 'submissions' },
       { label: 'Orders', icon: ShoppingCart, path: '/superadmin', tab: 'orders' },
       { label: 'Payments', icon: DollarSign, path: '/superadmin', tab: 'payments' },
       { label: 'Consultations', icon: Calendar, path: '/superadmin', tab: 'consultations' },
@@ -87,7 +87,6 @@ const navSections: NavSection[] = [
     defaultOpen: true,
     items: [
       { label: 'Messaging Hub', icon: MessageSquare, path: '/superadmin', tab: 'messages' },
-      { label: 'Dispute Mediator', icon: Gavel, path: '/superadmin', tab: 'disputes' },
     ],
   },
   {

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, Clock, AlertTriangle, ShieldCheck,
-    Search, ExternalLink, ImageIcon, CheckCircle, XCircle, ThumbsUp, Edit, ChevronRight, Settings
+    Search, ExternalLink, ImageIcon, CheckCircle, XCircle, ThumbsUp, Edit, ChevronRight, Settings, Download
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog'
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 
+const ITEMS_PER_PAGE = 15;
+
 const QADashboard = () => {
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
@@ -32,6 +34,7 @@ const QADashboard = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [selectedService, setSelectedService] = useState('all');
+    const [page, setPage] = useState(1);
 
     const [viewFilesSubmission, setViewFilesSubmission] = useState<any>(null);
     const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
@@ -230,7 +233,40 @@ const QADashboard = () => {
         } catch (error: any) { toast({ title: 'Revoke Failed', description: error.message, variant: 'destructive' }); }
     };
 
-    const filteredSubmissions = useMemo(() => {
+    const handleExport = () => {
+        const data = filteredSubmissions.map(s => ({
+            ID: s.id,
+            'Project Name': s.project_name,
+            Designer: s.designer_name,
+            'Service Type': s.service_type,
+            Status: s.status,
+            'PH Approved': s.ph_approved ? 'Yes' : 'No',
+            'Client Accepted': s.client_accepted ? 'Yes' : 'No',
+            'Points Awarded': s.points_awarded || 0,
+            'Submitted Date': format(new Date(s.created_at), 'yyyy-MM-dd HH:mm'),
+        }));
+
+        const filename = `submissions-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        const headers = Object.keys(data[0] || {});
+        const csvRows = [headers.join(','), ...data.map(row => headers.map(header => JSON.stringify(row[header as keyof typeof row] ?? '')).join(','))];
+        const csvString = csvRows.join('\n');
+
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        toast({ title: 'Data exported', description: `${filename} has been downloaded.` });
+    };
+
+    useEffect(() => { setPage(1); }, [selectedStatus, selectedService, searchQuery]);
+
+    const filteredSubmissionsRaw = useMemo(() => {
         let filtered = submissions;
         if (selectedService !== 'all') filtered = filtered.filter(s => s.service_type === selectedService);
         if (selectedStatus !== 'all') {
@@ -245,6 +281,12 @@ const QADashboard = () => {
         }
         return filtered;
     }, [submissions, selectedStatus, selectedService, searchQuery]);
+
+    const filteredSubmissions = useMemo(() => {
+        return filteredSubmissionsRaw.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    }, [filteredSubmissionsRaw, page]);
+
+    const totalPages = Math.ceil(filteredSubmissionsRaw.length / ITEMS_PER_PAGE);
 
     const stats = {
         total: submissions.length,
@@ -329,6 +371,9 @@ const QADashboard = () => {
                                     <SelectItem value="correction_requested">In Revision</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Button variant="outline" size="sm" className="h-8 text-xs bg-card/50" onClick={handleExport}>
+                                <Download className="w-3.5 h-3.5 mr-1" /> Export
+                            </Button>
                         </div>
                     </div>
                     <div className="p-0">
@@ -446,6 +491,18 @@ const QADashboard = () => {
                                 </TableBody>
                             </Table>
                         </div>
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between p-4 border-t border-border/50">
+                                <p className="text-[11px] text-muted-foreground">
+                                    {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filteredSubmissionsRaw.length)} of {filteredSubmissionsRaw.length}
+                                </p>
+                                <div className="flex gap-1">
+                                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
+                                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
