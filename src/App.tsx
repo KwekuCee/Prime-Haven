@@ -76,8 +76,6 @@ const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const ManagePricing = lazy(() => import("./pages/ManagePricing"));
 const ManageClients = lazy(() => import("./pages/ManageClients"));
 const ForwardWork = lazy(() => import("./pages/ForwardWork"));
-const Promo = lazy(() => import("./pages/Promo"));
-const ManageMarketingAssets = lazy(() => import("./components/admin/ManageMarketingAssets"));
 
 const queryClient = new QueryClient();
 
@@ -140,7 +138,6 @@ const App = () => {
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
-                  <Route path="/superadmin/promo" element={<Promo />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/client/projects" element={<ClientProjectsReview />} />
