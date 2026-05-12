@@ -1262,6 +1262,7 @@ export type Database = {
           cta_label: string | null
           cta_url: string | null
           description: string | null
+          expiry_date: string | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -1276,6 +1277,7 @@ export type Database = {
           cta_label?: string | null
           cta_url?: string | null
           description?: string | null
+          expiry_date?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean

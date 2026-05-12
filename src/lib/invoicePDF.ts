@@ -105,8 +105,8 @@ export const generateInvoicePDF = (invoice: InvoiceData): void => {
     </div>
     <div class="info-block">
       <h3>From</h3>
-      <p class="name">Prime Haven Studio</p>
-      <p>info@primehaven.studio</p>
+      <p class="name">Prime Haven</p>
+      <p>info@primehaven.tech</p>
       <p>Ghana, West Africa</p>
     </div>
   </div>
@@ -141,7 +141,7 @@ export const generateInvoicePDF = (invoice: InvoiceData): void => {
   <div class="footer">
     <p>Thank you for choosing <strong>Prime Haven</strong> — Where Creativity Meets Excellence.</p>
     <p>This is a computer-generated invoice and does not require a signature.</p>
-    <p>Questions? Contact us at <span class="accent">support@primehaven.studio</span></p>
+    <p>Questions? Contact us at <span class="accent">info@primehaven.tech</span></p>
   </div>
 </body>
 </html>`;

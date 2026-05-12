@@ -76,6 +76,7 @@ const ManageClientProjects = lazy(() => import("./pages/ManageClientProjects"));
 const ManagePricing = lazy(() => import("./pages/ManagePricing"));
 const ManageClients = lazy(() => import("./pages/ManageClients"));
 const ForwardWork = lazy(() => import("./pages/ForwardWork"));
+const ManagePromoPopup = lazy(() => import("./pages/ManagePromoPopup"));
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,7 @@ const App = () => {
                   <Route path="/start-project" element={<StartProject />} />
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
+                  <Route path="/superadmin/promo" element={<ManagePromoPopup />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/dashboard" element={<ClientDashboard />} />

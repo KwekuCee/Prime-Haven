@@ -11,8 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, Upload, ArrowLeft, Download } from "lucide-react";
+import { Loader2, Trash2, Upload, Download } from "lucide-react";
 import { TechStackLoader } from "@/components/ui/TechStackLoader";
+import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 
 interface Promo {
   id: string;
@@ -25,6 +26,7 @@ interface Promo {
   background_color: string | null;
   accent_color: string | null;
   is_active: boolean;
+  expiry_date: string | null;
   created_at: string;
 }
 
@@ -46,6 +48,7 @@ const empty = {
   background_color: "#0a0a0a",
   accent_color: "#fe4c18",
   is_active: false,
+  expiry_date: "",
 };
 
 const ManagePromoPopup = () => {
@@ -58,6 +61,35 @@ const ManagePromoPopup = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<typeof empty>(empty);
+  const [now, setNow] = useState(Date.now());
+
+  const getLocalDatetime = (timestamp: string | null) => {
+    if (!timestamp) return "";
+    const d = new Date(timestamp);
+    const pad = (value: number) => value.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const formatTimeLeft = (expiryDate: string | null) => {
+    if (!expiryDate) return "No deadline";
+    const diff = new Date(expiryDate).getTime() - now;
+    if (diff <= 0) return "Expired";
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const parts = [];
+    if (days) parts.push(`${days}d`);
+    if (hours || days) parts.push(`${hours}h`);
+    parts.push(`${minutes}m`);
+    return `${parts.join(" ")} left`;
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const runningPromos = promos.filter((p) => p.is_active && (!p.expiry_date || new Date(p.expiry_date).getTime() > now));
 
   const fetchAll = async () => {
     setLoading(true);
@@ -86,6 +118,7 @@ const ManagePromoPopup = () => {
       background_color: p.background_color || "#0a0a0a",
       accent_color: p.accent_color || "#fe4c18",
       is_active: p.is_active,
+      expiry_date: getLocalDatetime(p.expiry_date),
     });
   };
 
@@ -128,6 +161,7 @@ const ManagePromoPopup = () => {
         background_color: form.background_color,
         accent_color: form.accent_color,
         is_active: form.is_active,
+        expiry_date: form.expiry_date ? new Date(form.expiry_date).toISOString() : null,
       };
 
       if (form.id) {
@@ -180,12 +214,9 @@ const ManagePromoPopup = () => {
   if (checking || !isAdmin) return <TechStackLoader />;
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <SuperAdminLayout>
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/superadmin")}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back
-          </Button>
           <h1 className="text-3xl font-bold">Promo Popups</h1>
         </div>
 
@@ -248,6 +279,14 @@ const ManagePromoPopup = () => {
                         placeholder="https://..."
                       />
                     </div>
+                  </div>
+                  <div>
+                    <Label>Expiry deadline</Label>
+                    <Input
+                      type="datetime-local"
+                      value={form.expiry_date}
+                      onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -338,6 +377,35 @@ const ManagePromoPopup = () => {
             {/* Existing promos */}
             <Card>
               <CardHeader>
+                <CardTitle>Running Promos</CardTitle>
+                <CardDescription>Active promos with time left until deadline.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {runningPromos.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-6">No active promos running right now.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {runningPromos.map((p) => (
+                      <div key={p.id} className="rounded-xl border border-border/50 bg-background/80 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold">{p.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{p.expiry_date ? new Date(p.expiry_date).toLocaleString() : "No deadline"}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold">{formatTimeLeft(p.expiry_date)}</p>
+                            <p className="text-xs text-muted-foreground">{p.collect_email ? "Captures email" : "No email capture"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>All Promos</CardTitle>
               </CardHeader>
               <CardContent>
@@ -352,6 +420,8 @@ const ManagePromoPopup = () => {
                         <TableHead>Title</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Email Capture</TableHead>
+                        <TableHead>Expiry</TableHead>
+                        <TableHead>Time Left</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -363,6 +433,8 @@ const ManagePromoPopup = () => {
                             <Switch checked={p.is_active} onCheckedChange={() => toggleActive(p)} />
                           </TableCell>
                           <TableCell>{p.collect_email ? "Yes" : "No"}</TableCell>
+                          <TableCell>{p.expiry_date ? new Date(p.expiry_date).toLocaleString() : "No deadline"}</TableCell>
+                          <TableCell>{formatTimeLeft(p.expiry_date)}</TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button size="sm" variant="outline" onClick={() => editPromo(p)}>Edit</Button>
                             <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(p.id)}>
@@ -415,7 +487,7 @@ const ManagePromoPopup = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </SuperAdminLayout>
   );
 };
 

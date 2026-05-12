@@ -458,15 +458,15 @@ const QADashboard = () => {
                                                                 </DropdownMenuItem>
                                                             </>
                                                         )}
+                                                        {s.status !== 'rejected' && s.status !== 'approved' && !s.client_accepted && s.status !== 'correction_requested' && (
+                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-amber-500/10 text-amber-500 transition-colors" onClick={() => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}>
+                                                                <Edit className="w-3.5 h-3.5 mr-2" /> Request Correction
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         {s.status === 'client_rejected' && (
-                                                            <>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-amber-500/10 text-amber-500 transition-colors" onClick={() => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}>
-                                                                    <Edit className="w-3.5 h-3.5 mr-2" /> Request Correction
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
-                                                                    <XCircle className="w-3.5 h-3.5 mr-2" /> Final Reject
-                                                                </DropdownMenuItem>
-                                                            </>
+                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                                                <XCircle className="w-3.5 h-3.5 mr-2" /> Final Reject
+                                                            </DropdownMenuItem>
                                                         )}
                                                         {s.status === 'correction_requested' && (
                                                             <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>

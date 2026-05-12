@@ -1,73 +1,47 @@
-# Welcome to your Lovable project
+# Prime Haven
 
-## Project info
+Prime Haven is a modern digital agency and creative platform built with React, TypeScript, Tailwind CSS, and Supabase.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Getting started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Then open the local URL shown by Vite.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project structure
 
-**Use GitHub Codespaces**
+- `src/` – main application code
+  - `components/` – reusable UI and homepage sections
+  - `pages/` – route pages for public site, dashboards, auth, and client workflows
+  - `hooks/` – custom React hooks for auth, tracking, notifications, and app behavior
+  - `contexts/` – app context providers such as user settings
+  - `integrations/supabase/` – Supabase client and typed database integration
+  - `lib/` – utilities, helpers, validators, and invoice generation
+- `supabase/` – Supabase functions, migrations, and config
+- `public/` – static assets and manifest files
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Development scripts
 
-## What technologies are used for this project?
+- `npm run dev` – start the Vite dev server
+- `npm run build` – build the app for production
+- `npm run build:dev` – build in development mode
+- `npm run lint` – run ESLint
+- `npm run preview` – preview production build locally
 
-This project is built with:
+## Notes
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- The app uses Supabase for authentication, storage, and backend functions.
+- The frontend is configured as a PWA with `vite-plugin-pwa`.
+- The project uses `next-themes` to support dark/light mode.
+- The default app alias `@` points to `./src`.
 
-## How can I deploy this project?
+## Brand
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+This project is branded as **Prime Haven**.
 
-## Can I connect a custom domain to my Lovable project?
+## Contact
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+For support when running locally, use the email configured in your environment variables or project documentation.

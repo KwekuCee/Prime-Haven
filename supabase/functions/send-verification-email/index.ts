@@ -24,11 +24,6 @@ const generateToken = (): string => {
 const ALLOWED_REDIRECT_DOMAINS = [
   "localhost",
   "127.0.0.1",
-  "lovable.app",
-  "lovable.dev",
-  "lovableproject.com",
-  "youthquake-forge.lovable.app",
-  "primehaven.tech",
   "primehaven.tech",
 ];
 
@@ -185,9 +180,9 @@ function buildEmailHtml(name: string, verificationLink: string): string {
     ' you can safely ignore this email.</p>',
     '<p style="margin:0 0 8px;font-size:12px;',
     'color:#555555;">Questions? Contact us at ',
-    '<a href="mailto:primehaven26@gmail.com"',
+    '<a href="mailto:info@primehaven.tech"',
     ' style="color:#fe4c18;text-decoration:none;">',
-    'primehaven26@gmail.com</a></p>',
+    'info@primehaven.tech</a></p>',
     '<p style="margin:12px 0 0;font-size:11px;',
     'color:#fe4c18;font-weight:600;',
     'letter-spacing:2px;text-transform:uppercase;">',
@@ -218,7 +213,7 @@ function buildPlainText(name: string, verificationLink: string): string {
     'Instagram: https://instagram.com/primehaven_co',
     '',
     "If you didn't create an account, ignore this email.",
-    'Questions? primehaven26@gmail.com',
+    'Questions? info@primehaven.tech',
     '',
     '© 2026 Prime Haven - Making IT Dreams a Reality',
   ].join('\n');

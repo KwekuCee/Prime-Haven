@@ -67,7 +67,7 @@ const Settings = () => {
 
   const handleDeleteAccount = () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      toast({ title: "Account deletion requested", description: "Please contact support@primehaven.com to proceed.", variant: "destructive" });
+      toast({ title: "Account deletion requested", description: "Please contact info@primehaven.tech to proceed.", variant: "destructive" });
     }
   };
 

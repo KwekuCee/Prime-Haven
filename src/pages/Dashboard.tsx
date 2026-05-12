@@ -414,6 +414,9 @@ const Dashboard = () => {
   };
 
   const showEarnings = settings.show_earnings;
+  const correctionRequests = submissions.filter((s) => s.status === 'correction_requested');
+  const getCorrectionLink = (submission: Submission) =>
+    `/submit-work?correction=${submission.id}&project=${encodeURIComponent(submission.project_name)}&client=${encodeURIComponent(submission.client_ref || '')}&service=${encodeURIComponent(submission.service_type || '')}`;
 
   if (loading || authLoading) {
     return (
@@ -552,6 +555,38 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Correction Requests */}
+        {correctionRequests.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="mb-6 rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-lg font-heading font-bold">Corrections Requested</h2>
+                <p className="text-xs text-muted-foreground">Submissions needing your revised work.</p>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              {correctionRequests.map((submission) => (
+                <div key={submission.id} className="rounded-2xl border border-border/50 bg-background/80 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">{submission.project_name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{submission.client_ref ? `Client: ${submission.client_ref}` : 'Client not specified'}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Status: <span className="font-semibold">Correction Requested</span>
+                    </p>
+                    {submission.rejection_reason && (
+                      <p className="text-[11px] text-amber-500 mt-1">Feedback: {submission.rejection_reason}</p>
+                    )}
+                  </div>
+                  <Button size="sm" variant="outline" className="w-full md:w-auto" onClick={() => navigate(getCorrectionLink(submission))}>
+                    Submit Correction
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Revenue Banner */}
         {stats.monthlyRevenue > 0 && (

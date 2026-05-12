@@ -68,6 +68,7 @@ const SubmitWork = () => {
   const [availableJobs, setAvailableJobs] = useState<JobOption[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [startedProject, setStartedProject] = useState<{ jobId: string; title: string } | null>(null);
+  const [parentSubmission, setParentSubmission] = useState<{ ph_approved: boolean } | null>(null);
   
   const correctionId = searchParams.get('correction');
   const correctionProject = searchParams.get('project');
@@ -131,13 +132,25 @@ const SubmitWork = () => {
       finally { setJobsLoading(false); }
     };
     loadJobs();
+
+    if (correctionId) {
+      const loadCorrectionParent = async () => {
+        try {
+          const { data, error } = await supabase.from('submissions').select('ph_approved').eq('id', correctionId).maybeSingle();
+          if (!error && data) setParentSubmission(data as { ph_approved: boolean });
+        } catch (err) {
+          console.error('Error loading parent submission:', err);
+        }
+      };
+      loadCorrectionParent();
+    }
   }, [user, correctionId, correctionClient]);
 
   useEffect(() => {
     if (correctionId) {
       setFormData(prev => ({
         ...prev,
-        projectName: correctionProject ? `${decodeURIComponent(correctionProject)} (Correction)` : prev.projectName,
+        projectName: correctionProject ? `${decodeURIComponent(correctionProject)} (CR)` : prev.projectName,
         clientReference: correctionClient ? decodeURIComponent(correctionClient) : prev.clientReference,
         serviceType: correctionService || prev.serviceType,
       }));
@@ -179,11 +192,29 @@ const SubmitWork = () => {
     setLoading(true);
     try {
       const fileUrls = successfulUploads.map(f => f.url!);
+      let parentApproved = false;
+      if (correctionId) {
+        if (parentSubmission) {
+          parentApproved = !!parentSubmission.ph_approved;
+        } else {
+          const { data, error } = await supabase.from('submissions').select('ph_approved').eq('id', correctionId).maybeSingle();
+          if (!error && data) parentApproved = !!data.ph_approved;
+        }
+      }
+
       const submissionData: any = {
-        designer_id: user.id, project_name: formData.projectName.trim(), service_type: formData.serviceType,
-        client_ref: formData.clientReference.trim(), files_urls: fileUrls, submission_date: new Date().toISOString(),
-        status: correctionId ? 'ph_approved' : 'pending', ph_approved: !!correctionId,
-        ph_approved_at: correctionId ? new Date().toISOString() : null, points_awarded: 0, revisions_count: 0, client_preference: false,
+        designer_id: user.id,
+        project_name: formData.projectName.trim(),
+        service_type: formData.serviceType,
+        client_ref: formData.clientReference.trim(),
+        files_urls: fileUrls,
+        submission_date: new Date().toISOString(),
+        status: correctionId ? (parentApproved ? 'ph_approved' : 'pending') : 'pending',
+        ph_approved: correctionId ? parentApproved : false,
+        ph_approved_at: correctionId && parentApproved ? new Date().toISOString() : null,
+        points_awarded: 0,
+        revisions_count: 0,
+        client_preference: false,
         ...((isLinkOnlyService && formData.designLink.trim()) ? { design_link: formData.designLink.trim() } : {}),
       };
       if (correctionId) submissionData.parent_submission_id = correctionId;
@@ -251,7 +282,7 @@ const SubmitWork = () => {
                               return <SelectItem value="none" disabled>{startedProject ? 'Started project not found in active list' : 'No active jobs — start one first'}</SelectItem>;
                             }
                             return visibleJobs.map(job => (
-                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}</SelectItem>
+                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}{correctionId ? ' (CR)' : ''}</SelectItem>
                             ));
                           })()}
                         </SelectContent>
