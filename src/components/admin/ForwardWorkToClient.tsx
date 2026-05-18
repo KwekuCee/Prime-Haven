@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Send, Loader2, Mail, User, Phone, FileCheck, Paperclip,
-  CheckCircle, Image as ImageIcon, ExternalLink, Search
+  CheckCircle, Image as ImageIcon, ExternalLink, Search, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ const ForwardWorkToClient = () => {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [submissions, setSubmissions] = useState<AcceptedSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
 
   // Form state
@@ -104,6 +105,36 @@ const ForwardWorkToClient = () => {
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Re-fetch fresh client data from the DB
+    try {
+      const { data: clientsData } = await supabase
+        .from('clients')
+        .select('id, name, email, whatsapp')
+        .order('name');
+
+      const freshClients = (clientsData || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email || '',
+        whatsapp: c.whatsapp || '',
+      }));
+      setClients(freshClients);
+
+      // If a client was already selected, refresh their info too
+      if (selectedClientKey) {
+        const updated = freshClients.find(c => c.id === selectedClientKey);
+        if (updated) setSelectedClient(updated);
+      }
+    } catch (err) {
+      console.error('Refresh error:', err);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -252,10 +283,23 @@ Thank you for choosing Prime Haven! ✨`;
       {/* Client Selection */}
       <Card className="glass-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-heading flex items-center gap-2">
-            <User className="w-4 h-4 text-primary" />
-            Select Client
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-heading flex items-center gap-2">
+              <User className="w-4 h-4 text-primary" />
+              Select Client
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-primary"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Refresh client list with latest details"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={selectedClientKey} onValueChange={handleClientSelect}>
@@ -326,8 +370,8 @@ Thank you for choosing Prime Haven! ✨`;
                     key={sub.id}
                     onClick={() => toggleSubmission(sub.id)}
                     className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedSubmissionIds.includes(sub.id)
-                        ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_hsla(16,99%,55%,0.2)] scale-[1.02]'
-                        : 'border-white/5 glass bg-transparent hover:border-primary/30 hover:scale-[1.01]'
+                      ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_hsla(16,99%,55%,0.2)] scale-[1.02]'
+                      : 'border-white/5 glass bg-transparent hover:border-primary/30 hover:scale-[1.01]'
                       }`}
                   >
                     <Checkbox

@@ -69,7 +69,7 @@ const navSections: NavSection[] = [
     defaultOpen: false,
     items: [
       { label: 'Team', icon: UserCheck, path: '/superadmin', tab: 'team' },
-      { label: 'Clients DB', icon: UserSquare, path: '/superadmin', tab: 'clients' },
+      { label: 'Clients DB', icon: UserSquare, path: '/superadmin/clients' },
     ],
   },
   {
