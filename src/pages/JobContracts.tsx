@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Plus, Send, Calendar, DollarSign, Users, FileText,
   ArrowLeft, Trash2, Clock, CheckCircle, XCircle, Upload, Image as ImageIcon,
-  Loader2, RefreshCw, UserPlus
+  Loader2, RefreshCw, UserPlus, FileSearch
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,13 +112,28 @@ const JobContracts = () => {
       const contractsData = (data || []) as JobContract[];
       setContracts(contractsData);
 
-      // Fetch active designer names
-      const allActiveIds = [...new Set(contractsData.flatMap(c => c.active_designer_ids || []))];
-      if (allActiveIds.length > 0) {
+      // 1. Collect IDs from active_designer_ids (legacy)
+      const legacyIds = [...new Set(contractsData.flatMap(c => c.active_designer_ids || []))];
+
+      // 2. Fetch from job_contract_claims (new system)
+      const contractIds = contractsData.map(c => c.id);
+      const { data: claimsData } = contractIds.length
+        ? await (supabase as any)
+          .from('job_contract_claims')
+          .select('contract_id, designer_id')
+          .in('contract_id', contractIds)
+          .eq('status', 'active')
+        : { data: [] };
+
+      const claimDesignerIds = [...new Set((claimsData || []).map((cl: any) => cl.designer_id))];
+
+      // 3. Resolve all unique designer IDs
+      const allIds = [...new Set([...legacyIds, ...claimDesignerIds])];
+      if (allIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', allActiveIds);
+          .in('id', allIds);
 
         const names: Record<string, string> = {};
         profiles?.forEach(p => { names[p.id] = p.full_name || 'Designer'; });
@@ -558,6 +573,14 @@ const JobContracts = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="View Related Submissions"
+                              onClick={() => window.open(`/superadmin/submissions?contract=${encodeURIComponent(c.title)}`, '_blank')}
+                            >
+                              <FileSearch className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"

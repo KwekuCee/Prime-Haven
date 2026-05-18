@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, CreditCard, ExternalLink, ArrowRight, Wallet, Clock, CheckCircle } from 'lucide-react';
+import { ShoppingBag, CreditCard, ExternalLink, ArrowRight, Wallet, Clock, CheckCircle, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,6 +36,7 @@ const ClientDashboard = () => {
     const [submissions, setSubmissions] = useState<any[]>([]);
     const [clientProfile, setClientProfile] = useState<any>(null);
     const [stats, setStats] = useState({ totalSpent: 0, activeProjects: 0, completedProjects: 0, pendingPayments: 0 });
+    const [acceptedDesigners, setAcceptedDesigners] = useState<Record<string, any>>({});
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -91,6 +92,22 @@ const ClientDashboard = () => {
             const pendingPayments = fetchedOrders.filter(o => o.payment_status === 'pending').length;
 
             setStats({ totalSpent, activeProjects, completedProjects, pendingPayments });
+
+            // Fetch accepted designer info from client_projects
+            const { data: projectsWithDesigner } = await supabase
+                .from('client_projects')
+                .select('id, title, accepted_designer_id, profiles:accepted_designer_id(full_name, bio, instagram_url)')
+                .eq('client_email', user?.email)
+                .not('accepted_designer_id', 'is', null)
+                .limit(5);
+
+            const designerMap: Record<string, any> = {};
+            (projectsWithDesigner || []).forEach((p: any) => {
+                if (p.accepted_designer_id) {
+                    designerMap[p.id] = { name: p.profiles?.full_name || 'Designer', bio: p.profiles?.bio, instagram: p.profiles?.instagram_url, projectTitle: p.title };
+                }
+            });
+            setAcceptedDesigners(designerMap);
 
         } catch (err: any) {
             console.error('Error loading client data:', err);
@@ -218,6 +235,36 @@ const ClientDashboard = () => {
                         </motion.div>
                     </div>
                 </div>
+
+                {/* Accepted Designers Section */}
+                {Object.keys(acceptedDesigners).length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
+                        className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm overflow-hidden mb-6">
+                        <div className="p-5 border-b border-border/50 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                <UserCheck className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <h2 className="text-sm font-heading font-bold">Your Design Team</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-5">
+                            {Object.entries(acceptedDesigners).map(([projectId, designer]) => (
+                                <div key={projectId} className="p-4 rounded-xl border border-border/40 bg-card/20 hover:border-primary/20 transition-colors">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+                                            {(designer.name || 'D').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold truncate">{designer.name}</p>
+                                            <Badge variant="outline" className="text-[9px] uppercase border-emerald-500/20 text-emerald-500 mt-0.5">Accepted Designer</Badge>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground truncate">{designer.projectTitle}</p>
+                                    {designer.bio && <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2">{designer.bio}</p>}
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Orders Table */}
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}

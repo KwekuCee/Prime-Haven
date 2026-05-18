@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Mail, UserSquare, Send, Loader2, Phone, Plus, Trash2, Pencil } from 'lucide-react';
+import { Search, Mail, UserSquare, Send, Loader2, Phone, Plus, Trash2, Pencil, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ interface Client {
   whatsapp: string | null;
   company: string | null;
   notes: string | null;
+  is_primary: boolean | null;
   created_at: string;
 }
 
@@ -149,6 +150,20 @@ const ManageClients = () => {
     }
   };
 
+  const handleTogglePrimary = async (client: Client) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ is_primary: !client.is_primary })
+        .eq('id', client.id);
+      if (error) throw error;
+      toast({ title: client.is_primary ? 'Removed Primary Flag' : 'Marked as Primary!', description: `${client.name} updated.` });
+      await loadClients();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const openEmailDialog = (client: Client) => {
     setEmailDialog(client);
     setEmailSubject('');
@@ -242,7 +257,12 @@ const ManageClients = () => {
                   <TableBody>
                     {filteredClients.map((client) => (
                       <TableRow key={client.id}>
-                        <TableCell className="font-semibold">{client.name}</TableCell>
+                        <TableCell className="font-semibold">
+                          <div className="flex items-center gap-2">
+                            {client.is_primary && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-shrink-0" title="Primary Record" />}
+                            {client.name}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-sm">{client.email || '—'}</TableCell>
                         <TableCell className="text-sm">
                           {client.whatsapp ? (
@@ -257,6 +277,9 @@ const ManageClients = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button size="sm" variant="ghost" title={client.is_primary ? 'Unmark Primary' : 'Mark as Primary'} onClick={() => handleTogglePrimary(client)} className={`h-7 ${client.is_primary ? 'text-amber-500 hover:text-amber-600' : 'text-muted-foreground'}`}>
+                              <Star className={`w-3 h-3 ${client.is_primary ? 'fill-amber-500' : ''}`} />
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => openEditDialog(client)} className="gap-1 h-7 text-xs">
                               <Pencil className="w-3 h-3" /> Edit
                             </Button>

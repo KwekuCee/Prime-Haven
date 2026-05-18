@@ -31,6 +31,7 @@ import EarningsChart from '@/components/dashboard/EarningsChart';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
+import ClaimedContracts from '@/components/dashboard/ClaimedContracts';
 
 interface ProfileData {
   full_name: string;
@@ -619,6 +620,28 @@ const Dashboard = () => {
 
         {/* Active Contracts */}
         <ActiveContracts />
+
+        {/* Claimed Job Contracts */}
+        <ClaimedContracts />
+
+        {/* Profession Setup Prompt */}
+        {designer && (!designer.professions || designer.professions.length === 0) && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="mb-6 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Target className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-500 mb-1">Set Your Profession</p>
+                <p className="text-xs text-muted-foreground">You haven't set your profession yet. Please update your profile so you can claim jobs that match your skills.</p>
+              </div>
+              <Button size="sm" variant="outline" className="text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10" onClick={() => navigate('/edit-profile')}>
+                Update Profile
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Project Marketplace Section */}
         <div className="mb-8 space-y-6">

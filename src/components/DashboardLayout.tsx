@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import BrandLogo from '@/components/BrandLogo';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import NotificationBell from '@/components/NotificationBell';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -29,6 +30,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const unreadMessages = useUnreadMessages();
+  const { unreadCount: unreadNotifications } = useNotifications();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -156,7 +158,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <nav className="flex-1 py-4 px-3 space-y-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
-              const showBadge = item.path === '/messages' && unreadMessages > 0;
+              const showBadge = (item.path === '/messages' || item.path === '/client/messages') && unreadMessages > 0;
+              const showNotifBadge = item.path === '/marketplace' && unreadNotifications > 0;
               return (
                 <Link
                   key={item.path}
@@ -184,6 +187,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   {showBadge && (
                     <Badge variant="default" className={`h-5 min-w-[20px] px-1.5 text-[10px] font-bold rounded-full ${collapsed ? 'absolute -top-1 -right-1' : ''}`}>
                       {unreadMessages}
+                    </Badge>
+                  )}
+                  {showNotifBadge && (
+                    <Badge variant="default" className={`h-5 min-w-[20px] px-1.5 text-[10px] font-bold rounded-full bg-amber-500 ${collapsed ? 'absolute -top-1 -right-1' : ''}`}>
+                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
                     </Badge>
                   )}
                 </Link>

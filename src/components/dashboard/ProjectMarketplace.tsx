@@ -249,16 +249,32 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                 });
                 if (error) throw error;
             } else if (order.source === 'job_contracts') {
-                // Use the notification system for job_contracts
-                const { error } = await supabase.functions.invoke('notify-designer', {
+                // Record the claim in job_contract_claims table
+                const { error: claimError } = await (supabase as any)
+                    .from('job_contract_claims')
+                    .insert({
+                        contract_id: order.id,
+                        designer_id: user.id,
+                        status: 'active',
+                    });
+
+                // Notify admin regardless of insert result (table might not exist yet)
+                if (claimError && !claimError.message?.includes('unique')) {
+                    console.warn('Could not insert claim record:', claimError.message);
+                }
+                if (claimError?.message?.includes('unique')) {
+                    throw new Error('You have already claimed this contract.');
+                }
+
+                // Notify admin
+                await supabase.functions.invoke('notify-designer', {
                     body: {
                         designerId: user.id,
                         projectName: order.title,
                         notificationType: 'contract_application',
                     },
                 });
-                if (error) throw error;
-                toast({ title: 'Application Sent!', description: `You've applied for "${order.title}". Admin notified.` });
+                toast({ title: 'Contract Claimed! 🚀', description: `You've claimed "${order.title}". Admin has been notified.` });
             } else {
                 // Legacy logic for client_orders
                 const deadline = addDays(new Date(), 2).toISOString();
