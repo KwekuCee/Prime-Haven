@@ -452,7 +452,7 @@ const JobContracts = () => {
                       <TableHead className="text-xs font-semibold">Title</TableHead>
                       <TableHead className="text-xs font-semibold">Category</TableHead>
                       <TableHead className="text-xs font-semibold">Budget</TableHead>
-                      <TableHead className="text-xs font-semibold">Designers</TableHead>
+                      <TableHead className="text-xs font-semibold">Designer(s)</TableHead>
                       <TableHead className="text-xs font-semibold">Deadline</TableHead>
                       <TableHead className="text-xs font-semibold">Discord</TableHead>
                       <TableHead className="text-xs font-semibold">Status</TableHead>
@@ -470,21 +470,48 @@ const JobContracts = () => {
                         <TableCell>{c.budget || '—'}</TableCell>
                         <TableCell>
                           {c.active_designer_ids && c.active_designer_ids.length > 0 ? (
-                            <div className="flex -space-x-2 overflow-hidden py-1">
-                              {c.active_designer_ids.map((id, idx) => (
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center gap-2">
                                 <div
-                                  key={id}
-                                  title={designerNames[id] || 'Loading...'}
-                                  className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary cursor-help"
+                                  title={designerNames[c.active_designer_ids[0]] || 'Loading...'}
+                                  className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary cursor-help shrink-0"
                                 >
-                                  {(designerNames[id] || '?').charAt(0).toUpperCase()}
+                                  {(designerNames[c.active_designer_ids[0]] || '?').charAt(0).toUpperCase()}
                                 </div>
-                              ))}
-                              {c.active_designers_count > c.active_designer_ids.length && (
-                                <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground">
-                                  +{c.active_designers_count - c.active_designer_ids.length}
+                                <span className="text-xs font-semibold truncate max-w-[100px]">
+                                  {designerNames[c.active_designer_ids[0]] || 'Designer'}
+                                </span>
+                              </div>
+                              {c.active_designer_ids.length > 1 && (
+                                <div className="flex -space-x-1.5 ml-0.5">
+                                  {c.active_designer_ids.slice(1, 4).map((id) => (
+                                    <div
+                                      key={id}
+                                      title={designerNames[id] || 'Loading...'}
+                                      className="h-4 w-4 rounded-full border border-background bg-muted flex items-center justify-center text-[7px] font-medium text-muted-foreground cursor-help"
+                                    >
+                                      {(designerNames[id] || '?').charAt(0).toUpperCase()}
+                                    </div>
+                                  ))}
+                                  {c.active_designers_count > 4 && (
+                                    <div className="h-4 w-4 rounded-full border border-background bg-muted flex items-center justify-center text-[7px] font-medium text-muted-foreground">
+                                      +{c.active_designers_count - 4}
+                                    </div>
+                                  )}
+                                  {c.active_designers_count > 1 && c.active_designers_count <= 4 && c.active_designers_count > c.active_designer_ids.length && (
+                                    <div className="h-4 w-4 rounded-full border border-background bg-muted flex items-center justify-center text-[7px] font-medium text-muted-foreground">
+                                      +{c.active_designers_count - c.active_designer_ids.length}
+                                    </div>
+                                  )}
                                 </div>
                               )}
+                            </div>
+                          ) : c.active_designers_count > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                                {c.active_designers_count} Claimants
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground italic">(IDs not synced)</span>
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground italic">None yet</span>
