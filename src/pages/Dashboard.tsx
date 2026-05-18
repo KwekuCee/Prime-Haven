@@ -200,9 +200,20 @@ const Dashboard = () => {
       }));
 
       if (isMounted) {
-        const combined = [...availableCP, ...availableJC].sort((a, b) =>
+        const combinedRaw = [...availableCP, ...availableJC].sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
+
+        // Deduplicate by title to prevent showing the same job from two sources
+        const uniqueTitles = new Set();
+        const combined = combinedRaw.filter(job => {
+          if (!job.title) return true;
+          const normalizedTitle = job.title.trim().toLowerCase();
+          if (uniqueTitles.has(normalizedTitle)) return false;
+          uniqueTitles.add(normalizedTitle);
+          return true;
+        });
+
         setActiveJobs(combined);
         setLoadingJobs(false);
       }

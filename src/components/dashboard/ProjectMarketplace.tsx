@@ -216,9 +216,21 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     created_at: c.created_at
                 }));
 
-            setOrders([...projectMarket, ...orderMarket, ...jobMarket].sort((a, b) =>
+            const combinedRaw = [...projectMarket, ...orderMarket, ...jobMarket].sort((a, b) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            ));
+            );
+
+            // Deduplicate by title to prevent showing the same job from two sources
+            const uniqueTitles = new Set();
+            const combined = combinedRaw.filter(order => {
+                if (!order.title) return true;
+                const normalizedTitle = order.title.trim().toLowerCase();
+                if (uniqueTitles.has(normalizedTitle)) return false;
+                uniqueTitles.add(normalizedTitle);
+                return true;
+            });
+
+            setOrders(combined);
         } catch (err) {
             console.error('Error loading marketplace:', err);
         } finally {

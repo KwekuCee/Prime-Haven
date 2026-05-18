@@ -217,6 +217,12 @@ const JobContracts = () => {
     try {
       const fileUrls = referenceFiles.filter(f => f.url).map(f => f.url!);
 
+      const professionMap: Record<string, string[]> = {
+        'graphic-design': ['Graphic Designer'],
+        'app-design': ['UI/UX Designer'],
+        'web-dev': ['Web Developer'],
+      };
+
       const { data: contract, error } = await supabase
         .from('job_contracts')
         .insert({
@@ -231,6 +237,7 @@ const JobContracts = () => {
           reference_files: fileUrls.length > 0 ? fileUrls : null,
           posted_by: user?.id,
           status: 'active',
+          target_professions: professionMap[form.category] || null,
         })
         .select()
         .single();
