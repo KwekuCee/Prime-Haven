@@ -34,13 +34,14 @@ const availableHoursOptions = [
 ];
 
 const professionalTitles = [
-  'UI/UX Designer', 'Graphic Designer', 'Web Developer',
+  'UI/UX Designer', 'Graphic Designer', 'Web Developer', 'Social Media Manager',
 ];
 
 const PROFESSION_FEES: Record<string, number> = {
   'Web Developer': 150,
   'UI/UX Designer': 120,
   'Graphic Designer': 90,
+  'Social Media Manager': 90,
 };
 
 const EditProfile = () => {
@@ -261,6 +262,7 @@ const EditProfile = () => {
                         'Graphic Designer': 'Graphic Designer',
                         'Web Designer': 'UI/UX Designer',
                         'Web Developer': 'Web Developer',
+                        'Social Media Manager': 'Social Media Manager',
                       };
                       const implied = titleToProfession[v];
                       let newProfessions = [...formData.professions];
@@ -291,7 +293,7 @@ const EditProfile = () => {
                     You can have one profession for free. Adding more requires a one-time upgrade fee per profession. <strong>Once paid, it's unlocked forever.</strong>
                   </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer'].map(prof => {
+                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer', 'Social Media Manager'].map(prof => {
                       const selected = formData.professions.includes(prof);
                       const isFreeSlot = !selected && formData.professions.length === 0;
                       const isPaid = paidProfessions.includes(prof);

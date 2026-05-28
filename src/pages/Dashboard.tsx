@@ -323,7 +323,15 @@ const Dashboard = () => {
           supabase.from('system_settings').select('key, value')
         ]);
         if (profileResult.data) setProfile(profileResult.data);
-        if (designerResult.data) setDesigner(designerResult.data);
+        if (designerResult.data) {
+          setDesigner(designerResult.data);
+          // Redirect Social Media Managers to their dedicated dashboard
+          const title = (designerResult.data.professional_title || '').toLowerCase().replace(/\s+/g, '-');
+          if (title === 'social-media-manager') {
+            navigate('/dashboard/smm', { replace: true });
+            return;
+          }
+        }
         if (submissionsResult.data) setSubmissions(submissionsResult.data);
 
         const profilesMap = new Map((profilesResult.data || []).map((p: { id: string; full_name?: string }) => [p.id, p.full_name]));

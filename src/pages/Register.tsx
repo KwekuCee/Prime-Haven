@@ -316,76 +316,75 @@ const Register = () => {
               <div className="space-y-4">
 
                 <form onSubmit={personalForm.handleSubmit(handleStep1Submit)} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="fullName" className={labelClass}>Full Name *</Label>
-                  <Input id="fullName" placeholder="John Doe" {...personalForm.register('fullName')}
-                    className={cn(inputClass, personalForm.formState.errors.fullName && 'border-destructive')} />
-                  {personalForm.formState.errors.fullName && <p className="text-xs text-destructive">{personalForm.formState.errors.fullName.message}</p>}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className={labelClass}>Email *</Label>
-                  <Input id="email" type="email" placeholder="john@example.com" {...personalForm.register('email')}
-                    className={cn(inputClass, personalForm.formState.errors.email && 'border-destructive')} />
-                  {personalForm.formState.errors.email && <p className="text-xs text-destructive">{personalForm.formState.errors.email.message}</p>}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="phone" className={labelClass}>Phone *</Label>
-                    <Input id="phone" type="tel" placeholder="+233 XX XXX XXXX" {...personalForm.register('phone')}
-                      className={cn(inputClass, personalForm.formState.errors.phone && 'border-destructive')} />
-                    {personalForm.formState.errors.phone && <p className="text-xs text-destructive">{personalForm.formState.errors.phone.message}</p>}
+                    <Label htmlFor="fullName" className={labelClass}>Full Name *</Label>
+                    <Input id="fullName" placeholder="John Doe" {...personalForm.register('fullName')}
+                      className={cn(inputClass, personalForm.formState.errors.fullName && 'border-destructive')} />
+                    {personalForm.formState.errors.fullName && <p className="text-xs text-destructive">{personalForm.formState.errors.fullName.message}</p>}
                   </div>
+
                   <div className="space-y-1.5">
-                    <Label htmlFor="dob" className={labelClass}>Date of Birth *</Label>
-                    <Popover open={dobOpen} onOpenChange={setDobOpen}>
-                      <PopoverTrigger asChild>
-                        <Button id="dob" variant="outline" className={cn(
-                          "w-full justify-start text-left font-normal h-11 rounded-xl bg-background/60 border-border/60",
-                          !personalForm.watch('dob') && "text-muted-foreground",
-                          personalForm.formState.errors.dob && "border-destructive"
-                        )}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {personalForm.watch('dob') ? format(personalForm.watch('dob'), "PPP") : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={personalForm.watch('dob')} onSelect={(date) => { personalForm.setValue('dob', date as Date, { shouldValidate: true }); setDobOpen(false); }}
-                          disabled={(date) => date > getMinimumAgeDate() || date < new Date("1900-01-01")} defaultMonth={getMinimumAgeDate()} initialFocus />
-                      </PopoverContent>
-                    </Popover>
-                    {personalForm.formState.errors.dob && <p className="text-xs text-destructive">{personalForm.formState.errors.dob.message}</p>}
+                    <Label htmlFor="email" className={labelClass}>Email *</Label>
+                    <Input id="email" type="email" placeholder="john@example.com" {...personalForm.register('email')}
+                      className={cn(inputClass, personalForm.formState.errors.email && 'border-destructive')} />
+                    {personalForm.formState.errors.email && <p className="text-xs text-destructive">{personalForm.formState.errors.email.message}</p>}
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="portfolio" className={labelClass}>Portfolio URL (Optional)</Label>
-                  <Input id="portfolio" type="url" placeholder="https://yourportfolio.com" {...personalForm.register('portfolioUrl')}
-                    className={cn(inputClass, personalForm.formState.errors.portfolioUrl && 'border-destructive')} />
-                  {personalForm.formState.errors.portfolioUrl && <p className="text-xs text-destructive">{personalForm.formState.errors.portfolioUrl.message}</p>}
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="phone" className={labelClass}>Phone *</Label>
+                      <Input id="phone" type="tel" placeholder="+233 XX XXX XXXX" {...personalForm.register('phone')}
+                        className={cn(inputClass, personalForm.formState.errors.phone && 'border-destructive')} />
+                      {personalForm.formState.errors.phone && <p className="text-xs text-destructive">{personalForm.formState.errors.phone.message}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="dob" className={labelClass}>Date of Birth *</Label>
+                      <Popover open={dobOpen} onOpenChange={setDobOpen}>
+                        <PopoverTrigger asChild>
+                          <Button id="dob" variant="outline" className={cn(
+                            "w-full justify-start text-left font-normal h-11 rounded-xl bg-background/60 border-border/60",
+                            !personalForm.watch('dob') && "text-muted-foreground",
+                            personalForm.formState.errors.dob && "border-destructive"
+                          )}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {personalForm.watch('dob') ? format(personalForm.watch('dob'), "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={personalForm.watch('dob')} onSelect={(date) => { personalForm.setValue('dob', date as Date, { shouldValidate: true }); setDobOpen(false); }}
+                            disabled={(date) => date > getMinimumAgeDate() || date < new Date("1900-01-01")} defaultMonth={getMinimumAgeDate()} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                      {personalForm.formState.errors.dob && <p className="text-xs text-destructive">{personalForm.formState.errors.dob.message}</p>}
+                    </div>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label className={labelClass}>Professional Title *</Label>
-                  <Select value={personalForm.watch('professionalTitle')} onValueChange={(v) => personalForm.setValue('professionalTitle', v, { shouldValidate: true })}>
-                    <SelectTrigger className={cn(inputClass, personalForm.formState.errors.professionalTitle && 'border-destructive')}>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="graphic-designer">Graphic Designer</SelectItem>
-                      <SelectItem value="ui-ux-designer">UI/UX Designer</SelectItem>
-                      <SelectItem value="web-developer">Web Developer</SelectItem>
-                      <SelectItem value="app-developer">App Developer</SelectItem>
-                      <SelectItem value="it-specialist">IT Specialist</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {personalForm.formState.errors.professionalTitle && <p className="text-xs text-destructive">{personalForm.formState.errors.professionalTitle.message}</p>}
-                </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="portfolio" className={labelClass}>Portfolio URL (Optional)</Label>
+                    <Input id="portfolio" type="url" placeholder="https://yourportfolio.com" {...personalForm.register('portfolioUrl')}
+                      className={cn(inputClass, personalForm.formState.errors.portfolioUrl && 'border-destructive')} />
+                    {personalForm.formState.errors.portfolioUrl && <p className="text-xs text-destructive">{personalForm.formState.errors.portfolioUrl.message}</p>}
+                  </div>
 
-                <Button type="submit" className="w-full h-11 rounded-xl font-semibold text-sm">Continue</Button>
-              </form>
+                  <div className="space-y-1.5">
+                    <Label className={labelClass}>Professional Title *</Label>
+                    <Select value={personalForm.watch('professionalTitle')} onValueChange={(v) => personalForm.setValue('professionalTitle', v, { shouldValidate: true })}>
+                      <SelectTrigger className={cn(inputClass, personalForm.formState.errors.professionalTitle && 'border-destructive')}>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="graphic-designer">Graphic Designer</SelectItem>
+                        <SelectItem value="ui-ux-designer">UI/UX Designer</SelectItem>
+                        <SelectItem value="web-developer">Web Developer</SelectItem>
+                        <SelectItem value="social-media-manager">Social Media Manager</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {personalForm.formState.errors.professionalTitle && <p className="text-xs text-destructive">{personalForm.formState.errors.professionalTitle.message}</p>}
+                  </div>
+
+                  <Button type="submit" className="w-full h-11 rounded-xl font-semibold text-sm">Continue</Button>
+                </form>
               </div>
             )}
 
