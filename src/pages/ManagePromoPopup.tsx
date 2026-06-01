@@ -26,7 +26,7 @@ interface Promo {
   background_color: string | null;
   accent_color: string | null;
   is_active: boolean;
-  expiry_date: string | null;
+  expiry_date?: string | null;
   created_at: string;
 }
 
@@ -97,7 +97,7 @@ const ManagePromoPopup = () => {
       supabase.from("promo_popups").select("*").order("created_at", { ascending: false }),
       supabase.from("promo_email_signups").select("*").order("captured_at", { ascending: false }).limit(500),
     ]);
-    setPromos(((pData as unknown) as Promo[]) || []);
+    setPromos((pData as Promo[]) || []);
     setSignups((sData as Signup[]) || []);
     setLoading(false);
   };
