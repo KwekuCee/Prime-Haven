@@ -2329,6 +2329,8 @@ const SuperAdminDashboard = () => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="smm" className="mt-0"><SuperAdminSMMPanel /></TabsContent>
         </Tabs>
       </div>
 

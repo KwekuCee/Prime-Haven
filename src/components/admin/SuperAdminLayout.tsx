@@ -54,6 +54,7 @@ const navSections: NavSection[] = [
       { label: 'Graphic Design', icon: Palette, path: '/superadmin/graphic-design' },
       { label: 'UI/UX Design', icon: Layout, path: '/superadmin/uiux' },
       { label: 'Web Development', icon: Globe, path: '/superadmin/web' },
+      { label: 'SMM Projects', icon: MonitorPlay, path: '/superadmin', tab: 'smm' },
     ],
   },
   {
