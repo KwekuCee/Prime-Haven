@@ -26,7 +26,7 @@ interface Promo {
   background_color: string | null;
   accent_color: string | null;
   is_active: boolean;
-  expiry_date: string | null;
+  expiry_date?: string | null;
   created_at: string;
 }
 

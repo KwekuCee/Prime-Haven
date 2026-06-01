@@ -27,12 +27,42 @@ function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+const PRIVATE_IP_RE = /^(127\.|10\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.|0\.|::1$|fc00:|fe80:)/i;
+const ALLOWED_CONTENT_TYPES = /^(image\/(png|jpe?g|gif|webp|svg\+xml)|application\/pdf)/i;
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+function isSafeUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return false;
+    const host = u.hostname;
+    if (PRIVATE_IP_RE.test(host)) return false;
+    if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function downloadFile(url: string): Promise<{ data: Uint8Array; contentType: string; name: string } | null> {
   try {
-    const res = await fetch(url);
+    if (!isSafeUrl(url)) {
+      console.warn("Rejected unsafe reference URL:", url);
+      return null;
+    }
+    const res = await fetch(url, { redirect: "error" });
     if (!res.ok) return null;
-    const data = new Uint8Array(await res.arrayBuffer());
     const contentType = res.headers.get("content-type") || "application/octet-stream";
+    if (!ALLOWED_CONTENT_TYPES.test(contentType)) {
+      console.warn("Rejected disallowed content-type:", contentType);
+      return null;
+    }
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength > MAX_FILE_BYTES) {
+      console.warn("Rejected oversized file:", buf.byteLength);
+      return null;
+    }
+    const data = new Uint8Array(buf);
     const urlPath = new URL(url).pathname;
     const name = urlPath.split("/").pop() || "file";
     return { data, contentType, name };

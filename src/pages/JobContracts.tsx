@@ -128,7 +128,7 @@ const JobContracts = () => {
       const claimDesignerIds = [...new Set((claimsData || []).map((cl: any) => cl.designer_id))];
 
       // 3. Resolve all unique designer IDs
-      const allIds = [...new Set([...legacyIds, ...claimDesignerIds])];
+      const allIds = [...new Set([...legacyIds, ...claimDesignerIds])] as string[];
       if (allIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')

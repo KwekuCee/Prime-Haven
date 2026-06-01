@@ -306,6 +306,7 @@ export type Database = {
           budget: string | null
           category: string
           client_email: string | null
+          client_id: string | null
           client_name: string
           client_whatsapp: string | null
           created_at: string
@@ -327,6 +328,7 @@ export type Database = {
           budget?: string | null
           category?: string
           client_email?: string | null
+          client_id?: string | null
           client_name: string
           client_whatsapp?: string | null
           created_at?: string
@@ -348,6 +350,7 @@ export type Database = {
           budget?: string | null
           category?: string
           client_email?: string | null
+          client_id?: string | null
           client_name?: string
           client_whatsapp?: string | null
           created_at?: string
@@ -364,7 +367,15 @@ export type Database = {
           tracking_token?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_support_tickets: {
         Row: {
@@ -402,6 +413,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_primary: boolean
           name: string
           notes: string | null
           updated_at: string
@@ -412,6 +424,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_primary?: boolean
           name: string
           notes?: string | null
           updated_at?: string
@@ -422,6 +435,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_primary?: boolean
           name?: string
           notes?: string | null
           updated_at?: string
@@ -479,6 +493,7 @@ export type Database = {
           extra_profession_paid: boolean
           id: string
           monthly_points: number | null
+          paid_professions: string[] | null
           payment_details: Json | null
           payment_method: string | null
           portfolio_url: string | null
@@ -504,6 +519,7 @@ export type Database = {
           extra_profession_paid?: boolean
           id?: string
           monthly_points?: number | null
+          paid_professions?: string[] | null
           payment_details?: Json | null
           payment_method?: string | null
           portfolio_url?: string | null
@@ -529,6 +545,7 @@ export type Database = {
           extra_profession_paid?: boolean
           id?: string
           monthly_points?: number | null
+          paid_professions?: string[] | null
           payment_details?: Json | null
           payment_method?: string | null
           portfolio_url?: string | null
@@ -572,6 +589,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      job_contract_claims: {
+        Row: {
+          claimed_at: string
+          contract_id: string
+          designer_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          claimed_at?: string
+          contract_id: string
+          designer_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          claimed_at?: string
+          contract_id?: string
+          designer_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_contract_claims_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "job_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_contracts: {
         Row: {
@@ -1292,6 +1341,7 @@ export type Database = {
           cta_label?: string | null
           cta_url?: string | null
           description?: string | null
+          expiry_date?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -1342,12 +1392,214 @@ export type Database = {
         }
         Relationships: []
       }
+      site_promos: {
+        Row: {
+          created_at: string | null
+          delay_ms: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          link_url: string | null
+          target_audience: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delay_ms?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          target_audience?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delay_ms?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          target_audience?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      smm_analytics: {
+        Row: {
+          campaign_id: string
+          followers_gained: number | null
+          id: string
+          platform: string
+          recorded_at: string
+          top_post_url: string | null
+          total_engagement: number | null
+          total_impressions: number | null
+          total_posts: number | null
+          total_reach: number | null
+          week_start: string
+        }
+        Insert: {
+          campaign_id: string
+          followers_gained?: number | null
+          id?: string
+          platform: string
+          recorded_at?: string
+          top_post_url?: string | null
+          total_engagement?: number | null
+          total_impressions?: number | null
+          total_posts?: number | null
+          total_reach?: number | null
+          week_start: string
+        }
+        Update: {
+          campaign_id?: string
+          followers_gained?: number | null
+          id?: string
+          platform?: string
+          recorded_at?: string
+          top_post_url?: string | null
+          total_engagement?: number | null
+          total_impressions?: number | null
+          total_posts?: number | null
+          total_reach?: number | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smm_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "smm_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smm_campaign_posts: {
+        Row: {
+          campaign_id: string
+          caption: string | null
+          created_at: string
+          engagement_data: Json | null
+          id: string
+          media_url: string | null
+          notes: string | null
+          platform: string
+          post_type: string
+          posted_at: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          caption?: string | null
+          created_at?: string
+          engagement_data?: Json | null
+          id?: string
+          media_url?: string | null
+          notes?: string | null
+          platform: string
+          post_type?: string
+          posted_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          caption?: string | null
+          created_at?: string
+          engagement_data?: Json | null
+          id?: string
+          media_url?: string | null
+          notes?: string | null
+          platform?: string
+          post_type?: string
+          posted_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smm_campaign_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "smm_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smm_campaigns: {
+        Row: {
+          campaign_name: string
+          client_name: string | null
+          contract_id: string | null
+          created_at: string
+          end_date: string | null
+          goal: string | null
+          id: string
+          notes: string | null
+          platforms: string[]
+          smm_user_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_name: string
+          client_name?: string | null
+          contract_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          goal?: string | null
+          id?: string
+          notes?: string | null
+          platforms?: string[]
+          smm_user_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_name?: string
+          client_name?: string | null
+          contract_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          goal?: string | null
+          id?: string
+          notes?: string | null
+          platforms?: string[]
+          smm_user_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smm_campaigns_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "job_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           client_accepted: boolean | null
           client_accepted_at: string | null
           client_accepted_by: string | null
           client_preference: boolean | null
+          client_project_id: string | null
           client_ref: string | null
           created_at: string
           design_link: string | null
@@ -1374,6 +1626,7 @@ export type Database = {
           client_accepted_at?: string | null
           client_accepted_by?: string | null
           client_preference?: boolean | null
+          client_project_id?: string | null
           client_ref?: string | null
           created_at?: string
           design_link?: string | null
@@ -1400,6 +1653,7 @@ export type Database = {
           client_accepted_at?: string | null
           client_accepted_by?: string | null
           client_preference?: boolean | null
+          client_project_id?: string | null
           client_ref?: string | null
           created_at?: string
           design_link?: string | null
@@ -1422,6 +1676,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "submissions_client_project_id_fkey"
+            columns: ["client_project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "submissions_parent_submission_id_fkey"
             columns: ["parent_submission_id"]

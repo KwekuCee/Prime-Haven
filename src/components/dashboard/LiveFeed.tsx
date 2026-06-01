@@ -109,7 +109,7 @@ const LiveFeed = ({ submissions, activeJobs }: LiveFeedProps) => {
                                     </p>
                                 </div>
                                 {item.type === 'correction' && (
-                                    <Button size="xs" variant="outline" className="mt-2" onClick={() => navigate(correctionLink(item))}>
+                                    <Button size="sm" variant="outline" className="mt-2 h-7 px-2 text-xs" onClick={() => navigate(correctionLink(item))}>
                                         Submit Correction
                                     </Button>
                                 )}
