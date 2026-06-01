@@ -1,0 +1,1 @@
+ALTER TABLE public.promo_popups ADD COLUMN IF NOT EXISTS expiry_date timestamptz;
