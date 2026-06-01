@@ -151,10 +151,34 @@ Politely say it's outside your scope and offer to help with anything Prime Haven
 - When relevant, link to the right page (e.g., /register, /blog, /track, /start-project).`;
 
 
+// Simple in-memory IP rate limiter: 20 requests per IP per hour
+const ipHits = new Map<string, { count: number; resetAt: number }>();
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const RATE_LIMIT = 20;
+
+function rateLimitCheck(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipHits.get(ip);
+  if (!entry || entry.resetAt < now) {
+    ipHits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+    if (!rateLimitCheck(ip)) {
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -212,7 +236,7 @@ serve(async (req) => {
     const body = await req.json();
     const messages = body?.messages;
 
-    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 12) {
       return new Response(JSON.stringify({ error: "invalid_request" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

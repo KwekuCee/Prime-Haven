@@ -64,15 +64,11 @@ serve(async (req: Request): Promise<Response> => {
       }
     });
 
-    // Member breakdown
-    const { data: rolesData } = await supabase
+    // Designer member count only (do not expose admin headcount publicly)
+    const { count: designerCount } = await supabase
       .from("user_roles")
-      .select("role");
-
-    const roleBreakdown: Record<string, number> = {};
-    (rolesData || []).forEach((r: any) => {
-      roleBreakdown[r.role] = (roleBreakdown[r.role] || 0) + 1;
-    });
+      .select("*", { count: "exact", head: true })
+      .eq("role", "designer");
 
     const stats = {
       totalMembers: totalMembers || 0,
@@ -80,7 +76,7 @@ serve(async (req: Request): Promise<Response> => {
       satisfactionRate: Math.max(satisfactionRate, 90),
       totalSubmissions: totalSubmissions || 0,
       categoryBreakdown,
-      roleBreakdown,
+      designerCount: designerCount || 0,
     };
 
     return new Response(JSON.stringify({ success: true, stats }), {

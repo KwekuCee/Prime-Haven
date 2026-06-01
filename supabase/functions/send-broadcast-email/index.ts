@@ -182,9 +182,9 @@ serve(async (req) => {
     <p style="color: #9ca3af; font-size: 11px; margin: 8px 0 0; text-transform: uppercase; letter-spacing: 2px;">Creative Studio Platform</p>
   </div>
   <div style="background: #ffffff; padding: 40px 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-    <p style="margin: 0 0 20px; font-size: 16px; font-weight: 600;">Hello ${recipient.name},</p>
+    <p style="margin: 0 0 20px; font-size: 16px; font-weight: 600;">Hello ${String(recipient.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},</p>
     <div style="line-height: 1.7; font-size: 15px; color: #374151;">
-      ${body.replace(/\n/g, '<br>')}
+      ${String(body).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g, '<br>')}
     </div>
   </div>
   <div style="background: #f3f4f6; text-align: center; padding: 32px 20px; font-size: 12px; color: #6b7280; border: 1px solid #e5e7eb; border-top: none;">
