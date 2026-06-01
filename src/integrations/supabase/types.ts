@@ -1485,47 +1485,65 @@ export type Database = {
         Row: {
           campaign_id: string
           caption: string | null
+          comments: number
           created_at: string
           engagement_data: Json | null
           id: string
+          likes: number
           media_url: string | null
           notes: string | null
           platform: string
+          platform_post_id: string | null
           post_type: string
           posted_at: string | null
+          reach: number
           scheduled_at: string | null
+          shares: number
           status: string
           updated_at: string
+          views: number
         }
         Insert: {
           campaign_id: string
           caption?: string | null
+          comments?: number
           created_at?: string
           engagement_data?: Json | null
           id?: string
+          likes?: number
           media_url?: string | null
           notes?: string | null
           platform: string
+          platform_post_id?: string | null
           post_type?: string
           posted_at?: string | null
+          reach?: number
           scheduled_at?: string | null
+          shares?: number
           status?: string
           updated_at?: string
+          views?: number
         }
         Update: {
           campaign_id?: string
           caption?: string | null
+          comments?: number
           created_at?: string
           engagement_data?: Json | null
           id?: string
+          likes?: number
           media_url?: string | null
           notes?: string | null
           platform?: string
+          platform_post_id?: string | null
           post_type?: string
           posted_at?: string | null
+          reach?: number
           scheduled_at?: string | null
+          shares?: number
           status?: string
           updated_at?: string
+          views?: number
         }
         Relationships: [
           {
@@ -1592,6 +1610,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      smm_platform_connections: {
+        Row: {
+          access_token: string | null
+          account_id: string | null
+          account_name: string | null
+          connected_at: string
+          created_at: string
+          expires_at: string | null
+          followers_count: number | null
+          id: string
+          last_synced_at: string | null
+          platform: string
+          refresh_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_id?: string | null
+          account_name?: string | null
+          connected_at?: string
+          created_at?: string
+          expires_at?: string | null
+          followers_count?: number | null
+          id?: string
+          last_synced_at?: string | null
+          platform: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          account_id?: string | null
+          account_name?: string | null
+          connected_at?: string
+          created_at?: string
+          expires_at?: string | null
+          followers_count?: number | null
+          id?: string
+          last_synced_at?: string | null
+          platform?: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       submissions: {
         Row: {
