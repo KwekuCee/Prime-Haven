@@ -259,7 +259,7 @@ const ManageClients = () => {
                       <TableRow key={client.id}>
                         <TableCell className="font-semibold">
                           <div className="flex items-center gap-2">
-                            {client.is_primary && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-shrink-0" title="Primary Record" />}
+                            {client.is_primary && <span title="Primary Record" className="inline-flex"><Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-shrink-0" /></span>}
                             {client.name}
                           </div>
                         </TableCell>

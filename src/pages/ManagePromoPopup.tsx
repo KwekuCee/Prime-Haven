@@ -97,7 +97,7 @@ const ManagePromoPopup = () => {
       supabase.from("promo_popups").select("*").order("created_at", { ascending: false }),
       supabase.from("promo_email_signups").select("*").order("captured_at", { ascending: false }).limit(500),
     ]);
-    setPromos((pData as Promo[]) || []);
+    setPromos(((pData as unknown) as Promo[]) || []);
     setSignups((sData as Signup[]) || []);
     setLoading(false);
   };
