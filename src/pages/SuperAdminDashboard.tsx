@@ -55,6 +55,7 @@ import ManageTestimonials from '@/components/admin/ManageTestimonials';
 import ManageBlog from '@/components/admin/ManageBlog';
 import { MonthlyReports } from '@/components/admin/MonthlyReports';
 import PerformanceAnalytics from '@/components/admin/PerformanceAnalytics';
+import SuperAdminSMMPanel from '@/components/admin/SuperAdminSMMPanel';
 import ManageClientOrders from '@/components/admin/ManageClientOrders';
 import ManageConsultations from '@/components/admin/ManageConsultations';
 import AdminPayments from '@/components/admin/AdminPayments';
