@@ -242,13 +242,16 @@ serve(async (req) => {
       });
     }
 
-    // Validate each message structure
+    // Validate each message structure - whitelist roles to prevent system-role prompt injection
+    const ALLOWED_ROLES = new Set(['user', 'assistant']);
+    const sanitizedMessages: Array<{ role: string; content: string }> = [];
     for (const msg of messages) {
-      if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string' || msg.content.length > 5000) {
+      if (!msg || !ALLOWED_ROLES.has(msg.role) || typeof msg.content !== 'string' || msg.content.length > 5000) {
         return new Response(JSON.stringify({ error: "invalid_request" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      sanitizedMessages.push({ role: msg.role, content: msg.content });
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -261,7 +264,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: SYSTEM_PROMPT + dynamicContext },
-          ...messages,
+          ...sanitizedMessages,
         ],
         stream: true,
       }),
