@@ -36,6 +36,32 @@ serve(async (req: Request): Promise<Response> => {
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
+    // Cross-table check: reject if reference was already consumed by another endpoint
+    // (e.g. registration payments, client orders) to prevent double-crediting one
+    // Korapay reference as both a payment and a tip.
+    const { data: existingPayment } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("transaction_id", reference)
+      .maybeSingle();
+
+    if (existingPayment) {
+      return new Response(JSON.stringify({ success: false, error: "reference_already_used" }),
+        { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    const { data: existingOrder } = await supabase
+      .from("client_orders")
+      .select("id")
+      .eq("payment_reference", reference)
+      .maybeSingle();
+
+    if (existingOrder) {
+      return new Response(JSON.stringify({ success: false, error: "reference_already_used" }),
+        { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+
     // Verify with Korapay
     const kr = await fetch(
       `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(reference)}`,
