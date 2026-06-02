@@ -111,7 +111,7 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("Send client email error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "email_send_failed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
