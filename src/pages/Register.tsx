@@ -351,8 +351,24 @@ const Register = () => {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={personalForm.watch('dob')} onSelect={(date) => { personalForm.setValue('dob', date as Date, { shouldValidate: true }); setDobOpen(false); }}
-                            disabled={(date) => date > getMinimumAgeDate() || date < new Date("1900-01-01")} defaultMonth={getMinimumAgeDate()} initialFocus />
+                          <Calendar
+                            mode="single"
+                            selected={personalForm.watch('dob')}
+                            onSelect={(date) => { personalForm.setValue('dob', date as Date, { shouldValidate: true }); setDobOpen(false); }}
+                            disabled={(date) => date > getMinimumAgeDate() || date < new Date("1900-01-01")}
+                            defaultMonth={personalForm.watch('dob') || getMinimumAgeDate()}
+                            captionLayout="dropdown-buttons"
+                            fromYear={1940}
+                            toYear={new Date().getFullYear() - 13}
+                            classNames={{
+                              caption_label: "hidden",
+                              caption_dropdowns: "flex gap-2",
+                              dropdown: "h-8 rounded-md border border-border/60 bg-background px-2 text-sm",
+                              dropdown_month: "h-8 rounded-md border border-border/60 bg-background px-2 text-sm",
+                              dropdown_year: "h-8 rounded-md border border-border/60 bg-background px-2 text-sm",
+                            }}
+                            initialFocus
+                          />
                         </PopoverContent>
                       </Popover>
                       {personalForm.formState.errors.dob && <p className="text-xs text-destructive">{personalForm.formState.errors.dob.message}</p>}
