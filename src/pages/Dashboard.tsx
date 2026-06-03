@@ -28,6 +28,7 @@ import ActivityStreak from '@/components/dashboard/ActivityStreak';
 import LiveFeed from '@/components/dashboard/LiveFeed';
 import ExpectedSalaryModal from '@/components/dashboard/ExpectedSalaryModal';
 import EarningsChart from '@/components/dashboard/EarningsChart';
+import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
