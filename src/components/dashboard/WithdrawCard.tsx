@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 type Method = { id: string; provider: 'mtn' | 'vodafone' | 'airteltigo'; phone_number: string; account_name: string; is_default: boolean };
-type Withdrawal = { id: string; amount: number; currency: string; status: string; created_at: string; failure_reason: string | null };
+type Withdrawal = { id: string; amount: number; currency: string; status: string; created_at: string; failure_reason: string | null; korapay_reference: string | null };
 
 const PROVIDER_LABEL: Record<string, string> = { mtn: 'MTN MoMo', vodafone: 'Vodafone Cash', airteltigo: 'AirtelTigo Money' };
 
