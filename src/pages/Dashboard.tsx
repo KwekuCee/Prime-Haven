@@ -679,6 +679,12 @@ const Dashboard = () => {
           </div>
         )}
 
+        {user && (
+          <div className="mb-6">
+            <WithdrawCard userId={user.id} availableBalance={stats.estSalary} />
+          </div>
+        )}
+
 
         {/* Designer Portfolio */}
         {user && (
