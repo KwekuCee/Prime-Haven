@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Wallet, Plus, Trash2, Loader2, Copy } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 type Method = { id: string; provider: 'mtn' | 'vodafone' | 'airteltigo'; phone_number: string; account_name: string; is_default: boolean };
-type Withdrawal = { id: string; amount: number; currency: string; status: string; created_at: string; failure_reason: string | null };
+type Withdrawal = { id: string; amount: number; currency: string; status: string; created_at: string; failure_reason: string | null; korapay_reference: string | null };
 
 const PROVIDER_LABEL: Record<string, string> = { mtn: 'MTN MoMo', vodafone: 'Vodafone Cash', airteltigo: 'AirtelTigo Money' };
 
@@ -42,7 +43,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   const refresh = async () => {
     const [{ data: m }, { data: w }] = await Promise.all([
       supabase.from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('withdrawals').select('id, amount, currency, status, created_at, failure_reason').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+      supabase.from('withdrawals').select('id, amount, currency, status, created_at, failure_reason, korapay_reference').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
     ]);
     setMethods((m as Method[]) || []);
     setWithdrawals((w as Withdrawal[]) || []);
@@ -150,20 +151,67 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
           )}
         </div>
 
-        {withdrawals.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium">Recent withdrawals</p>
-            {withdrawals.slice(0, 5).map((w) => (
-              <div key={w.id} className="flex items-center justify-between text-xs border border-border/40 rounded-md px-3 py-1.5">
-                <span>GH₵{Number(w.amount).toFixed(2)} • {new Date(w.created_at).toLocaleDateString()}</span>
-                <Badge variant={w.status === 'success' ? 'default' : w.status === 'failed' ? 'destructive' : 'secondary'}>
-                  {w.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Withdrawal history</p>
+          {withdrawals.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No withdrawals yet.</p>
+          ) : (
+            <div className="rounded-md border border-border/50 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="h-9">Date</TableHead>
+                    <TableHead className="h-9">Amount</TableHead>
+                    <TableHead className="h-9">Status</TableHead>
+                    <TableHead className="h-9">Reference</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {withdrawals.map((w) => (
+                    <TableRow key={w.id}>
+                      <TableCell className="py-2 text-xs whitespace-nowrap">
+                        {new Date(w.created_at).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="py-2 text-xs font-medium">
+                        {w.currency === 'GHS' ? 'GH₵' : `${w.currency} `}{Number(w.amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <Badge variant={w.status === 'success' ? 'default' : w.status === 'failed' ? 'destructive' : 'secondary'} className="capitalize">
+                          {w.status}
+                        </Badge>
+                        {w.status === 'failed' && w.failure_reason && (
+                          <p className="text-[10px] text-destructive mt-1 max-w-[200px] truncate" title={w.failure_reason}>
+                            {w.failure_reason}
+                          </p>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-2 text-xs">
+                        {w.korapay_reference ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(w.korapay_reference!);
+                              toast.success('Reference copied');
+                            }}
+                            className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                            title="Click to copy"
+                          >
+                            <span className="truncate max-w-[140px]">{w.korapay_reference}</span>
+                            <Copy className="h-3 w-3 shrink-0" />
+                          </button>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
       </CardContent>
+
 
       {/* Withdraw dialog */}
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
