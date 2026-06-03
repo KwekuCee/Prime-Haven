@@ -1934,6 +1934,39 @@ export type Database = {
           },
         ]
       }
+      user_payout_methods: {
+        Row: {
+          account_name: string
+          created_at: string
+          id: string
+          is_default: boolean
+          phone_number: string
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          phone_number: string
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          phone_number?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2056,6 +2089,56 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          korapay_reference: string | null
+          payout_method_id: string
+          processed_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          korapay_reference?: string | null
+          payout_method_id: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          korapay_reference?: string | null
+          payout_method_id?: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_payout_method_id_fkey"
+            columns: ["payout_method_id"]
+            isOneToOne: false
+            referencedRelation: "user_payout_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

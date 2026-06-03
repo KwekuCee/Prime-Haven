@@ -28,6 +28,7 @@ import ActivityStreak from '@/components/dashboard/ActivityStreak';
 import LiveFeed from '@/components/dashboard/LiveFeed';
 import ExpectedSalaryModal from '@/components/dashboard/ExpectedSalaryModal';
 import EarningsChart from '@/components/dashboard/EarningsChart';
+import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
@@ -676,6 +677,12 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
             <EarningsChart userId={user.id} />
             <GoalTracker userId={user.id} currentPoints={designer?.monthly_points || 0} currentSubmissions={stats.totalSubmissions} />
+          </div>
+        )}
+
+        {user && (
+          <div className="mb-6">
+            <WithdrawCard userId={user.id} availableBalance={stats.estSalary} />
           </div>
         )}
 
