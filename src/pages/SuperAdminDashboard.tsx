@@ -68,6 +68,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import SparklineChart from '@/components/ui/SparklineChart';
 import EmailBroadcast from '@/components/admin/EmailBroadcast';
+import AdsToggleCard from '@/components/admin/AdsToggleCard';
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
