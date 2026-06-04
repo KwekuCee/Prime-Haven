@@ -1808,6 +1808,7 @@ const SuperAdminDashboard = () => {
         <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4">
           {/* ========== OVERVIEW TAB ========== */}
           <TabsContent value="overview" className="mt-0 space-y-6">
+            <AdsToggleCard />
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {[
