@@ -58,13 +58,15 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
 
   useEffect(() => {
     refresh();
-    const channel = supabase
-      .channel(`withdraw-${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${userId}` }, () => refresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'designer_details', filter: `user_id=eq.${userId}` }, () => refresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_payout_methods', filter: `user_id=eq.${userId}` }, () => refresh())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // Poll every 10s to pick up withdrawal status / balance changes without
+    // broadcasting sensitive financial data over Realtime.
+    const interval = setInterval(refresh, 10000);
+    const onFocus = () => refresh();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [userId]);
 
