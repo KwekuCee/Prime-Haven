@@ -42,19 +42,31 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   }, [today]);
 
   const refresh = async () => {
-    const [{ data: m }, { data: w }] = await Promise.all([
+    const [{ data: m }, { data: w }, { data: dd }] = await Promise.all([
       supabase.from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('id, amount, currency, status, created_at, failure_reason, korapay_reference').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
+      supabase.from('designer_details').select('salary_estimated').eq('user_id', userId).maybeSingle(),
     ]);
     setMethods((m as Method[]) || []);
     setWithdrawals((w as Withdrawal[]) || []);
+    if (dd && typeof (dd as any).salary_estimated === 'number') setLiveSalary(Number((dd as any).salary_estimated));
     if (m && m.length && !selectedMethod) {
       const def = (m as Method[]).find((x) => x.is_default) || (m as Method[])[0];
       setSelectedMethod(def.id);
     }
   };
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [userId]);
+  useEffect(() => {
+    refresh();
+    const channel = supabase
+      .channel(`withdraw-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${userId}` }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'designer_details', filter: `user_id=eq.${userId}` }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_payout_methods', filter: `user_id=eq.${userId}` }, () => refresh())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [userId]);
 
   const addMethod = async () => {
     if (!newMethod.phone_number.trim() || !newMethod.account_name.trim()) {
