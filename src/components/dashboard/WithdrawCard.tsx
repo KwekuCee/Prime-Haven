@@ -96,7 +96,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   const submitWithdrawal = async () => {
     const amt = Number(amount);
     if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is GH₵100'); return; }
-    if (amt > availableBalance) { toast.error('Amount exceeds available balance'); return; }
+    if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
     if (!selectedMethod) { toast.error('Select a payment method'); return; }
     setSubmitting(true);
     try {
@@ -134,13 +134,13 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Available balance</p>
-            <p className="text-2xl font-bold">GH₵{availableBalance.toFixed(2)}</p>
+            <p className="text-2xl font-bold">GH₵{effectiveBalance.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
           <Button
             onClick={() => setWithdrawOpen(true)}
             disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 30th' : availableBalance < 100 ? 'Balance below GH₵100' : ''}
+            title={!isWithdrawalDay ? 'Available only on the 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : ''}
           >
             Withdraw
           </Button>
@@ -238,7 +238,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
             <div>
               <Label>Amount (GHS)</Label>
               <Input type="number" min={100} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" />
-              <p className="text-xs text-muted-foreground mt-1">Available: GH₵{availableBalance.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Available: GH₵{effectiveBalance.toFixed(2)}</p>
             </div>
             <div>
               <Label>Payment method</Label>
