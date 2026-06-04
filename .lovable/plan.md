@@ -1,60 +1,64 @@
+## Goal
 
-# Promo Popup Feature
+Add a single switch in the Superadmin dashboard that disables every ad on the platform — Adsterra, Google AdSense, and Ezoic — for both authenticated users and anonymous visitors, taking effect within ~30 seconds without a redeploy.
 
-A configurable promotional popup that appears on the homepage 2-3 seconds after load. Managed entirely from the SuperAdmin dashboard with optional email capture.
+## Good news: most of the plumbing already exists
 
-## What gets built
+- `src/hooks/useAdsEnabled.ts` already reads `system_settings.ads_enabled`, polls every 30s, and exposes `setAdsEnabledSetting(enabled)` for admins.
+- `src/components/ThirdPartyLoader.tsx` only injects the Adsterra + Ezoic scripts when `adsEnabled === true`.
+- `src/components/AdUnit.tsx` returns `null` when ads are off (covers AdSense slots in Blog, Index, Promo).
+- `index.html` no longer has any inline Adsterra script — it's fully client-driven.
 
-### 1. Database
-New table `promo_popups`:
-- `title`, `description`, `image_url` (optional), `cta_label`, `cta_url`
-- `collect_email` (boolean) — toggle email field on/off
-- `is_active` (boolean) — only one active at a time, enforced by partial unique index
-- `background_color`, `accent_color` (optional theming overrides)
-- standard timestamps
+Two things are missing, which this plan fixes.
 
-New table `promo_email_signups`:
-- `popup_id`, `email`, `captured_at`, `ip` (for basic dedupe/abuse)
-- Unique index on `(popup_id, email)`
+## Changes
 
-RLS:
-- Public can `SELECT` only the single active popup
-- Public can `INSERT` into `promo_email_signups` (rate-limited via edge function for abuse protection)
-- Only superadmin/masteradmin can manage `promo_popups` and view signups
+### 1. Make the `ads_enabled` flag readable by visitors
 
-### 2. SuperAdmin Management UI
-New page **`/superadmin/promo`** (linked from `AdminNavigation.tsx` with a Megaphone icon):
-- Form to create / edit a promo (title, description, image upload to `blog-images` bucket, CTA label, CTA URL, toggle email capture, color pickers)
-- Live preview of the popup as it will appear
-- Toggle "Active" — activating one auto-deactivates others
-- Tab showing collected email signups with CSV export
+Today `system_settings` is admin-only, so visitors always see the default (ads ON) regardless of the toggle. Add one row-scoped public read policy so only the `ads_enabled` row is readable by anyone:
 
-### 3. Homepage Popup Component
-New `src/components/PromoPopup.tsx` rendered in `src/pages/Index.tsx`:
-- Fetches the active promo on mount
-- Shows after 2.5s delay using a Dialog (shadcn) with fade/scale animation
-- Displays title, description, image, CTA button, and (if enabled) an email input + Subscribe button
-- Email submit calls a new edge function `submit-promo-email` (validates with Zod, rate-limits by IP, inserts into `promo_email_signups`, sends a confirmation email via existing SMTP function)
-- "Every visit" frequency — no localStorage suppression
+```sql
+CREATE POLICY "Anyone can read ads_enabled flag"
+ON public.system_settings
+FOR SELECT
+TO anon, authenticated
+USING (key = 'ads_enabled');
 
-### 4. Edge Function
-`supabase/functions/submit-promo-email/index.ts`:
-- Zod-validated email
-- IP-based simple rate limit (max 5/hour per IP via in-memory or a small `rate_limits` check)
-- Inserts signup, fires confirmation email through existing SMTP infra
+GRANT SELECT ON public.system_settings TO anon;
+```
 
-## Technical notes
-- Reuses existing `blog-images` public bucket for promo imagery
-- Follows dark theme + `#fe4c18` accent and brand fonts
-- Single source of truth: only one `is_active = true` row enforced via partial unique index `CREATE UNIQUE INDEX ... WHERE is_active`
-- No changes to auth / RBAC — uses existing `has_role` helper for admin policies
-- Mobile responsive (popup shrinks to ~92vw on small screens)
+All other settings stay admin-only.
 
-## Files added/changed
-- migration: `promo_popups`, `promo_email_signups` + RLS
-- `src/pages/ManagePromoPopup.tsx` (new)
-- `src/components/PromoPopup.tsx` (new)
-- `src/components/admin/AdminNavigation.tsx` (add link)
-- `src/pages/Index.tsx` (mount `<PromoPopup />`)
-- `src/App.tsx` (route)
-- `supabase/functions/submit-promo-email/index.ts` (new)
+### 2. Add the toggle UI in the Superadmin dashboard
+
+In `src/pages/SuperAdminDashboard.tsx`, add a small "Ads" card near the existing controls (next to the Adsterra stats area) containing:
+
+- A shadcn `Switch` bound to the current `useAdsEnabled()` value.
+- Label: "Show ads on the platform" with a helper line "Disables Adsterra, AdSense and Ezoic for every visitor."
+- On toggle, call `setAdsEnabledSetting(next)` and show a `sonner` toast confirming the new state.
+- Initial value is fetched via the same hook so it reflects the current DB state on mount.
+
+No new tables, no new edge functions.
+
+## How "off" propagates
+
+```text
+Admin flips Switch
+        |
+        v
+setAdsEnabledSetting(false) -> system_settings.ads_enabled = false
+        |
+        v
+useAdsEnabled() polls every 30s (or notifies admin tab immediately)
+        |
+        +-> ThirdPartyLoader stops injecting Adsterra + Ezoic scripts on new page loads
+        +-> AdUnit returns null -> AdSense ins tags disappear
+        +-> EzoicAd returns null
+```
+
+Already-loaded Adsterra scripts in an open tab keep running until that tab reloads; new visitors and reloads see zero ads. This is acceptable for a manual admin toggle; if you want instant removal in open tabs we can also strip injected scripts on toggle — say the word and I'll add it.
+
+## Out of scope
+
+- No changes to AdSense / Ezoic accounts themselves.
+- No per-page or per-role granularity (single global switch as requested).
