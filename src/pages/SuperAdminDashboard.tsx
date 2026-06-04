@@ -68,6 +68,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import SparklineChart from '@/components/ui/SparklineChart';
 import EmailBroadcast from '@/components/admin/EmailBroadcast';
+import AdsToggleCard from '@/components/admin/AdsToggleCard';
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
@@ -1807,6 +1808,7 @@ const SuperAdminDashboard = () => {
         <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4">
           {/* ========== OVERVIEW TAB ========== */}
           <TabsContent value="overview" className="mt-0 space-y-6">
+            <AdsToggleCard />
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {[
