@@ -116,7 +116,11 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
     }
   };
 
-  const canWithdraw = isWithdrawalDay && availableBalance >= 100;
+  const earned = liveSalary ?? availableBalance;
+  const locked = withdrawals.filter(w => w.status !== 'failed').reduce((s, w) => s + Number(w.amount || 0), 0);
+  // If liveSalary is set we treat it as raw earnings and subtract locked; else fall back to prop (already net).
+  const effectiveBalance = liveSalary !== null ? Math.max(0, earned - locked) : availableBalance;
+  const canWithdraw = isWithdrawalDay && effectiveBalance >= 100;
 
   return (
     <Card>
