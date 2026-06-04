@@ -24,6 +24,7 @@ interface Props {
 export default function WithdrawCard({ userId, availableBalance }: Props) {
   const [methods, setMethods] = useState<Method[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [liveSalary, setLiveSalary] = useState<number | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [methodOpen, setMethodOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -41,19 +42,31 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   }, [today]);
 
   const refresh = async () => {
-    const [{ data: m }, { data: w }] = await Promise.all([
+    const [{ data: m }, { data: w }, { data: dd }] = await Promise.all([
       supabase.from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('id, amount, currency, status, created_at, failure_reason, korapay_reference').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
+      supabase.from('designer_details').select('salary_estimated').eq('user_id', userId).maybeSingle(),
     ]);
     setMethods((m as Method[]) || []);
     setWithdrawals((w as Withdrawal[]) || []);
+    if (dd && typeof (dd as any).salary_estimated === 'number') setLiveSalary(Number((dd as any).salary_estimated));
     if (m && m.length && !selectedMethod) {
       const def = (m as Method[]).find((x) => x.is_default) || (m as Method[])[0];
       setSelectedMethod(def.id);
     }
   };
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [userId]);
+  useEffect(() => {
+    refresh();
+    const channel = supabase
+      .channel(`withdraw-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${userId}` }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'designer_details', filter: `user_id=eq.${userId}` }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_payout_methods', filter: `user_id=eq.${userId}` }, () => refresh())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [userId]);
 
   const addMethod = async () => {
     if (!newMethod.phone_number.trim() || !newMethod.account_name.trim()) {
@@ -83,7 +96,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   const submitWithdrawal = async () => {
     const amt = Number(amount);
     if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is GH₵100'); return; }
-    if (amt > availableBalance) { toast.error('Amount exceeds available balance'); return; }
+    if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
     if (!selectedMethod) { toast.error('Select a payment method'); return; }
     setSubmitting(true);
     try {
@@ -103,7 +116,11 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
     }
   };
 
-  const canWithdraw = isWithdrawalDay && availableBalance >= 100;
+  const earned = liveSalary ?? availableBalance;
+  const locked = withdrawals.filter(w => w.status !== 'failed').reduce((s, w) => s + Number(w.amount || 0), 0);
+  // If liveSalary is set we treat it as raw earnings and subtract locked; else fall back to prop (already net).
+  const effectiveBalance = liveSalary !== null ? Math.max(0, earned - locked) : availableBalance;
+  const canWithdraw = isWithdrawalDay && effectiveBalance >= 100;
 
   return (
     <Card>
@@ -117,13 +134,13 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Available balance</p>
-            <p className="text-2xl font-bold">GH₵{availableBalance.toFixed(2)}</p>
+            <p className="text-2xl font-bold">GH₵{effectiveBalance.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
           <Button
             onClick={() => setWithdrawOpen(true)}
             disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 30th' : availableBalance < 100 ? 'Balance below GH₵100' : ''}
+            title={!isWithdrawalDay ? 'Available only on the 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : ''}
           >
             Withdraw
           </Button>
@@ -221,7 +238,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
             <div>
               <Label>Amount (GHS)</Label>
               <Input type="number" min={100} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" />
-              <p className="text-xs text-muted-foreground mt-1">Available: GH₵{availableBalance.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Available: GH₵{effectiveBalance.toFixed(2)}</p>
             </div>
             <div>
               <Label>Payment method</Label>
