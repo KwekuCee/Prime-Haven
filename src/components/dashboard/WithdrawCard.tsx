@@ -24,6 +24,7 @@ interface Props {
 export default function WithdrawCard({ userId, availableBalance }: Props) {
   const [methods, setMethods] = useState<Method[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [liveSalary, setLiveSalary] = useState<number | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [methodOpen, setMethodOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
