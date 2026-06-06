@@ -10,6 +10,7 @@ import { MagneticEffect } from '@/components/ui/MagneticEffect';
 import DashboardLayout from '@/components/DashboardLayout';
 import ClientActivityStreak from '@/components/dashboard/ClientActivityStreak';
 import ClientLiveFeed from '@/components/dashboard/ClientLiveFeed';
+import ClientPostedJobs from '@/components/client/ClientPostedJobs';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -235,6 +236,9 @@ const ClientDashboard = () => {
                         </motion.div>
                     </div>
                 </div>
+
+                {/* My Posted Jobs (client → marketplace) */}
+                <ClientPostedJobs />
 
                 {/* Accepted Designers Section */}
                 {Object.keys(acceptedDesigners).length > 0 && (

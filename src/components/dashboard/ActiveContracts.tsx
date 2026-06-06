@@ -191,8 +191,8 @@ const ActiveContracts = () => {
                                             size="sm"
                                             variant="outline"
                                             className="h-8 w-8 p-0"
-                                            onClick={() => navigate(`/workspace/${contract.id}`)}
-                                            title="Project Workspace"
+                                            onClick={() => navigate(`/project-chat/${contract.id}`)}
+                                            title="Chat with Client"
                                         >
                                             <MessageSquare className="w-3.5 h-3.5 text-primary" />
                                         </Button>
