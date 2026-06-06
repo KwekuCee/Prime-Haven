@@ -63,6 +63,7 @@ const ClientSupport = lazy(() => import("./pages/ClientSupport"));
 const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const SMMDashboard = lazy(() => import("./pages/SMMDashboard"));
+const ProjectChatPage = lazy(() => import("./pages/ProjectChatPage"));
 
 // Lazy load admin pages for better initial bundle size
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
@@ -154,6 +155,7 @@ const App = () => {
                   <Route path="/marketplace" element={<Marketplace />} />
                   <Route path="/dashboard/smm" element={<SMMDashboard />} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
+                  <Route path="/project-chat/:projectId" element={<ProjectChatPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

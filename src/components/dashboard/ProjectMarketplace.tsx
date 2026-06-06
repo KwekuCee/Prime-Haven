@@ -249,22 +249,11 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                 });
                 if (error) throw error;
             } else if (order.source === 'job_contracts') {
-                // Record the claim in job_contract_claims table
-                const { error: claimError } = await (supabase as any)
-                    .from('job_contract_claims')
-                    .insert({
-                        contract_id: order.id,
-                        designer_id: user.id,
-                        status: 'active',
-                    });
-
-                // Notify admin regardless of insert result (table might not exist yet)
-                if (claimError && !claimError.message?.includes('unique')) {
-                    console.warn('Could not insert claim record:', claimError.message);
-                }
-                if (claimError?.message?.includes('unique')) {
-                    throw new Error('You have already claimed this contract.');
-                }
+                // New RPC enforces: active-work lock + category cap (graphic-design = 2, others = 1)
+                const { error: claimError } = await (supabase as any).rpc('claim_job_contract', {
+                    p_contract_id: order.id,
+                });
+                if (claimError) throw new Error(claimError.message || 'Could not claim contract.');
 
                 // Notify admin
                 await supabase.functions.invoke('notify-designer', {

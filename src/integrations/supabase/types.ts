@@ -2202,6 +2202,10 @@ export type Database = {
         Args: { p_designer_id: string; p_points: number }
         Returns: undefined
       }
+      claim_job_contract: {
+        Args: { p_contract_id: string }
+        Returns: undefined
+      }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
       generate_monthly_report_now: {
         Args: { p_month?: number; p_year?: number }
