@@ -23,6 +23,7 @@ import PromoPopup from '@/components/PromoPopup';
 import AdUnit from '@/components/AdUnit';
 import EzoicAd from '@/components/EzoicAd';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Prefetch all homepage images immediately so they're cached before scrolling
 const prefetchImages = async () => {
@@ -46,6 +47,17 @@ const prefetchImages = async () => {
 const Index = () => {
   useEffect(() => {
     prefetchImages();
+  }, []);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('ph_welcomed')) return;
+    const t = setTimeout(() => {
+      toast('Welcome to Prime Haven 👋', {
+        description: 'Premium design, built in Ghana.',
+      });
+      sessionStorage.setItem('ph_welcomed', '1');
+    }, 800);
+    return () => clearTimeout(t);
   }, []);
 
   return (
