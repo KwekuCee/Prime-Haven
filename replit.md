@@ -1,44 +1,58 @@
-# [Project name]
+# Prime Haven
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Prime Haven is a freelance design & tech marketplace where clients post projects and designers/developers apply for work — Ghana's premier creative hub.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/prime-haven run dev` — run the web app (workflow: "artifacts/prime-haven: web")
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase credentials (set as secrets)
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite + Tailwind v3 + shadcn/ui
+- Auth & Data: Supabase (kept from original Lovable project)
+- Routing: react-router-dom v6
+- Rich text: Tiptap
+- DnD: @dnd-kit
+- i18n: i18next
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/prime-haven/src/` — all frontend source
+- `artifacts/prime-haven/src/integrations/supabase/` — Supabase client + generated types
+- `artifacts/prime-haven/src/pages/` — all page components (60+ pages)
+- `artifacts/prime-haven/src/components/` — shared components (admin/, auth/, client/, dashboard/, ui/)
+- `artifacts/prime-haven/src/hooks/` — custom hooks (useAuth, useNotifications, etc.)
+- `artifacts/prime-haven/src/index.css` — design tokens (dark navy + orange theme)
+- `artifacts/prime-haven/tailwind.config.ts` — Tailwind v3 config
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Supabase kept as-is (auth + 30+ tables + storage + edge functions) — too complex to replace inline
+- Tailwind v3 used (not v4) — original Lovable project used v3, wired via postcss
+- react-router-dom v6 used (not wouter) — original app routing preserved
+- `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` stored as Replit secrets
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Landing page with services, portfolio, testimonials, stats, blog
+- Auth: email/password signup/login, Google OAuth, password reset via Supabase
+- Designer dashboard: earnings, job contracts, submissions, portfolio management
+- Client dashboard: project orders, payments, support tickets
+- Super admin panel: manage users, orders, team, blog, pricing, promos, analytics
+- Affiliate dashboard, SMM dashboard, project chat, marketplace
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep Supabase as the backend — the user chose to keep their existing Supabase project
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Third-party ad scripts (Ezoic, AdSense, Adsterra) return 403 in dev — expected, they need a live domain
+- `vite-plugin-pwa` and `lovable-tagger` are dropped (Replit doesn't need them)
+- Fonts: PP Neue Machina (local OTF in /public/fonts/), Space Grotesk + Switzer (Google Fonts/Fontshare CDN)
 
 ## Pointers
 

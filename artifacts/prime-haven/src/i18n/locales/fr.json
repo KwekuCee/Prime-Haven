@@ -1,0 +1,74 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "services": "Services",
+    "portfolio": "Portfolio",
+    "story": "Notre Histoire",
+    "reviews": "Avis",
+    "about": "À Propos",
+    "blog": "Blog",
+    "contact": "Contact",
+    "login": "Connexion",
+    "join": "Rejoindre Prime Haven"
+  },
+  "hero": {
+    "badge": "Est. 2026 • Innovation Portée par la Jeunesse",
+    "headline1": "Réaliser",
+    "headline2": "Vos Rêves",
+    "headline3": "Numériques",
+    "subheadline": "Des solutions de design et de technologie portées par la jeunesse, transformant les paysages numériques et permettant aux organisations de prospérer.",
+    "cta1": "Contactez-Nous",
+    "cta2": "Voir Nos Projets"
+  },
+  "services": {
+    "tag": "Ce Que Nous Faisons",
+    "title1": "Nos",
+    "title2": "Services",
+    "description": "Des visuels époustouflants aux expériences web de pointe, nous livrons des solutions numériques complètes."
+  },
+  "portfolio": {
+    "tag": "Nos Réalisations",
+    "title1": "Projets",
+    "title2": "Vedettes",
+    "description": "Explorez notre portfolio de solutions numériques innovantes conçues pour des clients du monde entier.",
+    "viewAll": "Voir Tous les Projets"
+  },
+  "contact": {
+    "tag": "Contactez-Nous",
+    "title1": "Restons en",
+    "title2": "Contact",
+    "description": "Vous avez un projet en tête ? Nous serions ravis de vous entendre. Contactez-nous et créons quelque chose d'incroyable ensemble.",
+    "startProject": "Démarrer un Projet",
+    "whatsapp": "Discuter sur WhatsApp",
+    "email": "Nous Écrire",
+    "bookConsultation": "Réserver une Consultation Gratuite"
+  },
+  "faq": {
+    "tag": "FAQ",
+    "title1": "Questions",
+    "title2": "Fréquentes"
+  },
+  "testimonials": {
+    "tag": "Avis Clients",
+    "title1": "Ce Que Disent",
+    "title2": "Nos Clients"
+  },
+  "join": {
+    "tag": "Rejoignez-Nous",
+    "title1": "Devenez un",
+    "title2": "Créateur"
+  },
+  "footer": {
+    "rights": "Tous droits réservés."
+  },
+  "track": {
+    "title": "Suivi de Projet",
+    "milestones": "Étapes",
+    "deliverables": "Livrables",
+    "feedback": "Laisser un Avis",
+    "status": "Statut",
+    "progress": "Progrès",
+    "notFound": "Projet introuvable. Veuillez vérifier votre lien de suivi.",
+    "loading": "Chargement des détails du projet..."
+  }
+}
