@@ -56,7 +56,7 @@ const ClientDashboard = () => {
             const { data, error } = await supabase
                 .from('client_orders')
                 .select('*')
-                .eq('client_email', user?.email)
+                .eq('client_email', user?.email ?? '')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -82,7 +82,7 @@ const ClientDashboard = () => {
             const { data: profileData } = await supabase
                 .from('clients')
                 .select('*')
-                .eq('email', user?.email)
+                .eq('email', user?.email ?? '')
                 .maybeSingle();
 
             if (profileData) setClientProfile(profileData);
@@ -98,7 +98,7 @@ const ClientDashboard = () => {
             const { data: projectsWithDesigner } = await supabase
                 .from('client_projects')
                 .select('id, title, accepted_designer_id, profiles:accepted_designer_id(full_name, bio, instagram_url)')
-                .eq('client_email', user?.email)
+                .eq('client_email', user?.email ?? '')
                 .not('accepted_designer_id', 'is', null)
                 .limit(5);
 

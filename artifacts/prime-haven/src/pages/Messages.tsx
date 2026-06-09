@@ -13,7 +13,7 @@ import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 
 interface Designer { user_id: string; full_name: string; professional_title: string; profile_photo_url: string | null; }
-interface Message { id: string; sender_id: string; receiver_id: string; content: string; read: boolean; created_at: string; }
+interface Message { id: string; sender_id: string; receiver_id: string; content: string; read: boolean | null; created_at: string; }
 interface ConversationMeta { partnerId: string; lastMessage: Message | null; unreadCount: number; }
 
 const Messages = () => {
@@ -29,7 +29,7 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [myTitle, setMyTitle] = useState('');
-  const [myProfile, setMyProfile] = useState<{ full_name: string } | null>(null);
+  const [myProfile, setMyProfile] = useState<{ full_name: string | null } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollToBottom = useCallback(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, []);
@@ -40,7 +40,7 @@ const Messages = () => {
       setLoading(true);
       try {
         // 0. Check if user is a client
-        const { data: clientData } = await supabase.from('clients').select('id, name').eq('email', user.email).maybeSingle();
+        const { data: clientData } = await supabase.from('clients').select('id, name').eq('email', user.email ?? '').maybeSingle();
         const isClientUser = !!clientData;
 
         // 1. Get my own title (for fallback/sorting)
@@ -65,7 +65,7 @@ const Messages = () => {
         if (isClientUser) {
           // 2. Client Mode: Find designers linked to their projects
           // Get designer IDs from submissions belonging to this client's orders
-          const { data: myOrders } = await supabase.from('client_orders').select('id').eq('client_email', user.email);
+          const { data: myOrders } = await supabase.from('client_orders').select('id').eq('client_email', user.email ?? '');
           const orderIds = (myOrders || []).map(o => o.id);
 
           const { data: submissions } = await supabase.from('submissions').select('designer_id').in('client_ref', orderIds);
@@ -101,7 +101,7 @@ const Messages = () => {
 
           // Fetch clients this designer has worked for
           const { data: mySubmissions } = await supabase.from('submissions').select('client_ref').eq('designer_id', user.id);
-          const clientRefs = Array.from(new Set((mySubmissions || []).map(s => s.client_ref)));
+          const clientRefs = Array.from(new Set((mySubmissions || []).map(s => s.client_ref).filter((r): r is string => r !== null)));
 
           let clientList: Designer[] = [];
           if (clientRefs.length > 0) {
@@ -114,7 +114,7 @@ const Messages = () => {
               const authMap = new Map(authUsers?.map(a => [a.email, a.id]) || []);
 
               clientList = (clients || []).map(c => ({
-                user_id: authMap.get(c.email) || '',
+                user_id: authMap.get(c.email ?? '') || '',
                 full_name: c.name || 'Client',
                 professional_title: c.company || 'Business',
                 profile_photo_url: (c as any).profile_photo_url || null

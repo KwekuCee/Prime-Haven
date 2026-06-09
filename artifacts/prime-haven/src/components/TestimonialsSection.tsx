@@ -11,7 +11,7 @@ interface Testimonial {
   service_used: string | null;
   rating: number;
   review_text: string;
-  display_order: number;
+  display_order: number | null;
 }
 
 const StarRating = ({ rating }: { rating: number }) => (

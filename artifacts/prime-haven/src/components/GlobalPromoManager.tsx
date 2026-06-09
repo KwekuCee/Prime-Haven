@@ -10,8 +10,8 @@ interface SitePromo {
     description: string | null;
     image_url: string | null;
     link_url: string | null;
-    delay_ms: number;
-    target_audience: string;
+    delay_ms: number | null;
+    target_audience: string | null;
 }
 
 const GlobalPromoManager = () => {
@@ -41,6 +41,7 @@ const GlobalPromoManager = () => {
 
                 return () => clearTimeout(timer);
             }
+            return undefined;
         };
 
         fetchPromos();

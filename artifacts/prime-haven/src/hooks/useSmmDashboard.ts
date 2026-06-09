@@ -86,9 +86,9 @@ export const useSmmDashboard = () => {
     const [posts, setPosts] = useState<SmmPost[]>([]);
     const [analytics, setAnalytics] = useState<SmmAnalytics[]>([]);
     const [connections, setConnections] = useState<SmmConnection[]>([]);
-    const [profile, setProfile] = useState<{ full_name: string; email_verified: boolean } | null>(null);
+    const [profile, setProfile] = useState<{ full_name: string | null; email_verified: boolean | null } | null>(null);
     const [contracts, setContracts] = useState<{ id: string; title: string; category: string; status: string }[]>([]);
-    const [submissions, setSubmissions] = useState<{ id: string; project_name: string; status: string; created_at: string; points_awarded: number }[]>([]);
+    const [submissions, setSubmissions] = useState<{ id: string; project_name: string; status: string | null; created_at: string; points_awarded: number | null }[]>([]);
     const [loading, setLoading] = useState(true);
     const [realtimeConnected, setRealtimeConnected] = useState(false);
     const [liveEvents, setLiveEvents] = useState<SmmLiveEvent[]>([]);

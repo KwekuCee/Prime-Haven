@@ -20,7 +20,7 @@ interface Testimonial {
   rating: number;
   review_text: string;
   is_visible: boolean;
-  display_order: number;
+  display_order: number | null;
 }
 
 const SERVICE_OPTIONS = ['Graphic Design', 'UI/UX Design', 'Web Development', 'IT Solutions'];
@@ -81,7 +81,7 @@ const ManageTestimonials = () => {
       service_used: t.service_used || '',
       rating: t.rating,
       review_text: t.review_text,
-      display_order: t.display_order,
+      display_order: t.display_order ?? 0,
       is_visible: t.is_visible,
     });
     setDialogOpen(true);

@@ -16,7 +16,7 @@ const LiveFeed = ({ submissions, activeJobs }: LiveFeedProps) => {
         `/submit-work?correction=${submission.submissionId}&project=${encodeURIComponent(submission.project_name)}&client=${encodeURIComponent(submission.client_ref || '')}&service=${encodeURIComponent(submission.service_type || '')}`;
 
     // Merge and sort
-    const feedItems = [];
+    const feedItems: any[] = [];
 
     submissions.forEach(sub => {
         feedItems.push({

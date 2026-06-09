@@ -176,7 +176,7 @@ interface SystemLog {
   ip_address: string;
   user_agent: string;
   profiles?: {
-    full_name: string;
+    full_name: string | null;
   };
 }
 
@@ -193,11 +193,11 @@ interface SystemSettings {
 // Raw DB row types for safer typing of Supabase responses
 interface ProfileRaw {
   id: string;
-  email?: string;
-  full_name?: string;
-  phone?: string;
-  registration_fee_paid?: boolean;
-  is_active?: boolean;
+  email?: string | null;
+  full_name?: string | null;
+  phone?: string | null;
+  registration_fee_paid?: boolean | null;
+  is_active?: boolean | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -217,17 +217,17 @@ interface DesignerDetailsRaw {
 interface SubmissionRaw {
   id: string;
   designer_id: string;
-  project_name?: string;
-  service_type?: string;
-  status?: string;
-  points_awarded?: number;
+  project_name?: string | null;
+  service_type?: string | null;
+  status?: string | null;
+  points_awarded?: number | null;
   created_at?: string;
   updated_at?: string;
-  final_approval_date?: string;
-  client_ref?: string;
-  files_urls?: string[];
-  ph_approved?: boolean;
-  client_accepted?: boolean;
+  final_approval_date?: string | null;
+  client_ref?: string | null;
+  files_urls?: string[] | null;
+  ph_approved?: boolean | null;
+  client_accepted?: boolean | null;
   ph_approved_at?: string | null;
   client_accepted_at?: string | null;
   parent_submission_id?: string | null;
@@ -240,20 +240,20 @@ interface PaymentRaw {
   user_id: string;
   amount?: number;
   type?: string;
-  status?: string;
-  transaction_id?: string;
+  status?: string | null;
+  transaction_id?: string | null;
   created_at?: string;
   metadata?: any;
 }
 
 interface LogRaw {
   id: string;
-  action_type?: string;
-  admin_id?: string;
-  description?: string;
-  timestamp?: string;
+  action_type?: string | null;
+  admin_id?: string | null;
+  description?: string | null;
+  timestamp?: string | null;
   ip_address?: any;
-  user_agent?: string;
+  user_agent?: string | null;
 }
 
 const SuperAdminDashboard = () => {
@@ -362,7 +362,7 @@ const SuperAdminDashboard = () => {
         const webDevIds = new Set(
           (allDesigners as any[] || [])
             .filter((d: DesignerDetailsRaw) => {
-              const cat = normalizeCategory(d.professional_title);
+              const cat = normalizeCategory(d.professional_title ?? null);
               return cat === 'Web Developer';
             })
             .map((d: DesignerDetailsRaw) => d.user_id)
@@ -421,7 +421,7 @@ const SuperAdminDashboard = () => {
             effectiveU = (subPts.uiux / subTotal) * totalMonthlyPts;
           } else {
             // No submissions but has points (gift points?) -> assign to primary category
-            const cat = normalizeCategory(d.professional_title);
+            const cat = normalizeCategory(d.professional_title ?? null);
             if (cat === 'UI/UX Designer') effectiveU = totalMonthlyPts;
             else effectiveG = totalMonthlyPts;
           }
@@ -631,7 +631,7 @@ const SuperAdminDashboard = () => {
           timestamp: l.timestamp || '',
           ip_address: l.ip_address || '',
           user_agent: l.user_agent || '',
-          profiles: actor ? { full_name: actor.full_name } : undefined
+          profiles: actor ? { full_name: actor.full_name ?? null } : undefined
         };
       });
 
@@ -1111,7 +1111,7 @@ const SuperAdminDashboard = () => {
             effectiveU = (subPts.uiux / subTotal) * totalMonthlyPts;
           } else {
             // No submissions but has points (gift points?) -> assign to primary category
-            const cat = normalizeCategory(d.professional_title);
+            const cat = normalizeCategory(d.professional_title ?? null);
             if (cat === 'UI/UX Designer') effectiveU = totalMonthlyPts;
             else effectiveG = totalMonthlyPts;
           }

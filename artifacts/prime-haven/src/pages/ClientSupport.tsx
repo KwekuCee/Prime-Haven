@@ -45,7 +45,7 @@ const ClientSupport = () => {
             const { data, error } = await supabase
                 .from('client_support_tickets')
                 .select('*')
-                .eq('client_email', user?.email)
+                .eq('client_email', user?.email ?? '')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -74,7 +74,7 @@ const ClientSupport = () => {
 
         try {
             const { error } = await supabase.from('client_support_tickets').insert({
-                client_email: user?.email,
+                client_email: user?.email ?? '',
                 subject: newTicket.subject,
                 description: newTicket.description
             });

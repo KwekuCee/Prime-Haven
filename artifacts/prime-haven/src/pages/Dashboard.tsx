@@ -34,44 +34,44 @@ import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
 
 interface ProfileData {
-  full_name: string;
-  email_verified: boolean;
-  registration_fee_paid: boolean;
+  full_name: string | null;
+  email_verified: boolean | null;
+  registration_fee_paid: boolean | null;
 }
 
 interface DesignerData {
-  total_points: number;
-  monthly_points: number;
-  salary_estimated: number;
-  professional_title: string;
-  talent_score: number;
-  talent_score_breakdown: any | null; // using any since Json might need import
-  talent_score_updated_at: string;
-  professions?: string[];
+  total_points: number | null;
+  monthly_points: number | null;
+  salary_estimated: number | null;
+  professional_title: string | null;
+  talent_score: number | null;
+  talent_score_breakdown: any | null;
+  talent_score_updated_at: string | null;
+  professions?: string[] | null;
 }
 
 interface Submission {
   id: string;
   project_name: string;
-  status: string;
-  points_awarded: number;
-  client_preference: boolean;
-  ph_approved: boolean;
-  client_accepted: boolean;
+  status: string | null;
+  points_awarded: number | null;
+  client_preference: boolean | null;
+  ph_approved: boolean | null;
+  client_accepted: boolean | null;
   created_at: string;
-  rejection_reason?: string;
-  parent_submission_id?: string;
-  client_ref?: string;
-  service_type?: string;
+  rejection_reason?: string | null;
+  parent_submission_id?: string | null;
+  client_ref?: string | null;
+  service_type?: string | null;
 }
 
 interface LeaderboardEntry {
-  user_id: string;
-  full_name: string;
-  total_points: number;
-  monthly_points: number;
-  professional_title: string;
-  talent_score: number;
+  user_id: string | null;
+  full_name: string | null;
+  total_points: number | null;
+  monthly_points: number | null;
+  professional_title: string | null;
+  talent_score: number | null;
 }
 
 const normalizeCategory = (title: string | null): string => {
@@ -335,9 +335,9 @@ const Dashboard = () => {
         }
         if (submissionsResult.data) setSubmissions(submissionsResult.data);
 
-        const profilesMap = new Map((profilesResult.data || []).map((p: { id: string; full_name?: string }) => [p.id, p.full_name]));
+        const profilesMap = new Map((profilesResult.data as any[] || []).map((p: { id: string; full_name?: string }) => [p.id, p.full_name]));
         if (designersResult.data && designersResult.data.length > 0) {
-          const processedLeaderboard: LeaderboardEntry[] = designersResult.data.map((entry: { user_id: string; total_points?: number; monthly_points?: number; professional_title?: string; talent_score?: number }) => {
+          const processedLeaderboard: LeaderboardEntry[] = (designersResult.data as any[]).map((entry: { user_id: string; total_points?: number; monthly_points?: number; professional_title?: string; talent_score?: number }) => {
             const profTitle = entry.professional_title ? String(entry.professional_title).trim() : '';
             return {
               user_id: entry.user_id,

@@ -62,9 +62,9 @@ const DesignerProfile = () => {
             const { data: profData } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', id)
+                .eq('id', id!)
                 .single();
-            setProfile(profData);
+            setProfile(profData as any);
 
             // 2. Load Portfolio
             const { data: portData } = await (supabase
@@ -94,10 +94,10 @@ const DesignerProfile = () => {
                 .eq('assigned_designer_id', id);
 
             if (statsData) {
-                const ratings = statsData.filter(d => d.client_rating).map(d => d.client_rating);
-                const avg = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+                const ratings = statsData.filter((d: any) => d.client_rating).map((d: any) => d.client_rating);
+                const avg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
                 setAvgRating(avg);
-                setTotalJobs(statsData.filter(d => d.project_status === 'completed').length);
+                setTotalJobs(statsData.filter((d: any) => d.project_status === 'completed').length);
             }
         } catch (err) {
             console.error('Error loading designer profile:', err);
@@ -125,10 +125,10 @@ const DesignerProfile = () => {
                                     <div className="inline-block relative">
                                         <div className="w-32 h-32 rounded-full border-4 border-background overflow-hidden bg-muted shadow-2xl">
                                             {profile.avatar_url ? (
-                                                <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
+                                                <img src={profile.avatar_url} alt={profile.full_name ?? undefined} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-primary text-4xl font-bold bg-primary/10">
-                                                    {profile.full_name[0]}
+                                                    {(profile.full_name ?? '?')[0]}
                                                 </div>
                                             )}
                                         </div>

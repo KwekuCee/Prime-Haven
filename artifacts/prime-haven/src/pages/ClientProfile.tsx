@@ -35,7 +35,7 @@ const ClientProfile = () => {
                 const { data: client, error } = await supabase
                     .from('clients')
                     .select('*')
-                    .eq('email', user.email)
+                    .eq('email', user.email ?? '')
                     .maybeSingle();
 
                 if (error) throw error;
@@ -76,7 +76,7 @@ const ClientProfile = () => {
             await supabase.from('clients').update({
                 profile_photo_url: publicUrl,
                 updated_at: new Date().toISOString()
-            } as any).eq('email', user.email);
+            } as any).eq('email', user.email ?? '');
             toast({ title: "Photo uploaded!" });
         } catch (error: any) {
             toast({ title: "Upload failed", description: error.message, variant: "destructive" });
@@ -98,7 +98,7 @@ const ClientProfile = () => {
                     notes: formData.notes,
                     updated_at: new Date().toISOString()
                 })
-                .eq('email', user.email);
+                .eq('email', user.email ?? '');
 
             if (error) throw error;
 

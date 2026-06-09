@@ -357,7 +357,7 @@ const Register = () => {
                             onSelect={(date) => { personalForm.setValue('dob', date as Date, { shouldValidate: true }); setDobOpen(false); }}
                             disabled={(date) => date > getMinimumAgeDate() || date < new Date("1900-01-01")}
                             defaultMonth={personalForm.watch('dob') || getMinimumAgeDate()}
-                            captionLayout="dropdown-buttons"
+                            captionLayout="dropdown"
                             fromYear={1940}
                             toYear={new Date().getFullYear() - 13}
                             classNames={{

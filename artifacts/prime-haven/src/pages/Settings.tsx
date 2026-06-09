@@ -47,10 +47,10 @@ const Settings = () => {
   const handleExportData = async () => {
     try {
       const [profileData, designerData, submissionsData, paymentsData] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user?.id).maybeSingle(),
-        supabase.from('designer_details').select('*').eq('user_id', user?.id).maybeSingle(),
-        supabase.from('submissions').select('*').eq('designer_id', user?.id),
-        supabase.from('payments').select('*').eq('user_id', user?.id),
+        supabase.from('profiles').select('*').eq('id', user?.id ?? '').maybeSingle(),
+        supabase.from('designer_details').select('*').eq('user_id', user?.id ?? '').maybeSingle(),
+        supabase.from('submissions').select('*').eq('designer_id', user?.id ?? ''),
+        supabase.from('payments').select('*').eq('user_id', user?.id ?? ''),
       ]);
       const exportData = { profile: profileData.data, designer_details: designerData.data, submissions: submissionsData.data, payments: paymentsData.data, exported_at: new Date().toISOString() };
       const dataStr = JSON.stringify(exportData, null, 2);

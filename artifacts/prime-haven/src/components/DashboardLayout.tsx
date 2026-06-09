@@ -36,8 +36,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const loadProfile = async () => {
       if (!user) return;
 
-      const { data: clientOrder } = await supabase.from('client_orders').select('id').eq('client_email', user.email).limit(1).maybeSingle();
-      const { data: clientRecord } = await supabase.from('clients').select('id').eq('email', user.email).limit(1).maybeSingle();
+      const { data: clientOrder } = await supabase.from('client_orders').select('id').eq('client_email', user.email ?? '').limit(1).maybeSingle();
+      const { data: clientRecord } = await supabase.from('clients').select('id').eq('email', user.email ?? '').limit(1).maybeSingle();
       if (clientOrder || clientRecord) {
         setIsClient(true);
       }

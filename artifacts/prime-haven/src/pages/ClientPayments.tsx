@@ -44,7 +44,7 @@ const ClientPayments = () => {
             const { data, error } = await supabase
                 .from('client_orders')
                 .select('*')
-                .eq('client_email', user?.email)
+                .eq('client_email', user?.email ?? '')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

@@ -101,7 +101,7 @@ const FinanceDashboard = () => {
 
             const mappedDesigners = (designerDetailsData || []).map(detail => {
                 const profile = (profilesMap.get(detail.user_id) || {}) as any;
-                const activeSalary = detail.salary_estimated > 0 ? Number(detail.salary_estimated) : (detail.monthly_points || 0) * 10;
+                const activeSalary = (detail.salary_estimated ?? 0) > 0 ? Number(detail.salary_estimated) : (detail.monthly_points || 0) * 10;
                 pendingPayouts += activeSalary;
                 return {
                     ...detail,
@@ -109,7 +109,7 @@ const FinanceDashboard = () => {
                     email: profile.email || '',
                     activeSalary
                 };
-            }).filter(d => d.activeSalary > 0 || d.total_points > 0);
+            }).filter(d => d.activeSalary > 0 || (d.total_points ?? 0) > 0);
 
             // Profit Calculation = Total Revenue - Pending Payouts
             const platformProfit = totalCombinedRevenue - pendingPayouts;
@@ -151,7 +151,7 @@ const FinanceDashboard = () => {
 
             // Build Ledger
             const ledger: any[] = [];
-            (ordersData || []).forEach(order => {
+            (ordersData || []).forEach((order: any) => {
                 ledger.push({
                     id: order.id.substring(0, 8).toUpperCase(),
                     type: 'incoming',
@@ -164,7 +164,7 @@ const FinanceDashboard = () => {
                 });
             });
 
-            (paymentsData || []).forEach(payment => {
+            (paymentsData || []).forEach((payment: any) => {
                 ledger.push({
                     id: payment.id.substring(0, 8).toUpperCase(),
                     type: 'outgoing',

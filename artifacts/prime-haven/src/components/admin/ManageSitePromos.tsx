@@ -23,9 +23,9 @@ interface SitePromo {
     description: string | null;
     image_url: string | null;
     link_url: string | null;
-    delay_ms: number;
-    is_active: boolean;
-    target_audience: string;
+    delay_ms: number | null;
+    is_active: boolean | null;
+    target_audience: string | null;
     created_at: string;
 }
 
@@ -61,7 +61,7 @@ const ManageSitePromos = () => {
         if (error) {
             toast.error('Failed to fetch promos');
         } else {
-            setPromos(data || []);
+            setPromos((data || []) as any);
         }
         setLoading(false);
     };
@@ -142,8 +142,8 @@ const ManageSitePromos = () => {
             description: promo.description || '',
             image_url: promo.image_url || '',
             link_url: promo.link_url || '',
-            delay_ms: promo.delay_ms.toString(),
-            target_audience: promo.target_audience
+            delay_ms: (promo.delay_ms ?? 0).toString(),
+            target_audience: promo.target_audience ?? ''
         });
         setIsAddDialogOpen(true);
     };
@@ -213,7 +213,7 @@ const ManageSitePromos = () => {
                                 <TableCell>
                                     <div className="flex items-center gap-1.5 text-xs">
                                         <Timer className="w-3.5 h-3.5 text-muted-foreground" />
-                                        {(promo.delay_ms / 1000).toFixed(1)}s Delay
+                                        {((promo.delay_ms ?? 0) / 1000).toFixed(1)}s Delay
                                     </div>
                                 </TableCell>
                                 <TableCell>
@@ -232,7 +232,7 @@ const ManageSitePromos = () => {
                                             variant="ghost"
                                             size="sm"
                                             className="h-8 w-8 p-0"
-                                            onClick={() => handleToggleActive(promo.id, promo.is_active)}
+                                            onClick={() => handleToggleActive(promo.id, promo.is_active ?? false)}
                                         >
                                             {promo.is_active ? <PowerOff className="w-4 h-4 text-amber-500" /> : <Power className="w-4 h-4 text-emerald-500" />}
                                         </Button>

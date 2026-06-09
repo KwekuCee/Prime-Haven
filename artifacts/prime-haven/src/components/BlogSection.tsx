@@ -17,7 +17,7 @@ interface BlogPost {
   excerpt: string;
   cover_image_url: string | null;
   category: string;
-  published_at: string;
+  published_at: string | null;
 }
 
 const categoryColors: Record<string, string> = {
@@ -155,7 +155,7 @@ const BlogSection = () => {
                       <div className="w-full sm:w-1/2 flex flex-col justify-center text-center sm:text-left">
                         <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
                           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] tracking-wider">{post.category}</Badge>
-                          <span className="text-xs font-medium text-muted-foreground"><Calendar className="w-3 h-3 inline mr-1" />{format(new Date(post.published_at), 'MMM d, yy')}</span>
+                          <span className="text-xs font-medium text-muted-foreground"><Calendar className="w-3 h-3 inline mr-1" />{post.published_at ? format(new Date(post.published_at), 'MMM d, yy') : ''}</span>
                         </div>
                         <Link to={`/blog/${post.slug}`} className="cursor-pointer group">
                           <h4 className="text-xl sm:text-2xl font-heading font-bold mb-3 group-hover:text-primary transition-colors leading-snug line-clamp-2">{post.title}</h4>

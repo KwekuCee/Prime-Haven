@@ -118,7 +118,7 @@ const ManagePromoPopup = () => {
       background_color: p.background_color || "#0a0a0a",
       accent_color: p.accent_color || "#fe4c18",
       is_active: p.is_active,
-      expiry_date: getLocalDatetime(p.expiry_date),
+      expiry_date: getLocalDatetime(p.expiry_date ?? null),
     });
   };
 
@@ -393,7 +393,7 @@ const ManagePromoPopup = () => {
                             <p className="text-xs text-muted-foreground mt-1">{p.expiry_date ? new Date(p.expiry_date).toLocaleString() : "No deadline"}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-semibold">{formatTimeLeft(p.expiry_date)}</p>
+                            <p className="text-sm font-semibold">{formatTimeLeft(p.expiry_date ?? null)}</p>
                             <p className="text-xs text-muted-foreground">{p.collect_email ? "Captures email" : "No email capture"}</p>
                           </div>
                         </div>
@@ -434,7 +434,7 @@ const ManagePromoPopup = () => {
                           </TableCell>
                           <TableCell>{p.collect_email ? "Yes" : "No"}</TableCell>
                           <TableCell>{p.expiry_date ? new Date(p.expiry_date).toLocaleString() : "No deadline"}</TableCell>
-                          <TableCell>{formatTimeLeft(p.expiry_date)}</TableCell>
+                          <TableCell>{formatTimeLeft(p.expiry_date ?? null)}</TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button size="sm" variant="outline" onClick={() => editPromo(p)}>Edit</Button>
                             <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(p.id)}>

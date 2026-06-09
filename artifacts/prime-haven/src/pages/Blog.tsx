@@ -21,7 +21,7 @@ interface BlogPost {
   excerpt: string;
   cover_image_url: string | null;
   category: string;
-  published_at: string;
+  published_at: string | null;
 }
 
 const categories = ['all', 'news', 'opportunities', 'updates', 'general'];
@@ -167,7 +167,7 @@ const Blog = () => {
                           </Badge>
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {format(new Date(post.published_at), 'MMM d, yyyy')}
+                            {post.published_at ? format(new Date(post.published_at), 'MMM d, yyyy') : ''}
                           </span>
                         </div>
                         <h3 className="text-xl font-bold group-hover:text-primary transition-colors line-clamp-2">

@@ -45,7 +45,7 @@ const ClientProjectsReview = () => {
             const { data: ordersData } = await supabase
                 .from('client_orders')
                 .select('id, service_type')
-                .eq('client_email', user?.email);
+                .eq('client_email', user?.email ?? '');
 
             const orderIds = (ordersData || []).map(o => o.id);
             const serviceTypes = (ordersData || []).map(o => o.service_type?.toLowerCase());
@@ -67,7 +67,7 @@ const ClientProjectsReview = () => {
 
             // Filter to ensuring client ownership
             let clientSubs = (subData || []).filter(sub =>
-                orderIds.includes(sub.client_ref) ||
+                orderIds.includes(sub.client_ref ?? '') ||
                 (sub.project_name && serviceTypes.includes(sub.project_name.toLowerCase()))
             );
 
@@ -166,7 +166,7 @@ const ClientProjectsReview = () => {
             // Insert the revision request
             const { error: revError } = await supabase.from('project_revisions').insert({
                 submission_id: selectedId,
-                client_email: user?.email,
+                client_email: user?.email ?? '',
                 feedback: revisionFeedback
             });
 

@@ -1,0 +1,2 @@
+- [Supabase null typing pattern](supabase-null-typing.md) — all Supabase DB fields should use `| null` (not `| undefined`) in local interfaces; user.email/id always needs `?? ''` guard at .eq() call sites.
+- [react-day-picker v9 breaks](react-day-picker-v9.md) — IconLeft/IconRight removed; use Chevron with orientation prop. captionLayout="dropdown-buttons" invalid; use "dropdown".

@@ -170,7 +170,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     max_assignees: p.max_assignees,
                     current_claims: p.project_assignments?.length || 0
                 }))
-                .filter(p => (p.current_claims || 0) < (p.max_assignees || 1));
+                .filter((p: any) => (p.current_claims || 0) < (p.max_assignees || 1));
 
             const orderMarket: OpenOrder[] = (orders || [])
                 .filter((o: any) => {

@@ -83,7 +83,7 @@ const StartProject = () => {
   useEffect(() => {
     const checkReturning = async () => {
       if (user?.email) {
-        const { data: client } = await supabase.from('clients').select('*').eq('email', user.email).maybeSingle();
+        const { data: client } = await supabase.from('clients').select('*').eq('email', user.email ?? '').maybeSingle();
         if (client) {
           setIsReturningClient(true);
           setForm(prev => ({

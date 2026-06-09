@@ -9,9 +9,9 @@ interface ApprovedWork {
   id: string;
   project_name: string;
   service_type: string;
-  points_awarded: number;
+  points_awarded: number | null;
   created_at: string;
-  files_urls: string[];
+  files_urls: string[] | null;
   client_ref: string | null;
 }
 
