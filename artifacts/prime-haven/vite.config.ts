@@ -8,12 +8,6 @@ const port = process.env.PORT ? Number(process.env.PORT) : 5173;
 const basePath = process.env.BASE_PATH || "/";
 const isReplit = typeof process.env.REPL_ID === "string";
 
-// On Replit: output to artifacts/prime-haven/dist (matches artifact.toml publicDir)
-// On Lovable/CI: output to workspace root dist/ so dist-check finds index.html
-const outDir = isReplit
-  ? path.resolve(import.meta.dirname, "dist")
-  : path.resolve(import.meta.dirname, "../../dist");
-
 export default defineConfig({
   base: basePath,
   plugins: [
@@ -57,7 +51,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir,
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
   server: {
