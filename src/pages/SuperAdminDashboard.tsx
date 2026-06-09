@@ -2010,6 +2010,11 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
 
+          {/* ========== SMM TAB ========== */}
+          <TabsContent value="smm" className="mt-0 space-y-4">
+            <SuperAdminSMMPanel />
+          </TabsContent>
+
           {/* ========== USERS TAB ========== */}
           <TabsContent value="users" className="mt-0 space-y-4">
             <div className="rounded-xl glass-card">
