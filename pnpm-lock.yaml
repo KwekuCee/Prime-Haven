@@ -450,6 +450,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.0)
+      '@esbuild/win32-x64':
+        specifier: ^0.28.0
+        version: 0.28.0
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.75.0(react@19.1.0))
@@ -543,6 +546,9 @@ importers:
       '@replit/vite-plugin-runtime-error-modal':
         specifier: 'catalog:'
         version: 0.0.6
+      '@rollup/rollup-win32-x64-msvc':
+        specifier: ^4.61.1
+        version: 4.61.1
       '@tailwindcss/typography':
         specifier: ^0.5.15
         version: 0.5.20(tailwindcss@3.4.19(tsx@4.21.0)(yaml@2.8.4))
@@ -829,6 +835,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [linux]
+
+  '@esbuild/win32-x64@0.28.0':
+    resolution: {integrity: sha512-pEl1bO9mfAmIC+tW5btTmrKaujg3zGtUmWNdCw/xs70FBjwAL3o9OEKNHvNmnyylD6ubxUERiEhdsL0xBQ9efw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [win32]
 
   '@floating-ui/core@1.7.5':
     resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
@@ -1595,6 +1607,11 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [glibc]
+
+  '@rollup/rollup-win32-x64-msvc@4.61.1':
+    resolution: {integrity: sha512-X+zaP2x+j4RXGfbp/seSoRHWnPxzApilDszisZxbYH5C/jTxFhCtDNdPGZb9lJyYPs24wGxruPF7Y+sIXt9Gzw==}
+    cpu: [x64]
+    os: [win32]
 
   '@scalar/helpers@0.5.2':
     resolution: {integrity: sha512-Pi1GAl8jO6ungmGj2sjDfCfqiBNrKW6HXDZmminV94ybGU/KtRLOqHwd0n9FIhY3j0RYGpGC0VCuniCICfQPHg==}
@@ -4111,6 +4128,8 @@ snapshots:
   '@esbuild/linux-x64@0.27.3':
     optional: true
 
+  '@esbuild/win32-x64@0.28.0': {}
+
   '@floating-ui/core@1.7.5':
     dependencies:
       '@floating-ui/utils': 0.2.11
@@ -4997,6 +5016,8 @@ snapshots:
 
   '@rollup/rollup-linux-x64-gnu@4.60.3':
     optional: true
+
+  '@rollup/rollup-win32-x64-msvc@4.61.1': {}
 
   '@scalar/helpers@0.5.2': {}
 
