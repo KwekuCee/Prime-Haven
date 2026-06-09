@@ -19,7 +19,7 @@ run = "pnpm --filter @workspace/prime-haven run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/prime-haven", "run", "build" ]
-publicDir = "artifacts/prime-haven/dist/public"
+publicDir = "artifacts/prime-haven/dist"
 serve = "static"
 
 [[services.production.rewrites]]
