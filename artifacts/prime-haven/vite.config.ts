@@ -8,6 +8,14 @@ const port = process.env.PORT ? Number(process.env.PORT) : 5173;
 const basePath = process.env.BASE_PATH || "/";
 const isReplit = typeof process.env.REPL_ID === "string";
 
+// process.cwd() is reliably set to artifacts/prime-haven by both:
+//   - pnpm (runs scripts from the package directory)
+//   - bun --cwd ./artifacts/prime-haven
+// Two levels up reaches the workspace root, which is where both
+// Replit's artifact.toml publicDir and Lovable's dist-check expect output.
+const projectDir = process.cwd();
+const workspaceRoot = path.resolve(projectDir, "../..");
+
 export default defineConfig({
   base: basePath,
   plugins: [
@@ -20,9 +28,7 @@ export default defineConfig({
           ...(process.env.NODE_ENV !== "production"
             ? [
                 await import("@replit/vite-plugin-cartographer").then((m) =>
-                  m.cartographer({
-                    root: path.resolve(import.meta.dirname, ".."),
-                  })
+                  m.cartographer({ root: workspaceRoot })
                 ),
                 await import("@replit/vite-plugin-dev-banner").then((m) =>
                   m.devBanner()
@@ -39,19 +45,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src"),
-      "@assets": path.resolve(
-        import.meta.dirname,
-        "..",
-        "..",
-        "attached_assets"
-      ),
+      "@": path.join(projectDir, "src"),
+      "@assets": path.join(workspaceRoot, "attached_assets"),
     },
     dedupe: ["react", "react-dom"],
   },
-  root: path.resolve(import.meta.dirname),
+  root: projectDir,
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    outDir: path.join(workspaceRoot, "dist"),
     emptyOutDir: true,
   },
   server: {
