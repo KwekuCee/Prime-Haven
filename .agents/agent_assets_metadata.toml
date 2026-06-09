@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "xCg51Lbr0rpeGz8b-GHL8"
+uri = "file://artifacts/prime-haven-video/public/images/hero-bg.png"
+type = "image"
+title = "Abstract hero background"
+
+[[generated]]
+id = "F-Bj-DymXsxC-dmWNUmfl"
+uri = "file://artifacts/prime-haven-video/public/images/services-bg.png"
+type = "image"
+title = "Services background"
+
+[[generated]]
+id = "L4oGt9vYIuwqhSmYNJe-F"
+uri = "file://artifacts/prime-haven-video/public/images/stats-bg.png"
+type = "image"
+title = "Stats background"

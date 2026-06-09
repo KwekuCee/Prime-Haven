@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/prime-haven-video/"
+title = "Prime Haven Promo Video"
+version = "1.0.0"
+id = "artifacts/prime-haven-video"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/prime-haven-video/" ]
+localPort = 5000
+
+[services.development]
+run = "pnpm --filter @workspace/prime-haven-video run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/prime-haven-video", "run", "build" ]
+publicDir = "artifacts/prime-haven-video/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "5000"
+BASE_PATH = "/prime-haven-video/"

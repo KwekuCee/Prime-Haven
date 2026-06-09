@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #ff6b35;
+  --color-bg-dark: #0a0f1e;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-bg-dark: var(--color-bg-dark);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-dark);
+  color: #ffffff;
+}
