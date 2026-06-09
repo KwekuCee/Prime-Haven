@@ -32,6 +32,8 @@ const FinanceDashboard = () => {
     const [clientDebts, setClientDebts] = useState<any[]>([]);
     const [systemClients, setSystemClients] = useState<any[]>([]);
     const [acceptedProjects, setAcceptedProjects] = useState<any[]>([]);
+    const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
+    const [approvingWithdrawal, setApprovingWithdrawal] = useState<string | null>(null);
 
     // Modals & Inputs
     const [filter, setFilter] = useState('all');
@@ -119,6 +121,33 @@ const FinanceDashboard = () => {
                 pendingPayouts: pendingPayouts
             });
             setDesigners(mappedDesigners);
+
+            const { data: pendingWithdrawalsData, error: pendingWithdrawalsError } = await supabase
+                .from('withdrawals')
+                .select('id, user_id, amount, currency, status, created_at, payout_method_id')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (pendingWithdrawalsError) throw pendingWithdrawalsError;
+
+            const userIds = [...new Set((pendingWithdrawalsData || []).map((w: any) => w.user_id))];
+            const payoutMethodIds = [...new Set((pendingWithdrawalsData || []).map((w: any) => w.payout_method_id))];
+
+            const { data: payoutMethodsData } = payoutMethodIds.length
+                ? await supabase.from('user_payout_methods').select('id, provider, phone_number, account_name').in('id', payoutMethodIds)
+                : { data: [] as any[] };
+            const { data: withdrawalProfiles } = userIds.length
+                ? await supabase.from('profiles').select('id, full_name').in('id', userIds)
+                : { data: [] as any[] };
+
+            const payoutMap = new Map(((payoutMethodsData || []) as any[]).map((pm: any) => [pm.id, pm]));
+            const profileMap = new Map(((withdrawalProfiles || []) as any[]).map((p: any) => [p.id, p]));
+
+            setPendingWithdrawals((pendingWithdrawalsData || []).map((w: any) => ({
+                ...w,
+                client_name: profileMap.get(w.user_id)?.full_name || 'Unknown Designer',
+                payout_method: payoutMap.get(w.payout_method_id) || null,
+            })));
 
             // Build Ledger
             const ledger: any[] = [];
@@ -224,6 +253,26 @@ const FinanceDashboard = () => {
             await loadFinancialData();
         } catch (error: any) {
             toast({ title: 'Action Failed', description: error.message, variant: 'destructive' });
+        }
+    };
+
+    const approveWithdrawal = async (withdrawalId: string) => {
+        if (!user) return;
+        setApprovingWithdrawal(withdrawalId);
+        try {
+            const { data, error } = await supabase.functions.invoke('approve-withdrawal', {
+                body: { withdrawal_id: withdrawalId }
+            });
+            if (error || (data as any)?.error) {
+                const message = (data as any)?.message || error?.message || 'Approval failed';
+                throw new Error(message);
+            }
+            toast({ title: 'Withdrawal Approved', description: 'Korapay payout has been triggered for this request.' });
+            await loadFinancialData();
+        } catch (err: any) {
+            toast({ title: 'Approval Failed', description: err.message, variant: 'destructive' });
+        } finally {
+            setApprovingWithdrawal(null);
         }
     };
 
@@ -384,6 +433,52 @@ const FinanceDashboard = () => {
                                 </TableBody>
                             </Table>
                         </div>
+                    </div>
+                </div>
+
+                {/* Pending Withdrawal Requests */}
+                <div className="rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden mb-8">
+                    <div className="p-4 sm:p-5 border-b border-border/50 bg-card/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div><h2 className="text-base font-bold flex items-center gap-2"><Wallet className="w-4 h-4 text-emerald-500" /> Pending Withdrawal Requests</h2></div>
+                        <div className="text-xs text-muted-foreground">Live requests waiting superadmin approval.</div>
+                    </div>
+                    <div className="p-0 overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-card/40 border-b border-border/30">
+                                    <TableHead>Request</TableHead>
+                                    <TableHead>Designer</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Method</TableHead>
+                                    <TableHead>Requested At</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingWithdrawals.length > 0 ? pendingWithdrawals.map((w: any) => (
+                                    <TableRow key={w.id} className="border-border/30">
+                                        <TableCell className="font-mono text-[10px] text-muted-foreground">{w.id.slice(0, 8).toUpperCase()}</TableCell>
+                                        <TableCell className="font-medium text-sm">{w.client_name}</TableCell>
+                                        <TableCell className="font-bold whitespace-nowrap">GH₵ {Number(w.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                        <TableCell className="text-xs text-muted-foreground">
+                                            {w.payout_method ? `${w.payout_method.provider.toUpperCase()} • ${w.payout_method.phone_number}` : 'Method missing'}
+                                        </TableCell>
+                                        <TableCell className="text-[10px] text-muted-foreground whitespace-nowrap">{format(new Date(w.created_at), 'MMM d, yy HH:mm')}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary" className="uppercase text-[10px] tracking-[.2em]">{w.status}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button size="sm" variant="outline" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id)}>
+                                                {approvingWithdrawal === w.id ? 'Approving...' : 'Approve via Korapay'}
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No pending withdrawals found.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
                 </div>
 

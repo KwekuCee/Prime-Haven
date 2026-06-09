@@ -102,13 +102,17 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
     if (!selectedMethod) { toast.error('Select a payment method'); return; }
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('request-withdrawal', {
-        body: { amount: amt, payout_method_id: selectedMethod },
+      const { error } = await supabase.from('withdrawals').insert({
+        user_id: userId,
+        payout_method_id: selectedMethod,
+        amount: amt,
+        currency: 'GHS',
+        status: 'pending',
       });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.message || (data as any)?.error || error?.message || 'Withdrawal failed');
+      if (error) {
+        toast.error(error.message || 'Withdrawal request failed');
       } else {
-        toast.success('Withdrawal sent. Funds should arrive shortly.');
+        toast.success('Withdrawal requested. Pending approval.');
         setWithdrawOpen(false);
         setAmount('');
         refresh();

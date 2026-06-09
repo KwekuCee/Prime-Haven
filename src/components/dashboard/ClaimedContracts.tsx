@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface Claim {
     id: string;
@@ -29,35 +30,57 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const ClaimedContracts = () => {
     const { user } = useAuth();
+    const { toast } = useToast();
     const [claims, setClaims] = useState<Claim[]>([]);
     const [loading, setLoading] = useState(true);
+    const [unclaiming, setUnclaiming] = useState<string | null>(null);
+
+    const loadClaims = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const { data, error } = await (supabase as any)
+                .from('job_contract_claims')
+                .select(`
+        id, status, claimed_at,
+        contract:job_contracts(id, title, category, budget, deadline, status)
+      `)
+                .eq('designer_id', user.id)
+                .eq('status', 'active')
+                .order('claimed_at', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+            setClaims(data || []);
+        } catch (err) {
+            console.error('Error loading claimed contracts:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        if (!user) return;
-        const loadClaims = async () => {
-            setLoading(true);
-            try {
-                const { data, error } = await (supabase as any)
-                    .from('job_contract_claims')
-                    .select(`
-            id, status, claimed_at,
-            contract:job_contracts(id, title, category, budget, deadline, status)
-          `)
-                    .eq('designer_id', user.id)
-                    .eq('status', 'active')
-                    .order('claimed_at', { ascending: false })
-                    .limit(10);
-
-                if (error) throw error;
-                setClaims(data || []);
-            } catch (err) {
-                console.error('Error loading claimed contracts:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadClaims();
     }, [user]);
+
+    const handleUnclaim = async (claimId: string) => {
+        if (!user) return;
+        setUnclaiming(claimId);
+        try {
+            const { error } = await supabase
+                .from('job_contract_claims')
+                .delete()
+                .eq('id', claimId)
+                .eq('designer_id', user.id);
+            if (error) throw error;
+            toast({ title: 'Contract Unclaimed', description: 'The project has been returned to the marketplace.' });
+            loadClaims();
+        } catch (err: any) {
+            toast({ title: 'Unclaim Failed', description: err.message, variant: 'destructive' });
+        } finally {
+            setUnclaiming(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -126,6 +149,17 @@ const ClaimedContracts = () => {
                                 <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${badge.className}`}>
                                     {badge.label}
                                 </Badge>
+                                {badge.label !== 'Completed' && badge.label !== 'Cancelled' && (
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="h-7 text-[10px] font-bold px-2.5 opacity-90"
+                                        disabled={unclaiming === claim.id}
+                                        onClick={() => handleUnclaim(claim.id)}
+                                    >
+                                        {unclaiming === claim.id ? 'Unclaiming...' : 'Unclaim'}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     );

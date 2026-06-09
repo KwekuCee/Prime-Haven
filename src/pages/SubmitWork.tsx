@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
+import {
   Upload, FileText, Tag, CheckCircle, XCircle, Loader2, Trash2,
   Image as ImageIcon, Link as LinkIcon, Archive
 } from 'lucide-react';
@@ -69,7 +69,7 @@ const SubmitWork = () => {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [startedProject, setStartedProject] = useState<{ jobId: string; title: string } | null>(null);
   const [parentSubmission, setParentSubmission] = useState<{ ph_approved: boolean } | null>(null);
-  
+
   const correctionId = searchParams.get('correction');
   const correctionProject = searchParams.get('project');
   const correctionClient = searchParams.get('client');
@@ -92,7 +92,7 @@ const SubmitWork = () => {
           if (parsed?.jobId && !correctionId) {
             setFormData(prev => ({ ...prev, selectedJobId: parsed.jobId, projectName: prev.projectName || parsed.title || '' }));
           }
-        } catch {}
+        } catch { }
       }
     }
   }, [user, correctionId]);
@@ -101,31 +101,60 @@ const SubmitWork = () => {
     const loadJobs = async () => {
       if (!user) return;
       try {
-        const { data: designerData } = await supabase
-          .from('designer_details')
-          .select('professional_title')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        const profession = normalizeCategory(designerData?.professional_title || null);
-        const jobCategories = categoryToJobCategory(profession);
+        // 1. Claimed client_projects
+        const { data: cpAssignments } = await supabase
+          .from('project_assignments')
+          .select(`project:client_projects(id, title, category)`)
+          .eq('designer_id', user.id)
+          .neq('status', 'completed');
 
-        // For corrections, load ALL active/in_progress jobs so the correction job always appears
-        let query = supabase.from('job_contracts').select('id, title, client_name, category').in('status', ['active', 'in_progress']).order('created_at', { ascending: false });
-        if (!correctionId) {
-          query = query.in('category', jobCategories);
-        }
+        const availableCP = (cpAssignments || [])
+          .filter((a: any) => a.project)
+          .map((a: any) => ({
+            id: a.project.id,
+            title: a.project.title,
+            client_name: null,
+            category: a.project.category
+          }));
 
-        const { data, error } = await query;
-        if (!error && data) {
-          setAvailableJobs(data as JobOption[]);
-          // Auto-select job for corrections by matching client name
-          if (correctionId && correctionClient) {
-            const decodedClient = decodeURIComponent(correctionClient);
-            const matchingJob = data.find(j => j.client_name === decodedClient);
-            if (matchingJob) {
-              setFormData(prev => ({ ...prev, selectedJobId: matchingJob.id, clientReference: matchingJob.client_name || '' }));
-            }
+        // 2. Claimed job_contracts
+        const { data: jcClaims } = await supabase
+          .from('job_contract_claims')
+          .select(`contract:job_contracts(id, title, category)`)
+          .eq('designer_id', user.id)
+          .eq('status', 'active');
+
+        const availableJC = (jcClaims || [])
+          .filter((c: any) => c.contract)
+          .map((c: any) => ({
+            id: c.contract.id,
+            title: c.contract.title,
+            client_name: null,
+            category: c.contract.category
+          }));
+
+        // 3. Legacy client_orders
+        const { data: legacyOrders } = await supabase.from('client_orders')
+          .select('id, service_type')
+          .eq('assigned_designer_id', user.id)
+          .neq('project_status', 'completed');
+
+        const availableLegacy = (legacyOrders || []).map((o: any) => ({
+          id: o.id,
+          title: `Legacy Order: ${o.service_type}`,
+          client_name: null,
+          category: o.service_type
+        }));
+
+        const data = [...availableCP, ...availableJC, ...availableLegacy];
+        setAvailableJobs(data as JobOption[]);
+
+        // Auto-select job for corrections
+        if (correctionId && correctionClient) {
+          const decodedClient = decodeURIComponent(correctionClient);
+          const matchingJob = data.find(j => j.client_name === decodedClient || j.title.includes(decodedClient));
+          if (matchingJob) {
+            setFormData(prev => ({ ...prev, selectedJobId: matchingJob.id, clientReference: decodedClient }));
           }
         }
       } catch (err) { console.error('Error loading jobs:', err); }
@@ -150,7 +179,7 @@ const SubmitWork = () => {
     if (correctionId) {
       setFormData(prev => ({
         ...prev,
-        projectName: correctionProject ? `${decodeURIComponent(correctionProject)} (CR)` : prev.projectName,
+        projectName: correctionProject ? `${decodeURIComponent(correctionProject)}(CR)` : prev.projectName,
         clientReference: correctionClient ? decodeURIComponent(correctionClient) : prev.clientReference,
         serviceType: correctionService || prev.serviceType,
       }));
@@ -220,8 +249,8 @@ const SubmitWork = () => {
       if (correctionId) submissionData.parent_submission_id = correctionId;
       const { error } = await supabase.from('submissions').insert([submissionData]);
       if (error) throw error;
-      try { await supabase.from('system_logs').insert({ action_type: correctionId ? 'correction_submitted' : 'work_submitted', admin_id: user.id, description: `${correctionId ? 'Correction' : 'New work'}: ${formData.projectName.trim()} (${formData.serviceType})`, timestamp: new Date().toISOString() }); } catch {}
-      try { await supabase.functions.invoke('notify-designer', { body: { designerId: user.id, projectName: formData.projectName.trim(), notificationType: 'new_submission', serviceType: formData.serviceType } }); } catch {}
+      try { await supabase.from('system_logs').insert({ action_type: correctionId ? 'correction_submitted' : 'work_submitted', admin_id: user.id, description: `${correctionId ? 'Correction' : 'New work'}: ${formData.projectName.trim()} (${formData.serviceType})`, timestamp: new Date().toISOString() }); } catch { }
+      try { await supabase.functions.invoke('notify-designer', { body: { designerId: user.id, projectName: formData.projectName.trim(), notificationType: 'new_submission', serviceType: formData.serviceType } }); } catch { }
       toast({ title: "Submission successful!", description: "Your work has been submitted for review." });
       // Clear started project after successful submission
       if (user) localStorage.removeItem(`started_project_${user.id}`);
@@ -282,7 +311,7 @@ const SubmitWork = () => {
                               return <SelectItem value="none" disabled>{startedProject ? 'Started project not found in active list' : 'No active jobs — start one first'}</SelectItem>;
                             }
                             return visibleJobs.map(job => (
-                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name}` : ''}{correctionId ? ' (CR)' : ''}</SelectItem>
+                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name} ` : ''}{correctionId ? ' (CR)' : ''}</SelectItem>
                             ));
                           })()}
                         </SelectContent>
@@ -320,7 +349,7 @@ const SubmitWork = () => {
               )}
 
               {/* File Upload */}
-              <SectionCard icon={Upload} title={`File Upload ${isLinkOnlyService ? '(Optional)' : ''}`} desc="JPG, PNG, PDF, ZIP, RAR — Max 50MB" delay={0.2}>
+              <SectionCard icon={Upload} title={`File Upload ${isLinkOnlyService ? '(Optional)' : ''} `} desc="JPG, PNG, PDF, ZIP, RAR — Max 50MB" delay={0.2}>
                 <DropZoneUpload
                   files={uploadedFiles as any}
                   onFilesChange={(files) => setUploadedFiles(files as any)}

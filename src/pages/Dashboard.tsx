@@ -32,7 +32,6 @@ import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
-import ClaimedContracts from '@/components/dashboard/ClaimedContracts';
 
 interface ProfileData {
   full_name: string;
@@ -100,7 +99,7 @@ const Dashboard = () => {
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
-  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string; category: string; source: 'client_projects' | 'job_contracts' }[]>([]);
+  const [activeJobs, setActiveJobs] = useState<{ id: string; title: string; category: string; source: 'client_projects' | 'job_contracts' | 'client_orders' }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [hasStartedProject, setHasStartedProject] = useState(false);
   const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
@@ -141,68 +140,66 @@ const Dashboard = () => {
     const loadJobs = async () => {
       setLoadingJobs(true);
 
-      // 1. Fetch client_projects via secure RPC (excludes client PII)
-      const { data: cpRaw, error: cpError } = await (supabase as any).rpc('get_pending_client_projects');
+      // 1. Fetch from project_assignments matching user
+      const { data: cpAssignments, error: cpError } = await supabase
+        .from('project_assignments')
+        .select(`
+          project_id,
+          project:client_projects(id, title, category, created_at)
+        `)
+        .eq('designer_id', user.id)
+        .neq('status', 'completed');
 
-      if (cpError) {
-        console.error('Error fetching client projects:', cpError);
-        if (isMounted) toast({ title: 'Error', description: 'Failed to fetch some active jobs.', variant: 'destructive' });
-      }
+      if (cpError) console.error('Error fetching project_assignments:', cpError);
 
-      const cpFiltered = (cpRaw || []).filter((proj: any) => {
-        const reqProfs: string[] = proj.required_professions || [];
-        return reqProfs.length === 0 || reqProfs.some((rp: string) => userProfessions.includes(rp));
-      });
+      const availableCP = (cpAssignments || [])
+        .filter((a: any) => a.project)
+        .map((a: any) => ({
+          id: a.project.id,
+          title: a.project.title,
+          category: a.project.category,
+          source: 'client_projects' as const,
+          created_at: a.project.created_at
+        }));
 
-      // Get assignment counts
-      const cpIds = cpFiltered.map((p: any) => p.id);
-      const { data: assignCounts } = cpIds.length
-        ? await supabase.from('project_assignments').select('project_id').in('project_id', cpIds)
-        : { data: [] as any[] };
-      const countByProject: Record<string, number> = {};
-      (assignCounts || []).forEach((a: any) => { countByProject[a.project_id] = (countByProject[a.project_id] || 0) + 1; });
+      // 2. Fetch from job_contract_claims matching user
+      const { data: jcClaims, error: jcError } = await supabase
+        .from('job_contract_claims')
+        .select(`
+          contract_id,
+          contract:job_contracts(id, title, category, created_at)
+        `)
+        .eq('designer_id', user.id)
+        .eq('status', 'active');
 
-      const availableCP = cpFiltered.filter((proj: any) => {
-        const currentClaims = countByProject[proj.id] || 0;
-        return currentClaims < (proj.max_assignees || 1);
-      }).map((proj: any) => ({
-        id: proj.id,
-        title: proj.title,
-        category: proj.category,
-        source: 'client_projects' as const,
-        created_at: proj.created_at
-      }));
+      if (jcError) console.error('Error fetching job_contract_claims:', jcError);
 
-      // 2. Fetch job_contracts
-      const { data: jcData, error: jcError } = await supabase
-        .from('job_contracts')
-        .select('id, title, category, created_at, target_professions')
-        .in('status', ['active', 'in_progress'])
-        .order('created_at', { ascending: false });
+      const availableJC = (jcClaims || [])
+        .filter((c: any) => c.contract)
+        .map((c: any) => ({
+          id: c.contract.id,
+          title: c.contract.title,
+          category: c.contract.category,
+          source: 'job_contracts' as const,
+          created_at: c.contract.created_at
+        }));
 
-      if (jcError) {
-        console.error('Error fetching job contracts:', jcError);
-      }
+      // 3. Fallback for legacy client_orders
+      const { data: legacyOrders } = await supabase.from('client_orders')
+        .select('id, service_type, created_at')
+        .eq('assigned_designer_id', user.id)
+        .neq('project_status', 'completed');
 
-      const availableJC = (jcData || []).filter((job: any) => {
-        const targetProfs: string[] = job.target_professions || [];
-        if (targetProfs.length > 0) {
-          return targetProfs.some(p => userProfessions.includes(p));
-        }
-
-        // Legacy fallback
-        const jobCategories = userProfessions.flatMap(p => categoryToJobCategories(p));
-        return jobCategories.includes(job.category);
-      }).map((job) => ({
-        id: job.id,
-        title: job.title,
-        category: job.category,
-        source: 'job_contracts' as const,
-        created_at: job.created_at
+      const availableLegacy = (legacyOrders || []).map((o: any) => ({
+        id: o.id,
+        title: `Legacy Order: ${o.service_type}`,
+        category: o.service_type,
+        source: 'client_orders' as const,
+        created_at: o.created_at
       }));
 
       if (isMounted) {
-        const combinedRaw = [...availableCP, ...availableJC].sort((a, b) =>
+        const combinedRaw = [...availableCP, ...availableJC, ...availableLegacy].sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
@@ -260,7 +257,7 @@ const Dashboard = () => {
         });
 
         if (claimError) throw claimError;
-      } else {
+      } else if (selectedJob.source === 'job_contracts') {
         // For job_contracts, notify admin that designer is starting
         const { error: notifyError } = await supabase.functions.invoke('notify-designer', {
           body: {
@@ -272,6 +269,9 @@ const Dashboard = () => {
         if (notifyError) {
           console.error('Failed to notify admin:', notifyError);
         }
+      } else {
+        // Legacy client order already assigned; just start it locally.
+        console.info('Starting legacy assigned order locally', selectedJob.id);
       }
 
       // 2. Store local state
@@ -421,9 +421,9 @@ const Dashboard = () => {
   const getTimeAgo = (dateString: string) => {
     const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
     if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    if (diff < 3600) return `${ Math.floor(diff / 60) }m ago`;
+    if (diff < 86400) return `${ Math.floor(diff / 3600) }h ago`;
+    if (diff < 604800) return `${ Math.floor(diff / 86400) }d ago`;
     return new Date(dateString).toLocaleDateString();
   };
 
@@ -554,18 +554,18 @@ const Dashboard = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
-            { label: 'Total Points', value: stats.totalPoints.toLocaleString(), sub: `+${designer?.monthly_points || 0} this month`, icon: Flame, iconColor: 'text-primary' },
-            { label: 'Rank', value: stats.monthlyRank > 0 ? `#${stats.monthlyRank}` : '—', sub: `of ${stats.totalDesigners} designers`, icon: Trophy, iconColor: 'text-yellow-500' },
+            { label: 'Total Points', value: stats.totalPoints.toLocaleString(), sub: `+ ${ designer?.monthly_points || 0 } this month`, icon: Flame, iconColor: 'text-primary' },
+            { label: 'Rank', value: stats.monthlyRank > 0 ? `#${ stats.monthlyRank } ` : '—', sub: `of ${ stats.totalDesigners } designers`, icon: Trophy, iconColor: 'text-yellow-500' },
             { label: 'Est. Salary', value: showEarnings ? formatCurrency(stats.estSalary) : '••••', sub: showEarnings ? 'Click for breakdown' : 'Hidden', icon: showEarnings ? Wallet : EyeOff, iconColor: 'text-emerald-500', action: 'EST_SALARY' },
-            { label: 'Submissions', value: stats.totalSubmissions.toString(), sub: `${stats.approvedSubmissions} approved`, icon: FileCheck, iconColor: 'text-blue-500' },
+            { label: 'Submissions', value: stats.totalSubmissions.toString(), sub: `${ stats.approvedSubmissions } approved`, icon: FileCheck, iconColor: 'text-blue-500' },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }} className="h-full">
-              <div onClick={() => { if (stat.action === 'EST_SALARY') setShowSalaryModal(true); }} className={`h-full ${stat.action && 'cursor-pointer'}`}>
+              <div onClick={() => { if (stat.action === 'EST_SALARY') setShowSalaryModal(true); }} className={`h - full ${ stat.action && 'cursor-pointer' } `}>
                 <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 sm:p-5 hover:border-primary/20 hover:bg-card/60 transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="relative">
                     <div className="flex items-center justify-between mb-3">
-                      <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                      <stat.icon className={`w - 5 h - 5 ${ stat.iconColor } `} />
                     </div>
                     <p className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">{stat.value}</p>
                     <p className="text-[11px] text-muted-foreground mt-1">{stat.label}</p>
@@ -592,7 +592,7 @@ const Dashboard = () => {
                 <div key={submission.id} className="rounded-2xl border border-border/50 bg-background/80 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{submission.project_name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">{submission.client_ref ? `Client: ${submission.client_ref}` : 'Client not specified'}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{submission.client_ref ? `Client: ${ submission.client_ref } ` : 'Client not specified'}</p>
                     <p className="text-[11px] text-muted-foreground mt-1">
                       Status: <span className="font-semibold">Correction Requested</span>
                     </p>
@@ -629,9 +629,6 @@ const Dashboard = () => {
 
         {/* Active Contracts */}
         <ActiveContracts />
-
-        {/* Claimed Job Contracts */}
-        <ClaimedContracts />
 
         {/* Profession Setup Prompt */}
         {designer && (!designer.professions || designer.professions.length === 0) && (
@@ -704,13 +701,13 @@ const Dashboard = () => {
                 <h2 className="text-sm font-heading font-bold">AI Talent Score</h2>
                 <p className="text-[10px] text-muted-foreground">
                   {designer?.talent_score_updated_at
-                    ? `Updated ${new Date(designer.talent_score_updated_at).toLocaleDateString()}`
+                    ? `Updated ${ new Date(designer.talent_score_updated_at).toLocaleDateString() } `
                     : 'Not yet calculated'}
                 </p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={recalculateTalentScore} disabled={recalculating} className="text-xs h-8">
-              <RefreshCw className={`w-3.5 h-3.5 mr-1 ${recalculating ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w - 3.5 h - 3.5 mr - 1 ${ recalculating ? 'animate-spin' : '' } `} />
               {recalculating ? 'Calculating...' : 'Refresh'}
             </Button>
           </div>
@@ -722,7 +719,7 @@ const Dashboard = () => {
                 <svg className="w-20 h-20 -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
                   <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--primary))" strokeWidth="6"
-                    strokeLinecap="round" strokeDasharray={`${(designer?.talent_score || 0) * 2.64} 264`}
+                    strokeLinecap="round" strokeDasharray={`${ (designer?.talent_score || 0) * 2.64 } 264`}
                     className="transition-all duration-1000"
                   />
                 </svg>
@@ -737,7 +734,7 @@ const Dashboard = () => {
                     <div key={key} className="flex items-center gap-2">
                       <span className="text-[10px] text-muted-foreground capitalize w-20 truncate">{key.replace(/_/g, ' ')}</span>
                       <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, Number(value))}%` }}
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${ Math.min(100, Number(value)) }% ` }}
                           transition={{ duration: 0.8, delay: 0.5 }}
                           className="h-full rounded-full bg-primary"
                         />
@@ -791,12 +788,12 @@ const Dashboard = () => {
                     const isMe = entry.user_id === user?.id;
                     return (
                       <div key={entry.user_id}
-                        className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20'}`}>
+                        className={`flex items - center gap - 2.5 p - 2.5 rounded - xl transition - colors ${ isMe ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20' } `}>
                         <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                           {getRankIcon(idx + 1)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : ''}`}>
+                          <p className={`text - xs font - semibold truncate ${ isMe ? 'text-primary' : '' } `}>
                             {entry.full_name} {isMe && <span className="text-[9px] opacity-60">(You)</span>}
                           </p>
                         </div>
@@ -823,7 +820,7 @@ const Dashboard = () => {
             <div className="space-y-2">
               {[
                 {
-                  label: hasStartedProject ? `In Progress: ${startedProjectInfo?.title}` : 'Start Work', icon: PlayCircle, action: () => {
+                  label: hasStartedProject ? `In Progress: ${ startedProjectInfo?.title } ` : 'Start Work', icon: PlayCircle, action: () => {
                     if (hasStartedProject) {
                       toast({ title: 'Project Already Started', description: `You must submit your work for "${startedProjectInfo?.title}" before starting another.`, variant: 'destructive' });
                       return;
@@ -836,15 +833,16 @@ const Dashboard = () => {
                 { label: 'Edit Profile', icon: Settings, action: () => navigate('/edit-profile') },
               ].map((action) => (
                 <button key={action.label} onClick={action.action}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 group
-                    ${action.primary
-                      ? 'bg-primary/10 border border-primary/20 hover:bg-primary/15 hover:border-primary/30'
-                      : 'hover:bg-muted/30 border border-transparent'
-                    }`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${action.primary ? 'bg-primary/20' : 'bg-muted/50'}`}>
-                    <action.icon className={`w-4 h-4 ${action.primary ? 'text-primary' : 'text-muted-foreground'}`} />
+                  className={`w - full flex items - center gap - 3 p - 3 rounded - xl text - left transition - all duration - 200 group
+                    ${
+      action.primary
+      ? 'bg-primary/10 border border-primary/20 hover:bg-primary/15 hover:border-primary/30'
+      : 'hover:bg-muted/30 border border-transparent'
+    } `}>
+                  <div className={`w - 8 h - 8 rounded - lg flex items - center justify - center flex - shrink - 0 ${ action.primary ? 'bg-primary/20' : 'bg-muted/50' } `}>
+                    <action.icon className={`w - 4 h - 4 ${ action.primary ? 'text-primary' : 'text-muted-foreground' } `} />
                   </div>
-                  <span className={`text-xs font-medium flex-1 ${action.primary ? 'text-primary' : 'text-foreground'}`}>{action.label}</span>
+                  <span className={`text - xs font - medium flex - 1 ${ action.primary ? 'text-primary' : 'text-foreground' } `}>{action.label}</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ))}

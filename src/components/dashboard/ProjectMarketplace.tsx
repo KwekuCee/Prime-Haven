@@ -20,6 +20,7 @@ interface OpenOrder {
     budget?: string;
     description: string;
     created_at: string;
+    deadline?: string;
     required_professions?: string[];
     max_assignees?: number;
     current_claims?: number;
@@ -163,6 +164,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     title: p.title || `Project: ${CATEGORY_LABELS[p.category] || p.category || 'Untitled'}`,
                     description: p.description,
                     created_at: p.created_at,
+                    deadline: p.deadline,
                     budget: p.budget,
                     required_professions: p.required_professions,
                     max_assignees: p.max_assignees,
@@ -185,7 +187,8 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     tier: o.tier || 'Standard',
                     price: o.price,
                     description: o.description,
-                    created_at: o.created_at
+                    created_at: o.created_at,
+                    deadline: o.deadline_at
                 }));
 
             const jobMarket: OpenOrder[] = (contracts || [])
@@ -213,7 +216,8 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     title: c.title || `Contract: ${CATEGORY_LABELS[c.category] || c.category || 'Untitled'}`,
                     budget: c.budget,
                     description: c.description,
-                    created_at: c.created_at
+                    created_at: c.created_at,
+                    deadline: c.deadline
                 }));
 
             const combinedRaw = [...projectMarket, ...orderMarket, ...jobMarket].sort((a, b) =>
@@ -428,7 +432,11 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                 <div className="flex items-center gap-4 text-xs font-medium">
                                     <div className="flex items-center gap-1.5">
                                         <Calendar className="w-3.5 h-3.5 text-primary" />
-                                        <span>Standard Deadline: 2 Days</span>
+                                        <span>Deadline: {selectedOrder.deadline ? format(new Date(selectedOrder.deadline), 'MMM d, yyyy') : 'No strict deadline defined'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                                        <span className="text-emerald-500 font-bold">Reward: {selectedOrder.source === 'client_projects' || selectedOrder.source === 'job_contracts' ? (selectedOrder.budget ? `GH₵ ${selectedOrder.budget}` : '—') : (selectedOrder.price ? `GH₵ ${selectedOrder.price.toLocaleString()}` : '—')}</span>
                                     </div>
                                 </div>
                             </div>
