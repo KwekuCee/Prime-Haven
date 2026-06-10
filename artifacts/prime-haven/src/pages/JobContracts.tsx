@@ -281,7 +281,7 @@ const JobContracts = () => {
 
       if (fnError) {
         console.error('Edge function error:', fnError);
-        toast({ title: 'Partially Posted', description: 'Contract saved but Discord/email notification may have failed.', variant: 'destructive' });
+        toast({ title: 'Contract Saved', description: 'Contract saved. Discord/email notification may have failed — the contract is still listed below.', variant: 'destructive' });
       } else {
         toast({ title: 'Job Posted! 🎉', description: 'Contract posted to Discord and emails sent to relevant designers.' });
       }
@@ -289,12 +289,12 @@ const JobContracts = () => {
       setForm({ title: '', description: '', category: '', deadline: '', budget: '', requirements: '', clientName: '', specialInstructions: '' });
       setReferenceFiles([]);
       setIsCreateOpen(false);
-      await loadContracts();
     } catch (err: any) {
       console.error('Error creating contract:', err);
       toast({ title: 'Error', description: err.message || 'Failed to create contract', variant: 'destructive' });
     } finally {
       setPosting(false);
+      await loadContracts();
     }
   };
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, ExternalLink, AlertCircle, CheckCircle2, MoreVertical, FileText, MessageSquare } from 'lucide-react';
+import { Clock, ExternalLink, AlertCircle, CheckCircle2, FileText, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -45,7 +45,7 @@ const ActiveContracts = () => {
 
     useEffect(() => {
         loadContracts();
-        const timer = setInterval(() => setNow(new Date()), 60000); // Update every minute for countdown
+        const timer = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(timer);
     }, [user]);
 
@@ -53,7 +53,6 @@ const ActiveContracts = () => {
         if (!user) return;
         setLoading(true);
         try {
-            // 1. Fetch from project_assignments (new system)
             const { data: assignments, error: assignmentError } = await (supabase as any)
                 .from('project_assignments')
                 .select(`
@@ -74,7 +73,6 @@ const ActiveContracts = () => {
 
             if (assignmentError) throw assignmentError;
 
-            // 2. Fetch from job_contract_claims (new contract assignment system)
             const { data: contractClaims, error: contractClaimsError } = await (supabase as any)
                 .from('job_contract_claims')
                 .select(`
@@ -95,7 +93,6 @@ const ActiveContracts = () => {
 
             if (contractClaimsError) throw contractClaimsError;
 
-            // 3. Fetch from client_orders (legacy/direct assignment)
             const { data: orders, error: orderError } = await (supabase
                 .from('client_orders') as any)
                 .select('id, service_type, tier, deadline_at, project_status, price')
@@ -104,7 +101,6 @@ const ActiveContracts = () => {
 
             if (orderError) throw orderError;
 
-            // 4. Map into a unified ActiveContract interface
             const unified: ActiveContract[] = [
                 ...(assignments || [])
                     .filter((a: any) => a.client_projects)
@@ -142,14 +138,12 @@ const ActiveContracts = () => {
                 }))
             ];
 
-            // Remove duplicates and Filter by deadline
             const seen = new Set();
             const nowTime = new Date();
             const filtered = unified
                 .filter(item => {
                     const isDuplicate = seen.has(item.id);
                     seen.add(item.id);
-                    // Disappear if deadline is passed (as requested)
                     const isExpired = isAfter(nowTime, new Date(item.deadline_at));
                     return !isDuplicate && !isExpired;
                 });
@@ -174,8 +168,33 @@ const ActiveContracts = () => {
                     .eq('designer_id', user.id);
                 if (error) throw error;
             } else if (source === 'job_contracts') {
-                const { error } = await supabase.rpc('release_job_contract_claim', { p_contract_id: contractId });
-                if (error) throw error;
+                // Update the claim status to 'released'
+                const { error: claimError } = await (supabase as any)
+                    .from('job_contract_claims')
+                    .update({ status: 'released' })
+                    .eq('contract_id', contractId)
+                    .eq('designer_id', user.id);
+                if (claimError) throw claimError;
+
+                // Remove user from active_designer_ids — always use [] not null to respect NOT NULL constraint
+                const { data: contractData } = await (supabase as any)
+                    .from('job_contracts')
+                    .select('active_designer_ids, active_designers_count')
+                    .eq('id', contractId)
+                    .single();
+
+                const currentIds: string[] = contractData?.active_designer_ids || [];
+                const newIds = currentIds.filter((id: string) => id !== user.id);
+                const newCount = Math.max(0, (contractData?.active_designers_count || 1) - 1);
+
+                const { error: contractError } = await (supabase as any)
+                    .from('job_contracts')
+                    .update({
+                        active_designer_ids: newIds,
+                        active_designers_count: newCount,
+                    })
+                    .eq('id', contractId);
+                if (contractError) throw contractError;
             } else {
                 const { error } = await (supabase.from('client_orders') as any)
                     .update({ assigned_designer_id: null, project_status: 'unassigned' })
@@ -192,6 +211,9 @@ const ActiveContracts = () => {
         }
     };
 
+    const handleChatClick = () => {
+        toast({ title: 'Client Messaging Coming Soon', description: 'This feature is currently under development.' });
+    };
 
     const getDeadlineStatus = (deadline: string) => {
         const d = new Date(deadline);
@@ -233,9 +255,6 @@ const ActiveContracts = () => {
                                             {contract.title || CATEGORY_LABELS[contract.service_type] || contract.service_type}
                                         </h3>
                                     </div>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                        <MoreVertical className="w-4 h-4" />
-                                    </Button>
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -272,7 +291,7 @@ const ActiveContracts = () => {
                                             size="sm"
                                             variant="outline"
                                             className="h-8 w-8 p-0"
-                                            onClick={() => navigate(`/project-chat/${contract.id}`)}
+                                            onClick={handleChatClick}
                                             title="Chat with Client"
                                         >
                                             <MessageSquare className="w-3.5 h-3.5 text-primary" />

@@ -377,14 +377,16 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                             <span className="text-[10px] text-muted-foreground uppercase">Reward</span>
                                             <span className="text-xs font-bold text-primary flex items-center gap-1">
                                                 <DollarSign className="w-3 h-3" />
-                                                {order.source === 'client_projects' ? (order.budget || '—') : order.price?.toLocaleString()}
+                                                {order.source === 'client_projects' || order.source === 'job_contracts'
+                                                    ? (order.budget ? `GH₵${order.budget}` : '—')
+                                                    : (order.price ? `GH₵${order.price.toLocaleString()}` : '—')}
                                             </span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] text-muted-foreground uppercase">Posted</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase">Deadline</span>
                                             <span className="text-[10px] font-medium flex items-center gap-1">
-                                                <Clock className="w-3 h-3" />
-                                                {format(new Date(order.created_at), 'MMM d')}
+                                                <Calendar className="w-3 h-3" />
+                                                {order.deadline ? format(new Date(order.deadline), 'MMM d, yyyy') : 'Open'}
                                             </span>
                                         </div>
                                     </div>

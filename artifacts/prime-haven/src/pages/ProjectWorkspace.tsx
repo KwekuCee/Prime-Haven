@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Send, MessageSquare, Paperclip, ChevronLeft, Clock,
     FileText, CheckCircle2, AlertCircle, Download, Upload,
-    MoreVertical, Star, ShieldCheck, User
+    Star, ShieldCheck, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,8 @@ const CATEGORY_LABELS: Record<string, string> = {
     'print-design': 'Print Design',
     'flyer-design': 'Flyer / Poster Design',
     'social-media': 'Social Media Design',
+    'graphic-design': 'Graphic Design',
+    'web-dev': 'Web Development',
 };
 
 const ProjectWorkspace = () => {
@@ -82,24 +84,66 @@ const ProjectWorkspace = () => {
 
     const loadOrderData = async () => {
         try {
-            const { data, error } = await (supabase as any)
+            // Try client_orders first
+            const { data: orderData, error: orderError } = await (supabase as any)
                 .from('client_orders')
                 .select('*')
                 .eq('id', orderId)
-                .single();
+                .maybeSingle();
 
-            if (error) throw error;
-            setOrder(data);
+            if (!orderError && orderData) {
+                setOrder(orderData);
+                await loadMessages(orderId!);
+                return;
+            }
 
-            // Load messages
-            const { data: msgData, error: msgError } = await (supabase as any)
-                .from('project_messages')
+            // Try job_contracts
+            const { data: contractData, error: contractError } = await (supabase as any)
+                .from('job_contracts')
                 .select('*')
-                .eq('order_id', orderId)
-                .order('created_at', { ascending: true });
+                .eq('id', orderId)
+                .maybeSingle();
 
-            if (msgError) throw msgError;
-            setMessages((msgData as any) || []);
+            if (!contractError && contractData) {
+                setOrder({
+                    id: contractData.id,
+                    service_type: contractData.category || 'design',
+                    tier: 'Standard',
+                    project_status: contractData.status || 'in_progress',
+                    price: parseFloat(contractData.budget) || 0,
+                    description: contractData.description || '',
+                    deadline_at: contractData.deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    client_name: contractData.client_name || 'Client',
+                    assigned_designer_id: '',
+                });
+                await loadMessages(orderId!);
+                return;
+            }
+
+            // Try client_projects
+            const { data: projectData, error: projectError } = await (supabase as any)
+                .from('client_projects')
+                .select('*')
+                .eq('id', orderId)
+                .maybeSingle();
+
+            if (!projectError && projectData) {
+                setOrder({
+                    id: projectData.id,
+                    service_type: projectData.category || 'design',
+                    tier: 'Standard',
+                    project_status: projectData.status || 'in_progress',
+                    price: parseFloat(projectData.budget) || 0,
+                    description: projectData.description || '',
+                    deadline_at: projectData.deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    client_name: projectData.client_name || 'Client',
+                    assigned_designer_id: '',
+                });
+                await loadMessages(orderId!);
+                return;
+            }
+
+            throw new Error('Project not found');
         } catch (err) {
             console.error('Error loading workspace:', err);
             toast({ title: 'Error', description: 'Could not load project workspace.', variant: 'destructive' });
@@ -108,9 +152,22 @@ const ProjectWorkspace = () => {
         }
     };
 
+    const loadMessages = async (id: string) => {
+        try {
+            const { data: msgData } = await (supabase as any)
+                .from('project_messages')
+                .select('*')
+                .eq('order_id', id)
+                .order('created_at', { ascending: true });
+            setMessages((msgData as any) || []);
+        } catch (err) {
+            console.error('Error loading messages:', err);
+        }
+    };
+
     const subscribeToMessages = () => {
         const channel = supabase
-            .channel(`project_${orderId}`)
+            .channel(`project_${orderId}_${Date.now()}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
@@ -222,9 +279,8 @@ const ProjectWorkspace = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-                    {/* Main Area: Chat & Info */}
+                    {/* Main Area: Chat */}
                     <div className="lg:col-span-8 flex flex-col gap-6 min-h-0">
-                        {/* Chat Panel */}
                         <Card className="flex-1 flex flex-col min-h-0 glass border-border/50 overflow-hidden shadow-2xl relative">
                             <div className="p-3 border-b border-border/50 bg-card/40 flex items-center justify-between shrink-0">
                                 <div className="flex items-center gap-2">
@@ -280,9 +336,8 @@ const ProjectWorkspace = () => {
                         </Card>
                     </div>
 
-                    {/* Sidebar Area: Brief & Assets */}
+                    {/* Sidebar */}
                     <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto pr-1">
-                        {/* Brief Card */}
                         <Card className="glass border-border/50 shrink-0">
                             <div className="p-4 border-b border-border/50 font-bold text-xs uppercase tracking-tight flex items-center gap-2">
                                 <FileText className="w-4 h-4 text-primary" /> Project Brief
@@ -298,17 +353,18 @@ const ProjectWorkspace = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="p-3 rounded-xl bg-card/60 border border-border/50">
                                         <p className="text-[9px] text-muted-foreground uppercase font-bold mb-1">Fee</p>
-                                        <p className="text-sm font-bold text-primary">GH₵{order.price.toLocaleString()}</p>
+                                        <p className="text-sm font-bold text-primary">
+                                            {order.price > 0 ? `GH₵${order.price.toLocaleString()}` : '—'}
+                                        </p>
                                     </div>
                                     <div className="p-3 rounded-xl bg-card/60 border border-border/50">
                                         <p className="text-[9px] text-muted-foreground uppercase font-bold mb-1">Status</p>
-                                        <p className="text-sm font-bold text-foreground capitalize">{order.project_status}</p>
+                                        <p className="text-sm font-bold text-foreground capitalize">{order.project_status.replace('_', ' ')}</p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Assets/Files Card */}
                         <Card className="glass border-border/50 flex-1">
                             <div className="p-4 border-b border-border/50 font-bold text-xs uppercase tracking-tight flex items-center gap-2">
                                 <Paperclip className="w-4 h-4 text-primary" /> Assets & Files
@@ -321,13 +377,14 @@ const ProjectWorkspace = () => {
                             </CardContent>
                         </Card>
 
-                        {/* Security Check */}
                         <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 flex gap-3">
                             <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
                             <div>
                                 <p className="text-[11px] font-bold text-foreground">Prime Haven Payments</p>
                                 <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                                    Your payment for GHS {order.price.toLocaleString()} is secured. It will be released to your wallet upon client approval.
+                                    {order.price > 0
+                                        ? `Your payment for GHS ${order.price.toLocaleString()} is secured. It will be released to your wallet upon client approval.`
+                                        : 'Payment details will be confirmed by your admin.'}
                                 </p>
                             </div>
                         </div>
