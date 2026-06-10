@@ -168,10 +168,10 @@ const ActiveContracts = () => {
                     .eq('designer_id', user.id);
                 if (error) throw error;
             } else if (source === 'job_contracts') {
-                // Update the claim status to 'released'
+                // Mark the claim as cancelled (check constraint allows: active, completed, cancelled)
                 const { error: claimError } = await (supabase as any)
                     .from('job_contract_claims')
-                    .update({ status: 'released' })
+                    .update({ status: 'cancelled' })
                     .eq('contract_id', contractId)
                     .eq('designer_id', user.id);
                 if (claimError) throw claimError;
