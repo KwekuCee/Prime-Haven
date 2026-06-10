@@ -140,7 +140,7 @@ export const useSuperAdminSMM = () => {
 
   useEffect(() => {
     const channel = (supabase as any)
-      .channel('admin-smm-live')
+      .channel(`admin-smm-live:${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'smm_campaign_posts' }, (payload: any) => {
         const row = payload.new || payload.old;
         if (!row) return;
