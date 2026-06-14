@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Settings } from 'lucide-react';
+import { Menu, X, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,128 +15,174 @@ import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { t } = useTranslation();
 
-  const navItems = [
-    { name: t('nav.home'), href: '/' },
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const navLinks = [
     { name: t('nav.services'), href: '/#services' },
     { name: t('nav.portfolio'), href: '/#portfolio' },
     { name: t('nav.story'), href: '/#founder' },
     { name: t('nav.reviews'), href: '/#testimonials' },
     { name: t('nav.about'), href: '/#about' },
     { name: t('nav.blog'), href: '/blog' },
-    { name: t('nav.contact'), href: '/#contact' },
   ];
 
   return (
     <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 z-50 glass"
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm shadow-black/20'
+          : 'bg-transparent'
+      }`}
     >
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-6">
+        <div className="flex items-center justify-between h-16 lg:h-18">
+
           {/* Logo */}
-          <Link to="/" className="flex items-center shrink-0">
-            <motion.div whileHover={{ scale: 1.05 }} className="shrink-0">
-              <BrandLogo height={40} className="shrink-0" />
+          <Link to="/" className="flex items-center shrink-0 z-10">
+            <motion.div whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 400 }}>
+              <BrandLogo height={36} />
             </motion.div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-6 xl:gap-8 glass px-8 py-2.5 rounded-full border border-primary/20 shadow-sm">
-            {navItems.map((item) => (
+          {/* Desktop center nav — pill style */}
+          <div className="hidden lg:flex items-center gap-1 px-2 py-1.5 rounded-full border border-border/40 bg-background/40 backdrop-blur-md">
+            {navLinks.map((item) => (
               <motion.a
                 key={item.name}
                 href={item.href}
-                whileHover={{ y: -2 }}
-                className="text-muted-foreground hover:text-foreground transition-colors font-medium text-sm"
+                whileHover={{ y: -1 }}
+                className="px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-full hover:bg-primary/8 transition-all duration-200"
               >
                 {item.name}
               </motion.a>
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
-            <div className="glass p-1 rounded-full flex items-center border border-primary/20">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-9 px-4 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
-                    <Settings className="w-4 h-4 mr-2" />
-                    <span className="text-sm font-medium">Options</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="glass border-primary/20 bg-card/80 p-2 rounded-xl mt-2 w-56 space-y-1 z-[100]">
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-primary/5 transition-colors cursor-default">
-                    <span className="text-sm font-medium text-foreground">Theme</span>
-                    <ThemeToggle />
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-primary/5 transition-colors cursor-default">
-                    <span className="text-sm font-medium text-foreground">Language</span>
-                    <LanguageSwitcher />
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+          {/* Desktop right actions */}
+          <div className="hidden lg:flex items-center gap-2 z-10">
+            {/* Options dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 px-3 rounded-full text-muted-foreground hover:text-foreground gap-1.5"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3 h-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="glass border-border/60 bg-card/90 backdrop-blur-xl p-2 rounded-2xl mt-2 w-52 shadow-xl"
+              >
+                <div className="flex items-center justify-between p-2 rounded-xl hover:bg-primary/5 transition-colors cursor-default">
+                  <span className="text-sm font-medium">Theme</span>
+                  <ThemeToggle />
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-xl hover:bg-primary/5 transition-colors cursor-default">
+                  <span className="text-sm font-medium">Language</span>
+                  <LanguageSwitcher />
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="w-px h-5 bg-border/60" />
 
             <Link to="/login">
-              <Button variant="ghost" className="text-foreground hover:text-primary">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-4 rounded-full font-medium hover:text-primary"
+              >
                 {t('nav.login')}
               </Button>
             </Link>
+
             <Link to="/register">
-              <Button variant="primary" className="glow-primary">
+              <Button
+                size="sm"
+                className="h-9 px-5 rounded-full font-bold glow-primary"
+              >
                 {t('nav.join')}
               </Button>
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-foreground p-2"
+            className="lg:hidden p-2 rounded-xl text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors z-10"
           >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={isOpen ? 'close' : 'open'}
+                initial={{ opacity: 0, rotate: -90 }}
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={{ opacity: 0, rotate: 90 }}
+                transition={{ duration: 0.15 }}
+              >
+                {isOpen ? <X size={22} /> : <Menu size={22} />}
+              </motion.div>
+            </AnimatePresence>
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden glass border-t border-border"
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="lg:hidden overflow-hidden bg-background/95 backdrop-blur-xl border-t border-border/40"
           >
-            <div className="container mx-auto px-6 py-4 flex flex-col gap-4">
-              {navItems.map((item) => (
-                <a
+            <div className="container mx-auto px-6 py-5 flex flex-col gap-1">
+              {navLinks.map((item, i) => (
+                <motion.a
                   key={item.name}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="text-muted-foreground hover:text-foreground transition-colors py-2"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="py-2.5 px-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all font-medium text-sm"
                 >
                   {item.name}
-                </a>
+                </motion.a>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground text-sm">Theme</span>
-                  <ThemeToggle />
+
+              <div className="flex items-center justify-between pt-4 pb-2 border-t border-border/40 mt-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Lang</span>
+                    <LanguageSwitcher />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground text-sm">Language</span>
-                  <LanguageSwitcher />
-                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-1">
                 <Link to="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" className="w-full">{t('nav.login')}</Button>
+                  <Button variant="outline" className="w-full rounded-xl">{t('nav.login')}</Button>
                 </Link>
                 <Link to="/register" onClick={() => setIsOpen(false)}>
-                  <Button variant="primary" className="w-full">{t('nav.join')}</Button>
+                  <Button className="w-full rounded-xl font-bold glow-primary">{t('nav.join')}</Button>
                 </Link>
               </div>
             </div>

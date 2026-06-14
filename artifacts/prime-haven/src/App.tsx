@@ -79,6 +79,8 @@ const ManagePricing = lazy(() => import("./pages/ManagePricing"));
 const ManageClients = lazy(() => import("./pages/ManageClients"));
 const ForwardWork = lazy(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazy(() => import("./pages/ManagePromoPopup"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 const queryClient = new QueryClient();
 
@@ -156,6 +158,8 @@ const App = () => {
                   <Route path="/dashboard/smm" element={<SMMDashboard />} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="/project-chat/:projectId" element={<ProjectChatPage />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
