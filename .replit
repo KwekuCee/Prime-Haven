@@ -9,28 +9,6 @@ args = ["pnpm", "store", "prune"]
 env = { "CI" = "true" }
 
 [workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Prime Haven"
-
-[[workflows.workflow]]
-name = "Prime Haven"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=21106 BASE_PATH=/ pnpm --filter @workspace/prime-haven run dev"
-waitForPort = 21106
 
 [agent]
 stack = "PNPM_WORKSPACE"
