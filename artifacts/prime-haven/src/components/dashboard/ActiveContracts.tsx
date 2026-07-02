@@ -214,6 +214,20 @@ const ActiveContracts = () => {
         }
     };
 
+    const handleStartWork = async (projectId: string) => {
+        setStarting(projectId);
+        try {
+            const { error } = await (supabase as any).rpc('start_project_work', { p_project_id: projectId });
+            if (error) throw error;
+            toast({ title: 'Work Started', description: 'You can now submit your work when ready.' });
+            loadContracts();
+        } catch (err: any) {
+            toast({ title: 'Could not start', description: err.message, variant: 'destructive' });
+        } finally {
+            setStarting(null);
+        }
+    };
+
     const handleChatClick = () => {
         toast({ title: 'Client Messaging Coming Soon', description: 'This feature is currently under development.' });
     };
