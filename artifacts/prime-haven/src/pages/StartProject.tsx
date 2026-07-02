@@ -390,6 +390,7 @@ const StartProject = () => {
   const handleOrderProcess = async (reference: string, finalPrice: number) => {
 
     try {
+      const uploadedRefUrls = await uploadReferenceImages(reference);
       const { data, error } = await supabase.functions.invoke('process-client-order', {
         body: {
           clientName: form.clientName,
@@ -405,7 +406,8 @@ const StartProject = () => {
           promoCode: promoRef,
           gateway: 'korapay',
           clientPassword: form.password,
-          businessName: form.businessName
+          businessName: form.businessName,
+          referenceFiles: uploadedRefUrls,
         },
       });
 
