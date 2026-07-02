@@ -245,6 +245,7 @@ const ClientStartProject = () => {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
       try {
+        const uploadedRefUrls = await uploadReferenceImages(freeReference);
         const { error: orderError } = await supabase
           .from('client_orders')
           .insert({
@@ -257,7 +258,8 @@ const ClientStartProject = () => {
             description: form.description || null,
             payment_status: 'completed',
             payment_reference: freeReference,
-          });
+            reference_images: uploadedRefUrls,
+          } as any);
 
         if (orderError) throw new Error(orderError.message);
 
@@ -280,7 +282,8 @@ const ClientStartProject = () => {
             budget: 'GH₵0 (Promo)',
             required_professions: dist.professions,
             max_assignees: dist.max,
-          });
+            reference_images: uploadedRefUrls,
+          } as any);
         } catch (e) {
           console.error('Project tracking insert failed (non-critical):', e);
         }
