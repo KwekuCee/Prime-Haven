@@ -286,12 +286,22 @@ const ActiveContracts = () => {
                                     <div className="flex-1">
                                         <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Status</p>
                                         <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                            {contract.project_status === 'submitted' ? (
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                            {contract.assignment_status === 'claimed' ? (
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                                    <span>Claimed — not started</span>
+                                                </>
+                                            ) : contract.project_status === 'submitted' ? (
+                                                <>
+                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                    <span className="capitalize">{contract.project_status.replace('_', ' ')}</span>
+                                                </>
                                             ) : (
-                                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                    <span className="capitalize">In progress</span>
+                                                </>
                                             )}
-                                            <span className="capitalize">{contract.project_status.replace('_', ' ')}</span>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
