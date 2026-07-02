@@ -248,6 +248,7 @@ const StartProject = () => {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
       try {
+        const uploadedRefUrls = await uploadReferenceImages(freeReference);
         // Insert order directly — no payment gateway verification needed
         const { error: orderError } = await supabase
           .from('client_orders')
@@ -261,7 +262,8 @@ const StartProject = () => {
             description: form.description || null,
             payment_status: 'completed',
             payment_reference: freeReference,
-          });
+            reference_images: uploadedRefUrls,
+          } as any);
 
         if (orderError) {
           console.error('Free order insert error:', orderError);
