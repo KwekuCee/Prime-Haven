@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
