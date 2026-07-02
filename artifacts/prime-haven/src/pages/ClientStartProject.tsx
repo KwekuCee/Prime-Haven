@@ -153,28 +153,19 @@ const ClientStartProject = () => {
     setIsPromoValidating(true);
     try {
       const { data, error } = await (supabase as any)
-        .from('promo_codes')
-        .select('*')
-        .eq('code', promoCode.toUpperCase().trim())
-        .eq('is_active', true)
-        .maybeSingle();
+        .rpc('validate_promo_code', { p_code: promoCode.toUpperCase().trim() });
 
       if (error) throw error;
-      if (!data) {
-        toast({ title: 'Invalid Code', description: 'This promo code does not exist or is inactive.', variant: 'destructive' });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) {
+        toast({ title: 'Invalid Code', description: 'This promo code does not exist, is inactive, or has expired.', variant: 'destructive' });
         setPromoDiscount(0);
         return;
       }
 
-      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
-        toast({ title: 'Expired Code', description: 'This promo code has expired.', variant: 'destructive' });
-        setPromoDiscount(0);
-        return;
-      }
-
-      setPromoDiscount(data.discount_percent);
-      setPromoRef(data.code);
-      toast({ title: 'Code Applied!', description: `You got ${data.discount_percent}% off!` });
+      setPromoDiscount(row.discount_percent);
+      setPromoRef(row.code);
+      toast({ title: 'Code Applied!', description: `You got ${row.discount_percent}% off!` });
     } catch (err: any) {
       toast({ title: 'Error', description: 'Could not validate promo code.', variant: 'destructive' });
     } finally {
