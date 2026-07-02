@@ -250,6 +250,7 @@ export type Database = {
           payment_status: string
           price: number
           project_status: string | null
+          reference_images: string[]
           service_type: string
           tier: string
           updated_at: string
@@ -272,6 +273,7 @@ export type Database = {
           payment_status?: string
           price: number
           project_status?: string | null
+          reference_images?: string[]
           service_type: string
           tier: string
           updated_at?: string
@@ -294,6 +296,7 @@ export type Database = {
           payment_status?: string
           price?: number
           project_status?: string | null
+          reference_images?: string[]
           service_type?: string
           tier?: string
           updated_at?: string
@@ -316,6 +319,7 @@ export type Database = {
           id: string
           max_assignees: number | null
           progress_percentage: number
+          reference_images: string[]
           required_professions: string[] | null
           status: string
           tip_total: number
@@ -338,6 +342,7 @@ export type Database = {
           id?: string
           max_assignees?: number | null
           progress_percentage?: number
+          reference_images?: string[]
           required_professions?: string[] | null
           status?: string
           tip_total?: number
@@ -360,6 +365,7 @@ export type Database = {
           id?: string
           max_assignees?: number | null
           progress_percentage?: number
+          reference_images?: string[]
           required_professions?: string[] | null
           status?: string
           tip_total?: number
@@ -2264,6 +2270,7 @@ export type Database = {
         Args: { p_contract_id: string }
         Returns: undefined
       }
+      start_project_work: { Args: { p_project_id: string }; Returns: undefined }
       validate_promo_code: {
         Args: { p_code: string }
         Returns: {

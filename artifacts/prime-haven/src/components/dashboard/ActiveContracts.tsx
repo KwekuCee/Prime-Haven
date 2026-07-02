@@ -20,6 +20,7 @@ interface ActiveContract {
     project_status: string;
     price: number;
     source: 'client_projects' | 'client_orders' | 'job_contracts';
+    assignment_status?: 'claimed' | 'in_progress' | 'submitted' | 'active';
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -40,6 +41,7 @@ const ActiveContracts = () => {
     const [contracts, setContracts] = useState<ActiveContract[]>([]);
     const [loading, setLoading] = useState(true);
     const [unclaiming, setUnclaiming] = useState<string | null>(null);
+    const [starting, setStarting] = useState<string | null>(null);
 
     const [now, setNow] = useState(new Date());
 
@@ -69,7 +71,7 @@ const ActiveContracts = () => {
                     )
                 `)
                 .eq('designer_id', user.id)
-                .neq('status', 'completed');
+                .in('status', ['claimed', 'in_progress', 'active']);
 
             if (assignmentError) throw assignmentError;
 
@@ -113,6 +115,7 @@ const ActiveContracts = () => {
                         project_status: a.client_projects.status,
                         price: 0,
                         source: 'client_projects' as const,
+                        assignment_status: a.status,
                     })),
                 ...(contractClaims || [])
                     .filter((c: any) => c.job_contracts)
@@ -211,6 +214,20 @@ const ActiveContracts = () => {
         }
     };
 
+    const handleStartWork = async (projectId: string) => {
+        setStarting(projectId);
+        try {
+            const { error } = await (supabase as any).rpc('start_project_work', { p_project_id: projectId });
+            if (error) throw error;
+            toast({ title: 'Work Started', description: 'You can now submit your work when ready.' });
+            loadContracts();
+        } catch (err: any) {
+            toast({ title: 'Could not start', description: err.message, variant: 'destructive' });
+        } finally {
+            setStarting(null);
+        }
+    };
+
     const handleChatClick = () => {
         toast({ title: 'Client Messaging Coming Soon', description: 'This feature is currently under development.' });
     };
@@ -269,12 +286,22 @@ const ActiveContracts = () => {
                                     <div className="flex-1">
                                         <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Status</p>
                                         <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                            {contract.project_status === 'submitted' ? (
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                            {contract.assignment_status === 'claimed' ? (
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                                    <span>Claimed — not started</span>
+                                                </>
+                                            ) : contract.project_status === 'submitted' ? (
+                                                <>
+                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                    <span className="capitalize">{contract.project_status.replace('_', ' ')}</span>
+                                                </>
                                             ) : (
-                                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                    <span className="capitalize">In progress</span>
+                                                </>
                                             )}
-                                            <span className="capitalize">{contract.project_status.replace('_', ' ')}</span>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -296,13 +323,24 @@ const ActiveContracts = () => {
                                         >
                                             <MessageSquare className="w-3.5 h-3.5 text-primary" />
                                         </Button>
-                                        <Button
-                                            size="sm"
-                                            className="h-8 text-xs font-bold px-3 gap-1.5"
-                                            onClick={() => navigate(`/workspace/${contract.id}`)}
-                                        >
-                                            Workspace <ExternalLink className="w-3 h-3" />
-                                        </Button>
+                                        {contract.source === 'client_projects' && contract.assignment_status === 'claimed' ? (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 text-xs font-bold px-3 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
+                                                disabled={starting === contract.id}
+                                                onClick={() => handleStartWork(contract.id)}
+                                            >
+                                                {starting === contract.id ? 'Starting...' : 'Start Work'}
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 text-xs font-bold px-3 gap-1.5"
+                                                onClick={() => navigate(`/submit-work`)}
+                                            >
+                                                Submit Work <ExternalLink className="w-3 h-3" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>

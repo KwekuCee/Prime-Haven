@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,7 +78,51 @@ const StartProject = () => {
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
   const [isReturningClient, setIsReturningClient] = useState(false);
+  const [referenceImages, setReferenceImages] = useState<{ file: File; preview: string }[]>([]);
+  const [uploadingRefs, setUploadingRefs] = useState(false);
   const { user } = useAuth();
+
+  const handleAddReferenceImages = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files).slice(0, 5 - referenceImages.length);
+    const rejected = arr.filter(f => f.size > 5 * 1024 * 1024);
+    if (rejected.length) {
+      toast({ title: 'File too large', description: 'Each image must be under 5MB.', variant: 'destructive' });
+    }
+    const accepted = arr.filter(f => f.size <= 5 * 1024 * 1024 && f.type.startsWith('image/'));
+    setReferenceImages(prev => [...prev, ...accepted.map(f => ({ file: f, preview: URL.createObjectURL(f) }))]);
+  };
+
+  const removeReferenceImage = (idx: number) => {
+    setReferenceImages(prev => {
+      URL.revokeObjectURL(prev[idx].preview);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const uploadReferenceImages = async (reference: string): Promise<string[]> => {
+    if (referenceImages.length === 0) return [];
+    setUploadingRefs(true);
+    try {
+      const urls: string[] = [];
+      for (const item of referenceImages) {
+        const ext = item.file.name.split('.').pop() || 'jpg';
+        const path = `orders/${reference}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('client-order-attachments')
+          .upload(path, item.file, { contentType: item.file.type, upsert: false });
+        if (upErr) { console.error('Upload failed:', upErr); continue; }
+        const { data: signed } = await supabase.storage
+          .from('client-order-attachments')
+          .createSignedUrl(path, 60 * 60 * 24 * 365);
+        if (signed?.signedUrl) urls.push(signed.signedUrl);
+      }
+      return urls;
+    } finally {
+      setUploadingRefs(false);
+    }
+  };
+
 
   useEffect(() => {
     const checkReturning = async () => {
@@ -204,6 +248,7 @@ const StartProject = () => {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
       try {
+        const uploadedRefUrls = await uploadReferenceImages(freeReference);
         // Insert order directly — no payment gateway verification needed
         const { error: orderError } = await supabase
           .from('client_orders')
@@ -217,7 +262,8 @@ const StartProject = () => {
             description: form.description || null,
             payment_status: 'completed',
             payment_reference: freeReference,
-          });
+            reference_images: uploadedRefUrls,
+          } as any);
 
         if (orderError) {
           console.error('Free order insert error:', orderError);
@@ -274,7 +320,8 @@ const StartProject = () => {
             budget: 'GH₵0 (Promo)',
             required_professions: dist.professions,
             max_assignees: dist.max,
-          });
+            reference_images: uploadedRefUrls,
+          } as any);
         } catch (e) {
           console.error('Project tracking insert failed (non-critical):', e);
         }
@@ -343,6 +390,7 @@ const StartProject = () => {
   const handleOrderProcess = async (reference: string, finalPrice: number) => {
 
     try {
+      const uploadedRefUrls = await uploadReferenceImages(reference);
       const { data, error } = await supabase.functions.invoke('process-client-order', {
         body: {
           clientName: form.clientName,
@@ -358,7 +406,8 @@ const StartProject = () => {
           promoCode: promoRef,
           gateway: 'korapay',
           clientPassword: form.password,
-          businessName: form.businessName
+          businessName: form.businessName,
+          referenceFiles: uploadedRefUrls,
         },
       });
 
@@ -569,6 +618,29 @@ const StartProject = () => {
                       <Textarea id="description" value={form.description} onChange={e => handleChange('description', e.target.value)} placeholder="Tell us about your project, goals, timeline, and any specific requirements..." className="min-h-[120px]" required />
                     </div>
 
+                    <div className="space-y-2">
+                      <Label>Reference Images (Optional)</Label>
+                      <p className="text-[11px] text-muted-foreground">Upload up to 5 images (max 5MB each).</p>
+                      <div className="flex flex-wrap gap-2">
+                        {referenceImages.map((img, idx) => (
+                          <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border/60">
+                            <img src={img.preview} alt="ref" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => removeReferenceImage(idx)} className="absolute top-0.5 right-0.5 bg-black/70 rounded-full p-0.5 hover:bg-red-500">
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        ))}
+                        {referenceImages.length < 5 && (
+                          <label className="w-20 h-20 rounded-lg border-2 border-dashed border-border/60 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition">
+                            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                            <span className="text-[9px] text-muted-foreground mt-1">Add</span>
+                            <input type="file" accept="image/*" multiple className="hidden" onChange={e => { handleAddReferenceImages(e.target.files); e.target.value = ''; }} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+
                     <div className="space-y-3">
                       <Label>Payment Method</Label>
                       <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-2">
@@ -625,9 +697,9 @@ const StartProject = () => {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full h-14 text-lg font-heading glow-primary" disabled={submitting}>
-                      {submitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
-                      Pay & Submit Project
+                    <Button type="submit" className="w-full h-14 text-lg font-heading glow-primary" disabled={submitting || uploadingRefs}>
+                      {submitting || uploadingRefs ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
+                      {uploadingRefs ? 'Uploading images...' : 'Pay & Submit Project'}
                     </Button>
                   </form>
                 </CardContent>
