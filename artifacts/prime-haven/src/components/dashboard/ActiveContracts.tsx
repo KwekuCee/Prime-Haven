@@ -114,6 +114,7 @@ const ActiveContracts = () => {
                         project_status: a.client_projects.status,
                         price: 0,
                         source: 'client_projects' as const,
+                        assignment_status: a.status,
                     })),
                 ...(contractClaims || [])
                     .filter((c: any) => c.job_contracts)
