@@ -101,12 +101,12 @@ const SubmitWork = () => {
     const loadJobs = async () => {
       if (!user) return;
       try {
-        // 1. Claimed client_projects
+        // 1. Started client_projects — only assignments the designer has clicked "Start Work" on
         const { data: cpAssignments } = await supabase
           .from('project_assignments')
-          .select(`project:client_projects(id, title, category)`)
+          .select(`status, project:client_projects(id, title, category)`)
           .eq('designer_id', user.id)
-          .neq('status', 'completed');
+          .in('status', ['in_progress', 'active']);
 
         const availableCP = (cpAssignments || [])
           .filter((a: any) => a.project)
