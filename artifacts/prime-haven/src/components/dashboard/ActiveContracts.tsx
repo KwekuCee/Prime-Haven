@@ -41,6 +41,7 @@ const ActiveContracts = () => {
     const [contracts, setContracts] = useState<ActiveContract[]>([]);
     const [loading, setLoading] = useState(true);
     const [unclaiming, setUnclaiming] = useState<string | null>(null);
+    const [starting, setStarting] = useState<string | null>(null);
 
     const [now, setNow] = useState(new Date());
 
