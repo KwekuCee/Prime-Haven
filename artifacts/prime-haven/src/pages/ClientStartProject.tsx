@@ -78,6 +78,50 @@ const ClientStartProject = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
+  const [referenceImages, setReferenceImages] = useState<{ file: File; preview: string }[]>([]);
+  const [uploadingRefs, setUploadingRefs] = useState(false);
+
+  const handleAddReferenceImages = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files).slice(0, 5 - referenceImages.length);
+    const rejected = arr.filter(f => f.size > 5 * 1024 * 1024);
+    if (rejected.length) {
+      toast({ title: 'File too large', description: 'Each image must be under 5MB.', variant: 'destructive' });
+    }
+    const accepted = arr.filter(f => f.size <= 5 * 1024 * 1024 && f.type.startsWith('image/'));
+    setReferenceImages(prev => [...prev, ...accepted.map(f => ({ file: f, preview: URL.createObjectURL(f) }))]);
+  };
+
+  const removeReferenceImage = (idx: number) => {
+    setReferenceImages(prev => {
+      URL.revokeObjectURL(prev[idx].preview);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const uploadReferenceImages = async (reference: string): Promise<string[]> => {
+    if (referenceImages.length === 0) return [];
+    setUploadingRefs(true);
+    try {
+      const urls: string[] = [];
+      for (const item of referenceImages) {
+        const ext = item.file.name.split('.').pop() || 'jpg';
+        const path = `orders/${reference}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('client-order-attachments')
+          .upload(path, item.file, { contentType: item.file.type, upsert: false });
+        if (upErr) { console.error('Upload failed:', upErr); continue; }
+        const { data: signed } = await supabase.storage
+          .from('client-order-attachments')
+          .createSignedUrl(path, 60 * 60 * 24 * 365);
+        if (signed?.signedUrl) urls.push(signed.signedUrl);
+      }
+      return urls;
+    } finally {
+      setUploadingRefs(false);
+    }
+  };
+
 
   useEffect(() => {
     const fetchClientProfile = async () => {
