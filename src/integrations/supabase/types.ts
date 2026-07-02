@@ -2264,6 +2264,13 @@ export type Database = {
         Args: { p_contract_id: string }
         Returns: undefined
       }
+      validate_promo_code: {
+        Args: { p_code: string }
+        Returns: {
+          code: string
+          discount_percent: number
+        }[]
+      }
     }
     Enums: {
       app_role: "designer" | "superadmin" | "masteradmin"
