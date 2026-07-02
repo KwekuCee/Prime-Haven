@@ -661,9 +661,9 @@ const ClientStartProject = () => {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full h-14 text-lg font-heading glow-primary" disabled={submitting}>
-                      {submitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
-                      Pay & Submit Project
+                    <Button type="submit" className="w-full h-14 text-lg font-heading glow-primary" disabled={submitting || uploadingRefs}>
+                      {submitting || uploadingRefs ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
+                      {uploadingRefs ? 'Uploading images...' : 'Pay & Submit Project'}
                     </Button>
                   </form>
                 </CardContent>
