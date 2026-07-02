@@ -70,7 +70,7 @@ const ActiveContracts = () => {
                     )
                 `)
                 .eq('designer_id', user.id)
-                .neq('status', 'completed');
+                .in('status', ['claimed', 'in_progress', 'active']);
 
             if (assignmentError) throw assignmentError;
 
