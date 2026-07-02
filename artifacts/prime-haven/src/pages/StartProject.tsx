@@ -320,7 +320,8 @@ const StartProject = () => {
             budget: 'GH₵0 (Promo)',
             required_professions: dist.professions,
             max_assignees: dist.max,
-          });
+            reference_images: uploadedRefUrls,
+          } as any);
         } catch (e) {
           console.error('Project tracking insert failed (non-critical):', e);
         }
