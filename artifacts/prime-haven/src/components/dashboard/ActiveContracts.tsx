@@ -323,13 +323,24 @@ const ActiveContracts = () => {
                                         >
                                             <MessageSquare className="w-3.5 h-3.5 text-primary" />
                                         </Button>
-                                        <Button
-                                            size="sm"
-                                            className="h-8 text-xs font-bold px-3 gap-1.5"
-                                            onClick={() => navigate(`/workspace/${contract.id}`)}
-                                        >
-                                            Workspace <ExternalLink className="w-3 h-3" />
-                                        </Button>
+                                        {contract.source === 'client_projects' && contract.assignment_status === 'claimed' ? (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 text-xs font-bold px-3 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
+                                                disabled={starting === contract.id}
+                                                onClick={() => handleStartWork(contract.id)}
+                                            >
+                                                {starting === contract.id ? 'Starting...' : 'Start Work'}
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 text-xs font-bold px-3 gap-1.5"
+                                                onClick={() => navigate(`/submit-work`)}
+                                            >
+                                                Submit Work <ExternalLink className="w-3 h-3" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>
