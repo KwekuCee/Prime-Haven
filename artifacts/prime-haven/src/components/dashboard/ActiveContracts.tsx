@@ -20,6 +20,7 @@ interface ActiveContract {
     project_status: string;
     price: number;
     source: 'client_projects' | 'client_orders' | 'job_contracts';
+    assignment_status?: 'claimed' | 'in_progress' | 'submitted' | 'active';
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
