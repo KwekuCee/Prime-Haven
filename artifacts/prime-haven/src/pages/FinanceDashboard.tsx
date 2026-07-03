@@ -278,6 +278,9 @@ const FinanceDashboard = () => {
         if (!user) return;
         setApprovingWithdrawal(withdrawalId);
         try {
+            // Find the withdrawal + designer so we can zero out points + notify on success
+            const wd = pendingWithdrawals.find((w: any) => w.id === withdrawalId);
+
             const { data, error } = await supabase.functions.invoke('approve-withdrawal', {
                 body: { withdrawal_id: withdrawalId }
             });
@@ -285,13 +288,68 @@ const FinanceDashboard = () => {
                 const message = (data as any)?.message || error?.message || 'Approval failed';
                 throw new Error(message);
             }
-            toast({ title: 'Withdrawal Approved', description: 'Korapay payout has been triggered for this request.' });
+
+            // Money left Korapay → reset the designer's points + notify them.
+            if (wd?.user_id) {
+                await supabase.from('designer_details').update({
+                    salary_estimated: 0,
+                    monthly_points: 0,
+                    total_points: 0,
+                }).eq('user_id', wd.user_id);
+
+                await supabase.from('notifications').insert({
+                    user_id: wd.user_id,
+                    title: 'Withdrawal Paid',
+                    message: `Your withdrawal of GH₵ ${Number(wd.amount).toLocaleString()} has been sent to your Mobile Money account via Korapay. Your accumulated points have been reset.`,
+                    type: 'payment',
+                    link: '/dashboard',
+                });
+            }
+
+            toast({ title: 'Withdrawal Approved', description: 'Korapay payout triggered, designer notified, and points reset.' });
             await loadFinancialData();
         } catch (err: any) {
             toast({ title: 'Approval Failed', description: err.message, variant: 'destructive' });
         } finally {
             setApprovingWithdrawal(null);
         }
+    };
+
+    const handleExportAndClearPaidEscrow = async () => {
+        const paid = clientDebts.filter((d: any) => d.status === 'paid');
+        if (paid.length === 0) {
+            toast({ title: 'Nothing to export', description: 'No paid escrow records to clear.' });
+            return;
+        }
+        // Build CSV (opens directly in Excel / Google Sheets)
+        const header = ['Client Name', 'Project', 'Amount (GHS)', 'Date Recorded', 'Status'];
+        const rows = paid.map((d: any) => [
+            d.client_name || '',
+            d.project_name || '',
+            Number(d.amount_owed).toFixed(2),
+            format(new Date(d.created_at), 'yyyy-MM-dd HH:mm'),
+            d.status,
+        ]);
+        const csv = [header, ...rows]
+            .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `paid-escrow-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // Delete paid rows after export
+        const ids = paid.map((d: any) => d.id);
+        const { error } = await supabase.from('client_debts').delete().in('id', ids);
+        if (error) {
+            toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+            return;
+        }
+        toast({ title: 'Exported & Cleared', description: `${paid.length} paid escrow record${paid.length === 1 ? '' : 's'} saved to CSV and removed.` });
+        await loadFinancialData();
     };
 
     const filteredTransactions = useMemo(() => {
