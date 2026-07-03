@@ -151,7 +151,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
           <Button
             onClick={() => setWithdrawOpen(true)}
             disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : ''}
+            title={!isWithdrawalDay ? 'Available only on the 29th & 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : methods.length === 0 ? 'Add a Mobile Money method first' : ''}
           >
             Withdraw
           </Button>
