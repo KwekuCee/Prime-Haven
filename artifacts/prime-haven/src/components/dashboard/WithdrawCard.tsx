@@ -33,10 +33,11 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   const [newMethod, setNewMethod] = useState<{ provider: Method['provider']; phone_number: string; account_name: string }>({ provider: 'mtn', phone_number: '', account_name: '' });
 
   const today = new Date();
-  const isWithdrawalDay = today.getUTCDate() === 30;
+  const dayOfMonth = today.getUTCDate();
+  const isWithdrawalDay = dayOfMonth === 29 || dayOfMonth === 30;
   const daysToNext = useMemo(() => {
     const d = new Date(today);
-    d.setUTCDate(30);
+    d.setUTCDate(29);
     if (d <= today) d.setUTCMonth(d.getUTCMonth() + 1);
     return Math.ceil((d.getTime() - today.getTime()) / 86400000);
   }, [today]);
@@ -137,6 +138,10 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
         </Badge>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+          Withdrawals are open on the <strong>29th and 30th</strong> only, and are paid out via <strong>Mobile Money (MTN / Vodafone / AirtelTigo)</strong> through Korapay.
+          If your saved payout method is a bank account, please add a Mobile Money method below to enable withdrawal — Korapay disbursement does not currently support bank accounts.
+        </div>
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Available balance</p>
@@ -146,7 +151,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
           <Button
             onClick={() => setWithdrawOpen(true)}
             disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : ''}
+            title={!isWithdrawalDay ? 'Available only on the 29th & 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : methods.length === 0 ? 'Add a Mobile Money method first' : ''}
           >
             Withdraw
           </Button>

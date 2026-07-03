@@ -89,9 +89,13 @@ const FinanceDashboard = () => {
             const totalCombinedRevenue = customMonthlyRevenue || calculatedRevenue;
 
             // Escrow calculations from Client Debts
+            //   pending debts  -> shown as "funds in escrow"
+            //   paid debts     -> counted as realised revenue (adds to Prime Haven profit)
             let escrow = 0;
+            let paidEscrowRevenue = 0;
             (debtsData || []).forEach((debt: any) => {
                 if (debt.status === 'pending') escrow += Number(debt.amount_owed);
+                else if (debt.status === 'paid') paidEscrowRevenue += Number(debt.amount_owed);
             });
             setClientDebts(debtsData || []);
 
@@ -111,11 +115,13 @@ const FinanceDashboard = () => {
                 };
             }).filter(d => d.activeSalary > 0 || (d.total_points ?? 0) > 0);
 
-            // Profit Calculation = Total Revenue - Pending Payouts
-            const platformProfit = totalCombinedRevenue - pendingPayouts;
+            // Total revenue = configured/payment revenue + realised escrow (paid debts)
+            const grossRevenue = totalCombinedRevenue + paidEscrowRevenue;
+            // Profit = Revenue (incl. released escrow) - Pending Payouts
+            const platformProfit = grossRevenue - pendingPayouts;
 
             setStats({
-                totalRevenue: totalCombinedRevenue,
+                totalRevenue: grossRevenue,
                 escrow: escrow,
                 profit: platformProfit,
                 pendingPayouts: pendingPayouts
@@ -244,10 +250,22 @@ const FinanceDashboard = () => {
                 processed_by_admin_id: user?.id
             });
 
+            // Payment confirmed → zero out ALL accumulated points for this designer
+            // (their profession's pooled points effectively drop by their contribution).
             await supabase.from('designer_details').update({
                 salary_estimated: 0,
-                monthly_points: 0
+                monthly_points: 0,
+                total_points: 0
             }).eq('user_id', designer.user_id);
+
+            // In-app notification so the designer sees "You have been paid"
+            await supabase.from('notifications').insert({
+                user_id: designer.user_id,
+                title: 'Salary Paid',
+                message: `Your salary of GH₵ ${Number(designer.activeSalary).toLocaleString()} has been sent to your Mobile Money account. Your accumulated points have been reset for the new cycle.`,
+                type: 'payment',
+                link: '/dashboard'
+            });
 
             toast({ title: 'Notification Sent', description: `Salary email dispatched to ${designer.full_name}` });
             await loadFinancialData();
@@ -260,6 +278,9 @@ const FinanceDashboard = () => {
         if (!user) return;
         setApprovingWithdrawal(withdrawalId);
         try {
+            // Find the withdrawal + designer so we can zero out points + notify on success
+            const wd = pendingWithdrawals.find((w: any) => w.id === withdrawalId);
+
             const { data, error } = await supabase.functions.invoke('approve-withdrawal', {
                 body: { withdrawal_id: withdrawalId }
             });
@@ -267,13 +288,68 @@ const FinanceDashboard = () => {
                 const message = (data as any)?.message || error?.message || 'Approval failed';
                 throw new Error(message);
             }
-            toast({ title: 'Withdrawal Approved', description: 'Korapay payout has been triggered for this request.' });
+
+            // Money left Korapay → reset the designer's points + notify them.
+            if (wd?.user_id) {
+                await supabase.from('designer_details').update({
+                    salary_estimated: 0,
+                    monthly_points: 0,
+                    total_points: 0,
+                }).eq('user_id', wd.user_id);
+
+                await supabase.from('notifications').insert({
+                    user_id: wd.user_id,
+                    title: 'Withdrawal Paid',
+                    message: `Your withdrawal of GH₵ ${Number(wd.amount).toLocaleString()} has been sent to your Mobile Money account via Korapay. Your accumulated points have been reset.`,
+                    type: 'payment',
+                    link: '/dashboard',
+                });
+            }
+
+            toast({ title: 'Withdrawal Approved', description: 'Korapay payout triggered, designer notified, and points reset.' });
             await loadFinancialData();
         } catch (err: any) {
             toast({ title: 'Approval Failed', description: err.message, variant: 'destructive' });
         } finally {
             setApprovingWithdrawal(null);
         }
+    };
+
+    const handleExportAndClearPaidEscrow = async () => {
+        const paid = clientDebts.filter((d: any) => d.status === 'paid');
+        if (paid.length === 0) {
+            toast({ title: 'Nothing to export', description: 'No paid escrow records to clear.' });
+            return;
+        }
+        // Build CSV (opens directly in Excel / Google Sheets)
+        const header = ['Client Name', 'Project', 'Amount (GHS)', 'Date Recorded', 'Status'];
+        const rows = paid.map((d: any) => [
+            d.client_name || '',
+            d.project_name || '',
+            Number(d.amount_owed).toFixed(2),
+            format(new Date(d.created_at), 'yyyy-MM-dd HH:mm'),
+            d.status,
+        ]);
+        const csv = [header, ...rows]
+            .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `paid-escrow-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // Delete paid rows after export
+        const ids = paid.map((d: any) => d.id);
+        const { error } = await supabase.from('client_debts').delete().in('id', ids);
+        if (error) {
+            toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+            return;
+        }
+        toast({ title: 'Exported & Cleared', description: `${paid.length} paid escrow record${paid.length === 1 ? '' : 's'} saved to CSV and removed.` });
+        await loadFinancialData();
     };
 
     const filteredTransactions = useMemo(() => {
@@ -338,6 +414,9 @@ const FinanceDashboard = () => {
                     <div className="p-4 sm:p-5 border-b border-border/50 bg-card/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div><h2 className="text-base font-bold flex items-center gap-2"><Wallet className="w-4 h-4 text-amber-500" /> Amounts Owed (Escrow)</h2></div>
                         <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={handleExportAndClearPaidEscrow}>
+                                <FileText className="w-4 h-4 mr-1" /> Export & Clear Paid
+                            </Button>
                             <Button size="sm" onClick={() => setIsDebtModalOpen(true)} className="bg-amber-600 hover:bg-amber-700">
                                 <Plus className="w-4 h-4 mr-1" /> Add Client Debt
                             </Button>
