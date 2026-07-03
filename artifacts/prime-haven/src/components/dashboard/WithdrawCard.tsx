@@ -138,6 +138,10 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
         </Badge>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+          Withdrawals are open on the <strong>29th and 30th</strong> only, and are paid out via <strong>Mobile Money (MTN / Vodafone / AirtelTigo)</strong> through Korapay.
+          If your saved payout method is a bank account, please add a Mobile Money method below to enable withdrawal — Korapay disbursement does not currently support bank accounts.
+        </div>
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Available balance</p>
