@@ -33,10 +33,11 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   const [newMethod, setNewMethod] = useState<{ provider: Method['provider']; phone_number: string; account_name: string }>({ provider: 'mtn', phone_number: '', account_name: '' });
 
   const today = new Date();
-  const isWithdrawalDay = today.getUTCDate() === 30;
+  const dayOfMonth = today.getUTCDate();
+  const isWithdrawalDay = dayOfMonth === 29 || dayOfMonth === 30;
   const daysToNext = useMemo(() => {
     const d = new Date(today);
-    d.setUTCDate(30);
+    d.setUTCDate(29);
     if (d <= today) d.setUTCMonth(d.getUTCMonth() + 1);
     return Math.ceil((d.getTime() - today.getTime()) / 86400000);
   }, [today]);
