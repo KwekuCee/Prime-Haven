@@ -414,6 +414,9 @@ const FinanceDashboard = () => {
                     <div className="p-4 sm:p-5 border-b border-border/50 bg-card/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div><h2 className="text-base font-bold flex items-center gap-2"><Wallet className="w-4 h-4 text-amber-500" /> Amounts Owed (Escrow)</h2></div>
                         <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={handleExportAndClearPaidEscrow}>
+                                <FileText className="w-4 h-4 mr-1" /> Export & Clear Paid
+                            </Button>
                             <Button size="sm" onClick={() => setIsDebtModalOpen(true)} className="bg-amber-600 hover:bg-amber-700">
                                 <Plus className="w-4 h-4 mr-1" /> Add Client Debt
                             </Button>
