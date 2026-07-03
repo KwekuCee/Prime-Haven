@@ -89,9 +89,13 @@ const FinanceDashboard = () => {
             const totalCombinedRevenue = customMonthlyRevenue || calculatedRevenue;
 
             // Escrow calculations from Client Debts
+            //   pending debts  -> shown as "funds in escrow"
+            //   paid debts     -> counted as realised revenue (adds to Prime Haven profit)
             let escrow = 0;
+            let paidEscrowRevenue = 0;
             (debtsData || []).forEach((debt: any) => {
                 if (debt.status === 'pending') escrow += Number(debt.amount_owed);
+                else if (debt.status === 'paid') paidEscrowRevenue += Number(debt.amount_owed);
             });
             setClientDebts(debtsData || []);
 
