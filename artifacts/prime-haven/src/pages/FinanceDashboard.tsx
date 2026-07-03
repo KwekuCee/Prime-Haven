@@ -115,11 +115,13 @@ const FinanceDashboard = () => {
                 };
             }).filter(d => d.activeSalary > 0 || (d.total_points ?? 0) > 0);
 
-            // Profit Calculation = Total Revenue - Pending Payouts
-            const platformProfit = totalCombinedRevenue - pendingPayouts;
+            // Total revenue = configured/payment revenue + realised escrow (paid debts)
+            const grossRevenue = totalCombinedRevenue + paidEscrowRevenue;
+            // Profit = Revenue (incl. released escrow) - Pending Payouts
+            const platformProfit = grossRevenue - pendingPayouts;
 
             setStats({
-                totalRevenue: totalCombinedRevenue,
+                totalRevenue: grossRevenue,
                 escrow: escrow,
                 profit: platformProfit,
                 pendingPayouts: pendingPayouts
