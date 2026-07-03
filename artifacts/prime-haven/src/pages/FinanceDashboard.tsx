@@ -250,10 +250,22 @@ const FinanceDashboard = () => {
                 processed_by_admin_id: user?.id
             });
 
+            // Payment confirmed → zero out ALL accumulated points for this designer
+            // (their profession's pooled points effectively drop by their contribution).
             await supabase.from('designer_details').update({
                 salary_estimated: 0,
-                monthly_points: 0
+                monthly_points: 0,
+                total_points: 0
             }).eq('user_id', designer.user_id);
+
+            // In-app notification so the designer sees "You have been paid"
+            await supabase.from('notifications').insert({
+                user_id: designer.user_id,
+                title: 'Salary Paid',
+                message: `Your salary of GH₵ ${Number(designer.activeSalary).toLocaleString()} has been sent to your Mobile Money account. Your accumulated points have been reset for the new cycle.`,
+                type: 'payment',
+                link: '/dashboard'
+            });
 
             toast({ title: 'Notification Sent', description: `Salary email dispatched to ${designer.full_name}` });
             await loadFinancialData();
