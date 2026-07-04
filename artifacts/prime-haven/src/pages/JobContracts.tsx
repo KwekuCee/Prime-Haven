@@ -181,8 +181,11 @@ const JobContracts = () => {
         const { error } = await supabase.storage.from('job-reference-files').upload(path, file);
         if (error) throw error;
 
-        const { data: { publicUrl } } = supabase.storage.from('job-reference-files').getPublicUrl(path);
-        setReferenceFiles(prev => prev.map(f => f.file === file ? { ...f, uploading: false, url: publicUrl } : f));
+        const { data: signed } = await supabase.storage
+          .from('job-reference-files')
+          .createSignedUrl(path, 60 * 60 * 24 * 365);
+        const url = signed?.signedUrl ?? '';
+        setReferenceFiles(prev => prev.map(f => f.file === file ? { ...f, uploading: false, url } : f));
       } catch (err: any) {
         console.error('Upload error:', err);
         setReferenceFiles(prev => prev.filter(f => f.file !== file));
