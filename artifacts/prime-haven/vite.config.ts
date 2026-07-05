@@ -21,6 +21,7 @@ export default defineConfig({
   base: basePath,
   plugins: [
     react(),
+    mcpPlugin(),
     ...(isReplit
       ? [
           await import("@replit/vite-plugin-runtime-error-modal").then((m) =>
