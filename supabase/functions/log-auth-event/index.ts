@@ -26,19 +26,16 @@ const ALLOWED_EVENTS = new Set([
   "admin_login_failed",
 ]);
 
-// Events allowed without a valid caller session.
-// admin_login_success is included because the custom admin-login edge function
-// authenticates server-side and the client hasn't yet attached the session
-// to the supabase-js client when this log call fires.
+// Events that legitimately happen before a session exists. For these, we do
+// NOT require an Authorization header and we only use client-supplied email
+// (never client-supplied user_id) for reference lookup — the log row's
+// admin_id stays NULL to prevent audit-trail forgery.
 const PRE_AUTH_EVENTS = new Set([
   "login_failed",
   "login_blocked_unverified",
   "password_reset_requested",
   "signup",
   "admin_login_failed",
-  "admin_login_success",
-  "login_success",
-  "logout",
 ]);
 
 Deno.serve(async (req) => {
@@ -66,7 +63,12 @@ Deno.serve(async (req) => {
       if (data?.user?.id) authedUserId = data.user.id;
     }
 
-    if (!authedUserId && !PRE_AUTH_EVENTS.has(body.event)) {
+    const isPreAuth = PRE_AUTH_EVENTS.has(body.event);
+
+    // Post-auth events (login_success, admin_login_success, logout, password_changed)
+    // MUST come from a real session. Refuse anything without a verified token so
+    // attackers can't forge audit rows attributed to arbitrary users.
+    if (!isPreAuth && !authedUserId) {
       return new Response(JSON.stringify({ error: "unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -80,17 +82,9 @@ Deno.serve(async (req) => {
       null;
     const userAgent = req.headers.get("user-agent") || "";
 
-    // Trust authed user id when present; otherwise fall back to the
-    // client-supplied user_id (only used for pre-auth or admin flows) or email lookup.
-    let userId: string | null = authedUserId ?? (body.user_id || null);
-    if (!userId && body.email) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", body.email)
-        .maybeSingle();
-      if (data?.id) userId = data.id;
-    }
+    // NEVER trust body.user_id. Post-auth events use the verified session id;
+    // pre-auth events leave admin_id NULL (email is kept in new_value for reference).
+    const userId: string | null = isPreAuth ? null : authedUserId;
 
     const description =
       body.description ||
