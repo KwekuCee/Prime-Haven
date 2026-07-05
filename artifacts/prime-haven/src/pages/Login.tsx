@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Loader2, LogIn, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,13 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn, signOut, user, loading: authLoading } = useAuth();
+
+  // Same-origin relative next path (e.g. `/.lovable/oauth/consent?authorization_id=...`).
+  const nextParam = searchParams.get('next');
+  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
+
 
   const {
     register,
@@ -74,6 +80,13 @@ const Login = () => {
 
       logAuthEvent('login_success', { email: data.email, user_id: authData.user.id });
       toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
+
+      // Honor OAuth consent (and similar) return path when present.
+      if (safeNext) {
+        window.location.href = safeNext;
+        return;
+      }
+
 
       const { data: roleData } = await supabase
         .from('user_roles')

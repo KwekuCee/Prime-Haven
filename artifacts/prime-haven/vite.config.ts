@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
 const port = process.env.PORT ? Number(process.env.PORT) : 5173;
 const basePath = process.env.BASE_PATH || "/";
@@ -20,6 +21,7 @@ export default defineConfig({
   base: basePath,
   plugins: [
     react(),
+    mcpPlugin(),
     ...(isReplit
       ? [
           await import("@replit/vite-plugin-runtime-error-modal").then((m) =>

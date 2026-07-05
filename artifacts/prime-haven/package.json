@@ -76,10 +76,11 @@
     "vaul": "^1.1.2",
     "vite": "^7.3.2",
     "wouter": "^3.3.5",
-    "zod": "^3.25.76"
+    "zod": "catalog:"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
+    "@lovable.dev/mcp-js": "^0.20.0",
     "@supabase/supabase-js": "^2.108.0",
     "@tiptap/extension-image": "^3.26.0",
     "@tiptap/extension-link": "^3.26.0",
