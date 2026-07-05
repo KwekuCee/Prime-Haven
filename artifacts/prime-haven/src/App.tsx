@@ -40,6 +40,7 @@ const TrackProject = lazy(() => import("./pages/TrackProject"));
 const SubmitReview = lazy(() => import("./pages/SubmitReview"));
 const StartProject = lazy(() => import("./pages/StartProject"));
 const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const VisitorTracker = lazy(() => import("./components/VisitorTracker"));
 const GlobalPromoManager = lazy(() => import("./components/GlobalPromoManager"));
 
