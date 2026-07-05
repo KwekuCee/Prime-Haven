@@ -81,6 +81,13 @@ const Login = () => {
       logAuthEvent('login_success', { email: data.email, user_id: authData.user.id });
       toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
 
+      // Honor OAuth consent (and similar) return path when present.
+      if (safeNext) {
+        window.location.href = safeNext;
+        return;
+      }
+
+
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
