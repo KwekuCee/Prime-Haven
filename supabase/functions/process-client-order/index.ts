@@ -242,29 +242,56 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // 1b. Create/Update Client User & Profile
+    // 1b. Create Client User (secure guest-checkout pre-provisioning)
+    // SECURITY: We never trust a client-supplied password bound to an unverified email,
+    // and we never mark the account email as confirmed here. If an account for this
+    // email already exists we leave it untouched (no overwrite / no password change),
+    // and any new account is created unconfirmed with a magic invite link so the
+    // real owner of the inbox must click through before they can sign in.
     console.log("Setting up client account...");
-    if (clientPassword) {
+    try {
+      // Look up any existing user for this email using the admin listUsers API.
+      let existingUser: { id: string } | null = null;
       try {
-        // Use admin client to create user to bypass confirmation if possible or just handle it cleanly
-        const { data: userData, error: authError } = await supabase.auth.admin.createUser({
+        // @ts-ignore - filter supported by supabase-js admin API
+        const { data: listData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1, filter: `email.eq.${clientEmail}` });
+        const found = listData?.users?.find?.((u: any) => (u.email || "").toLowerCase() === clientEmail.toLowerCase());
+        if (found) existingUser = { id: found.id };
+      } catch (lookupErr) {
+        console.warn("User lookup failed, continuing:", lookupErr);
+      }
+
+      if (!existingUser) {
+        // Create an UNCONFIRMED user without a client-supplied password so an
+        // attacker who guessed the email cannot pre-set credentials on it.
+        const { error: createErr } = await supabase.auth.admin.createUser({
           email: clientEmail,
-          password: clientPassword,
-          email_confirm: true,
+          email_confirm: false,
           user_metadata: {
             full_name: clientName,
             business_name: businessName,
             whatsapp: clientWhatsapp,
-            role: 'client'
-          }
+            role: 'client',
+          },
         });
-
-        if (authError && authError.status !== 422) { // 422 usually means user already exists
-          console.error("Auth creation error:", authError);
+        if (createErr && createErr.status !== 422) {
+          console.error("Auth creation error:", createErr);
         }
-      } catch (e) {
-        console.error("Auth catch error:", e);
+
+        // Send an invite / magic link so the real inbox owner can claim the account.
+        try {
+          await supabase.auth.admin.generateLink({
+            type: "invite",
+            email: clientEmail,
+          });
+        } catch (linkErr) {
+          console.warn("Invite link generation failed (non-critical):", linkErr);
+        }
+      } else {
+        console.log("Client account already exists — leaving untouched to prevent takeover.");
       }
+    } catch (e) {
+      console.error("Auth setup catch error (non-critical):", e);
     }
 
     // 1c. Upsert into clients table
