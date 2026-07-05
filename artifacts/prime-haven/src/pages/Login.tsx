@@ -18,7 +18,13 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn, signOut, user, loading: authLoading } = useAuth();
+
+  // Same-origin relative next path (e.g. `/.lovable/oauth/consent?authorization_id=...`).
+  const nextParam = searchParams.get('next');
+  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
+
 
   const {
     register,
