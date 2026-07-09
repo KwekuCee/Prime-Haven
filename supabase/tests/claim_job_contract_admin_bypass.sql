@@ -21,10 +21,18 @@ DECLARE
   v_pre_admin_active    int;
   v_pre_master_active   int;
 BEGIN
-  -- Pick real users for each role. Skip cleanly if the env doesn't have all three.
+  -- Pick real users for each role, borrowing extra designers when a role slot is missing.
   SELECT user_id INTO v_designer FROM public.user_roles WHERE role = 'designer'    LIMIT 1;
-  SELECT user_id INTO v_admin    FROM public.user_roles WHERE role = 'superadmin'  LIMIT 1;
   SELECT user_id INTO v_master   FROM public.user_roles WHERE role = 'masteradmin' LIMIT 1;
+  SELECT user_id INTO v_admin    FROM public.user_roles WHERE role = 'superadmin'  LIMIT 1;
+  IF v_admin IS NULL THEN
+    -- Borrow another designer and grant superadmin (rolled back at end of test)
+    SELECT user_id INTO v_admin FROM public.user_roles
+     WHERE role = 'designer' AND user_id <> v_designer LIMIT 1;
+    IF v_admin IS NOT NULL THEN
+      INSERT INTO public.user_roles (user_id, role) VALUES (v_admin, 'superadmin');
+    END IF;
+  END IF;
   IF v_designer IS NULL OR v_admin IS NULL OR v_master IS NULL THEN
     RAISE NOTICE 'SKIP: need a designer, superadmin, and masteradmin present in user_roles';
     RETURN;
