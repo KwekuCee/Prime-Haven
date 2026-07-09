@@ -13,6 +13,9 @@ DECLARE
   v_c1       uuid := gen_random_uuid();
   v_c2       uuid := gen_random_uuid();
   v_c3       uuid := gen_random_uuid();
+  v_c4       uuid := gen_random_uuid();
+  v_extra1   uuid;
+  v_extra2   uuid;
   v_before   int;
   v_after    int;
   v_logs     int;
