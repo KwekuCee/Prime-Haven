@@ -114,14 +114,17 @@ BEGIN
   END IF;
 
   ------------------------------------------------------------------
-  -- 4) Contract cap (graphic-design = 2) still enforced for admins
+  -- 4) Contract cap (graphic-design = 2) still enforced for admins.
+  -- v_c1 already holds 3 active claims from seeding, well over cap of 2,
+  -- so any further claim (even admin) must fail with the cap error.
   ------------------------------------------------------------------
-  -- v_c2 now holds admin + designer (existing) = 2; masteradmin attempt must fail
   PERFORM set_config('request.jwt.claims',
-    json_build_object('sub', v_master, 'role', 'authenticated')::text, true);
+    json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
+  -- Remove admin's existing v_c1 claim so we're testing the cap, not the unique constraint
+  DELETE FROM public.job_contract_claims WHERE contract_id = v_c1 AND designer_id = v_admin;
   BEGIN
-    PERFORM public.claim_job_contract(v_c2);
-    RAISE EXCEPTION 'FAIL: cap should still block admin';
+    PERFORM public.claim_job_contract(v_c1);
+    RAISE EXCEPTION 'FAIL_CAP_NOT_ENFORCED: cap should still block admin';
   EXCEPTION WHEN OTHERS THEN
     v_err := SQLERRM;
     IF v_err NOT ILIKE '%maximum number of designers%' THEN
