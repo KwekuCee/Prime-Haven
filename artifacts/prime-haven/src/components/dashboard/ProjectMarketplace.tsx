@@ -293,9 +293,17 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
             loadOpenOrders();
             setSelectedOrder(null);
         } catch (err: any) {
+            const raw: string = err?.message || 'Failed to claim project. It might have been taken.';
+            const isActiveLimit =
+                /active job contract/i.test(raw) ||
+                /Finish your current project/i.test(raw) ||
+                /active project\./i.test(raw);
+            const description = isActiveLimit
+                ? `${raw}\n\nAdmins: open the user's active contract in Job Contracts and release it, or use the "Force Release" action, before claiming another on their behalf.`
+                : raw;
             toast({
-                title: 'Claim Failed',
-                description: err.message || 'Failed to claim project. It might have been taken.',
+                title: isActiveLimit ? 'Active contract limit reached' : 'Claim Failed',
+                description,
                 variant: 'destructive',
             });
         } finally {
