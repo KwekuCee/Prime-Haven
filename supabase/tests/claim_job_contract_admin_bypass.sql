@@ -49,18 +49,32 @@ BEGIN
   SELECT count(*) INTO v_pre_master_active FROM public.job_contract_claims
    WHERE designer_id = v_master AND status = 'active';
 
+  -- Two extra unrelated designers to fill contract v_c4 to the cap
+  SELECT user_id INTO v_extra1 FROM public.user_roles
+   WHERE role = 'designer' AND user_id NOT IN (v_designer, v_admin, v_master) LIMIT 1;
+  SELECT user_id INTO v_extra2 FROM public.user_roles
+   WHERE role = 'designer' AND user_id NOT IN (v_designer, v_admin, v_master, v_extra1) LIMIT 1;
+
   -- Seed contracts (graphic-design cap = 2)
   INSERT INTO public.job_contracts (id, title, category, description, budget, status)
   VALUES
     (v_c1, 'RT1', 'graphic-design', 'x', '100', 'active'),
     (v_c2, 'RT2', 'graphic-design', 'x', '100', 'active'),
-    (v_c3, 'RT3', 'graphic-design', 'x', '100', 'active');
+    (v_c3, 'RT3', 'graphic-design', 'x', '100', 'active'),
+    (v_c4, 'RT4', 'graphic-design', 'x', '100', 'active');
 
   -- Force an active claim on each subject so the limit would trigger
   INSERT INTO public.job_contract_claims (contract_id, designer_id, status) VALUES
     (v_c1, v_designer, 'active'),
     (v_c1, v_admin,    'active'),
     (v_c1, v_master,   'active');
+
+  -- Fill v_c4 to cap with unrelated designers (skip if we don't have two extras)
+  IF v_extra1 IS NOT NULL AND v_extra2 IS NOT NULL THEN
+    INSERT INTO public.job_contract_claims (contract_id, designer_id, status) VALUES
+      (v_c4, v_extra1, 'active'),
+      (v_c4, v_extra2, 'active');
+  END IF;
 
   ------------------------------------------------------------------
   -- 1) Regular designer with an active claim MUST be blocked
