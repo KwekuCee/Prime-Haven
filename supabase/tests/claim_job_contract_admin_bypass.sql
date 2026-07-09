@@ -24,6 +24,12 @@ BEGIN
     (v_c2, 'T2', 'graphic-design', 'x', '100', 'active'),
     (v_c3, 'T3', 'graphic-design', 'x', '100', 'active');
 
+  -- Seed auth users (rolled back at end of test)
+  INSERT INTO auth.users (id, email) VALUES
+    (v_designer, 'designer-'||v_designer||'@test.local'),
+    (v_admin,    'admin-'||v_admin||'@test.local'),
+    (v_master,   'master-'||v_master||'@test.local');
+
   -- Seed roles
   INSERT INTO public.user_roles (user_id, role) VALUES
     (v_designer, 'designer'),
