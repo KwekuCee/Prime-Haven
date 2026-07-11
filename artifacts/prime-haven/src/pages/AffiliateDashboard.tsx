@@ -336,8 +336,9 @@ const AffiliateDashboard = () => {
                                                     <span className="text-xs text-muted-foreground">{ref.service_booked}</span>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${
+                                                     <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${
                                                         ref.status === 'paid' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10' :
+                                                        ref.status === 'available' ? 'text-cyan-500 border-cyan-500/20 bg-cyan-500/10' :
                                                         ref.status === 'converted' ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' :
                                                         'text-blue-500 border-blue-500/20 bg-blue-500/10'
                                                     }`}>
