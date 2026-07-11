@@ -76,28 +76,40 @@ export type Database = {
       affiliate_referrals: {
         Row: {
           affiliate_id: string
+          amount_paid: number | null
+          available_at: string | null
           client_name: string
+          client_ref: string | null
           commission: number
           created_at: string
           id: string
+          paid_at: string | null
           service_booked: string
           status: string | null
         }
         Insert: {
           affiliate_id: string
+          amount_paid?: number | null
+          available_at?: string | null
           client_name: string
+          client_ref?: string | null
           commission?: number
           created_at?: string
           id?: string
+          paid_at?: string | null
           service_booked: string
           status?: string | null
         }
         Update: {
           affiliate_id?: string
+          amount_paid?: number | null
+          available_at?: string | null
           client_name?: string
+          client_ref?: string | null
           commission?: number
           created_at?: string
           id?: string
+          paid_at?: string | null
           service_booked?: string
           status?: string | null
         }
@@ -2243,6 +2255,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_affiliate_click: {
+        Args: { p_code: string }
+        Returns: undefined
+      }
+      mark_affiliate_payout_paid: {
+        Args: { p_payout_id: string }
+        Returns: undefined
+      }
       notify_discord_order: {
         Args: {
           p_amount: number
@@ -2257,18 +2277,34 @@ export type Database = {
         }
         Returns: undefined
       }
-      process_affiliate_commission: {
-        Args: {
-          p_client_name: string
-          p_commission: number
-          p_ref_code: string
-          p_service: string
-        }
-        Returns: undefined
-      }
+      process_affiliate_commission:
+        | {
+            Args: {
+              p_client_name: string
+              p_commission: number
+              p_ref_code: string
+              p_service: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_amount_paid?: number
+              p_client_name: string
+              p_client_ref?: string
+              p_commission: number
+              p_ref_code: string
+              p_service: string
+            }
+            Returns: undefined
+          }
       release_job_contract_claim: {
         Args: { p_contract_id: string }
         Returns: undefined
+      }
+      release_referrals_for_withdrawal: {
+        Args: { p_affiliate_id: string }
+        Returns: number
       }
       start_project_work: { Args: { p_project_id: string }; Returns: undefined }
       validate_promo_code: {
