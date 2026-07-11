@@ -309,7 +309,7 @@ const ClientStartProject = () => {
         // Process Affiliate Commission for free orders (commission is 0, but good for tracking signups)
         const refCode = localStorage.getItem('primehaven_ref_code');
         if (refCode) {
-          await supabase.rpc('process_affiliate_commission', {
+          await (supabase.rpc as any)('process_affiliate_commission', {
             p_ref_code: refCode,
             p_client_name: form.clientName,
             p_service: selectedPricing.service_label,
@@ -407,7 +407,7 @@ const ClientStartProject = () => {
       const refCode = localStorage.getItem('primehaven_ref_code');
       if (refCode) {
         const commission = finalPrice * 0.15;
-        await supabase.rpc('process_affiliate_commission', {
+        await (supabase.rpc as any)('process_affiliate_commission', {
           p_ref_code: refCode,
           p_client_name: form.clientName,
           p_service: selectedPricing!.service_label,

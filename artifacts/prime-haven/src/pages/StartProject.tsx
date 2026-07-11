@@ -440,7 +440,7 @@ const StartProject = () => {
       try {
         const refCode = localStorage.getItem('primehaven_ref_code');
         if (refCode) {
-          await supabase.rpc('process_affiliate_commission', {
+          await (supabase.rpc as any)('process_affiliate_commission', {
             p_ref_code: refCode,
             p_client_name: form.clientName,
             p_service: selectedPricing!.service_label,

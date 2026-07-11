@@ -19,7 +19,7 @@ const ReferralHandler = () => {
       localStorage.setItem('primehaven_ref_ts', String(Date.now()));
       // Track click server-side (fire-and-forget)
       import('@/integrations/supabase/client').then(({ supabase }) => {
-        supabase.rpc('increment_affiliate_click', { p_code: code }).then(() => {}, () => {});
+        (supabase.rpc as any)('increment_affiliate_click', { p_code: code }).then(() => {}, () => {});
       });
     }
     window.location.href = '/';
