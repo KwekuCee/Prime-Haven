@@ -401,15 +401,17 @@ const ClientStartProject = () => {
 
       toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
 
-      // Process Affiliate Commission (5% of final price)
+      // Process Affiliate Commission (15% of final price)
       const refCode = localStorage.getItem('primehaven_ref_code');
       if (refCode) {
-        const commission = finalPrice * 0.05;
+        const commission = finalPrice * 0.15;
         await supabase.rpc('process_affiliate_commission', {
           p_ref_code: refCode,
           p_client_name: form.clientName,
           p_service: selectedPricing!.service_label,
-          p_commission: commission
+          p_commission: commission,
+          p_amount_paid: finalPrice,
+          p_client_ref: reference
         });
         // Clear the code after successful use
         localStorage.removeItem('primehaven_ref_code');
