@@ -281,8 +281,9 @@ const AffiliateDashboard = () => {
                                     <div className="flex items-center justify-between mb-3">
                                         <TrendingUp className="w-5 h-5 text-amber-500" />
                                     </div>
-                                    <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{pendingPayout.toLocaleString()}</p>
-                                    <p className="text-[11px] text-muted-foreground mt-1">Pending Commisions</p>
+                                    <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{(pendingPayout + availableBalance).toLocaleString()}</p>
+                                    <p className="text-[11px] text-muted-foreground mt-1">Pending Commissions</p>
+                                    <p className="text-[10px] text-cyan-500 mt-0.5">GH₵{availableBalance.toLocaleString()} withdrawable</p>
                                 </SpotlightCard>
                             </motion.div>
 
