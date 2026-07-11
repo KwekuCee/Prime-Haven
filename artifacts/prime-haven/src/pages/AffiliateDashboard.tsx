@@ -145,12 +145,12 @@ const AffiliateDashboard = () => {
     };
 
     const requestPayout = async () => {
-        if (!profile || pendingPayout <= 0) return;
+        if (!profile || availableBalance <= 0) return;
         setRequestingPayout(true);
         try {
             const { error } = await supabase.from('affiliate_payouts').insert({
                 affiliate_id: profile.id,
-                amount: pendingPayout
+                amount: availableBalance
             });
             if (error) throw error;
             toast({ title: "Payout Requested", description: "Your payout request has been submitted successfully." });
@@ -189,7 +189,7 @@ const AffiliateDashboard = () => {
                         </div>
                         <h1 className="text-2xl font-heading font-bold mb-3">Join the Partner Program</h1>
                         <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-                            Turn your network into income. Share Prime Haven with your peers and earn a <strong>5% commission</strong> on every successful project booked through your unique link.
+                            Turn your network into income. Share Prime Haven with your peers and earn a <strong>15% commission</strong> on every successful project booked through your unique link.
                         </p>
                         <Button size="lg" className="w-full text-sm h-12" onClick={joinProgram} disabled={joining}>
                             {joining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Generate My Referral Link"}
@@ -201,8 +201,9 @@ const AffiliateDashboard = () => {
     }
 
     const pendingPayout = referrals.filter(r => r.status === 'converted').reduce((sum, r) => sum + Number(r.commission), 0);
+    const availableBalance = referrals.filter(r => r.status === 'available').reduce((sum, r) => sum + Number(r.commission), 0);
     const totalEarned = referrals.filter(r => r.status === 'paid').reduce((sum, r) => sum + Number(r.commission), 0);
-    const signups = referrals.length;
+    const signups = referrals.filter(r => r.status !== 'rejected').length;
     const hasPendingRequest = payouts.some(p => p.status === 'pending');
 
     const currentTab = location.hash.replace('#', '') || 'overview';
@@ -220,9 +221,9 @@ const AffiliateDashboard = () => {
                     {currentTab === 'overview' && (
                         <MagneticEffect intensity={0.1}>
                             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-xs" 
-                                disabled={pendingPayout === 0 || hasPendingRequest} onClick={requestPayout}>
+                                disabled={availableBalance === 0 || hasPendingRequest} onClick={requestPayout}>
                                 {requestingPayout ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />} 
-                                {hasPendingRequest ? 'Payout Pending' : 'Request Payout'}
+                                {hasPendingRequest ? 'Payout Pending' : `Withdraw GH₵${availableBalance.toLocaleString()}`}
                             </Button>
                         </MagneticEffect>
                     )}
@@ -240,7 +241,7 @@ const AffiliateDashboard = () => {
                                 <h2 className="text-sm font-heading font-bold">Your Unique Referral Link</h2>
                             </div>
                             <p className="text-xs text-muted-foreground mb-4 max-w-2xl">
-                                Share this link across your network, social media, or marketing campaigns. You earn a <strong>5% commission</strong> on every successful project booked through your link.
+                                Share this link across your network, social media, or marketing campaigns. You earn a <strong>15% commission</strong> on every successful project booked through your link.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <div className="flex-1 bg-card/50 border border-border/50 rounded-xl px-4 py-3 font-mono text-sm flex items-center overflow-x-auto text-primary">
@@ -280,8 +281,9 @@ const AffiliateDashboard = () => {
                                     <div className="flex items-center justify-between mb-3">
                                         <TrendingUp className="w-5 h-5 text-amber-500" />
                                     </div>
-                                    <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{pendingPayout.toLocaleString()}</p>
-                                    <p className="text-[11px] text-muted-foreground mt-1">Pending Commisions</p>
+                                    <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{(pendingPayout + availableBalance).toLocaleString()}</p>
+                                    <p className="text-[11px] text-muted-foreground mt-1">Pending Commissions</p>
+                                    <p className="text-[10px] text-cyan-500 mt-0.5">GH₵{availableBalance.toLocaleString()} withdrawable</p>
                                 </SpotlightCard>
                             </motion.div>
 
@@ -321,7 +323,7 @@ const AffiliateDashboard = () => {
                                             <TableHead className="text-xs font-semibold">Client Name</TableHead>
                                             <TableHead className="text-xs font-semibold">Service Booked</TableHead>
                                             <TableHead className="text-xs font-semibold">Status</TableHead>
-                                            <TableHead className="text-xs font-semibold">Your Commission (5%)</TableHead>
+                                            <TableHead className="text-xs font-semibold">Your Commission (15%)</TableHead>
                                             <TableHead className="text-xs font-semibold">Date</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -335,8 +337,9 @@ const AffiliateDashboard = () => {
                                                     <span className="text-xs text-muted-foreground">{ref.service_booked}</span>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${
+                                                     <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${
                                                         ref.status === 'paid' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10' :
+                                                        ref.status === 'available' ? 'text-cyan-500 border-cyan-500/20 bg-cyan-500/10' :
                                                         ref.status === 'converted' ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' :
                                                         'text-blue-500 border-blue-500/20 bg-blue-500/10'
                                                     }`}>
@@ -366,12 +369,11 @@ const AffiliateDashboard = () => {
                             <Wallet className="w-16 h-16 text-primary mx-auto mb-6 opacity-80" />
                             <h2 className="text-2xl font-bold font-heading mb-2">Payout Management</h2>
                             <p className="text-muted-foreground mb-8">
-                                You currently have <strong className="text-primary">GH₵{pendingPayout.toLocaleString()}</strong> in pending commissions. 
-                                Commissions become eligible for payout 14 days after the referred project is successfully completed.
+                                You have <strong className="text-primary">GH₵{availableBalance.toLocaleString()}</strong> available to withdraw, plus <strong>GH₵{pendingPayout.toLocaleString()}</strong> pending admin release. Commissions become withdrawable after end-of-month admin approval.
                             </p>
-                            <Button size="lg" className="px-8 h-14 w-full sm:w-auto" disabled={pendingPayout === 0 || hasPendingRequest} onClick={requestPayout}>
+                            <Button size="lg" className="px-8 h-14 w-full sm:w-auto" disabled={availableBalance === 0 || hasPendingRequest} onClick={requestPayout}>
                                 {requestingPayout ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                {hasPendingRequest ? 'Payout Request Processing...' : 'Request Payout to Bank / Mobile Money'}
+                                {hasPendingRequest ? 'Payout Request Processing...' : `Withdraw GH₵${availableBalance.toLocaleString()}`}
                             </Button>
                         </motion.div>
 
