@@ -18,7 +18,7 @@ interface UserSettings {
 }
 
 const defaultSettings: UserSettings = {
-  theme: 'dark',
+  theme: 'light',
   currency: 'ghs',
   profile_visibility: 'public',
   show_earnings: false,
