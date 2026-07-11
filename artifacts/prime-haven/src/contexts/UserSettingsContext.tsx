@@ -88,7 +88,7 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
         if (data) {
           setHasRecord(true);
           const loaded: UserSettings = {
-            theme: data.theme || 'dark',
+            theme: data.theme || 'light',
             currency: data.currency || 'ghs',
             profile_visibility: data.profile_visibility || 'public',
             show_earnings: data.show_earnings ?? false,
