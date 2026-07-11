@@ -221,9 +221,9 @@ const AffiliateDashboard = () => {
                     {currentTab === 'overview' && (
                         <MagneticEffect intensity={0.1}>
                             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-xs" 
-                                disabled={pendingPayout === 0 || hasPendingRequest} onClick={requestPayout}>
+                                disabled={availableBalance === 0 || hasPendingRequest} onClick={requestPayout}>
                                 {requestingPayout ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />} 
-                                {hasPendingRequest ? 'Payout Pending' : 'Request Payout'}
+                                {hasPendingRequest ? 'Payout Pending' : `Withdraw GH₵${availableBalance.toLocaleString()}`}
                             </Button>
                         </MagneticEffect>
                     )}
