@@ -788,12 +788,12 @@ const Dashboard = () => {
                     const isMe = entry.user_id === user?.id;
                     return (
                       <div key={entry.user_id}
-                        className={`flex items - center gap - 2.5 p - 2.5 rounded - xl transition - colors ${ isMe ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20' } `}>
+                        className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20'}`}>
                         <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                           {getRankIcon(idx + 1)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text - xs font - semibold truncate ${ isMe ? 'text-primary' : '' } `}>
+                          <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : ''}`}>
                             {entry.full_name} {isMe && <span className="text-[9px] opacity-60">(You)</span>}
                           </p>
                         </div>
