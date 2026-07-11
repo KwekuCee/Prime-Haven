@@ -368,12 +368,11 @@ const AffiliateDashboard = () => {
                             <Wallet className="w-16 h-16 text-primary mx-auto mb-6 opacity-80" />
                             <h2 className="text-2xl font-bold font-heading mb-2">Payout Management</h2>
                             <p className="text-muted-foreground mb-8">
-                                You currently have <strong className="text-primary">GH₵{pendingPayout.toLocaleString()}</strong> in pending commissions. 
-                                Commissions become eligible for payout 14 days after the referred project is successfully completed.
+                                You have <strong className="text-primary">GH₵{availableBalance.toLocaleString()}</strong> available to withdraw, plus <strong>GH₵{pendingPayout.toLocaleString()}</strong> pending admin release. Commissions become withdrawable after end-of-month admin approval.
                             </p>
-                            <Button size="lg" className="px-8 h-14 w-full sm:w-auto" disabled={pendingPayout === 0 || hasPendingRequest} onClick={requestPayout}>
+                            <Button size="lg" className="px-8 h-14 w-full sm:w-auto" disabled={availableBalance === 0 || hasPendingRequest} onClick={requestPayout}>
                                 {requestingPayout ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                {hasPendingRequest ? 'Payout Request Processing...' : 'Request Payout to Bank / Mobile Money'}
+                                {hasPendingRequest ? 'Payout Request Processing...' : `Withdraw GH₵${availableBalance.toLocaleString()}`}
                             </Button>
                         </motion.div>
 
