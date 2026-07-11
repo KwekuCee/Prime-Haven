@@ -313,7 +313,9 @@ const ClientStartProject = () => {
             p_ref_code: refCode,
             p_client_name: form.clientName,
             p_service: selectedPricing.service_label,
-            p_commission: 0
+            p_commission: 0,
+            p_amount_paid: 0,
+            p_client_ref: freeReference
           });
           localStorage.removeItem('primehaven_ref_code');
         }
