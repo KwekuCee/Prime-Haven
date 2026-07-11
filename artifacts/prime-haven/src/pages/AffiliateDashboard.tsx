@@ -201,8 +201,9 @@ const AffiliateDashboard = () => {
     }
 
     const pendingPayout = referrals.filter(r => r.status === 'converted').reduce((sum, r) => sum + Number(r.commission), 0);
+    const availableBalance = referrals.filter(r => r.status === 'available').reduce((sum, r) => sum + Number(r.commission), 0);
     const totalEarned = referrals.filter(r => r.status === 'paid').reduce((sum, r) => sum + Number(r.commission), 0);
-    const signups = referrals.length;
+    const signups = referrals.filter(r => r.status !== 'rejected').length;
     const hasPendingRequest = payouts.some(p => p.status === 'pending');
 
     const currentTab = location.hash.replace('#', '') || 'overview';
