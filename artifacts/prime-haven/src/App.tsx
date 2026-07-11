@@ -16,8 +16,13 @@ const ReferralHandler = () => {
   useEffect(() => {
     if (code) {
       localStorage.setItem('primehaven_ref_code', code);
+      localStorage.setItem('primehaven_ref_ts', String(Date.now()));
+      // Track click server-side (fire-and-forget)
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        supabase.rpc('increment_affiliate_click', { p_code: code }).then(() => {}, () => {});
+      });
     }
-    window.location.href = '/login?mode=signup';
+    window.location.href = '/';
   }, [code]);
   return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
 };
