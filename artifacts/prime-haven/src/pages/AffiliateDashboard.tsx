@@ -189,7 +189,7 @@ const AffiliateDashboard = () => {
                         </div>
                         <h1 className="text-2xl font-heading font-bold mb-3">Join the Partner Program</h1>
                         <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-                            Turn your network into income. Share Prime Haven with your peers and earn a <strong>5% commission</strong> on every successful project booked through your unique link.
+                            Turn your network into income. Share Prime Haven with your peers and earn a <strong>15% commission</strong> on every successful project booked through your unique link.
                         </p>
                         <Button size="lg" className="w-full text-sm h-12" onClick={joinProgram} disabled={joining}>
                             {joining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Generate My Referral Link"}
@@ -241,7 +241,7 @@ const AffiliateDashboard = () => {
                                 <h2 className="text-sm font-heading font-bold">Your Unique Referral Link</h2>
                             </div>
                             <p className="text-xs text-muted-foreground mb-4 max-w-2xl">
-                                Share this link across your network, social media, or marketing campaigns. You earn a <strong>5% commission</strong> on every successful project booked through your link.
+                                Share this link across your network, social media, or marketing campaigns. You earn a <strong>15% commission</strong> on every successful project booked through your link.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <div className="flex-1 bg-card/50 border border-border/50 rounded-xl px-4 py-3 font-mono text-sm flex items-center overflow-x-auto text-primary">
@@ -322,7 +322,7 @@ const AffiliateDashboard = () => {
                                             <TableHead className="text-xs font-semibold">Client Name</TableHead>
                                             <TableHead className="text-xs font-semibold">Service Booked</TableHead>
                                             <TableHead className="text-xs font-semibold">Status</TableHead>
-                                            <TableHead className="text-xs font-semibold">Your Commission (5%)</TableHead>
+                                            <TableHead className="text-xs font-semibold">Your Commission (15%)</TableHead>
                                             <TableHead className="text-xs font-semibold">Date</TableHead>
                                         </TableRow>
                                     </TableHeader>
