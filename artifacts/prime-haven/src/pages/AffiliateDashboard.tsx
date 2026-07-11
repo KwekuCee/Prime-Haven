@@ -145,12 +145,12 @@ const AffiliateDashboard = () => {
     };
 
     const requestPayout = async () => {
-        if (!profile || pendingPayout <= 0) return;
+        if (!profile || availableBalance <= 0) return;
         setRequestingPayout(true);
         try {
             const { error } = await supabase.from('affiliate_payouts').insert({
                 affiliate_id: profile.id,
-                amount: pendingPayout
+                amount: availableBalance
             });
             if (error) throw error;
             toast({ title: "Payout Requested", description: "Your payout request has been submitted successfully." });
