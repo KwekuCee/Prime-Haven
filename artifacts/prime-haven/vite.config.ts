@@ -5,7 +5,7 @@ import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
-const port = process.env.PORT ? Number(process.env.PORT) : 5173;
+const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const basePath = process.env.BASE_PATH || "/";
 const isReplit = typeof process.env.REPL_ID === "string";
 

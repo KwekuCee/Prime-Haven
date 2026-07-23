@@ -117,12 +117,12 @@ const SubmitWork = () => {
             category: a.project.category
           }));
 
-        // 2. Claimed job_contracts
+        // 2. Claimed job_contracts (only in_progress or active claims that have not been submitted)
         const { data: jcClaims } = await supabase
           .from('job_contract_claims')
           .select(`contract:job_contracts(id, title, category)`)
           .eq('designer_id', user.id)
-          .eq('status', 'active');
+          .in('status', ['active', 'in_progress', 'claimed']);
 
         const availableJC = (jcClaims || [])
           .filter((c: any) => c.contract)
@@ -249,11 +249,65 @@ const SubmitWork = () => {
       if (correctionId) submissionData.parent_submission_id = correctionId;
       const { error } = await supabase.from('submissions').insert([submissionData]);
       if (error) throw error;
+
+      // Reset the user's active contract state so they can claim new jobs
+      if (formData.selectedJobId) {
+        try {
+          // 1. Try dedicated RPC
+          await (supabase as any).rpc('submit_job_contract_work', {
+            p_contract_id: formData.selectedJobId
+          });
+        } catch {
+          // Fallback direct updates if RPC not deployed yet
+          await (supabase as any)
+            .from('job_contract_claims')
+            .update({ status: 'submitted' })
+            .eq('contract_id', formData.selectedJobId)
+            .eq('designer_id', user.id);
+
+          await (supabase as any)
+            .from('project_assignments')
+            .update({ status: 'submitted' })
+            .eq('project_id', formData.selectedJobId)
+            .eq('designer_id', user.id);
+
+          await (supabase as any)
+            .from('client_orders')
+            .update({ project_status: 'submitted' })
+            .eq('id', formData.selectedJobId)
+            .eq('assigned_designer_id', user.id);
+
+          // Remove user from active_designer_ids on job_contracts
+          const { data: contractData } = await (supabase as any)
+            .from('job_contracts')
+            .select('active_designer_ids, active_designers_count')
+            .eq('id', formData.selectedJobId)
+            .single();
+
+          if (contractData) {
+            const currentIds: string[] = contractData.active_designer_ids || [];
+            const newIds = currentIds.filter((id: string) => id !== user.id);
+            const newCount = Math.max(0, (contractData.active_designers_count || 1) - 1);
+
+            await (supabase as any)
+              .from('job_contracts')
+              .update({
+                active_designer_ids: newIds,
+                active_designers_count: newCount,
+              })
+              .eq('id', formData.selectedJobId);
+          }
+        }
+      }
+
       try { await supabase.from('system_logs').insert({ action_type: correctionId ? 'correction_submitted' : 'work_submitted', admin_id: user.id, description: `${correctionId ? 'Correction' : 'New work'}: ${formData.projectName.trim()} (${formData.serviceType})`, timestamp: new Date().toISOString() }); } catch { }
       try { await supabase.functions.invoke('notify-designer', { body: { designerId: user.id, projectName: formData.projectName.trim(), notificationType: 'new_submission', serviceType: formData.serviceType } }); } catch { }
-      toast({ title: "Submission successful!", description: "Your work has been submitted for review." });
-      // Clear started project after successful submission
+
+      // Clear local started project state and remove submitted job from dropdown
       if (user) localStorage.removeItem(`started_project_${user.id}`);
+      setAvailableJobs(prev => prev.filter(j => j.id !== formData.selectedJobId));
+
+      toast({ title: "Submission successful!", description: "Your work has been submitted and your account is reset for new job claims." });
       uploadedFiles.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview); });
       navigate('/dashboard');
     } catch (error: any) {

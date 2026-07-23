@@ -1,4 +1,4 @@
-﻿-- Create role enum for the application
+-- Create role enum for the application
 CREATE TYPE public.app_role AS ENUM ('designer', 'superadmin', 'masteradmin');
 
 -- Create user_roles table (separate from profiles for security)

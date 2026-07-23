@@ -128,6 +128,7 @@ const ActiveContracts = () => {
                         project_status: c.job_contracts.status,
                         price: 0,
                         source: 'job_contracts' as const,
+                        assignment_status: c.status || 'claimed',
                     })),
                 ...(orders || []).map((o: any) => ({
                     id: o.id,
@@ -148,7 +149,8 @@ const ActiveContracts = () => {
                     const isDuplicate = seen.has(item.id);
                     seen.add(item.id);
                     const isExpired = isAfter(nowTime, new Date(item.deadline_at));
-                    return !isDuplicate && !isExpired;
+                    const isSubmitted = item.assignment_status === 'submitted' || item.project_status === 'submitted' || item.project_status === 'completed';
+                    return !isDuplicate && !isExpired && !isSubmitted;
                 });
 
             setContracts(filtered.sort((a, b) => new Date(a.deadline_at).getTime() - new Date(b.deadline_at).getTime()));
@@ -163,66 +165,102 @@ const ActiveContracts = () => {
         if (!user) return;
         setUnclaiming(contractId);
         try {
-            if (source === 'client_projects') {
-                const { error } = await supabase
-                    .from('project_assignments')
-                    .delete()
-                    .eq('project_id', contractId)
-                    .eq('designer_id', user.id);
-                if (error) throw error;
-            } else if (source === 'job_contracts') {
-                // Mark the claim as cancelled (check constraint allows: active, completed, cancelled)
-                const { error: claimError } = await (supabase as any)
-                    .from('job_contract_claims')
-                    .update({ status: 'cancelled' })
-                    .eq('contract_id', contractId)
-                    .eq('designer_id', user.id);
-                if (claimError) throw claimError;
+            // Try release RPC
+            let rpcSuccess = false;
+            try {
+                const { error } = await (supabase as any).rpc('release_job_contract', { p_contract_id: contractId });
+                if (!error) rpcSuccess = true;
+            } catch { }
 
-                // Remove user from active_designer_ids — always use [] not null to respect NOT NULL constraint
-                const { data: contractData } = await (supabase as any)
-                    .from('job_contracts')
-                    .select('active_designer_ids, active_designers_count')
-                    .eq('id', contractId)
-                    .single();
+            if (!rpcSuccess) {
+                if (source === 'client_projects') {
+                    const { error } = await supabase
+                        .from('project_assignments')
+                        .delete()
+                        .eq('project_id', contractId)
+                        .eq('designer_id', user.id);
+                    if (error) throw error;
+                } else if (source === 'job_contracts') {
+                    const { error: claimError } = await (supabase as any)
+                        .from('job_contract_claims')
+                        .update({ status: 'cancelled' })
+                        .eq('contract_id', contractId)
+                        .eq('designer_id', user.id);
+                    if (claimError) throw claimError;
 
-                const currentIds: string[] = contractData?.active_designer_ids || [];
-                const newIds = currentIds.filter((id: string) => id !== user.id);
-                const newCount = Math.max(0, (contractData?.active_designers_count || 1) - 1);
+                    const { data: contractData } = await (supabase as any)
+                        .from('job_contracts')
+                        .select('active_designer_ids, active_designers_count')
+                        .eq('id', contractId)
+                        .single();
 
-                const { error: contractError } = await (supabase as any)
-                    .from('job_contracts')
-                    .update({
-                        active_designer_ids: newIds,
-                        active_designers_count: newCount,
-                    })
-                    .eq('id', contractId);
-                if (contractError) throw contractError;
-            } else {
-                const { error } = await (supabase.from('client_orders') as any)
-                    .update({ assigned_designer_id: null, project_status: 'unassigned' })
-                    .eq('id', contractId)
-                    .eq('assigned_designer_id', user.id);
-                if (error) throw error;
+                    const currentIds: string[] = contractData?.active_designer_ids || [];
+                    const newIds = currentIds.filter((id: string) => id !== user.id);
+                    const newCount = Math.max(0, (contractData?.active_designers_count || 1) - 1);
+
+                    const { error: contractError } = await (supabase as any)
+                        .from('job_contracts')
+                        .update({
+                            active_designer_ids: newIds,
+                            active_designers_count: newCount,
+                        })
+                        .eq('id', contractId);
+                    if (contractError) throw contractError;
+                } else {
+                    const { error } = await (supabase.from('client_orders') as any)
+                        .update({ assigned_designer_id: null, project_status: 'unassigned' })
+                        .eq('id', contractId)
+                        .eq('assigned_designer_id', user.id);
+                    if (error) throw error;
+                }
             }
-            toast({ title: 'Contract Unclaimed', description: 'The project has been returned to the marketplace.' });
+
+            // Clear local storage started state
+            localStorage.removeItem(`started_project_${user.id}`);
+            toast({ title: 'Job Released 🔄', description: 'The project has been released back to the marketplace pool.' });
             loadContracts();
         } catch (err: any) {
-            toast({ title: 'Unclaim Failed', description: err.message, variant: 'destructive' });
+            toast({ title: 'Release Failed', description: err.message, variant: 'destructive' });
         } finally {
             setUnclaiming(null);
         }
     };
 
     const handleStartWork = async (projectId: string) => {
+        if (!user) return;
         setStarting(projectId);
         try {
-            const { error } = await (supabase as any).rpc('start_project_work', { p_project_id: projectId });
-            if (error) throw error;
-            toast({ title: 'Work Started', description: 'You can now submit your work when ready.' });
+            let rpcSuccess = false;
+            try {
+                const { error } = await (supabase as any).rpc('start_job_contract_work', { p_contract_id: projectId });
+                if (!error) rpcSuccess = true;
+            } catch { }
+
+            if (!rpcSuccess) {
+                await (supabase as any)
+                    .from('job_contract_claims')
+                    .update({ status: 'in_progress' })
+                    .eq('contract_id', projectId)
+                    .eq('designer_id', user.id);
+
+                await (supabase as any)
+                    .from('project_assignments')
+                    .update({ status: 'in_progress' })
+                    .eq('project_id', projectId)
+                    .eq('designer_id', user.id);
+            }
+
+            const contract = contracts.find(c => c.id === projectId);
+            localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
+                jobId: projectId,
+                title: contract?.title || 'Active Project',
+                startedAt: new Date().toISOString()
+            }));
+
+            toast({ title: 'Work Started! 🚀', description: 'You can now submit your work when ready.' });
             loadContracts();
         } catch (err: any) {
-            toast({ title: 'Could not start', description: err.message, variant: 'destructive' });
+            toast({ title: 'Could not start work', description: err.message, variant: 'destructive' });
         } finally {
             setStarting(null);
         }
@@ -312,7 +350,7 @@ const ActiveContracts = () => {
                                             disabled={unclaiming === contract.id}
                                             onClick={() => handleUnclaim(contract.id, contract.source)}
                                         >
-                                            {unclaiming === contract.id ? 'Unclaiming...' : 'Unclaim'}
+                                            {unclaiming === contract.id ? 'Releasing...' : 'Release Job'}
                                         </Button>
                                         <Button
                                             size="sm"
@@ -323,7 +361,7 @@ const ActiveContracts = () => {
                                         >
                                             <MessageSquare className="w-3.5 h-3.5 text-primary" />
                                         </Button>
-                                        {contract.source === 'client_projects' && contract.assignment_status === 'claimed' ? (
+                                        {contract.assignment_status === 'claimed' ? (
                                             <Button
                                                 size="sm"
                                                 className="h-8 text-xs font-bold px-3 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"

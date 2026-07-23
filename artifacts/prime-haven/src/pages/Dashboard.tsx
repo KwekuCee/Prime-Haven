@@ -170,7 +170,7 @@ const Dashboard = () => {
           contract:job_contracts(id, title, category, created_at)
         `)
         .eq('designer_id', user.id)
-        .eq('status', 'active');
+        .in('status', ['claimed', 'active', 'in_progress']);
 
       if (jcError) console.error('Error fetching job_contract_claims:', jcError);
 
@@ -258,6 +258,17 @@ const Dashboard = () => {
 
         if (claimError) throw claimError;
       } else if (selectedJob.source === 'job_contracts') {
+        // Mark job contract claim as in_progress
+        try {
+          await (supabase as any).rpc('start_job_contract_work', { p_contract_id: selectedJob.id });
+        } catch {
+          await (supabase as any)
+            .from('job_contract_claims')
+            .update({ status: 'in_progress' })
+            .eq('contract_id', selectedJob.id)
+            .eq('designer_id', user.id);
+        }
+
         // For job_contracts, notify admin that designer is starting
         const { error: notifyError } = await supabase.functions.invoke('notify-designer', {
           body: {
