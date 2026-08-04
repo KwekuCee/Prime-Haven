@@ -91,7 +91,7 @@ const ActiveContracts = () => {
                     )
                 `)
                 .eq('designer_id', user.id)
-                .eq('status', 'active');
+                .in('status', ['claimed', 'active', 'in_progress']);
 
             if (contractClaimsError) throw contractClaimsError;
 
