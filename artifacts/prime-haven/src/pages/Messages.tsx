@@ -86,8 +86,14 @@ const Messages = () => {
         } else {
           // 3. Designer Mode: Show other designers in SAME CATEGORY + their own clients
           // Fetch all designers
-          const { data: allDesigners } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
-          const { data: designerProfiles } = await supabase.from('profiles').select('id, full_name').in('id', allDesigners?.map(d => d.user_id) || []);
+          const { data: allDesigners } = await supabase
+            .from('leaderboard_designer_details')
+            .select('user_id, professional_title, profile_photo_url')
+            .neq('user_id', user.id);
+          const { data: designerProfiles } = await supabase
+            .from('leaderboard_profiles')
+            .select('id, full_name')
+            .in('id', allDesigners?.map(d => d.user_id) || []);
 
           const dProfileMap = new Map(designerProfiles?.map(p => [p.id, p.full_name]) || []);
           const designerList: Designer[] = (allDesigners || [])
