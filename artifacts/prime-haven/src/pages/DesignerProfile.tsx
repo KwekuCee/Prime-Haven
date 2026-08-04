@@ -1,260 +1,259 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-    Star, Trophy, Briefcase, MapPin, Globe, Instagram,
-    Github, ExternalLink, Award, CheckCircle2, Layout,
-    MessageSquare, UserCheck
+    Star, Trophy, Briefcase, Award, Download, Loader2, UserCheck, Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-interface Profile {
-    id: string;
-    full_name?: string | null;
-    avatar_url?: string;
-    bio?: string;
-    location?: string;
-    specialty?: string;
-    total_points?: number;
-    email?: string;
-    created_at?: string;
-    [key: string]: any;
+interface PublicProfile {
+    user_id: string;
+    full_name: string | null;
+    username: string | null;
+    bio: string | null;
+    specialty: string | null;
+    professional_title: string | null;
+    profile_photo_url: string | null;
+    professions: string[] | null;
+    skills: string[] | null;
+    experience_level: string | null;
+    total_points: number | null;
+    talent_score: number | null;
+    join_date: string | null;
 }
 
-interface PortfolioItem {
+interface Work {
     id: string;
-    title: string;
-    category: string;
-    image_url: string;
+    project_name: string;
+    service_type: string;
+    points_awarded: number | null;
+    files_urls: string[] | null;
+    design_link: string | null;
+    created_at: string;
 }
 
-interface BadgeItem {
-    id: string;
-    badge_name: string;
-    badge_icon: string;
-    badge_description: string;
-}
+interface BadgeItem { id: string; badge_name: string; badge_description: string; }
+
+const SERVICE_LABELS: Record<string, string> = {
+    logo: 'Logo Design', branding: 'Brand Identity', uiux: 'UI/UX Design',
+    web: 'Web Design', print: 'Print Design', flyer: 'Flyer Design',
+};
 
 const DesignerProfile = () => {
     const { id } = useParams();
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+    const [profile, setProfile] = useState<PublicProfile | null>(null);
+    const [works, setWorks] = useState<Work[]>([]);
     const [badges, setBadges] = useState<BadgeItem[]>([]);
-    const [avgRating, setAvgRating] = useState(0);
-    const [totalJobs, setTotalJobs] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (id) {
-            loadDesignerData();
-        }
+        if (!id) return;
+        const load = async () => {
+            try {
+                const [{ data: prof }, { data: portfolio }, { data: badgeData }] = await Promise.all([
+                    (supabase as any).rpc('get_designer_public_profile', { p_designer_id: id }),
+                    (supabase as any).rpc('get_designer_public_portfolio', { p_designer_id: id }),
+                    (supabase as any).from('user_badges').select('id, badges(title, description)').eq('user_id', id),
+                ]);
+                setProfile((prof || [])[0] || null);
+                setWorks((portfolio || []) as Work[]);
+                setBadges(((badgeData || []) as any[]).map(b => ({
+                    id: b.id,
+                    badge_name: b.badges?.title || 'Badge',
+                    badge_description: b.badges?.description || '',
+                })));
+            } catch (err) {
+                console.error('Error loading designer profile:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
     }, [id]);
 
-    const loadDesignerData = async () => {
+    const handleDownloadPDF = async () => {
+        if (!profile) return;
+        setExporting(true);
         try {
-            // 1. Load Profile
-            const { data: profData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', id!)
-                .single();
-            setProfile(profData as any);
-
-            // 2. Load Portfolio
-            const { data: portData } = await (supabase
-                .from('portfolio_items') as any)
-                .select('*')
-                .eq('designer_id', id);
-            setPortfolio(portData || []);
-
-            // 3. Load Badges
-            const { data: badgeData } = await (supabase
-                .from('user_badges') as any)
-                .select('*, badges(*)')
-                .eq('user_id', id);
-
-            const formattedBadges = (badgeData as any[])?.map(b => ({
-                id: b.id,
-                badge_name: b.badges?.name || 'Badge',
-                badge_icon: b.badges?.icon_url || '',
-                badge_description: b.badges?.description || ''
-            })) || [];
-            setBadges(formattedBadges);
-
-            // 4. Load Stats (Rating & Job Count)
-            const { data: statsData } = await (supabase
-                .from('client_orders') as any)
-                .select('client_rating, project_status')
-                .eq('assigned_designer_id', id);
-
-            if (statsData) {
-                const ratings = statsData.filter((d: any) => d.client_rating).map((d: any) => d.client_rating);
-                const avg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
-                setAvgRating(avg);
-                setTotalJobs(statsData.filter((d: any) => d.project_status === 'completed').length);
+            const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+                import('jspdf'),
+                import('html2canvas'),
+            ]);
+            const node = printRef.current;
+            if (!node) return;
+            const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const imgHeight = (canvas.height * pageWidth) / canvas.width;
+            let remaining = imgHeight;
+            let position = 0;
+            const imgData = canvas.toDataURL('image/jpeg', 0.92);
+            pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
+            remaining -= pageHeight;
+            while (remaining > 0) {
+                position -= pageHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
+                remaining -= pageHeight;
             }
+            pdf.save(`${(profile.full_name || 'designer').replace(/\s+/g, '-').toLowerCase()}-portfolio.pdf`);
         } catch (err) {
-            console.error('Error loading designer profile:', err);
+            console.error('PDF export failed:', err);
         } finally {
-            setLoading(false);
+            setExporting(false);
         }
     };
 
-    if (loading) return null;
-    if (!profile) return <div>Designer Not Found</div>;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <div className="min-h-screen bg-background">
+                <Navbar />
+                <main className="pt-32 pb-20 text-center">
+                    <h1 className="text-2xl font-heading font-bold">Designer not found</h1>
+                    <p className="text-sm text-muted-foreground mt-2">This portfolio is unavailable.</p>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    const title = profile.professional_title || profile.specialty || 'Creative Designer';
 
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
 
             <main className="pt-24 pb-20">
-                <div className="container mx-auto px-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-                        {/* Left Column: Profile Card */}
-                        <div className="lg:col-span-4 space-y-6">
-                            <Card className="glass border-border/50 overflow-hidden sticky top-24">
-                                <div className="h-32 bg-gradient-to-br from-primary/20 via-background to-background border-b border-border/30" />
-                                <CardContent className="px-6 pb-8 -mt-16 text-center">
-                                    <div className="inline-block relative">
-                                        <div className="w-32 h-32 rounded-full border-4 border-background overflow-hidden bg-muted shadow-2xl">
-                                            {profile.avatar_url ? (
-                                                <img src={profile.avatar_url} alt={profile.full_name ?? undefined} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-primary text-4xl font-bold bg-primary/10">
-                                                    {(profile.full_name ?? '?')[0]}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-background flex items-center justify-center" title="Verified Designer">
-                                            <UserCheck className="w-4 h-4 text-white" />
-                                        </div>
-                                    </div>
-
-                                    <h1 className="text-2xl font-heading font-bold mt-4">{profile.full_name}</h1>
-                                    <p className="text-primary font-bold text-xs uppercase tracking-widest mt-1">{profile.specialty || 'Creative Designer'}</p>
-
-                                    <div className="flex items-center justify-center gap-2 mt-4">
-                                        <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
-                                            {avgRating === 0 ? 'New' : (
-                                                <>
-                                                    <Star className="w-3 h-3 fill-primary" /> {avgRating.toFixed(1)}
-                                                </>
-                                            )}
-                                        </div>
-                                        <Badge variant="outline" className="text-xs h-7 rounded-full border-border/50">
-                                            {totalJobs} Jobs Done
+                <div className="container mx-auto px-6" ref={printRef}>
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+                        <div className="flex items-center gap-5">
+                            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center">
+                                {profile.profile_photo_url ? (
+                                    <img src={profile.profile_photo_url} alt={profile.full_name || 'Designer'} className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-3xl font-bold text-primary">{(profile.full_name || '?')[0]}</span>
+                                )}
+                            </div>
+                            <div>
+                                <h1 className="text-2xl sm:text-3xl font-heading font-bold flex items-center gap-2">
+                                    {profile.full_name || 'Prime Haven Talent'}
+                                    <UserCheck className="w-5 h-5 text-emerald-500" />
+                                </h1>
+                                <p className="text-primary text-xs font-bold uppercase tracking-widest mt-1">{title}</p>
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                    <Badge variant="outline" className="text-[10px] gap-1">
+                                        <Trophy className="w-3 h-3" /> {profile.total_points ?? 0} pts
+                                    </Badge>
+                                    <Badge variant="outline" className="text-[10px] gap-1">
+                                        <Briefcase className="w-3 h-3" /> {works.length} approved works
+                                    </Badge>
+                                    {profile.talent_score ? (
+                                        <Badge variant="outline" className="text-[10px] gap-1">
+                                            <Star className="w-3 h-3" /> Talent score {Number(profile.talent_score).toFixed(0)}
                                         </Badge>
-                                    </div>
-
-                                    <p className="text-sm text-muted-foreground mt-6 leading-relaxed italic">
-                                        "{profile.bio || 'This designer hasn\'t added a bio yet but their work speaks for itself!'}"
-                                    </p>
-
-                                    <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-border/30">
-                                        <a href="#" className="flex flex-col items-center gap-1 group">
-                                            <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                <Instagram className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Insta</span>
-                                        </a>
-                                        <a href="#" className="flex flex-col items-center gap-1 group">
-                                            <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                <Layout className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Behance</span>
-                                        </a>
-                                        <a href="#" className="flex flex-col items-center gap-1 group">
-                                            <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                <Github className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Git</span>
-                                        </a>
-                                    </div>
-
-                                    <Button className="w-full mt-8 glow-primary gap-2" size="lg">
-                                        <MessageSquare className="w-4 h-4" /> Message Designer
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                                    ) : null}
+                                </div>
+                            </div>
                         </div>
-
-                        {/* Right Column: Achievements & Portfolio */}
-                        <div className="lg:col-span-8 space-y-12">
-
-                            {/* Badges Section */}
-                            <section>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                        <Trophy className="w-6 h-6 text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-heading font-bold uppercase tracking-tight">Achievements</h2>
-                                        <p className="text-xs text-muted-foreground font-medium">Earned by consistent performance and quality</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    {badges.length === 0 ? (
-                                        <div className="col-span-full p-8 rounded-2xl border border-dashed border-border/50 text-center opacity-40">
-                                            <Award className="w-10 h-10 mx-auto mb-2" />
-                                            <p className="text-sm">No official badges earned yet</p>
-                                        </div>
-                                    ) : badges.map((badge) => (
-                                        <div key={badge.id} className="group relative flex flex-col items-center p-6 rounded-2xl glass border-border/50 hover:border-amber-500/30 transition-all text-center">
-                                            <div className="w-16 h-16 rounded-full bg-amber-500/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                                <img src={badge.badge_icon} alt={badge.badge_name} className="w-10 h-10 object-contain drop-shadow-lg" />
-                                            </div>
-                                            <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500 mb-1">{badge.badge_name}</h3>
-                                            <p className="text-[9px] text-muted-foreground leading-tight">{badge.badge_description}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-
-                            {/* Portfolio Tabs */}
-                            <Tabs defaultValue="all" className="w-full">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h2 className="text-2xl font-heading font-bold uppercase tracking-tighter">Designer <span className="text-primary">Showcase</span></h2>
-                                    <TabsList className="bg-muted/50 border border-border/50 p-1">
-                                        <TabsTrigger value="all" className="text-xs font-bold uppercase tracking-widest px-6 data-[state=active]:bg-background">All Work</TabsTrigger>
-                                        <TabsTrigger value="logos" className="text-xs font-bold uppercase tracking-widest px-6 data-[state=active]:bg-background">Branding</TabsTrigger>
-                                    </TabsList>
-                                </div>
-
-                                <TabsContent value="all" className="mt-0">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                        {portfolio.length === 0 ? (
-                                            <div className="col-span-full p-20 rounded-2xl border border-dashed border-border/50 text-center opacity-40">
-                                                <Briefcase className="w-12 h-12 mx-auto mb-4" />
-                                                <p className="text-sm">Portfolio is being curated...</p>
-                                            </div>
-                                        ) : portfolio.map((item) => (
-                                            <motion.div
-                                                key={item.id}
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                whileInView={{ opacity: 1, scale: 1 }}
-                                                viewport={{ once: true }}
-                                                className="group relative h-64 rounded-2xl glass border-border/50 overflow-hidden cursor-pointer"
-                                            >
-                                                <img src={item.image_url} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
-                                                    <p className="text-[10px] text-primary font-bold uppercase tracking-widest mb-1">{item.category}</p>
-                                                    <h4 className="text-sm font-bold">{item.title}</h4>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                        </div>
+                        <Button onClick={handleDownloadPDF} disabled={exporting} className="gap-2 self-start" data-html2canvas-ignore="true">
+                            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download PDF
+                        </Button>
                     </div>
+
+                    {profile.bio && (
+                        <p className="max-w-3xl text-sm text-muted-foreground leading-relaxed mb-10">{profile.bio}</p>
+                    )}
+
+                    {(profile.skills?.length || profile.professions?.length) ? (
+                        <div className="flex flex-wrap gap-2 mb-12">
+                            {[...(profile.professions || []), ...(profile.skills || [])].map((s, i) => (
+                                <Badge key={`${s}-${i}`} variant="secondary" className="text-[10px]">{s}</Badge>
+                            ))}
+                        </div>
+                    ) : null}
+
+                    {badges.length > 0 && (
+                        <section className="mb-14">
+                            <h2 className="text-lg font-heading font-bold uppercase tracking-tight mb-5">Achievements</h2>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                {badges.map(badge => (
+                                    <Card key={badge.id} className="border-border/50">
+                                        <CardContent className="p-5 text-center">
+                                            <Award className="w-8 h-8 mx-auto mb-3 text-amber-500" />
+                                            <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500">{badge.badge_name}</h3>
+                                            <p className="text-[9px] text-muted-foreground mt-1 leading-tight">{badge.badge_description}</p>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    <section>
+                        <h2 className="text-2xl font-heading font-bold uppercase tracking-tighter mb-6">
+                            Portfolio <span className="text-primary">Showcase</span>
+                        </h2>
+
+                        {works.length === 0 ? (
+                            <div className="p-16 rounded-2xl border border-dashed border-border/50 text-center opacity-50">
+                                <Briefcase className="w-10 h-10 mx-auto mb-3" />
+                                <p className="text-sm">No approved works published yet.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {works.map(work => (
+                                    <motion.div key={work.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                                        className="rounded-2xl border border-border/50 overflow-hidden bg-card/40">
+                                        {work.files_urls?.[0] ? (
+                                            <div className="aspect-[4/3] bg-muted/30 overflow-hidden">
+                                                <img src={work.files_urls[0]} alt={work.project_name} loading="lazy"
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            </div>
+                                        ) : (
+                                            <div className="aspect-[4/3] bg-muted/30 flex items-center justify-center">
+                                                <Briefcase className="w-8 h-8 text-muted-foreground/40" />
+                                            </div>
+                                        )}
+                                        <div className="p-4">
+                                            <p className="text-sm font-semibold truncate">{work.project_name}</p>
+                                            <div className="flex items-center justify-between mt-2">
+                                                <Badge variant="outline" className="text-[9px]">
+                                                    {SERVICE_LABELS[work.service_type] || work.service_type}
+                                                </Badge>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {new Date(work.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            {work.design_link && (
+                                                <a href={work.design_link} target="_blank" rel="noreferrer"
+                                                    className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-primary font-bold">
+                                                    <Link2 className="w-3 h-3" /> View live design
+                                                </a>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
                 </div>
             </main>
 

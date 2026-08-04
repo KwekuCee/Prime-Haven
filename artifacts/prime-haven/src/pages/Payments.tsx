@@ -45,12 +45,25 @@ const Payments = () => {
         if (designerData) {
           setFormData({ payment_method: designerData.payment_method || '', payment_details: designerData.payment_details ? JSON.stringify(designerData.payment_details, null, 2) : '', confirm_details: '' });
         }
-        const { data: paymentsData } = await supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-        if (paymentsData) {
-          setPaymentHistory(paymentsData);
-          const totalEarned = paymentsData.filter(p => p.type === 'salary' && p.status === 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
-          setPaymentStats({ totalEarned, pendingPayments: paymentsData.filter(p => p.status === 'pending').length, nextPayment: designerData?.salary_estimated || 0 });
-        }
+        const [{ data: paymentsData }, { data: withdrawalsData }] = await Promise.all([
+          supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('withdrawals').select('id, amount, status, created_at, currency').eq('user_id', user.id).order('created_at', { ascending: false }),
+        ]);
+
+        const combined = [
+          ...(paymentsData || []).map(p => ({ ...p, kind: p.type || 'payment' })),
+          ...(withdrawalsData || []).map(w => ({ ...w, type: 'withdrawal', kind: 'withdrawal' })),
+        ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setPaymentHistory(combined);
+        const totalEarned = (paymentsData || [])
+          .filter(p => (p.type === 'salary' || p.type === 'commission' || p.type === 'tip') && p.status === 'completed')
+          .reduce((sum, p) => sum + (p.amount || 0), 0);
+        setPaymentStats({
+          totalEarned,
+          pendingPayments: combined.filter((p: any) => p.status === 'pending').length,
+          nextPayment: designerData?.salary_estimated || 0,
+        });
       } catch { toast({ title: "Error loading payments", variant: "destructive" }); }
       finally { setLoading(false); }
     };
@@ -181,20 +194,21 @@ const Payments = () => {
             </SectionCard>
 
             {/* Payment History */}
-            <SectionCard icon={Clock} title="Payment History" desc="Your earnings record" delay={0.1}>
+            <SectionCard icon={Clock} title="Payment History" desc="Registration, salaries, commissions & withdrawals" delay={0.1}>
               {paymentHistory.length > 0 ? (
                 <div className="space-y-2">
                   {paymentHistory.map(payment => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/10 border border-border/30 hover:bg-muted/20 transition-colors">
+                    <div key={`${payment.kind}-${payment.id}`} className="flex items-center justify-between p-3 rounded-xl bg-muted/10 border border-border/30 hover:bg-muted/20 transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0">
                           <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">{payment.type}</p>
+                          <p className="text-xs font-medium truncate capitalize">{String(payment.type || 'payment').replace(/_/g, ' ')}</p>
                           <p className="text-[9px] text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
+
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs font-bold">{settings.show_earnings ? formatCurrency(payment.amount) : '••••'}</span>
                         <Badge variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'outline' : 'destructive'} className="text-[8px] h-5">

@@ -117,12 +117,12 @@ const SubmitWork = () => {
             category: a.project.category
           }));
 
-        // 2. Claimed job_contracts (only in_progress or active claims that have not been submitted)
+        // 2. Claimed job_contracts — only jobs where work has actually been STARTED
         const { data: jcClaims } = await supabase
           .from('job_contract_claims')
           .select(`contract:job_contracts(id, title, category)`)
           .eq('designer_id', user.id)
-          .in('status', ['active', 'in_progress', 'claimed']);
+          .in('status', ['active', 'in_progress']);
 
         const availableJC = (jcClaims || [])
           .filter((c: any) => c.contract)

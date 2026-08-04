@@ -72,12 +72,12 @@ const Messages = () => {
           const designerIds = Array.from(new Set((submissions || []).map(s => s.designer_id)));
 
           if (designerIds.length > 0) {
-            const { data: designers } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').in('user_id', designerIds);
-            const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', designerIds);
+            const { data: designers } = await supabase.from('leaderboard_designer_details').select('user_id, professional_title, profile_photo_url').in('user_id', designerIds);
+            const { data: profiles } = await supabase.from('leaderboard_profiles').select('id, full_name').in('id', designerIds);
 
             const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
             finalPeers = (designers || []).map(d => ({
-              user_id: d.user_id,
+              user_id: d.user_id as string,
               full_name: profileMap.get(d.user_id) || 'Unknown Designer',
               professional_title: d.professional_title || 'Designer',
               profile_photo_url: d.profile_photo_url || null
@@ -86,14 +86,20 @@ const Messages = () => {
         } else {
           // 3. Designer Mode: Show other designers in SAME CATEGORY + their own clients
           // Fetch all designers
-          const { data: allDesigners } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').neq('user_id', user.id);
-          const { data: designerProfiles } = await supabase.from('profiles').select('id, full_name').in('id', allDesigners?.map(d => d.user_id) || []);
+          const { data: allDesigners } = await supabase
+            .from('leaderboard_designer_details')
+            .select('user_id, professional_title, profile_photo_url')
+            .neq('user_id', user.id);
+          const { data: designerProfiles } = await supabase
+            .from('leaderboard_profiles')
+            .select('id, full_name')
+            .in('id', allDesigners?.map(d => d.user_id) || []);
 
           const dProfileMap = new Map(designerProfiles?.map(p => [p.id, p.full_name]) || []);
           const designerList: Designer[] = (allDesigners || [])
             .filter(d => normalizeCategory(d.professional_title) === myCategory)
             .map(d => ({
-              user_id: d.user_id,
+              user_id: d.user_id as string,
               full_name: dProfileMap.get(d.user_id) || 'Unknown',
               professional_title: d.professional_title || 'Designer',
               profile_photo_url: d.profile_photo_url || null,

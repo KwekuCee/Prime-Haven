@@ -2226,6 +2226,36 @@ export type Database = {
         Args: { p_month?: number; p_year?: number }
         Returns: undefined
       }
+      get_designer_public_portfolio: {
+        Args: { p_designer_id: string }
+        Returns: {
+          created_at: string
+          design_link: string
+          files_urls: string[]
+          id: string
+          points_awarded: number
+          project_name: string
+          service_type: string
+        }[]
+      }
+      get_designer_public_profile: {
+        Args: { p_designer_id: string }
+        Returns: {
+          bio: string
+          experience_level: string
+          full_name: string
+          join_date: string
+          professional_title: string
+          professions: string[]
+          profile_photo_url: string
+          skills: string[]
+          specialty: string
+          talent_score: number
+          total_points: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_pending_client_projects: {
         Args: never
         Returns: {
@@ -2298,6 +2328,10 @@ export type Database = {
       release_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       release_job_contract_claim: {
         Args: { p_contract_id: string }
+        Returns: undefined
+      }
+      release_project_claim: {
+        Args: { p_project_id: string }
         Returns: undefined
       }
       release_referrals_for_withdrawal: {
