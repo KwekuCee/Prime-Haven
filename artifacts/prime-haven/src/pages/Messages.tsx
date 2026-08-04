@@ -72,8 +72,8 @@ const Messages = () => {
           const designerIds = Array.from(new Set((submissions || []).map(s => s.designer_id)));
 
           if (designerIds.length > 0) {
-            const { data: designers } = await supabase.from('designer_details').select('user_id, professional_title, profile_photo_url').in('user_id', designerIds);
-            const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', designerIds);
+            const { data: designers } = await supabase.from('leaderboard_designer_details').select('user_id, professional_title, profile_photo_url').in('user_id', designerIds);
+            const { data: profiles } = await supabase.from('leaderboard_profiles').select('id, full_name').in('id', designerIds);
 
             const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
             finalPeers = (designers || []).map(d => ({
