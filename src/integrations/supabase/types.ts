@@ -2220,10 +2220,7 @@ export type Database = {
         Args: { p_designer_id: string; p_points: number }
         Returns: undefined
       }
-      claim_job_contract: {
-        Args: { p_contract_id: string }
-        Returns: undefined
-      }
+      claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
       generate_monthly_report_now: {
         Args: { p_month?: number; p_year?: number }
@@ -2298,6 +2295,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      release_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       release_job_contract_claim: {
         Args: { p_contract_id: string }
         Returns: undefined
@@ -2306,7 +2304,15 @@ export type Database = {
         Args: { p_affiliate_id: string }
         Returns: number
       }
+      start_job_contract_work: {
+        Args: { p_contract_id: string }
+        Returns: Json
+      }
       start_project_work: { Args: { p_project_id: string }; Returns: undefined }
+      submit_job_contract_work: {
+        Args: { p_contract_id: string }
+        Returns: Json
+      }
       validate_promo_code: {
         Args: { p_code: string }
         Returns: {
