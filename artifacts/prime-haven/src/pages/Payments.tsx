@@ -207,10 +207,8 @@ const Payments = () => {
                           <p className="text-xs font-medium truncate capitalize">{String(payment.type || 'payment').replace(/_/g, ' ')}</p>
                           <p className="text-[9px] text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p>
                         </div>
-
-                          <p className="text-[9px] text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p>
-                        </div>
                       </div>
+
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs font-bold">{settings.show_earnings ? formatCurrency(payment.amount) : '••••'}</span>
                         <Badge variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'outline' : 'destructive'} className="text-[8px] h-5">
