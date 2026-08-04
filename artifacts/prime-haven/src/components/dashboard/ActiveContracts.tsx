@@ -165,55 +165,20 @@ const ActiveContracts = () => {
         if (!user) return;
         setUnclaiming(contractId);
         try {
-            // Try release RPC
-            let rpcSuccess = false;
-            try {
+            if (source === 'job_contracts') {
                 const { error } = await (supabase as any).rpc('release_job_contract', { p_contract_id: contractId });
-                if (!error) rpcSuccess = true;
-            } catch { }
-
-            if (!rpcSuccess) {
-                if (source === 'client_projects') {
-                    const { error } = await supabase
-                        .from('project_assignments')
-                        .delete()
-                        .eq('project_id', contractId)
-                        .eq('designer_id', user.id);
-                    if (error) throw error;
-                } else if (source === 'job_contracts') {
-                    const { error: claimError } = await (supabase as any)
-                        .from('job_contract_claims')
-                        .update({ status: 'cancelled' })
-                        .eq('contract_id', contractId)
-                        .eq('designer_id', user.id);
-                    if (claimError) throw claimError;
-
-                    const { data: contractData } = await (supabase as any)
-                        .from('job_contracts')
-                        .select('active_designer_ids, active_designers_count')
-                        .eq('id', contractId)
-                        .single();
-
-                    const currentIds: string[] = contractData?.active_designer_ids || [];
-                    const newIds = currentIds.filter((id: string) => id !== user.id);
-                    const newCount = Math.max(0, (contractData?.active_designers_count || 1) - 1);
-
-                    const { error: contractError } = await (supabase as any)
-                        .from('job_contracts')
-                        .update({
-                            active_designer_ids: newIds,
-                            active_designers_count: newCount,
-                        })
-                        .eq('id', contractId);
-                    if (contractError) throw contractError;
-                } else {
-                    const { error } = await (supabase.from('client_orders') as any)
-                        .update({ assigned_designer_id: null, project_status: 'unassigned' })
-                        .eq('id', contractId)
-                        .eq('assigned_designer_id', user.id);
-                    if (error) throw error;
-                }
+                if (error) throw error;
+            } else if (source === 'client_projects') {
+                const { error } = await (supabase as any).rpc('release_project_claim', { p_project_id: contractId });
+                if (error) throw error;
+            } else {
+                const { error } = await (supabase.from('client_orders') as any)
+                    .update({ assigned_designer_id: null, project_status: 'unassigned' })
+                    .eq('id', contractId)
+                    .eq('assigned_designer_id', user.id);
+                if (error) throw error;
             }
+
 
             // Clear local storage started state
             localStorage.removeItem(`started_project_${user.id}`);
