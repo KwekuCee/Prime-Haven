@@ -77,7 +77,7 @@ const Messages = () => {
 
             const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
             finalPeers = (designers || []).map(d => ({
-              user_id: d.user_id,
+              user_id: d.user_id as string,
               full_name: profileMap.get(d.user_id) || 'Unknown Designer',
               professional_title: d.professional_title || 'Designer',
               profile_photo_url: d.profile_photo_url || null
@@ -99,7 +99,7 @@ const Messages = () => {
           const designerList: Designer[] = (allDesigners || [])
             .filter(d => normalizeCategory(d.professional_title) === myCategory)
             .map(d => ({
-              user_id: d.user_id,
+              user_id: d.user_id as string,
               full_name: dProfileMap.get(d.user_id) || 'Unknown',
               professional_title: d.professional_title || 'Designer',
               profile_photo_url: d.profile_photo_url || null,
