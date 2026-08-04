@@ -194,17 +194,20 @@ const Payments = () => {
             </SectionCard>
 
             {/* Payment History */}
-            <SectionCard icon={Clock} title="Payment History" desc="Your earnings record" delay={0.1}>
+            <SectionCard icon={Clock} title="Payment History" desc="Registration, salaries, commissions & withdrawals" delay={0.1}>
               {paymentHistory.length > 0 ? (
                 <div className="space-y-2">
                   {paymentHistory.map(payment => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/10 border border-border/30 hover:bg-muted/20 transition-colors">
+                    <div key={`${payment.kind}-${payment.id}`} className="flex items-center justify-between p-3 rounded-xl bg-muted/10 border border-border/30 hover:bg-muted/20 transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0">
                           <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">{payment.type}</p>
+                          <p className="text-xs font-medium truncate capitalize">{String(payment.type || 'payment').replace(/_/g, ' ')}</p>
+                          <p className="text-[9px] text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p>
+                        </div>
+
                           <p className="text-[9px] text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
