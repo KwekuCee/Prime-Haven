@@ -45,12 +45,25 @@ const Payments = () => {
         if (designerData) {
           setFormData({ payment_method: designerData.payment_method || '', payment_details: designerData.payment_details ? JSON.stringify(designerData.payment_details, null, 2) : '', confirm_details: '' });
         }
-        const { data: paymentsData } = await supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-        if (paymentsData) {
-          setPaymentHistory(paymentsData);
-          const totalEarned = paymentsData.filter(p => p.type === 'salary' && p.status === 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
-          setPaymentStats({ totalEarned, pendingPayments: paymentsData.filter(p => p.status === 'pending').length, nextPayment: designerData?.salary_estimated || 0 });
-        }
+        const [{ data: paymentsData }, { data: withdrawalsData }] = await Promise.all([
+          supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('withdrawals').select('id, amount, status, created_at, currency').eq('user_id', user.id).order('created_at', { ascending: false }),
+        ]);
+
+        const combined = [
+          ...(paymentsData || []).map(p => ({ ...p, kind: p.type || 'payment' })),
+          ...(withdrawalsData || []).map(w => ({ ...w, type: 'withdrawal', kind: 'withdrawal' })),
+        ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setPaymentHistory(combined);
+        const totalEarned = (paymentsData || [])
+          .filter(p => (p.type === 'salary' || p.type === 'commission' || p.type === 'tip') && p.status === 'completed')
+          .reduce((sum, p) => sum + (p.amount || 0), 0);
+        setPaymentStats({
+          totalEarned,
+          pendingPayments: combined.filter((p: any) => p.status === 'pending').length,
+          nextPayment: designerData?.salary_estimated || 0,
+        });
       } catch { toast({ title: "Error loading payments", variant: "destructive" }); }
       finally { setLoading(false); }
     };
