@@ -52,7 +52,7 @@ var get_my_profile_default = defineTool({
 // src/lib/mcp/tools/list-my-submissions.ts
 import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.108.0";
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z } from "npm:zod";
+import { z } from "npm:zod@^3.25.76";
 function supabaseForUser2(ctx) {
   return createClient2(
     process.env.SUPABASE_URL,
@@ -93,7 +93,7 @@ var list_my_submissions_default = defineTool2({
 // src/lib/mcp/tools/list-my-notifications.ts
 import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.108.0";
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z2 } from "npm:zod";
+import { z as z2 } from "npm:zod@^3.25.76";
 function supabaseForUser3(ctx) {
   return createClient3(
     process.env.SUPABASE_URL,
@@ -132,7 +132,7 @@ var list_my_notifications_default = defineTool3({
 // src/lib/mcp/tools/list-open-job-contracts.ts
 import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.108.0";
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z3 } from "npm:zod";
+import { z as z3 } from "npm:zod@^3.25.76";
 function supabaseForUser4(ctx) {
   return createClient4(
     process.env.SUPABASE_URL,
