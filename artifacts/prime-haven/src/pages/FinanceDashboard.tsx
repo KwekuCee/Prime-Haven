@@ -131,7 +131,7 @@ const FinanceDashboard = () => {
             const { data: pendingWithdrawalsData, error: pendingWithdrawalsError } = await supabase
                 .from('withdrawals')
                 .select('id, user_id, amount, currency, status, created_at, payout_method_id')
-                .eq('status', 'pending')
+                .in('status', ['pending', 'processing', 'failed'])
                 .order('created_at', { ascending: false });
 
             if (pendingWithdrawalsError) throw pendingWithdrawalsError;
@@ -255,8 +255,18 @@ const FinanceDashboard = () => {
             await supabase.from('designer_details').update({
                 salary_estimated: 0,
                 monthly_points: 0,
-                total_points: 0
+                total_points: 0,
+                salary_payment_status: 'paid',
+                salary_paid_at: new Date().toISOString(),
+                salary_paid_by: user?.id
             }).eq('user_id', designer.user_id);
+
+            // If the talent had an open withdrawal request, paying them manually settles it.
+            await supabase.from('withdrawals')
+                .update({ status: 'approved', processed_at: new Date().toISOString() })
+                .eq('user_id', designer.user_id)
+                .in('status', ['pending', 'processing', 'failed']);
+
 
             // In-app notification so the designer sees "You have been paid"
             await supabase.from('notifications').insert({
@@ -274,39 +284,24 @@ const FinanceDashboard = () => {
         }
     };
 
-    const approveWithdrawal = async (withdrawalId: string) => {
+    const approveWithdrawal = async (withdrawalId: string, mode: 'korapay' | 'manual' = 'korapay') => {
         if (!user) return;
         setApprovingWithdrawal(withdrawalId);
         try {
-            // Find the withdrawal + designer so we can zero out points + notify on success
-            const wd = pendingWithdrawals.find((w: any) => w.id === withdrawalId);
-
             const { data, error } = await supabase.functions.invoke('approve-withdrawal', {
-                body: { withdrawal_id: withdrawalId }
+                body: { withdrawal_id: withdrawalId, mode }
             });
             if (error || (data as any)?.error) {
                 const message = (data as any)?.message || error?.message || 'Approval failed';
                 throw new Error(message);
             }
 
-            // Money left Korapay → reset the designer's points + notify them.
-            if (wd?.user_id) {
-                await supabase.from('designer_details').update({
-                    salary_estimated: 0,
-                    monthly_points: 0,
-                    total_points: 0,
-                }).eq('user_id', wd.user_id);
-
-                await supabase.from('notifications').insert({
-                    user_id: wd.user_id,
-                    title: 'Withdrawal Paid',
-                    message: `Your withdrawal of GH₵ ${Number(wd.amount).toLocaleString()} has been sent to your Mobile Money account via Korapay. Your accumulated points have been reset.`,
-                    type: 'payment',
-                    link: '/dashboard',
-                });
-            }
-
-            toast({ title: 'Withdrawal Approved', description: 'Korapay payout triggered, designer notified, and points reset.' });
+            // The edge function records the transaction, resets the talent's points
+            // and notifies them — no client-side money handling here.
+            toast({
+                title: mode === 'manual' ? 'Marked Paid Manually' : 'Withdrawal Approved',
+                description: (data as any)?.message || 'Talent notified and points reset.'
+            });
             await loadFinancialData();
         } catch (err: any) {
             toast({ title: 'Approval Failed', description: err.message, variant: 'destructive' });
@@ -314,6 +309,30 @@ const FinanceDashboard = () => {
             setApprovingWithdrawal(null);
         }
     };
+
+    const exportLedgerCSV = () => {
+        if (filteredTransactions.length === 0) {
+            toast({ title: 'Nothing to export', description: 'No ledger records match the current filter.' });
+            return;
+        }
+        const header = ['Ref ID', 'Direction', 'User / Entity', 'Method', 'Category', 'Amount (GHS)', 'Status', 'Date'];
+        const rows = filteredTransactions.map((t: any) => [
+            t.id, t.type, t.user, t.gateway, t.category, Number(t.amount).toFixed(2), t.status,
+            format(new Date(t.date), 'yyyy-MM-dd HH:mm'),
+        ]);
+        const csv = [header, ...rows]
+            .map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `prime-haven-ledger-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: 'Ledger Exported', description: `${filteredTransactions.length} transaction(s) saved to CSV.` });
+    };
+
 
     const handleExportAndClearPaidEscrow = async () => {
         const paid = clientDebts.filter((d: any) => d.status === 'paid');
@@ -548,10 +567,16 @@ const FinanceDashboard = () => {
                                             <Badge variant="secondary" className="uppercase text-[10px] tracking-[.2em]">{w.status}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button size="sm" variant="outline" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id)}>
-                                                {approvingWithdrawal === w.id ? 'Approving...' : 'Approve via Korapay'}
-                                            </Button>
+                                            <div className="flex flex-wrap gap-2 justify-end">
+                                                <Button size="sm" variant="outline" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'korapay')}>
+                                                    {approvingWithdrawal === w.id ? 'Processing...' : 'Approve via Korapay'}
+                                                </Button>
+                                                <Button size="sm" variant="ghost" className="text-emerald-600" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'manual')}>
+                                                    <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid Manually
+                                                </Button>
+                                            </div>
                                         </TableCell>
+
                                     </TableRow>
                                 )) : (
                                     <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No pending withdrawals found.</TableCell></TableRow>
@@ -574,7 +599,7 @@ const FinanceDashboard = () => {
                                     <SelectItem value="outgoing">Outgoing Payouts</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button size="sm" variant="outline" className="h-8"><FileText className="w-3 h-3 mr-1" /> Export CSV</Button>
+                            <Button size="sm" variant="outline" className="h-8" onClick={exportLedgerCSV}><FileText className="w-3 h-3 mr-1" /> Export CSV</Button>
                         </div>
                     </div>
                     <div className="p-0">

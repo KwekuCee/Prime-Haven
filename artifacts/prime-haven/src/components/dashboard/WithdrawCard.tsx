@@ -96,38 +96,55 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
     refresh();
   };
 
+  const openWithdrawDialog = () => {
+    if (!isWithdrawalDay) {
+      toast.error(`Withdrawals open on the 29th & 30th only — ${daysToNext} day${daysToNext === 1 ? '' : 's'} to go.`);
+      return;
+    }
+    if (effectiveBalance < 100) {
+      toast.error(`You have less than GH₵100 salary available (current balance GH₵${effectiveBalance.toFixed(2)}). Withdrawals unlock at GH₵100.`);
+      return;
+    }
+    if (methods.length === 0) {
+      toast.error('Add a Mobile Money payout method first.');
+      setMethodOpen(true);
+      return;
+    }
+    setAmount(String(Math.floor(effectiveBalance)));
+    setWithdrawOpen(true);
+  };
+
   const submitWithdrawal = async () => {
     const amt = Number(amount);
     if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is GH₵100'); return; }
     if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
-    if (!selectedMethod) { toast.error('Select a payment method'); return; }
+    if (!selectedMethod) { toast.error('Select a Mobile Money payment method'); return; }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('withdrawals').insert({
-        user_id: userId,
-        payout_method_id: selectedMethod,
-        amount: amt,
-        currency: 'GHS',
-        status: 'pending',
+      const { data, error } = await supabase.functions.invoke('request-withdrawal', {
+        body: { amount: amt, payout_method_id: selectedMethod },
       });
-      if (error) {
-        toast.error(error.message || 'Withdrawal request failed');
+      const payload: any = data;
+      if (error || payload?.error) {
+        toast.error(payload?.message || error?.message || 'Withdrawal request failed');
       } else {
-        toast.success('Withdrawal requested. Pending approval.');
+        toast.success(payload?.message || 'Withdrawal requested. The CEO has been notified for approval.');
         setWithdrawOpen(false);
         setAmount('');
         refresh();
       }
+    } catch (e: any) {
+      toast.error(e?.message || 'Withdrawal request failed');
     } finally {
       setSubmitting(false);
     }
   };
 
   const earned = liveSalary ?? availableBalance;
-  const locked = withdrawals.filter(w => w.status !== 'failed').reduce((s, w) => s + Number(w.amount || 0), 0);
+  const locked = withdrawals.filter(w => !['failed', 'rejected', 'cancelled'].includes(w.status)).reduce((s, w) => s + Number(w.amount || 0), 0);
   // If liveSalary is set we treat it as raw earnings and subtract locked; else fall back to prop (already net).
   const effectiveBalance = liveSalary !== null ? Math.max(0, earned - locked) : availableBalance;
-  const canWithdraw = isWithdrawalDay && effectiveBalance >= 100;
+
 
   return (
     <Card>
@@ -148,13 +165,10 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
             <p className="text-2xl font-bold">GH₵{effectiveBalance.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
-          <Button
-            onClick={() => setWithdrawOpen(true)}
-            disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 29th & 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : methods.length === 0 ? 'Add a Mobile Money method first' : ''}
-          >
+          <Button onClick={openWithdrawDialog}>
             Withdraw
           </Button>
+
         </div>
 
         <div className="space-y-2">
@@ -204,7 +218,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
                         {w.currency === 'GHS' ? 'GH₵' : `${w.currency} `}{Number(w.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="py-2">
-                        <Badge variant={w.status === 'success' ? 'default' : w.status === 'failed' ? 'destructive' : 'secondary'} className="capitalize">
+                        <Badge variant={['success', 'approved'].includes(w.status) ? 'default' : w.status === 'failed' ? 'destructive' : 'secondary'} className="capitalize">
                           {w.status}
                         </Badge>
                         {w.status === 'failed' && w.failure_reason && (

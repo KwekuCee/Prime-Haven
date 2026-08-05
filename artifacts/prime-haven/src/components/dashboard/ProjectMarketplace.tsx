@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { format, addDays, isAfter } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -84,6 +85,14 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
     useEffect(() => {
         loadOpenOrders();
     }, [user]);
+
+    // Instant refresh on claim / start / submit / unclaim (Lovable Cloud Realtime websockets)
+    useRealtimeSync(
+        ['job_contracts', 'job_contract_claims', 'project_assignments', 'client_projects'],
+        () => { void loadOpenOrders(); },
+        'marketplace',
+    );
+
 
     const loadOpenOrders = async () => {
         if (!user) return;
