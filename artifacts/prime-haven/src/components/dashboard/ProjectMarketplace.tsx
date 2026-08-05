@@ -85,6 +85,14 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
         loadOpenOrders();
     }, [user]);
 
+    // Instant refresh on claim / start / submit / unclaim (Lovable Cloud Realtime websockets)
+    useRealtimeSync(
+        ['job_contracts', 'job_contract_claims', 'project_assignments', 'client_projects'],
+        () => { void loadOpenOrders(); },
+        'marketplace',
+    );
+
+
     const loadOpenOrders = async () => {
         if (!user) return;
         setLoading(true);
