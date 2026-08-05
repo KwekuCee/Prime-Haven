@@ -567,10 +567,16 @@ const FinanceDashboard = () => {
                                             <Badge variant="secondary" className="uppercase text-[10px] tracking-[.2em]">{w.status}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button size="sm" variant="outline" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id)}>
-                                                {approvingWithdrawal === w.id ? 'Approving...' : 'Approve via Korapay'}
-                                            </Button>
+                                            <div className="flex flex-wrap gap-2 justify-end">
+                                                <Button size="sm" variant="outline" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'korapay')}>
+                                                    {approvingWithdrawal === w.id ? 'Processing...' : 'Approve via Korapay'}
+                                                </Button>
+                                                <Button size="sm" variant="ghost" className="text-emerald-600" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'manual')}>
+                                                    <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid Manually
+                                                </Button>
+                                            </div>
                                         </TableCell>
+
                                     </TableRow>
                                 )) : (
                                     <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No pending withdrawals found.</TableCell></TableRow>
