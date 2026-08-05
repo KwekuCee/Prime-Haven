@@ -255,8 +255,18 @@ const FinanceDashboard = () => {
             await supabase.from('designer_details').update({
                 salary_estimated: 0,
                 monthly_points: 0,
-                total_points: 0
+                total_points: 0,
+                salary_payment_status: 'paid',
+                salary_paid_at: new Date().toISOString(),
+                salary_paid_by: user?.id
             }).eq('user_id', designer.user_id);
+
+            // If the talent had an open withdrawal request, paying them manually settles it.
+            await supabase.from('withdrawals')
+                .update({ status: 'approved', processed_at: new Date().toISOString() })
+                .eq('user_id', designer.user_id)
+                .in('status', ['pending', 'processing', 'failed']);
+
 
             // In-app notification so the designer sees "You have been paid"
             await supabase.from('notifications').insert({
