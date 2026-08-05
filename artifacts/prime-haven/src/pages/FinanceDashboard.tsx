@@ -599,7 +599,7 @@ const FinanceDashboard = () => {
                                     <SelectItem value="outgoing">Outgoing Payouts</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button size="sm" variant="outline" className="h-8"><FileText className="w-3 h-3 mr-1" /> Export CSV</Button>
+                            <Button size="sm" variant="outline" className="h-8" onClick={exportLedgerCSV}><FileText className="w-3 h-3 mr-1" /> Export CSV</Button>
                         </div>
                     </div>
                     <div className="p-0">
