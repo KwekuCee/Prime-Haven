@@ -218,7 +218,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
                         {w.currency === 'GHS' ? 'GH₵' : `${w.currency} `}{Number(w.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="py-2">
-                        <Badge variant={w.status === 'success' ? 'default' : w.status === 'failed' ? 'destructive' : 'secondary'} className="capitalize">
+                        <Badge variant={['success', 'approved'].includes(w.status) ? 'default' : w.status === 'failed' ? 'destructive' : 'secondary'} className="capitalize">
                           {w.status}
                         </Badge>
                         {w.status === 'failed' && w.failure_reason && (
