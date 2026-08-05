@@ -165,13 +165,10 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
             <p className="text-2xl font-bold">GH₵{effectiveBalance.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
-          <Button
-            onClick={() => setWithdrawOpen(true)}
-            disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 29th & 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : methods.length === 0 ? 'Add a Mobile Money method first' : ''}
-          >
+          <Button onClick={openWithdrawDialog}>
             Withdraw
           </Button>
+
         </div>
 
         <div className="space-y-2">
