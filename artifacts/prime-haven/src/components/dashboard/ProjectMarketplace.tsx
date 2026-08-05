@@ -143,6 +143,13 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             if (contractsError) throw contractsError;
 
+            // Contracts this user has any claim on (active OR already submitted) must not be re-claimable
+            const { data: myClaims } = await (supabase as any)
+                .from('job_contract_claims')
+                .select('contract_id, status')
+                .eq('designer_id', user.id);
+            const myClaimedContractIds = new Set<string>((myClaims || []).map((c: any) => c.contract_id));
+
             // 4. Unify and Filter results
             const now = new Date();
 
@@ -193,6 +200,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             const jobMarket: OpenOrder[] = (contracts || [])
                 .filter((c: any) => {
+                    if (myClaimedContractIds.has(c.id)) return false;
                     const targetProfs: string[] = c.target_professions || [];
                     let hasMatchingProfession = false;
                     let isPushed = targetProfs.length > 0;
