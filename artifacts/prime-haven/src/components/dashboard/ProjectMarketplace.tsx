@@ -200,6 +200,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             const jobMarket: OpenOrder[] = (contracts || [])
                 .filter((c: any) => {
+                    if (myClaimedContractIds.has(c.id)) return false;
                     const targetProfs: string[] = c.target_professions || [];
                     let hasMatchingProfession = false;
                     let isPushed = targetProfs.length > 0;
