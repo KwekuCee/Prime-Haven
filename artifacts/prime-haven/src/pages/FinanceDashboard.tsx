@@ -131,7 +131,7 @@ const FinanceDashboard = () => {
             const { data: pendingWithdrawalsData, error: pendingWithdrawalsError } = await supabase
                 .from('withdrawals')
                 .select('id, user_id, amount, currency, status, created_at, payout_method_id')
-                .eq('status', 'pending')
+                .in('status', ['pending', 'processing', 'failed'])
                 .order('created_at', { ascending: false });
 
             if (pendingWithdrawalsError) throw pendingWithdrawalsError;
