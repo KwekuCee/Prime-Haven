@@ -91,6 +91,11 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Blog — Design & Tech Insights | Prime Haven"
+        description="News, opportunities and updates from Prime Haven: design, branding, web development and Ghana's tech talent network."
+        path="/blog"
+      />
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">

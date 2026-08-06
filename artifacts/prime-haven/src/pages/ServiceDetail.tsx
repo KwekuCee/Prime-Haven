@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Palette, Layers, Globe, Cpu, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
+import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 
 // Service data - in a real app, this would come from a database
@@ -120,6 +121,20 @@ const ServiceDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`${service.title} Services | Prime Haven`}
+        description={service.description || `Professional ${service.title} services from Prime Haven — structured process, senior talent, delivered in Ghana and worldwide.`}
+        path={`/services/${serviceId}`}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: service.title,
+          description: service.description || undefined,
+          serviceType: service.title,
+          provider: { '@type': 'Organization', name: 'Prime Haven', url: 'https://primehaven.tech' },
+          areaServed: 'Worldwide',
+        }}
+      />
       <Navbar />
       
       <main className="pt-24 pb-20">
