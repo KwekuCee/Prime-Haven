@@ -35,12 +35,11 @@ minimumReleaseAgeExclude:
   - stripe-replit-sync
 
 packages:
-  # Only the deployed app plus shared libs are installed. The other artifacts
-  # (prime-haven-video, mockup-sandbox, api-server) are excluded to keep the
-  # deploy install/build inside the executor deadline.
+  # Only the deployed app is installed. The other artifacts
+  # (prime-haven-video, mockup-sandbox, api-server) and the unused shared libs
+  # (lib/*) are excluded to keep the deploy install/build inside the executor
+  # deadline. The app imports none of the lib/* packages.
   - artifacts/prime-haven
-  - lib/*
-  - lib/integrations/*
 
 
 catalog:
