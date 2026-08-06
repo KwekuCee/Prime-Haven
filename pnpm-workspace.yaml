@@ -35,10 +35,13 @@ minimumReleaseAgeExclude:
   - stripe-replit-sync
 
 packages:
-  - artifacts/*
+  # Only the deployed app plus shared libs are installed. The other artifacts
+  # (prime-haven-video, mockup-sandbox, api-server) are excluded to keep the
+  # deploy install/build inside the executor deadline.
+  - artifacts/prime-haven
   - lib/*
   - lib/integrations/*
-  - scripts
+
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
