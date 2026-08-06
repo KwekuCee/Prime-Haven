@@ -2172,28 +2172,6 @@ export type Database = {
           total_points: number | null
           user_id: string | null
         }
-        Insert: {
-          experience_level?: string | null
-          monthly_points?: number | null
-          professional_title?: string | null
-          professions?: string[] | null
-          profile_photo_url?: string | null
-          skills?: string[] | null
-          talent_score?: number | null
-          total_points?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          experience_level?: string | null
-          monthly_points?: number | null
-          professional_title?: string | null
-          professions?: string[] | null
-          profile_photo_url?: string | null
-          skills?: string[] | null
-          talent_score?: number | null
-          total_points?: number | null
-          user_id?: string | null
-        }
         Relationships: []
       }
       leaderboard_profiles: {
@@ -2201,16 +2179,6 @@ export type Database = {
           full_name: string | null
           id: string | null
           username: string | null
-        }
-        Insert: {
-          full_name?: string | null
-          id?: string | null
-          username?: string | null
-        }
-        Update: {
-          full_name?: string | null
-          id?: string | null
-          username?: string | null
         }
         Relationships: []
       }
@@ -2285,6 +2253,28 @@ export type Database = {
       increment_affiliate_click: {
         Args: { p_code: string }
         Returns: undefined
+      }
+      leaderboard_designer_details_fn: {
+        Args: never
+        Returns: {
+          experience_level: string
+          monthly_points: number
+          professional_title: string
+          professions: string[]
+          profile_photo_url: string
+          skills: string[]
+          talent_score: number
+          total_points: number
+          user_id: string
+        }[]
+      }
+      leaderboard_profiles_fn: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+          username: string
+        }[]
       }
       mark_affiliate_payout_paid: {
         Args: { p_payout_id: string }
