@@ -115,7 +115,6 @@ const navSections: NavSection[] = [
       { label: 'Settings', icon: SettingsIcon, path: '/superadmin/settings' },
     ],
   },
-  },
 ];
 
 const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProps) => {
