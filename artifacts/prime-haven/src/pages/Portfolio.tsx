@@ -4,6 +4,7 @@ import { Search, Filter, ExternalLink, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Navbar from '@/components/Navbar';
+import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -59,6 +60,11 @@ const Portfolio = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Portfolio — Design & Development Work | Prime Haven"
+        description="Explore Prime Haven's portfolio of UI/UX design, branding, graphic design and web development projects delivered for clients."
+        path="/portfolio"
+      />
       <Navbar />
       
       <main className="pt-24 pb-20">

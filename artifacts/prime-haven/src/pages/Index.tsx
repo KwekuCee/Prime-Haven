@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import Seo from '@/components/Seo';
 import ParticleBackground from '@/components/ParticleBackground';
 import HeroSection from '@/components/HeroSection';
 import ServicesSection from '@/components/ServicesSection';
@@ -62,6 +63,28 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative z-0">
+      <Seo
+        title="Prime Haven — IT Services & Creative Design Solutions"
+        description="Prime Haven builds brands, websites and digital products — UI/UX design, graphic design, web development and IT solutions, powered by Ghana's vetted tech talent network."
+        path="/"
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'Prime Haven',
+            url: 'https://primehaven.tech',
+            description: 'Technology and design company offering UI/UX design, graphic design, web development and IT solutions, with a vetted tech talent network.',
+            areaServed: 'Worldwide',
+            address: { '@type': 'PostalAddress', addressCountry: 'GH' },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'Prime Haven',
+            url: 'https://primehaven.tech',
+          },
+        ]}
+      />
       <ParticleBackground />
       <Navbar />
       <main>

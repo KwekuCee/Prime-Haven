@@ -1,0 +1,25 @@
+# Prime Haven
+
+> Prime Haven is a Ghana-based technology and design company offering UI/UX design, graphic design, web development and IT solutions, backed by a vetted network of freelance tech talent.
+
+Businesses hire Prime Haven for end-to-end project delivery (research, design, development, testing and support) or to place vetted contract designers and developers. Pricing is quoted per project, in USD and Ghana Cedis (GH₵).
+
+## Pages
+
+- [Home](/): Overview of Prime Haven's services, process, team and client work.
+- [Portfolio](/portfolio): Case studies across UI/UX design, branding, graphic design and web development.
+- [Blog](/blog): News, opportunities and updates from Prime Haven.
+- [Start a project](/start-project): Brief submission and quote request for new client work.
+- [Marketplace](/marketplace): Open contract opportunities for Prime Haven talent.
+
+## Services
+
+- [Graphic Design](/services/graphic-design): Logos, brand identity and print/social design.
+- [UI/UX Design](/services/ui-ux-design): Product, web and app interface design.
+- [Web Development](/services/web-development): Custom websites and web applications.
+- [IT Solutions](/services/it-solutions): Support, infrastructure and business systems.
+
+## Optional
+
+- [Terms](/terms): Terms of service.
+- [Privacy](/privacy): Privacy policy.

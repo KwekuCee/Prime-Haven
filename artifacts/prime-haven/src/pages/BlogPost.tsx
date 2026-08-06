@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Navbar from '@/components/Navbar';
+import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -116,6 +117,25 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`${post.title} | Prime Haven Blog`}
+        description={post.excerpt || `${post.title} — from the Prime Haven blog.`}
+        path={`/blog/${post.slug}`}
+        type="article"
+        image={post.cover_image_url}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: post.title,
+          description: post.excerpt || undefined,
+          image: post.cover_image_url || undefined,
+          datePublished: post.published_at || undefined,
+          articleSection: post.category,
+          mainEntityOfPage: `https://primehaven.tech/blog/${post.slug}`,
+          author: { '@type': 'Organization', name: 'Prime Haven' },
+          publisher: { '@type': 'Organization', name: 'Prime Haven' },
+        }}
+      />
       <Navbar />
       <main className="pt-24 pb-16">
         <article className="container mx-auto px-6 max-w-3xl">

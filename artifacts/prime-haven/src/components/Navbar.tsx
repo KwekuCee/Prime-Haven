@@ -122,6 +122,8 @@ const Navbar = () => {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isOpen}
             className="lg:hidden p-2 rounded-xl text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors z-10"
           >
             <AnimatePresence mode="wait" initial={false}>

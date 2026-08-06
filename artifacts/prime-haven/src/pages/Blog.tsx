@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navbar from '@/components/Navbar';
+import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -90,6 +91,11 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Blog — Design & Tech Insights | Prime Haven"
+        description="News, opportunities and updates from Prime Haven: design, branding, web development and Ghana's tech talent network."
+        path="/blog"
+      />
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -177,7 +183,7 @@ const Blog = () => {
                           {post.excerpt}
                         </p>
                         <div className="flex items-center text-primary text-sm font-semibold pt-2">
-                          Read more <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                          Read full post<span className="sr-only">: {post.title}</span> <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </CardContent>
                     </Card>
