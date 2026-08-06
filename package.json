@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "npm run dev --workspace=artifacts/prime-haven",
     "build": "npm run build --workspace=artifacts/prime-haven",
+    "build:dev": "npm run build --workspace=artifacts/prime-haven",
     "serve": "npm run serve --workspace=artifacts/prime-haven",
     "typecheck": "npm run typecheck --workspace=artifacts/prime-haven",
     "lint": "npm run typecheck --workspace=artifacts/prime-haven"

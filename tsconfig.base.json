@@ -28,7 +28,6 @@
     ],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "paths": {
       "@workspace/api-zod": [
         "./lib/api-zod/dist/index.d.ts"
