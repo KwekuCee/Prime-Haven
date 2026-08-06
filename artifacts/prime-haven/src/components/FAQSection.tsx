@@ -53,6 +53,16 @@ const tabs = [
   { id: 'freelancers', label: '🔹 For Freelancers', faqs: freelancerFAQs },
 ];
 
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [...businessFAQs, ...freelancerFAQs].map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+
 const FAQSection = () => {
   const [activeTab, setActiveTab] = useState('businesses');
   const activeFAQs = tabs.find(t => t.id === activeTab)!.faqs;
