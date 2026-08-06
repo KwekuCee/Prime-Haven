@@ -87,6 +87,7 @@ const ForwardWork = lazy(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazy(() => import("./pages/ManagePromoPopup"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const ManageSystemSettings = lazy(() => import("./pages/ManageSystemSettings"));
 
 const queryClient = new QueryClient();
 
@@ -150,6 +151,7 @@ const App = () => {
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/promo" element={<ManagePromoPopup />} />
+                  <Route path="/superadmin/settings" element={<ManageSystemSettings />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
