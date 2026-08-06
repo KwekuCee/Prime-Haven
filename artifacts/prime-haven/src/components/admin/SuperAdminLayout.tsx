@@ -6,7 +6,8 @@ import {
   Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
   Star, Download, Activity, LogOut, Menu, X, Shield,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
-  TrendingUp, Ticket, Presentation, MonitorPlay, MessageSquare, Gavel, Zap
+  TrendingUp, Ticket, Presentation, MonitorPlay, MessageSquare, Gavel, Zap,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -111,7 +112,9 @@ const navSections: NavSection[] = [
       { label: 'Marketing Assets', icon: Presentation, path: '/superadmin', tab: 'marketing_assets' },
       { label: 'Communications', icon: Send, path: '/superadmin', tab: 'communications' },
       { label: 'Logs', icon: Activity, path: '/superadmin', tab: 'logs' },
+      { label: 'Settings', icon: SettingsIcon, path: '/superadmin/settings' },
     ],
+  },
   },
 ];
 
