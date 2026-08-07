@@ -104,21 +104,20 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 px-4 rounded-full font-medium hover:text-primary"
+                className="h-10 px-4 rounded-full font-semibold hover:text-primary"
               >
                 {t('nav.login')}
               </Button>
             </Link>
 
-            <Link to="/register">
-              <Button
-                size="sm"
-                className="h-9 px-5 rounded-full font-bold glow-primary"
-              >
-                {t('nav.join')}
-              </Button>
+            <Link to="/register" className="btn-ink group !py-2.5 !pl-5 !pr-2.5">
+              {t('nav.join')}
+              <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
             </Link>
           </div>
+
 
           {/* Mobile menu button */}
           <button
