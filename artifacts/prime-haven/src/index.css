@@ -200,28 +200,85 @@
     box-shadow: var(--glow-strong);
   }
 
+  /* Soft paper cards (legacy glass-* names kept so existing markup restyles automatically) */
   .glass {
-    @apply bg-card/40 backdrop-blur-2xl border border-white/5;
+    @apply bg-card border border-border/70;
+    box-shadow: var(--shadow-soft);
   }
 
   .glass-card {
-    @apply bg-card/30 backdrop-blur-[40px] border border-white/5 shadow-2xl;
+    @apply bg-card border border-border/70;
+    box-shadow: var(--shadow-soft);
   }
 
   .glass-panel {
-    @apply bg-background/50 backdrop-blur-3xl border border-white/5;
+    @apply bg-card/90 backdrop-blur-xl border border-border/70;
+    box-shadow: var(--shadow-soft);
   }
 
   .glass-hover {
-    @apply transition-all duration-300 hover:bg-card/60 hover:border-primary/40 hover:-translate-y-1;
+    @apply transition-all duration-500 hover:-translate-y-1.5 hover:border-primary/30;
   }
 
   .glass-hover:hover {
-    box-shadow: 0 0 30px hsla(16, 99%, 55%, 0.15);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .paper-card {
+    @apply bg-card border border-border/70 rounded-[1.75rem];
+    box-shadow: var(--shadow-soft);
+  }
+
+  .lift-card {
+    @apply paper-card transition-all duration-500 hover:-translate-y-1.5;
+  }
+
+  .lift-card:hover {
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Ink pill — the primary Bartoon CTA */
+  .btn-ink {
+    @apply inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-bold transition-all duration-300;
+    background: hsl(var(--ink));
+    color: hsl(var(--background));
+  }
+
+  .btn-ink:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+  }
+
+  /* Rainbow spectrum rail (top of page / dividers) */
+  .spectrum-bar {
+    background-image: var(--gradient-spectrum);
+    filter: saturate(1.05);
+  }
+
+  .spectrum-glow::before {
+    content: '';
+    position: absolute;
+    inset: -14% -6% auto -6%;
+    height: 55%;
+    border-radius: 999px;
+    background-image: var(--gradient-spectrum);
+    filter: blur(58px);
+    opacity: 0.55;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .display-italic {
+    font-style: italic;
+    letter-spacing: -0.045em;
   }
 
   .text-glow {
-    text-shadow: 0 0 20px hsla(16, 99%, 55%, 0.6);
+    text-shadow: 0 0 20px hsla(13, 100%, 58%, 0.35);
   }
 
   .neon-border {
@@ -234,9 +291,24 @@
     inset: -1px;
     z-index: -1;
     border-radius: inherit;
-    background: linear-gradient(135deg, hsla(16, 99%, 55%, 0.5), transparent 60%, hsla(16, 99%, 55%, 0.2));
+    background: linear-gradient(135deg, hsla(13, 100%, 58%, 0.35), transparent 60%, hsla(13, 100%, 58%, 0.15));
+  }
+
+  .marquee-track {
+    animation: marquee 32s linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
+
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
