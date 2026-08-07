@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["PP Neue Machina", "Space Grotesk", "system-ui", "sans-serif"],
-        body: ["Switzer", "system-ui", "sans-serif"],
+        heading: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        body: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
+
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
