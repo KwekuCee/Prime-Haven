@@ -104,7 +104,7 @@ const BlogSection = () => {
         <div className="relative max-w-4xl mx-auto mb-16 z-10">
 
           {/* Glassmorphic Carousel Track Container */}
-          <div className="relative overflow-hidden rounded-[2rem] glass border border-primary/20 bg-card/30 backdrop-blur-xl p-6 sm:p-10 shadow-none hover:shadow-[0_0_20px_hsl(var(--primary)/10)] transition-shadow duration-500">
+          <div className="relative overflow-hidden rounded-[2rem] glass border border-primary/20 bg-card p-6 sm:p-10 shadow-none hover:shadow-[0_0_20px_hsl(var(--primary)/10)] transition-shadow duration-500">
 
             {/* The Arrows */}
             {posts.length > 1 && (

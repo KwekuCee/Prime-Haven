@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Settings, ChevronDown } from 'lucide-react';
+import { Menu, X, Settings, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -40,12 +40,12 @@ const Navbar = () => {
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? 'bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm shadow-black/20'
+          ? 'bg-background/85 backdrop-blur-xl border-b border-border/60'
           : 'bg-transparent'
       }`}
     >
       <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16 lg:h-18">
+        <div className="flex items-center justify-between h-16 lg:h-20">
 
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0 z-10">
@@ -55,18 +55,19 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop center nav — pill style */}
-          <div className="hidden lg:flex items-center gap-1 px-2 py-1.5 rounded-full border border-border/40 bg-background/40 backdrop-blur-md">
+          <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((item) => (
               <motion.a
                 key={item.name}
                 href={item.href}
                 whileHover={{ y: -1 }}
-                className="px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-full hover:bg-primary/8 transition-all duration-200"
+                className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground rounded-full hover:bg-card transition-all duration-300"
               >
                 {item.name}
               </motion.a>
             ))}
           </div>
+
 
           {/* Desktop right actions */}
           <div className="hidden lg:flex items-center gap-2 z-10">
@@ -103,21 +104,20 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 px-4 rounded-full font-medium hover:text-primary"
+                className="h-10 px-4 rounded-full font-semibold hover:text-primary"
               >
                 {t('nav.login')}
               </Button>
             </Link>
 
-            <Link to="/register">
-              <Button
-                size="sm"
-                className="h-9 px-5 rounded-full font-bold glow-primary"
-              >
-                {t('nav.join')}
-              </Button>
+            <Link to="/register" className="btn-ink group !py-2.5 !pl-5 !pr-2.5">
+              {t('nav.join')}
+              <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
             </Link>
           </div>
+
 
           {/* Mobile menu button */}
           <button

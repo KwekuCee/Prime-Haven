@@ -6,7 +6,7 @@ const ValueBentoGrid = () => {
     return (
         <section className="py-24 relative overflow-hidden">
             {/* Background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/10 blur-[130px] rounded-full pointer-events-none opacity-40" />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center max-w-3xl mx-auto mb-16">
@@ -45,7 +45,7 @@ const ValueBentoGrid = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.3 }}
-                        className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl p-8 flex flex-col justify-between"
+                        className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-3xl border border-border/70 bg-card p-8 flex flex-col justify-between"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -59,7 +59,7 @@ const ValueBentoGrid = () => {
                             </p>
                         </div>
 
-                        <div className="relative z-10 flex border border-border/50 bg-black/40 rounded-2xl p-6 backdrop-blur-md overflow-hidden">
+                        <div className="relative z-10 flex border border-border/50 bg-background rounded-2xl p-6 backdrop-blur-md overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full pointer-events-none" />
                             <div className="flex-1 space-y-6">
                                 <div>
@@ -102,7 +102,7 @@ const ValueBentoGrid = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.4 }}
-                        className="md:col-span-1 group relative overflow-hidden rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl p-8"
+                        className="md:col-span-1 group relative overflow-hidden rounded-3xl border border-border/70 bg-card p-8"
                     >
                         <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <div className="relative z-10">
@@ -135,7 +135,7 @@ const ValueBentoGrid = () => {
                                 <Globe className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-heading font-bold mb-3 text-foreground dark:text-white">Global Reach & Standards</h3>
-                            <p className="text-blue-200/60 text-sm">
+                            <p className="text-muted-foreground text-sm">
                                 Borderless talent pool operating under strict international design standards. We deliver Silicon Valley quality, globally accessible.
                             </p>
                         </div>

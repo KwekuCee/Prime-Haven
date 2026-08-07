@@ -1,269 +1,281 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Briefcase, Users, Star, Sparkles, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowRight, ArrowUpRight, Users, Briefcase, Star, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const ease = [0.22, 1, 0.36, 1] as const;
+
+const metrics = [
+  { label: 'Vetted Talent', value: '50+', delta: '+12%', tone: 'text-primary' },
+  { label: 'Projects Delivered', value: '200+', delta: '+8.4%', tone: 'text-indigo-500' },
+  { label: 'Client Satisfaction', value: '98%', delta: '+2.1%', tone: 'text-emerald-500' },
+  { label: 'Avg. Turnaround', value: '5 days', delta: '-1.2d', tone: 'text-amber-500' },
+];
+
+const disciplines = ['Graphic Design', 'UI/UX Design', 'Web Development', 'IT Solutions'];
+
 const HeroSection = () => {
-  const stats = [
-    { icon: Users, value: '50+', label: 'Vetted Designers' },
-    { icon: Briefcase, value: '200+', label: 'Projects Delivered' },
-    { icon: Star, value: '98%', label: 'Client Satisfaction' },
-  ];
-
-  const floatingCards = [
-    { icon: '🎨', label: 'Graphic Design', delay: 0 },
-    { icon: '💻', label: 'Web Development', delay: 0.4 },
-    { icon: '📱', label: 'UI/UX Design', delay: 0.8 },
-  ];
-
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-background">
+    <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
+      {/* Spectrum rail at the very top of the canvas */}
+      <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
+      <div className="absolute -top-24 left-0 right-0 h-32 spectrum-bar blur-[100px] opacity-25 pointer-events-none" />
 
-      {/* Ambient background glow blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.45, 0.25] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[700px] h-[700px] bg-primary/20 rounded-full blur-[140px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.12, 0.25, 0.12] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-          className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[160px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.3, 0.15] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/8 rounded-full blur-[180px]"
-        />
-
-        {/* Dot grid */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, hsl(16 99% 55%) 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-
-        {/* Horizontal scan line */}
-        <motion.div
-          animate={{ y: ['-100%', '200%'] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'linear', repeatDelay: 4 }}
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
-        />
-      </div>
-
-      <div className="container mx-auto px-6 relative z-10 pt-28 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[calc(100vh-112px)]">
-
-          {/* ─── Left Column ─── */}
-          <div className="space-y-8">
-
-            {/* Eyebrow badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2.5 border border-primary/30 bg-primary/5 px-4 py-2 rounded-full"
-            >
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-              <span className="text-xs font-semibold text-primary tracking-widest uppercase">
-                Ghana's Premier Creative Marketplace
-              </span>
-            </motion.div>
-
-            {/* Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.15 }}
-              className="font-heading font-black leading-[1.05] tracking-tight"
-              style={{ fontSize: 'clamp(2.8rem, 5.5vw, 5rem)' }}
-            >
-              Where Great Design{' '}
-              <span className="relative inline-block">
-                <span className="text-gradient">Meets Real</span>
-              </span>
-              <br />
-              Opportunity.
-            </motion.h1>
-
-            {/* Subheadline */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-lg text-muted-foreground leading-relaxed max-w-lg"
-            >
-              Connect with Ghana's top-tier designers and developers — or launch your creative career
-              with guaranteed projects and real earnings.
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.45 }}
-              className="flex flex-col sm:flex-row gap-4"
-            >
-              <Link to="/start-project">
-                <Button
-                  size="lg"
-                  className="group glow-primary h-13 px-8 text-base font-bold gap-2 w-full sm:w-auto"
-                >
-                  <Briefcase className="w-5 h-5" />
-                  Start a Project
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-13 px-8 text-base font-bold gap-2 border-border/60 hover:border-primary/50 bg-background/40 backdrop-blur-md w-full sm:w-auto"
-                >
-                  <Users className="w-5 h-5" />
-                  Join as Freelancer
-                </Button>
-              </Link>
-            </motion.div>
-
-            {/* Stats row */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-wrap gap-6 pt-4 border-t border-border/30"
-            >
-              {stats.map((s, i) => (
-                <div key={s.label} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <s.icon className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold leading-tight">{s.value}</p>
-                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</p>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          </div>
-
-          {/* ─── Right Column – Visual ─── */}
+      <div className="container mx-auto px-6 relative z-10">
+        {/* ─── Headline block ─── */}
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="relative flex items-center justify-center hidden lg:flex"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease }}
+            className="eyebrow"
           >
-            {/* Outer glow ring */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-[440px] h-[440px] rounded-full border border-primary/10"
-              style={{
-                background: 'conic-gradient(from 0deg, transparent 70%, hsl(16 99% 55% / 0.15) 100%)',
-              }}
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-[340px] h-[340px] rounded-full border border-primary/15"
-              style={{
-                background: 'conic-gradient(from 180deg, transparent 70%, hsl(16 99% 55% / 0.12) 100%)',
-              }}
-            />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Ghana&apos;s premier creative marketplace
+          </motion.div>
 
-            {/* Center orb */}
-            <div className="relative w-48 h-48">
-              <motion.div
-                animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 blur-2xl"
-              />
-              <div className="relative w-full h-full rounded-full bg-gradient-to-br from-primary/30 via-primary/10 to-transparent border border-primary/30 flex items-center justify-center backdrop-blur-sm">
-                <motion.div
-                  animate={{ rotate: [0, 15, 0, -15, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  <Sparkles className="w-16 h-16 text-primary" />
-                </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.08, ease }}
+            className="mt-8 font-heading font-extrabold leading-[0.96]"
+            style={{ fontSize: 'clamp(2.9rem, 6.2vw, 5.6rem)' }}
+          >
+            Where great design
+            <br />
+            meets <span className="display-italic text-primary">real</span> opportunity
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease }}
+            className="mt-7 mx-auto max-w-xl text-lg text-muted-foreground leading-relaxed"
+          >
+            Prime Haven connects clients with vetted designers and developers — and gives creative
+            talent guaranteed projects, real points and real earnings.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease }}
+            className="mt-10 flex flex-col sm:flex-row gap-3 justify-center"
+          >
+            <Link to="/start-project" className="btn-ink justify-center group">
+              Start a Project
+              <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </Link>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-bold text-foreground transition-all duration-300 hover:border-primary/40 hover:-translate-y-0.5"
+            >
+              <Users className="w-4 h-4 text-primary" />
+              Join as Talent
+            </Link>
+          </motion.div>
+
+          {/* Social proof + discipline marquee */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mt-14"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+              Trusted by founders, startups and brands across Ghana
+            </p>
+            <div className="mt-6 relative overflow-hidden max-w-3xl mx-auto [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+              <div className="flex w-max marquee-track gap-3">
+                {[...disciplines, ...disciplines, ...disciplines, ...disciplines].map((d, i) => (
+                  <span
+                    key={`${d}-${i}`}
+                    className="rounded-full border border-border/70 bg-card px-5 py-2 text-sm font-semibold text-muted-foreground whitespace-nowrap"
+                  >
+                    {d}
+                  </span>
+                ))}
               </div>
             </div>
-
-            {/* Floating service cards */}
-            {floatingCards.map((card, i) => {
-              const positions = [
-                { top: '6%', left: '0%' },
-                { top: '50%', right: '-8%', transform: 'translateY(-50%)' },
-                { bottom: '8%', left: '8%' },
-              ];
-              return (
-                <motion.div
-                  key={card.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1, y: [0, -8, 0] }}
-                  transition={{
-                    opacity: { duration: 0.5, delay: 0.8 + card.delay },
-                    scale: { duration: 0.5, delay: 0.8 + card.delay },
-                    y: { duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: card.delay },
-                  }}
-                  className="absolute glass border border-primary/20 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl backdrop-blur-md"
-                  style={positions[i]}
-                >
-                  <span className="text-2xl">{card.icon}</span>
-                  <span className="text-sm font-semibold text-foreground whitespace-nowrap">{card.label}</span>
-                </motion.div>
-              );
-            })}
-
-            {/* Live indicator pill */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.4 }}
-              className="absolute bottom-2 right-4 glass border border-emerald-500/30 rounded-full px-3 py-1.5 flex items-center gap-2"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] font-semibold text-emerald-400">Live Projects Available</span>
-            </motion.div>
-
-            {/* Corner sparkle dots */}
-            {[
-              { top: '18%', right: '14%' },
-              { bottom: '22%', right: '22%' },
-            ].map((pos, i) => (
-              <motion.div
-                key={i}
-                animate={{ scale: [0.8, 1.4, 0.8], opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2.5, repeat: Infinity, delay: i * 1.2, ease: 'easeInOut' }}
-                className="absolute w-3 h-3"
-                style={pos}
-              >
-                <Zap className="w-full h-full text-primary/70" />
-              </motion.div>
-            ))}
           </motion.div>
         </div>
-      </div>
 
-      {/* Scroll hint */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.6 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-      >
-        <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground/50 font-medium">Scroll</span>
+        {/* ─── Dashboard mock ─── */}
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-5 h-8 rounded-full border border-muted-foreground/20 flex justify-center pt-1.5"
+          initial={{ opacity: 0, y: 70, rotateX: 12 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 1.1, delay: 0.35, ease }}
+          className="relative mt-20 max-w-5xl mx-auto spectrum-glow"
+          style={{ perspective: 1400 }}
         >
-          <div className="w-1 h-2 rounded-full bg-primary/60" />
+          <div className="paper-card relative overflow-hidden p-3 sm:p-5 rounded-[2rem]">
+            {/* Mock topbar */}
+            <div className="flex items-center justify-between gap-4 rounded-full border border-border/70 bg-background px-4 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center text-[11px] font-black text-primary-foreground">
+                  PH
+                </span>
+                <span className="font-bold text-sm">Prime Haven</span>
+              </div>
+              <div className="hidden md:flex items-center gap-1.5">
+                {['Dashboard', 'Marketplace', 'Submissions', 'Payments'].map((t, i) => (
+                  <span
+                    key={t}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-semibold ${
+                      i === 0 ? 'bg-foreground text-background' : 'border border-border/70 text-muted-foreground'
+                    }`}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+              <span className="flex items-center gap-2 text-[11px] font-semibold text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </span>
+            </div>
+
+            {/* Metric cards */}
+            <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {metrics.map((m, i) => (
+                <motion.div
+                  key={m.label}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.7 + i * 0.08, ease }}
+                  className="rounded-2xl border border-border/70 bg-background p-4"
+                >
+                  <p className="text-[11px] font-semibold text-muted-foreground">{m.label}</p>
+                  <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                    <span className="text-2xl font-extrabold tracking-tight">{m.value}</span>
+                    <span className={`text-[11px] font-bold ${m.tone}`}>{m.delta}</span>
+                  </div>
+                  {/* sparkline */}
+                  <svg viewBox="0 0 120 34" className="mt-3 w-full h-8 overflow-visible">
+                    <motion.path
+                      d="M0 26 C 14 20, 22 30, 34 22 S 54 8, 66 18 S 88 26, 100 12 L 120 16"
+                      fill="none"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      className={m.tone}
+                      stroke="currentColor"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 1.4, delay: 0.9 + i * 0.1, ease }}
+                    />
+                  </svg>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Lower panels */}
+            <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div className="lg:col-span-2 rounded-2xl border border-border/70 bg-background p-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm">Project Pipeline</h3>
+                  <div className="flex gap-1">
+                    {['1W', '1M', '6M', '1Y'].map((r, i) => (
+                      <span
+                        key={r}
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                          i === 1 ? 'bg-primary/12 text-primary' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-5 flex items-end gap-2 h-28">
+                  {[42, 66, 38, 78, 54, 88, 62, 96, 70, 84, 58, 92].map((h, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${h}%` }}
+                      transition={{ duration: 0.8, delay: 0.9 + i * 0.05, ease }}
+                      className="flex-1 rounded-t-md"
+                      style={{
+                        background:
+                          i % 3 === 0
+                            ? 'hsl(var(--primary))'
+                            : 'hsla(var(--primary) / 0.22)',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border/70 bg-background p-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm">Top Disciplines</h3>
+                  <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="mt-4 space-y-3.5">
+                  {[
+                    { name: 'UI/UX Design', pct: 92 },
+                    { name: 'Web Development', pct: 84 },
+                    { name: 'Graphic Design', pct: 76 },
+                  ].map((d, i) => (
+                    <div key={d.name}>
+                      <div className="flex justify-between text-[11px] font-semibold mb-1.5">
+                        <span className="text-muted-foreground">{d.name}</span>
+                        <span>{d.pct}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${d.pct}%` }}
+                          transition={{ duration: 1.2, delay: 1 + i * 0.12, ease }}
+                          className="h-full rounded-full bg-gradient-primary"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating accent chips */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="hidden xl:flex absolute -left-24 top-32 items-center gap-2.5 paper-card rounded-2xl px-4 py-3"
+          >
+            <span className="w-8 h-8 rounded-xl bg-primary/12 flex items-center justify-center">
+              <Briefcase className="w-4 h-4 text-primary" />
+            </span>
+            <div className="text-left">
+              <p className="text-xs font-bold leading-none">New contract</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Brand identity · GH₵2,400</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            animate={{ y: [0, 12, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+            className="hidden xl:flex absolute -right-24 bottom-24 items-center gap-2.5 paper-card rounded-2xl px-4 py-3"
+          >
+            <span className="w-8 h-8 rounded-xl bg-emerald-500/12 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
+            </span>
+            <div className="text-left">
+              <p className="text-xs font-bold leading-none">Payout released</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Monthly pool · 29th</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+            className="hidden xl:flex absolute -right-20 top-6 items-center gap-2 paper-card rounded-full px-4 py-2"
+          >
+            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+            <span className="text-xs font-bold">4.9 average rating</span>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </section>
   );
 };

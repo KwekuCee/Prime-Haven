@@ -2,114 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prime Haven Design System - Dark theme with orange accent */
-
-@font-face {
-  font-family: 'PP Neue Machina';
-  src: url('/fonts/PPNeueMachina-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-display: swap;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'PP Neue Machina';
-  src: url('/fonts/PPNeueMachina-Ultrabold.otf') format('opentype');
-  font-weight: 700;
-  font-display: swap;
-  font-style: normal;
-}
+/* Prime Haven Design System — warm cream canvas, ember-orange accent, ink-black CTAs */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
+    --background: 33 43% 96%;
+    --foreground: 24 10% 8%;
 
-    --card: 0 0% 97%;
-    --card-foreground: 0 0% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 8%;
 
-    --popover: 0 0% 97%;
-    --popover-foreground: 0 0% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 8%;
 
-    --primary: 16 99% 55%;
+    --primary: 13 100% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 92%;
-    --secondary-foreground: 0 0% 15%;
+    --secondary: 32 30% 92%;
+    --secondary-foreground: 24 10% 12%;
 
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 32 26% 93%;
+    --muted-foreground: 26 8% 42%;
 
-    --accent: 16 99% 55%;
+    --accent: 13 100% 58%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 90%;
-    --ring: 16 99% 55%;
+    --border: 32 22% 88%;
+    --input: 32 22% 90%;
+    --ring: 13 100% 58%;
 
-    --radius: 0.75rem;
+    --radius: 1.25rem;
 
-    /* Custom Prime Haven tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(16, 99%, 55%) 0%, hsl(30, 100%, 60%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(0, 0%, 96%) 100%);
-    --glow-primary: 0 0 40px hsla(16, 99%, 55%, 0.2);
-    --glow-strong: 0 0 80px hsla(16, 99%, 55%, 0.3);
+    /* Bartoon-inspired tokens */
+    --ink: 24 12% 7%;
+    --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
+    --gradient-spectrum: linear-gradient(90deg,
+        hsl(205 90% 62%) 0%,
+        hsl(265 70% 65%) 22%,
+        hsl(348 85% 60%) 45%,
+        hsl(13 100% 58%) 68%,
+        hsl(35 95% 62%) 86%,
+        hsl(45 95% 66%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(33 43% 96%) 0%, hsl(33 40% 93%) 100%);
+    --glow-primary: 0 18px 40px -18px hsla(13, 100%, 58%, 0.45);
+    --glow-strong: 0 30px 80px -24px hsla(13, 100%, 58%, 0.55);
+    --shadow-soft: 0 1px 2px hsla(24, 10%, 8%, 0.04), 0 12px 32px -14px hsla(24, 10%, 8%, 0.12);
+    --shadow-lift: 0 2px 4px hsla(24, 10%, 8%, 0.05), 0 28px 60px -22px hsla(24, 10%, 8%, 0.2);
+    --grid-line: hsla(24, 12%, 8%, 0.055);
 
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 0 0% 5%;
-    --sidebar-primary: 16 99% 55%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 24 10% 8%;
+    --sidebar-primary: 13 100% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 92%;
-    --sidebar-accent-foreground: 0 0% 15%;
-    --sidebar-border: 0 0% 88%;
-    --sidebar-ring: 16 99% 55%;
+    --sidebar-accent: 32 30% 93%;
+    --sidebar-accent-foreground: 24 10% 12%;
+    --sidebar-border: 32 22% 88%;
+    --sidebar-ring: 13 100% 58%;
   }
 
   .dark {
-    --background: 226 50% 4%;
-    --foreground: 0 0% 100%;
+    --background: 24 12% 6%;
+    --foreground: 33 40% 96%;
 
-    --card: 226 50% 7%;
-    --card-foreground: 0 0% 100%;
+    --card: 24 10% 10%;
+    --card-foreground: 33 40% 96%;
 
-    --popover: 226 50% 7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 24 10% 10%;
+    --popover-foreground: 33 40% 96%;
 
-    --primary: 16 99% 55%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 13 100% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 226 40% 12%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 24 8% 15%;
+    --secondary-foreground: 33 40% 96%;
 
-    --muted: 226 30% 15%;
-    --muted-foreground: 226 20% 70%;
+    --muted: 24 8% 16%;
+    --muted-foreground: 30 12% 66%;
 
-    --accent: 16 99% 55%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 13 100% 58%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 226 35% 14%;
-    --input: 226 35% 10%;
-    --ring: 16 99% 55%;
+    --border: 24 8% 18%;
+    --input: 24 8% 15%;
+    --ring: 13 100% 58%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(16, 99%, 55%) 0%, hsl(30, 100%, 60%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(226, 50%, 4%) 0%, hsl(226, 50%, 8%) 100%);
-    --glow-primary: 0 0 40px hsla(16, 99%, 55%, 0.4);
-    --glow-strong: 0 0 80px hsla(16, 99%, 55%, 0.6);
+    --ink: 0 0% 100%;
+    --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(24 12% 6%) 0%, hsl(24 12% 9%) 100%);
+    --glow-primary: 0 18px 40px -18px hsla(13, 100%, 58%, 0.5);
+    --glow-strong: 0 30px 80px -24px hsla(13, 100%, 58%, 0.6);
+    --shadow-soft: 0 12px 32px -14px hsla(0, 0%, 0%, 0.6);
+    --shadow-lift: 0 28px 60px -22px hsla(0, 0%, 0%, 0.7);
+    --grid-line: hsla(33, 40%, 96%, 0.05);
 
-    --sidebar-background: 226 60% 3%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 16 99% 55%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 226 40% 10%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 226 40% 12%;
-    --sidebar-ring: 16 99% 55%;
+    --sidebar-background: 24 12% 5%;
+    --sidebar-foreground: 33 40% 96%;
+    --sidebar-primary: 13 100% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 8% 13%;
+    --sidebar-accent-foreground: 33 40% 96%;
+    --sidebar-border: 24 8% 18%;
+    --sidebar-ring: 13 100% 58%;
   }
 }
 
@@ -120,39 +119,31 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     min-height: 100vh;
   }
 
-  .dark body {
-    background-color: hsl(var(--background));
-  }
-
-  .dark body::before {
+  /* Blueprint grid — the Bartoon canvas */
+  body::before {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-image:
-      linear-gradient(to right, hsla(226, 60%, 40%, 0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, hsla(226, 60%, 40%, 0.07) 1px, transparent 1px);
-    background-size: 50px 50px;
-    animation: bg-scroll 30s linear infinite;
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 100%);
     pointer-events: none;
     z-index: -2;
   }
 
-  .dark body::after {
+  body::after {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 50% 0%, hsla(16, 99%, 55%, 0.15) 0%, transparent 70%);
+    inset: 0;
+    background: radial-gradient(60% 45% at 50% 0%, hsla(13, 100%, 58%, 0.1) 0%, transparent 70%);
     pointer-events: none;
     z-index: -1;
   }
@@ -163,7 +154,7 @@
     }
 
     to {
-      background-position: -50px -50px;
+      background-position: -88px -88px;
     }
   }
 
@@ -173,22 +164,23 @@
   h4,
   h5,
   h6 {
-    font-family: 'PP Neue Machina', 'Space Grotesk', 'Switzer', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.035em;
   }
 
   p,
   span,
   label,
   a {
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .text-muted-foreground {
-    font-weight: 600;
+    font-weight: 500;
   }
 }
+
 
 @layer utilities {
   .text-gradient {
@@ -208,28 +200,85 @@
     box-shadow: var(--glow-strong);
   }
 
+  /* Soft paper cards (legacy glass-* names kept so existing markup restyles automatically) */
   .glass {
-    @apply bg-card/40 backdrop-blur-2xl border border-white/5;
+    @apply bg-card border border-border/70;
+    box-shadow: var(--shadow-soft);
   }
 
   .glass-card {
-    @apply bg-card/30 backdrop-blur-[40px] border border-white/5 shadow-2xl;
+    @apply bg-card border border-border/70;
+    box-shadow: var(--shadow-soft);
   }
 
   .glass-panel {
-    @apply bg-background/50 backdrop-blur-3xl border border-white/5;
+    @apply bg-card/90 backdrop-blur-xl border border-border/70;
+    box-shadow: var(--shadow-soft);
   }
 
   .glass-hover {
-    @apply transition-all duration-300 hover:bg-card/60 hover:border-primary/40 hover:-translate-y-1;
+    @apply transition-all duration-500 hover:-translate-y-1.5 hover:border-primary/30;
   }
 
   .glass-hover:hover {
-    box-shadow: 0 0 30px hsla(16, 99%, 55%, 0.15);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .paper-card {
+    @apply bg-card border border-border/70 rounded-[1.75rem];
+    box-shadow: var(--shadow-soft);
+  }
+
+  .lift-card {
+    @apply paper-card transition-all duration-500 hover:-translate-y-1.5;
+  }
+
+  .lift-card:hover {
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Ink pill — the primary Bartoon CTA */
+  .btn-ink {
+    @apply inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-bold transition-all duration-300;
+    background: hsl(var(--ink));
+    color: hsl(var(--background));
+  }
+
+  .btn-ink:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+  }
+
+  /* Rainbow spectrum rail (top of page / dividers) */
+  .spectrum-bar {
+    background-image: var(--gradient-spectrum);
+    filter: saturate(1.05);
+  }
+
+  .spectrum-glow::before {
+    content: '';
+    position: absolute;
+    inset: -14% -6% auto -6%;
+    height: 55%;
+    border-radius: 999px;
+    background-image: var(--gradient-spectrum);
+    filter: blur(58px);
+    opacity: 0.55;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .display-italic {
+    font-style: italic;
+    letter-spacing: -0.045em;
   }
 
   .text-glow {
-    text-shadow: 0 0 20px hsla(16, 99%, 55%, 0.6);
+    text-shadow: 0 0 20px hsla(13, 100%, 58%, 0.35);
   }
 
   .neon-border {
@@ -242,9 +291,24 @@
     inset: -1px;
     z-index: -1;
     border-radius: inherit;
-    background: linear-gradient(135deg, hsla(16, 99%, 55%, 0.5), transparent 60%, hsla(16, 99%, 55%, 0.2));
+    background: linear-gradient(135deg, hsla(13, 100%, 58%, 0.35), transparent 60%, hsla(13, 100%, 58%, 0.15));
+  }
+
+  .marquee-track {
+    animation: marquee 32s linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
+
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
