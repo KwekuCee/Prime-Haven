@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Settings, ChevronDown } from 'lucide-react';
+import { Menu, X, Settings, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
