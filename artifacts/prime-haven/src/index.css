@@ -2,114 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prime Haven Design System - Dark theme with orange accent */
-
-@font-face {
-  font-family: 'PP Neue Machina';
-  src: url('/fonts/PPNeueMachina-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-display: swap;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'PP Neue Machina';
-  src: url('/fonts/PPNeueMachina-Ultrabold.otf') format('opentype');
-  font-weight: 700;
-  font-display: swap;
-  font-style: normal;
-}
+/* Prime Haven Design System — warm cream canvas, ember-orange accent, ink-black CTAs */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
+    --background: 33 43% 96%;
+    --foreground: 24 10% 8%;
 
-    --card: 0 0% 97%;
-    --card-foreground: 0 0% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 8%;
 
-    --popover: 0 0% 97%;
-    --popover-foreground: 0 0% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 8%;
 
-    --primary: 16 99% 55%;
+    --primary: 13 100% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 92%;
-    --secondary-foreground: 0 0% 15%;
+    --secondary: 32 30% 92%;
+    --secondary-foreground: 24 10% 12%;
 
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 32 26% 93%;
+    --muted-foreground: 26 8% 42%;
 
-    --accent: 16 99% 55%;
+    --accent: 13 100% 58%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 90%;
-    --ring: 16 99% 55%;
+    --border: 32 22% 88%;
+    --input: 32 22% 90%;
+    --ring: 13 100% 58%;
 
-    --radius: 0.75rem;
+    --radius: 1.25rem;
 
-    /* Custom Prime Haven tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(16, 99%, 55%) 0%, hsl(30, 100%, 60%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(0, 0%, 96%) 100%);
-    --glow-primary: 0 0 40px hsla(16, 99%, 55%, 0.2);
-    --glow-strong: 0 0 80px hsla(16, 99%, 55%, 0.3);
+    /* Bartoon-inspired tokens */
+    --ink: 24 12% 7%;
+    --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
+    --gradient-spectrum: linear-gradient(90deg,
+        hsl(205 90% 62%) 0%,
+        hsl(265 70% 65%) 22%,
+        hsl(348 85% 60%) 45%,
+        hsl(13 100% 58%) 68%,
+        hsl(35 95% 62%) 86%,
+        hsl(45 95% 66%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(33 43% 96%) 0%, hsl(33 40% 93%) 100%);
+    --glow-primary: 0 18px 40px -18px hsla(13, 100%, 58%, 0.45);
+    --glow-strong: 0 30px 80px -24px hsla(13, 100%, 58%, 0.55);
+    --shadow-soft: 0 1px 2px hsla(24, 10%, 8%, 0.04), 0 12px 32px -14px hsla(24, 10%, 8%, 0.12);
+    --shadow-lift: 0 2px 4px hsla(24, 10%, 8%, 0.05), 0 28px 60px -22px hsla(24, 10%, 8%, 0.2);
+    --grid-line: hsla(24, 12%, 8%, 0.055);
 
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 0 0% 5%;
-    --sidebar-primary: 16 99% 55%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 24 10% 8%;
+    --sidebar-primary: 13 100% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 92%;
-    --sidebar-accent-foreground: 0 0% 15%;
-    --sidebar-border: 0 0% 88%;
-    --sidebar-ring: 16 99% 55%;
+    --sidebar-accent: 32 30% 93%;
+    --sidebar-accent-foreground: 24 10% 12%;
+    --sidebar-border: 32 22% 88%;
+    --sidebar-ring: 13 100% 58%;
   }
 
   .dark {
-    --background: 226 50% 4%;
-    --foreground: 0 0% 100%;
+    --background: 24 12% 6%;
+    --foreground: 33 40% 96%;
 
-    --card: 226 50% 7%;
-    --card-foreground: 0 0% 100%;
+    --card: 24 10% 10%;
+    --card-foreground: 33 40% 96%;
 
-    --popover: 226 50% 7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 24 10% 10%;
+    --popover-foreground: 33 40% 96%;
 
-    --primary: 16 99% 55%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 13 100% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 226 40% 12%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 24 8% 15%;
+    --secondary-foreground: 33 40% 96%;
 
-    --muted: 226 30% 15%;
-    --muted-foreground: 226 20% 70%;
+    --muted: 24 8% 16%;
+    --muted-foreground: 30 12% 66%;
 
-    --accent: 16 99% 55%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 13 100% 58%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 226 35% 14%;
-    --input: 226 35% 10%;
-    --ring: 16 99% 55%;
+    --border: 24 8% 18%;
+    --input: 24 8% 15%;
+    --ring: 13 100% 58%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(16, 99%, 55%) 0%, hsl(30, 100%, 60%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(226, 50%, 4%) 0%, hsl(226, 50%, 8%) 100%);
-    --glow-primary: 0 0 40px hsla(16, 99%, 55%, 0.4);
-    --glow-strong: 0 0 80px hsla(16, 99%, 55%, 0.6);
+    --ink: 0 0% 100%;
+    --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(24 12% 6%) 0%, hsl(24 12% 9%) 100%);
+    --glow-primary: 0 18px 40px -18px hsla(13, 100%, 58%, 0.5);
+    --glow-strong: 0 30px 80px -24px hsla(13, 100%, 58%, 0.6);
+    --shadow-soft: 0 12px 32px -14px hsla(0, 0%, 0%, 0.6);
+    --shadow-lift: 0 28px 60px -22px hsla(0, 0%, 0%, 0.7);
+    --grid-line: hsla(33, 40%, 96%, 0.05);
 
-    --sidebar-background: 226 60% 3%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 16 99% 55%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 226 40% 10%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 226 40% 12%;
-    --sidebar-ring: 16 99% 55%;
+    --sidebar-background: 24 12% 5%;
+    --sidebar-foreground: 33 40% 96%;
+    --sidebar-primary: 13 100% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 8% 13%;
+    --sidebar-accent-foreground: 33 40% 96%;
+    --sidebar-border: 24 8% 18%;
+    --sidebar-ring: 13 100% 58%;
   }
 }
 
