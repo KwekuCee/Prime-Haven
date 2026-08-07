@@ -119,39 +119,31 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     min-height: 100vh;
   }
 
-  .dark body {
-    background-color: hsl(var(--background));
-  }
-
-  .dark body::before {
+  /* Blueprint grid — the Bartoon canvas */
+  body::before {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-image:
-      linear-gradient(to right, hsla(226, 60%, 40%, 0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, hsla(226, 60%, 40%, 0.07) 1px, transparent 1px);
-    background-size: 50px 50px;
-    animation: bg-scroll 30s linear infinite;
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 100%);
     pointer-events: none;
     z-index: -2;
   }
 
-  .dark body::after {
+  body::after {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 50% 0%, hsla(16, 99%, 55%, 0.15) 0%, transparent 70%);
+    inset: 0;
+    background: radial-gradient(60% 45% at 50% 0%, hsla(13, 100%, 58%, 0.1) 0%, transparent 70%);
     pointer-events: none;
     z-index: -1;
   }
@@ -162,7 +154,7 @@
     }
 
     to {
-      background-position: -50px -50px;
+      background-position: -88px -88px;
     }
   }
 
@@ -172,22 +164,23 @@
   h4,
   h5,
   h6 {
-    font-family: 'PP Neue Machina', 'Space Grotesk', 'Switzer', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.035em;
   }
 
   p,
   span,
   label,
   a {
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .text-muted-foreground {
-    font-weight: 600;
+    font-weight: 500;
   }
 }
+
 
 @layer utilities {
   .text-gradient {
