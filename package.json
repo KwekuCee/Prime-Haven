@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "dev": "pnpm --filter @workspace/prime-haven dev",
-    "build": "pnpm --filter @workspace/prime-haven build",
-    "build:dev": "pnpm --filter @workspace/prime-haven build",
+    "build": "pnpm run install:app && pnpm --filter @workspace/prime-haven build",
+    "build:dev": "pnpm run build",
+    "install:app": "pnpm install --frozen-lockfile --prod=false --filter @workspace/prime-haven...",
     "serve": "pnpm --filter @workspace/prime-haven serve",
     "typecheck": "pnpm --filter @workspace/prime-haven typecheck",
     "lint": "pnpm --filter @workspace/prime-haven typecheck"
