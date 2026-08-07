@@ -18,7 +18,7 @@ const HeroSection = () => {
     <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
       {/* Spectrum rail at the very top of the canvas */}
       <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
-      <div className="absolute top-0 left-0 right-0 h-40 spectrum-bar blur-[90px] opacity-40 pointer-events-none" />
+      <div className="absolute -top-24 left-0 right-0 h-32 spectrum-bar blur-[100px] opacity-25 pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         {/* ─── Headline block ─── */}
@@ -241,7 +241,7 @@ const HeroSection = () => {
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="hidden lg:flex absolute -left-10 top-24 items-center gap-2.5 paper-card rounded-2xl px-4 py-3"
+            className="hidden xl:flex absolute -left-24 top-32 items-center gap-2.5 paper-card rounded-2xl px-4 py-3"
           >
             <span className="w-8 h-8 rounded-xl bg-primary/12 flex items-center justify-center">
               <Briefcase className="w-4 h-4 text-primary" />
@@ -255,7 +255,7 @@ const HeroSection = () => {
           <motion.div
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-            className="hidden lg:flex absolute -right-8 bottom-28 items-center gap-2.5 paper-card rounded-2xl px-4 py-3"
+            className="hidden xl:flex absolute -right-24 bottom-24 items-center gap-2.5 paper-card rounded-2xl px-4 py-3"
           >
             <span className="w-8 h-8 rounded-xl bg-emerald-500/12 flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
@@ -269,7 +269,7 @@ const HeroSection = () => {
           <motion.div
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-            className="hidden lg:flex absolute -right-6 top-10 items-center gap-2 paper-card rounded-full px-4 py-2"
+            className="hidden xl:flex absolute -right-20 top-6 items-center gap-2 paper-card rounded-full px-4 py-2"
           >
             <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
             <span className="text-xs font-bold">4.9 average rating</span>
