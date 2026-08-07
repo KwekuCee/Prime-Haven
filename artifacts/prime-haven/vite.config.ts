@@ -28,6 +28,11 @@ export default defineConfig({
   build: {
     outDir: path.join(projectDir, "dist"),
     emptyOutDir: true,
+    // Deployment hosts compress static assets when serving them. Calculating
+    // every chunk's gzip size here only delays the build and can exceed the
+    // deployment executor deadline on cold workers.
+    reportCompressedSize: false,
+    target: "es2022",
   },
   server: {
     port,
