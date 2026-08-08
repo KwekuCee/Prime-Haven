@@ -15,7 +15,6 @@ import ValueBentoGrid from '@/components/ValueBentoGrid';
 import CommunityPulse from '@/components/CommunityPulse';
 import ProcessTimeline from '@/components/ProcessTimeline';
 import ProjectEstimator from '@/components/ProjectEstimator';
-import GlobalPresence from '@/components/GlobalPresence';
 import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
@@ -102,7 +101,6 @@ const Index = () => {
         <EzoicAd placeholderId={102} />
         <FounderSection />
         <TeamSection />
-        <GlobalPresence />
         <TestimonialsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={103} />
