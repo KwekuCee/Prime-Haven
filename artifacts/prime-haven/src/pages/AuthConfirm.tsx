@@ -55,14 +55,15 @@ const AuthConfirm = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="max-w-md w-full"
       >
-        <div className="paper-card p-8 text-center">
+        <div className="paper-card p-8 rounded-[2rem] text-center">
           {/* Loading State */}
           {state === 'loading' && (
             <motion.div
@@ -70,7 +71,7 @@ const AuthConfirm = () => {
               animate={{ opacity: 1 }}
             >
               <Loader2 className="w-16 h-16 text-primary mx-auto animate-spin mb-6" />
-              <h1 className="text-2xl font-heading font-bold mb-2">Verifying Your Email</h1>
+              <h1 className="text-2xl font-heading font-extrabold tracking-tight mb-2">Verifying Your Email</h1>
               <p className="text-muted-foreground">Please wait while we verify your email address...</p>
             </motion.div>
           )}
@@ -89,7 +90,7 @@ const AuthConfirm = () => {
               >
                 <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
               </motion.div>
-              <h1 className="text-2xl font-heading font-bold mb-2">Email Verified!</h1>
+              <h1 className="text-2xl font-heading font-extrabold tracking-tight mb-2">Email Verified!</h1>
               <p className="text-muted-foreground mb-6">
                 Your email has been successfully verified. You can now access your dashboard.
               </p>
@@ -110,7 +111,7 @@ const AuthConfirm = () => {
               animate={{ opacity: 1 }}
             >
               <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-6" />
-              <h1 className="text-2xl font-heading font-bold mb-2">Link Expired</h1>
+              <h1 className="text-2xl font-heading font-extrabold tracking-tight mb-2">Link Expired</h1>
               <p className="text-muted-foreground mb-6">
                 This verification link has expired. Verification links are valid for 24 hours.
               </p>
@@ -127,7 +128,7 @@ const AuthConfirm = () => {
               animate={{ opacity: 1 }}
             >
               <XCircle className="w-16 h-16 text-destructive mx-auto mb-6" />
-              <h1 className="text-2xl font-heading font-bold mb-2">Verification Failed</h1>
+              <h1 className="text-2xl font-heading font-extrabold tracking-tight mb-2">Verification Failed</h1>
               <p className="text-muted-foreground mb-6">
                 {errorMessage || 'We could not verify your email. The link may be invalid or already used.'}
               </p>

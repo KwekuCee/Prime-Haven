@@ -86,7 +86,8 @@ const ResetPassword = () => {
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[140px] opacity-60" />
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/8 rounded-full blur-[120px] opacity-60" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
+        <div className="absolute -top-24 left-0 right-0 h-32 spectrum-bar blur-[100px] opacity-25" />
       </div>
 
       <div className="w-full max-w-[440px] relative z-10">
@@ -95,7 +96,7 @@ const ResetPassword = () => {
           Back to Login
         </Link>
 
-        <div className="paper-card p-8">
+        <div className="paper-card p-8 rounded-[2rem]">
           <div className="text-center mb-8">
             <Link to="/" className="inline-block mb-5">
               <BrandLogo height={36} />
@@ -106,7 +107,7 @@ const ResetPassword = () => {
                 <div className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center mx-auto mb-4">
                   <Lock className="w-7 h-7 text-destructive" />
                 </div>
-                <h1 className="text-2xl font-heading font-bold mb-2">Invalid Link</h1>
+                <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-2">Invalid Link</h1>
                 <p className="text-sm text-muted-foreground mb-6">This password reset link is invalid or has expired.</p>
                 <Link to="/forgot-password">
                   <Button className="w-full h-11 rounded-xl">Request New Reset Link</Button>
@@ -114,10 +115,10 @@ const ResetPassword = () => {
               </>
             ) : resetComplete ? (
               <>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-7 h-7 text-primary" />
                 </div>
-                <h1 className="text-2xl font-heading font-bold mb-2">Password Updated!</h1>
+                <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-2">Password Updated!</h1>
                 <p className="text-sm text-muted-foreground mb-6">You'll be redirected to login shortly.</p>
                 <Link to="/login">
                   <Button className="w-full h-11 rounded-xl">Go to Login</Button>
@@ -125,10 +126,10 @@ const ResetPassword = () => {
               </>
             ) : (
               <>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                   <ShieldCheck className="w-7 h-7 text-primary" />
                 </div>
-                <h1 className="text-2xl font-heading font-bold mb-2">Reset Password</h1>
+                <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-2">Reset Password</h1>
                 <p className="text-sm text-muted-foreground">Choose a strong new password.</p>
               </>
             )}
@@ -144,7 +145,7 @@ const ResetPassword = () => {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter new password"
                     {...register('password')}
-                    className={`h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                    className={`h-12 bg-background border-border/70 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -167,7 +168,7 @@ const ResetPassword = () => {
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Confirm new password"
                     {...register('confirmPassword')}
-                    className={`h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                    className={`h-12 bg-background border-border/70 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                   />
                   <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -176,7 +177,7 @@ const ResetPassword = () => {
                 {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
               </div>
 
-              <Button type="submit" className="w-full h-11 rounded-xl font-semibold text-sm shadow-lg shadow-primary/20" disabled={isSubmitting}>
+              <Button type="submit" className="w-full h-12 rounded-full font-bold text-sm bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all" disabled={isSubmitting}>
                 {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : 'Reset Password'}
               </Button>
             </form>
