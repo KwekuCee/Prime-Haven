@@ -70,7 +70,7 @@ const TestimonialsSection = () => {
     <section className="py-24 relative overflow-hidden bg-background" id="testimonials">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] opacity-60" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -99,7 +99,7 @@ const TestimonialsSection = () => {
             {/* Large quote icon */}
             <Quote className="absolute -top-6 -left-4 w-16 h-16 text-primary/10 rotate-180" />
 
-            <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-8 sm:p-12 min-h-[260px] flex flex-col justify-between">
+            <div className="relative overflow-hidden paper-card rounded-[2rem] p-8 sm:p-12 min-h-[260px] flex flex-col justify-between">
               <AnimatePresence custom={direction} mode="wait">
                 <motion.div
                   key={t.id}

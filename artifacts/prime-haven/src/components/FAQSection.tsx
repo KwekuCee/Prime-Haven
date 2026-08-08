@@ -74,7 +74,7 @@ const FAQSection = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] opacity-60" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -108,7 +108,7 @@ const FAQSection = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 py-4 rounded-xl text-left font-semibold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
+                    className={`relative px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                       }`}

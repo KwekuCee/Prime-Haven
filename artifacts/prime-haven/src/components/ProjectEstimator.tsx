@@ -163,10 +163,10 @@ const ProjectEstimator = () => {
                                                 key={srv.id}
                                                 onClick={() => toggleService(srv.id)}
                                                 className={`
-                          p-4 rounded-xl border text-left transition-all duration-300
+                          p-4 rounded-2xl border text-left transition-all duration-300
                           ${isSelected
-                                                        ? 'bg-primary/10 border-primary text-primary shadow-[0_0_15px_rgba(var(--primary),0.2)]'
-                                                        : 'bg-background/50 border-border/50 hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                                                        ? 'bg-primary/12 border-primary text-primary'
+                                                        : 'bg-background border-border/70 hover:border-primary/50 text-muted-foreground hover:text-foreground'
                                                     }
                         `}
                                             >
@@ -239,7 +239,7 @@ const ProjectEstimator = () => {
                                     </div>
                                 </div>
 
-                                <Button asChild className="w-full h-12 text-sm font-bold shadow-lg shadow-primary/20 group">
+                                <Button asChild className="w-full h-12 rounded-full text-sm font-bold bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all group">
                                     <Link to={`/start-project?services=${selectedServices.join(',')}&timeline=${timeline}`}>
                                         Finalize Project Scope <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                     </Link>
