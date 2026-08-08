@@ -105,9 +105,9 @@ const ProjectEstimator = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: 0.1 }}
-                            className="text-4xl md:text-5xl font-heading font-bold tracking-tight"
+                            className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight leading-[1.02]"
                         >
-                            Get an instant project estimate.
+                            Get an <span className="display-italic text-primary">instant</span> project estimate.
                         </motion.h2>
 
                         <motion.p

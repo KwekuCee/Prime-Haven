@@ -33,7 +33,7 @@ const FounderSection = () => {
 
             {/* Image Parallax Side */}
             <div className="relative lg:col-span-4 xl:col-span-5 flex justify-center lg:justify-start">
-              <motion.div style={{ y: yImage }} className="relative w-64 h-[350px] sm:w-80 sm:h-[450px] rounded-[2rem] overflow-hidden glass border border-primary/20 shadow-2xl group">
+              <motion.div style={{ y: yImage }} className="relative w-64 h-[350px] sm:w-80 sm:h-[450px] rounded-[2rem] overflow-hidden paper-card border-border/70 group">
                 <img
                   loading="lazy"
                   src={ceoPhoto}

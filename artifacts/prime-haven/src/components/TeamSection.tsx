@@ -64,11 +64,11 @@ const TeamSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/20 mb-4">
+          <span className="eyebrow mb-5">
             <Users className="w-4 h-4 inline mr-1" />
             Our People
           </span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
+          <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight leading-[1.02] text-foreground">
             Meet the Minds <span className="display-italic text-primary">Behind the Magic</span>
           </h2>
           <p className="text-muted-foreground mt-4 max-w-2xl mx-auto text-lg">

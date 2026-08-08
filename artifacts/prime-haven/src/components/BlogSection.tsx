@@ -90,10 +90,8 @@ const BlogSection = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <Badge variant="outline" className="mb-4 border-primary/50 text-primary font-semibold">
-            Blog & News
-          </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+          <span className="eyebrow mb-5">Blog &amp; News</span>
+          <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight mb-4 text-foreground">
             Our <span className="display-italic text-primary">Insights</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
