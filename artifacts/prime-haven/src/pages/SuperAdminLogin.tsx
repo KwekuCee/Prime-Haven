@@ -126,7 +126,7 @@ const SuperAdminLogin = () => {
           </div>
         </div>
 
-        <Card className="glass border-2 border-primary/20">
+        <Card className="paper-card border-border/70">
           <CardHeader className="text-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Shield className="w-8 h-8 text-primary" />

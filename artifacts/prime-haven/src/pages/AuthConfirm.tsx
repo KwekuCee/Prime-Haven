@@ -62,7 +62,7 @@ const AuthConfirm = () => {
         transition={{ duration: 0.5 }}
         className="max-w-md w-full"
       >
-        <div className="glass rounded-2xl p-8 text-center">
+        <div className="paper-card p-8 text-center">
           {/* Loading State */}
           {state === 'loading' && (
             <motion.div

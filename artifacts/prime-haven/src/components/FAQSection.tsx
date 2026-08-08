@@ -89,7 +89,7 @@ const FAQSection = () => {
             Got Questions?
           </span>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            Frequently Asked <span className="text-gradient">Questions</span>
+            Frequently Asked <span className="display-italic text-primary">Questions</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
             Everything you need to know, whether you're a business or a freelancer.

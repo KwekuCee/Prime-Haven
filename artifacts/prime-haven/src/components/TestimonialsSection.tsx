@@ -86,7 +86,7 @@ const TestimonialsSection = () => {
             Client Stories
           </span>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            What Our <span className="text-gradient">Clients Say</span>
+            What Our <span className="display-italic text-primary">Clients Say</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
             Real words from the businesses we've helped transform digitally.
