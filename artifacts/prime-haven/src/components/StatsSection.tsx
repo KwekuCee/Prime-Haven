@@ -159,11 +159,11 @@ const DrillDownContent = ({ stat, stats }: { stat: string; stats: StatsData }) =
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 text-center">
-          <div className="glass rounded-lg p-3">
+          <div className="rounded-xl border border-border/70 bg-background p-3">
             <p className="text-lg font-bold text-primary">{stats.projectsDelivered}</p>
             <p className="text-xs text-muted-foreground">Approved</p>
           </div>
-          <div className="glass rounded-lg p-3">
+          <div className="rounded-xl border border-border/70 bg-background p-3">
             <p className="text-lg font-bold">{stats.totalSubmissions}</p>
             <p className="text-xs text-muted-foreground">Total</p>
           </div>
@@ -223,7 +223,7 @@ const StatsSection = () => {
           className="text-center mb-16"
         >
           <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-primary font-medium uppercase tracking-wider text-sm">Our Impact</span>
+            <span className="eyebrow">Our Impact</span>
             {isLive && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -231,7 +231,7 @@ const StatsSection = () => {
               </span>
             )}
           </div>
-          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6 text-foreground">Our Impact in <span className="text-gradient">Numbers</span></h2>
+          <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight mt-6 mb-6 text-foreground">Our Impact in <span className="display-italic text-primary">Numbers</span></h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Our growing community of talented designers and developers continue to deliver exceptional results.
           </p>
@@ -251,7 +251,7 @@ const StatsSection = () => {
                 whileHover={{ y: -6, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setDrillDown(stat.key)}
-                className="glass rounded-2xl p-8 text-center group hover:glow-primary transition-all cursor-pointer relative overflow-hidden"
+                className="lift-card p-8 text-center group transition-all cursor-pointer relative overflow-hidden"
               >
                 {/* Subtle shimmer effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
@@ -262,7 +262,7 @@ const StatsSection = () => {
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
                     <stat.icon className="w-8 h-8 text-primary" />
                   </div>
-                  <div className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">
+                  <div className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight text-foreground mb-2">
                     <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                   </div>
                   <p className="text-muted-foreground font-medium mb-3">{stat.label}</p>

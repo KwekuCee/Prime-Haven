@@ -74,7 +74,7 @@ const FAQSection = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] opacity-60" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -85,11 +85,11 @@ const FAQSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/20 mb-4">
+          <span className="eyebrow mb-5">
             Got Questions?
           </span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            Frequently Asked <span className="text-gradient">Questions</span>
+          <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight leading-[1.02] text-foreground">
+            Frequently Asked <span className="display-italic text-primary">Questions</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
             Everything you need to know, whether you're a business or a freelancer.
@@ -108,7 +108,7 @@ const FAQSection = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 py-4 rounded-xl text-left font-semibold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
+                    className={`relative px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                       }`}

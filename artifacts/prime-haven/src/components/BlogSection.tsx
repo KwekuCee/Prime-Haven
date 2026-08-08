@@ -90,11 +90,9 @@ const BlogSection = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <Badge variant="outline" className="mb-4 border-primary/50 text-primary font-semibold">
-            Blog & News
-          </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-            Our <span className="text-gradient">Insights</span>
+          <span className="eyebrow mb-5">Blog &amp; News</span>
+          <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight mb-4 text-foreground">
+            Our <span className="display-italic text-primary">Insights</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Stay updated with our latest news, opportunities, and insights from the creative industry.
@@ -104,7 +102,7 @@ const BlogSection = () => {
         <div className="relative max-w-4xl mx-auto mb-16 z-10">
 
           {/* Glassmorphic Carousel Track Container */}
-          <div className="relative overflow-hidden rounded-[2rem] glass border border-primary/20 bg-card p-6 sm:p-10 shadow-none hover:shadow-[0_0_20px_hsl(var(--primary)/10)] transition-shadow duration-500">
+          <div className="relative overflow-hidden paper-card p-6 sm:p-10 shadow-none hover:shadow-[0_0_20px_hsl(var(--primary)/10)] transition-shadow duration-500">
 
             {/* The Arrows */}
             {posts.length > 1 && (
@@ -135,7 +133,7 @@ const BlogSection = () => {
                     <div className="flex flex-col sm:flex-row gap-6 sm:gap-10 items-center">
 
                       {/* Compact Thumbnail */}
-                      <div className="w-full sm:w-1/2 aspect-video rounded-2xl overflow-hidden glass border border-primary/20 relative group">
+                      <div className="w-full sm:w-1/2 aspect-video rounded-2xl overflow-hidden border border-border/70 bg-muted relative group">
                         {post.cover_image_url ? (
                           <img
                             src={post.cover_image_url}
@@ -184,7 +182,7 @@ const BlogSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="glass rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8"
+          className="paper-card p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8"
         >
           <div className="flex-1 space-y-2">
             <h3 className="text-2xl font-bold flex items-center gap-2">

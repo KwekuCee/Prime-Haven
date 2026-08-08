@@ -47,7 +47,7 @@ const steps = [
   { id: 4, name: 'Payment', icon: CreditCard },
 ];
 
-const inputClass = "h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl";
+const inputClass = "h-12 bg-background border-border/70 focus:border-primary/50 focus:ring-primary/20 rounded-xl";
 const labelClass = "text-xs font-medium text-muted-foreground uppercase tracking-wider";
 
 const Register = () => {
@@ -257,9 +257,10 @@ const Register = () => {
     <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center p-4 z-0">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[140px] opacity-60" />
+        <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/8 rounded-full blur-[120px] opacity-60" />
+        <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
+        <div className="absolute -top-24 left-0 right-0 h-32 spectrum-bar blur-[100px] opacity-25" />
       </div>
 
       <div className="w-full max-w-[520px] relative z-10">
@@ -268,13 +269,13 @@ const Register = () => {
           Back to Home
         </Link>
 
-        <div className="rounded-2xl border border-border/60 bg-card/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
+        <div className="paper-card p-6 sm:p-8 rounded-[2rem]">
           {/* Header */}
           <div className="text-center mb-6">
             <Link to="/" className="inline-block mb-4">
               <BrandLogo height={36} />
             </Link>
-            <h1 className="text-2xl font-heading font-bold mb-1">
+            <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-1">
               Join <span className="text-primary">Prime Haven</span>
             </h1>
             <p className="text-sm text-muted-foreground">Start your journey as a creative professional</p>
@@ -399,7 +400,7 @@ const Register = () => {
                     {personalForm.formState.errors.professionalTitle && <p className="text-xs text-destructive">{personalForm.formState.errors.professionalTitle.message}</p>}
                   </div>
 
-                  <Button type="submit" className="w-full h-11 rounded-xl font-semibold text-sm">Continue</Button>
+                  <Button type="submit" className="w-full h-12 rounded-full font-bold text-sm bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all">Continue</Button>
                 </form>
               </div>
             )}
@@ -503,7 +504,7 @@ const Register = () => {
             {currentStep === 4 && (
               <div className="space-y-5">
                 <div className="rounded-xl border border-border/40 bg-background/40 p-6 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                     <CreditCard className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-lg font-heading font-bold mb-1">Registration Fee</h3>

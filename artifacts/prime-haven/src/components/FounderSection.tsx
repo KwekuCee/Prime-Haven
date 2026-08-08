@@ -33,7 +33,7 @@ const FounderSection = () => {
 
             {/* Image Parallax Side */}
             <div className="relative lg:col-span-4 xl:col-span-5 flex justify-center lg:justify-start">
-              <motion.div style={{ y: yImage }} className="relative w-64 h-[350px] sm:w-80 sm:h-[450px] rounded-[2rem] overflow-hidden glass border border-primary/20 shadow-2xl group">
+              <motion.div style={{ y: yImage }} className="relative w-64 h-[350px] sm:w-80 sm:h-[450px] rounded-[2rem] overflow-hidden paper-card border-border/70 group">
                 <img
                   loading="lazy"
                   src={ceoPhoto}
@@ -56,7 +56,7 @@ const FounderSection = () => {
             {/* Editorial Text Side */}
             <div className="flex flex-col justify-center lg:col-span-8 xl:col-span-7 relative z-10">
               <div className="flex items-center gap-4 mb-8">
-                <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-widest">
+                <span className="eyebrow">
                   The Visionary
                 </span>
                 <div className="h-px w-16 bg-primary/30" />

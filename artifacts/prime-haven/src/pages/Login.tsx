@@ -138,9 +138,10 @@ const Login = () => {
     <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center p-4 z-0">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[140px] opacity-60" />
+        <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary/8 rounded-full blur-[120px] opacity-60" />
+        <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
+        <div className="absolute -top-24 left-0 right-0 h-32 spectrum-bar blur-[100px] opacity-25" />
       </div>
 
       <div className="w-full max-w-[440px] relative z-10">
@@ -151,7 +152,7 @@ const Login = () => {
         </Link>
 
         {/* Card */}
-        <div className="rounded-2xl border border-border/60 bg-card/50 backdrop-blur-xl p-8 shadow-2xl shadow-black/20">
+        <div className="paper-card p-8 rounded-[2rem]">
           {/* Logo & Header */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-block mb-5">
@@ -159,7 +160,7 @@ const Login = () => {
             </Link>
             <div className="flex items-center justify-center gap-2 mb-2">
               <LogIn className="w-5 h-5 text-primary" />
-              <h1 className="text-2xl font-heading font-bold">Welcome Back</h1>
+              <h1 className="text-3xl font-heading font-extrabold tracking-tight">Welcome Back</h1>
             </div>
             <p className="text-sm text-muted-foreground">Sign in to your designer dashboard</p>
           </div>
@@ -172,7 +173,7 @@ const Login = () => {
                 type="email"
                 placeholder="you@example.com"
                 {...register('email')}
-                className={`h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl ${errors.email ? 'border-destructive' : ''}`}
+                className={`h-12 bg-background border-border/70 focus:border-primary/50 focus:ring-primary/20 rounded-xl ${errors.email ? 'border-destructive' : ''}`}
               />
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
@@ -190,7 +191,7 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   {...register('password')}
-                  className={`h-11 bg-background/60 border-border/60 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  className={`h-12 bg-background border-border/70 focus:border-primary/50 focus:ring-primary/20 rounded-xl pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   autoComplete="current-password"
                 />
                 <button
@@ -206,7 +207,7 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 rounded-xl font-semibold text-sm shadow-lg shadow-primary/20"
+              className="w-full h-12 rounded-full font-bold text-sm bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

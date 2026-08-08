@@ -52,8 +52,8 @@ const TeamSection = () => {
   return (
     <section className="py-24 relative overflow-hidden bg-background" id="team">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/5 blur-3xl translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-primary/5 blur-3xl -translate-x-1/2 translate-y-1/2" />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/8 blur-[120px] opacity-60 translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-primary/8 blur-[120px] opacity-60 -translate-x-1/2 translate-y-1/2" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -64,12 +64,12 @@ const TeamSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/20 mb-4">
+          <span className="eyebrow mb-5">
             <Users className="w-4 h-4 inline mr-1" />
             Our People
           </span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
-            Meet the Minds <span className="text-gradient">Behind the Magic</span>
+          <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight leading-[1.02] text-foreground">
+            Meet the Minds <span className="display-italic text-primary">Behind the Magic</span>
           </h2>
           <p className="text-muted-foreground mt-4 max-w-2xl mx-auto text-lg">
             The passionate minds behind Prime Haven's mission

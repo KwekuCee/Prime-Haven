@@ -84,7 +84,7 @@ const ProjectEstimator = () => {
 
     return (
         <section className="py-24 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 blur-[150px] opacity-50 rounded-full pointer-events-none" />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 max-w-6xl">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -95,7 +95,7 @@ const ProjectEstimator = () => {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium"
+                            className="eyebrow"
                         >
                             <Calculator className="w-4 h-4" /> Fixed Price & Fast Delivery
                         </motion.div>
@@ -105,9 +105,9 @@ const ProjectEstimator = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: 0.1 }}
-                            className="text-4xl md:text-5xl font-heading font-bold tracking-tight"
+                            className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight leading-[1.02]"
                         >
-                            Get an instant project estimate.
+                            Get an <span className="display-italic text-primary">instant</span> project estimate.
                         </motion.h2>
 
                         <motion.p
@@ -147,7 +147,7 @@ const ProjectEstimator = () => {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-                        className="w-full glass-card p-6 md:p-8 rounded-3xl border shadow-2xl relative overflow-hidden"
+                        className="w-full paper-card p-6 md:p-8 relative overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
 
@@ -163,10 +163,10 @@ const ProjectEstimator = () => {
                                                 key={srv.id}
                                                 onClick={() => toggleService(srv.id)}
                                                 className={`
-                          p-4 rounded-xl border text-left transition-all duration-300
+                          p-4 rounded-2xl border text-left transition-all duration-300
                           ${isSelected
-                                                        ? 'bg-primary/10 border-primary text-primary shadow-[0_0_15px_rgba(var(--primary),0.2)]'
-                                                        : 'bg-background/50 border-border/50 hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                                                        ? 'bg-primary/12 border-primary text-primary'
+                                                        : 'bg-background border-border/70 hover:border-primary/50 text-muted-foreground hover:text-foreground'
                                                     }
                         `}
                                             >
@@ -239,7 +239,7 @@ const ProjectEstimator = () => {
                                     </div>
                                 </div>
 
-                                <Button asChild className="w-full h-12 text-sm font-bold shadow-lg shadow-primary/20 group">
+                                <Button asChild className="w-full h-12 rounded-full text-sm font-bold bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all group">
                                     <Link to={`/start-project?services=${selectedServices.join(',')}&timeline=${timeline}`}>
                                         Finalize Project Scope <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                     </Link>
