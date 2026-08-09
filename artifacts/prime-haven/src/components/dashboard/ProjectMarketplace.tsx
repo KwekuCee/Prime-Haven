@@ -143,14 +143,12 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             if (ordersError) throw ordersError;
 
-            // 3. Fetch from job_contracts (Available Contracts)
-            const { data: contracts, error: contractsError } = await supabase
-                .from('job_contracts')
-                .select('*, target_professions')
-                .in('status', ['active', 'in_progress'])
-                .order('created_at', { ascending: false });
+            // 3. Fetch open job contracts via sanitized RPC (hides client-identifying fields)
+            const { data: contracts, error: contractsError } = await (supabase as any)
+                .rpc('get_open_job_contracts');
 
             if (contractsError) throw contractsError;
+
 
             // Contracts this user has any claim on (active OR already submitted) must not be re-claimable
             const { data: myClaims } = await (supabase as any)
