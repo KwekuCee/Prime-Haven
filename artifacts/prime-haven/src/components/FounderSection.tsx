@@ -16,7 +16,7 @@ const FounderSection = () => {
   const yImage = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
 
   return (
-    <section ref={ref} className="py-32 relative overflow-hidden bg-background" id="founder">
+    <section ref={ref} className="py-32 relative overflow-hidden" id="founder">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 w-full h-[500px] bg-primary/5 blur-[120px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
       </div>

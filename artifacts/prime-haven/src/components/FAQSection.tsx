@@ -68,7 +68,7 @@ const FAQSection = () => {
   const activeFAQs = tabs.find(t => t.id === activeTab)!.faqs;
 
   return (
-    <section className="py-24 relative overflow-hidden bg-background" id="faq">
+    <section className="py-24 relative overflow-hidden" id="faq">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
