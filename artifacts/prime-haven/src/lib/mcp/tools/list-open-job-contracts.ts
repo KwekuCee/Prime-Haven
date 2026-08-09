@@ -28,14 +28,21 @@ export default defineTool({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    let q = supabase
-      .from("job_contracts")
-      .select("id,title,category,description,budget,deadline,active_designers_count")
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (category) q = q.eq("category", category);
-    const { data, error } = await q;
+    const { data: rows, error } = await (supabase as any).rpc("get_open_job_contracts");
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const data = ((rows ?? []) as any[])
+      .filter((r) => !category || r.category === category)
+      .slice(0, limit)
+      .map((r) => ({
+        id: r.id,
+        title: r.title,
+        category: r.category,
+        description: r.description,
+        budget: r.budget,
+        deadline: r.deadline,
+        active_designers_count: r.active_designers_count,
+      }));
+
     return {
       content: [{ type: "text", text: JSON.stringify(data ?? [], null, 2) }],
       structuredContent: { rows: data ?? [] },
