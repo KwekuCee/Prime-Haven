@@ -2224,6 +2224,22 @@ export type Database = {
           username: string
         }[]
       }
+      get_open_job_contracts: {
+        Args: never
+        Returns: {
+          active_designers_count: number
+          budget: string
+          category: string
+          created_at: string
+          deadline: string
+          description: string
+          id: string
+          requirements: string
+          status: string
+          target_professions: string[]
+          title: string
+        }[]
+      }
       get_pending_client_projects: {
         Args: never
         Returns: {
