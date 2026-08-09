@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -10,6 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { fetchPortfolioMedia, previewUrl } from '@/lib/portfolioMedia';
+import { generatePortfolioPDF } from '@/lib/portfolioPDF';
 
 interface PublicProfile {
     user_id: string;
@@ -51,7 +53,7 @@ const DesignerProfile = () => {
     const [badges, setBadges] = useState<BadgeItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
-    const printRef = useRef<HTMLDivElement>(null);
+    const [media, setMedia] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (!id) return;
@@ -64,6 +66,7 @@ const DesignerProfile = () => {
                 ]);
                 setProfile((prof || [])[0] || null);
                 setWorks((portfolio || []) as Work[]);
+                setMedia(await fetchPortfolioMedia(id));
                 setBadges(((badgeData || []) as any[]).map(b => ({
                     id: b.id,
                     badge_name: b.badges?.title || 'Badge',
@@ -82,29 +85,26 @@ const DesignerProfile = () => {
         if (!profile) return;
         setExporting(true);
         try {
-            const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-                import('jspdf'),
-                import('html2canvas'),
-            ]);
-            const node = printRef.current;
-            if (!node) return;
-            const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-            const pdf = new jsPDF('p', 'pt', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const imgHeight = (canvas.height * pageWidth) / canvas.width;
-            let remaining = imgHeight;
-            let position = 0;
-            const imgData = canvas.toDataURL('image/jpeg', 0.92);
-            pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
-            remaining -= pageHeight;
-            while (remaining > 0) {
-                position -= pageHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
-                remaining -= pageHeight;
-            }
-            pdf.save(`${(profile.full_name || 'designer').replace(/\s+/g, '-').toLowerCase()}-portfolio.pdf`);
+            await generatePortfolioPDF(
+                {
+                    full_name: profile.full_name || 'Prime Haven Talent',
+                    title: profile.professional_title || profile.specialty || 'Creative Designer',
+                    bio: profile.bio,
+                    tags: [...(profile.professions || []), ...(profile.skills || [])],
+                    total_points: profile.total_points ?? 0,
+                    works_count: works.length,
+                    talent_score: profile.talent_score,
+                    photo: profile.profile_photo_url,
+                },
+                works.map(w => ({
+                    project_name: w.project_name,
+                    service_label: SERVICE_LABELS[w.service_type] || w.service_type,
+                    created_at: w.created_at,
+                    points_awarded: w.points_awarded,
+                    image: previewUrl(w.files_urls, media),
+                    design_link: w.design_link,
+                })),
+            );
         } catch (err) {
             console.error('PDF export failed:', err);
         } finally {
@@ -140,7 +140,7 @@ const DesignerProfile = () => {
             <Navbar />
 
             <main className="pt-24 pb-20">
-                <div className="container mx-auto px-6" ref={printRef}>
+                <div className="container mx-auto px-6">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                         <div className="flex items-center gap-5">
                             <div className="w-24 h-24 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center">
@@ -161,7 +161,7 @@ const DesignerProfile = () => {
                                         <Trophy className="w-3 h-3" /> {profile.total_points ?? 0} pts
                                     </Badge>
                                     <Badge variant="outline" className="text-[10px] gap-1">
-                                        <Briefcase className="w-3 h-3" /> {works.length} approved works
+                                        <Briefcase className="w-3 h-3" /> {works.length} published works
                                     </Badge>
                                     {profile.talent_score ? (
                                         <Badge variant="outline" className="text-[10px] gap-1">
@@ -214,18 +214,18 @@ const DesignerProfile = () => {
                         {works.length === 0 ? (
                             <div className="p-16 rounded-2xl border border-dashed border-border/50 text-center opacity-50">
                                 <Briefcase className="w-10 h-10 mx-auto mb-3" />
-                                <p className="text-sm">No approved works published yet.</p>
+                                <p className="text-sm">No published works yet.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {works.map(work => (
                                     <motion.div key={work.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
                                         className="rounded-2xl border border-border/50 overflow-hidden bg-card/40">
-                                        {work.files_urls?.[0] ? (
+                                        {previewUrl(work.files_urls, media) ? (
                                             <div className="aspect-[4/3] bg-muted/30 overflow-hidden">
-                                                <img src={work.files_urls[0]} alt={work.project_name} loading="lazy"
+                                                <img src={previewUrl(work.files_urls, media) as string} alt={work.project_name} loading="lazy"
                                                     className="w-full h-full object-cover"
-                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                    onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }} />
                                             </div>
                                         ) : (
                                             <div className="aspect-[4/3] bg-muted/30 flex items-center justify-center">
