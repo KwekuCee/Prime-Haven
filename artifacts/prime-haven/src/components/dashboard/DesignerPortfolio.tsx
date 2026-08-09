@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Image, ExternalLink, User } from 'lucide-react';
+import { Image as ImageIcon, ExternalLink, Link2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchPortfolioMedia, previewUrl } from '@/lib/portfolioMedia';
 
 interface ApprovedWork {
   id: string;
@@ -12,7 +13,8 @@ interface ApprovedWork {
   points_awarded: number | null;
   created_at: string;
   files_urls: string[] | null;
-  client_ref: string | null;
+  design_link: string | null;
+  status: string | null;
 }
 
 interface DesignerPortfolioProps {
@@ -24,37 +26,49 @@ const SERVICE_LABELS: Record<string, string> = {
   web: 'Web Design', print: 'Print Design', flyer: 'Flyer Design',
 };
 
+const PUBLIC_STATUSES = ['approved', 'ph_approved', 'client_accepted'];
+
 const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
   const [works, setWorks] = useState<ApprovedWork[]>([]);
+  const [media, setMedia] = useState<Record<string, string>>({});
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
-    loadApprovedWork();
+    let active = true;
+
+    const load = async () => {
+      const { data } = await supabase
+        .from('submissions')
+        .select('id, project_name, service_type, points_awarded, created_at, files_urls, design_link, status')
+        .eq('designer_id', userId)
+        .in('status', PUBLIC_STATUSES)
+        .order('created_at', { ascending: false })
+        .limit(60);
+      if (!active) return;
+      setWorks((data || []) as ApprovedWork[]);
+      const resolved = await fetchPortfolioMedia(userId);
+      if (active) setMedia(resolved);
+    };
+
+    load();
+    return () => { active = false; };
   }, [userId]);
 
-  const loadApprovedWork = async () => {
-    const { data } = await supabase
-      .from('submissions')
-      .select('id, project_name, service_type, points_awarded, created_at, files_urls, client_ref')
-      .eq('designer_id', userId)
-      .in('status', ['approved', 'ph_approved'])
-      .order('created_at', { ascending: false })
-      .limit(12);
-    setWorks(data || []);
-  };
-
   if (works.length === 0) return null;
+
+  const visible = showAll ? works : works.slice(0, 6);
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center">
-            <Image className="w-4 h-4 text-purple-500" />
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <ImageIcon className="w-4 h-4 text-primary" />
           </div>
           <div>
             <h2 className="text-sm font-heading font-bold">My Portfolio</h2>
-            <p className="text-[10px] text-muted-foreground">{works.length} approved works</p>
+            <p className="text-[10px] text-muted-foreground">{works.length} submitted works published</p>
           </div>
         </div>
         <Link to={`/designer/${userId}`}>
@@ -65,35 +79,47 @@ const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {works.slice(0, 6).map(work => (
-          <div key={work.id} className="group rounded-xl border border-border/40 bg-muted/20 overflow-hidden hover:border-primary/20 transition-all">
-            {work.files_urls?.[0] ? (
-              <div className="aspect-square bg-muted/30 relative overflow-hidden">
-                <img
-                  src={work.files_urls[0]}
-                  alt={work.project_name}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                  <span className="text-white text-[10px] font-medium truncate">{work.project_name}</span>
+        {visible.map(work => {
+          const img = previewUrl(work.files_urls, media);
+          return (
+            <div key={work.id} className="group rounded-xl border border-border/40 bg-muted/20 overflow-hidden hover:border-primary/30 transition-all">
+              <div className="aspect-square bg-muted/30 relative overflow-hidden flex items-center justify-center">
+                {img ? (
+                  <img
+                    src={img}
+                    alt={work.project_name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
+                  />
+                ) : (
+                  <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                )}
+              </div>
+              <div className="p-2">
+                <p className="text-[11px] font-medium truncate">{work.project_name}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <Badge variant="outline" className="text-[9px] px-1 py-0">{SERVICE_LABELS[work.service_type] || work.service_type}</Badge>
+                  <span className="text-[9px] text-primary font-bold">+{work.points_awarded ?? 0}</span>
                 </div>
-              </div>
-            ) : (
-              <div className="aspect-square bg-muted/30 flex items-center justify-center">
-                <Image className="w-6 h-6 text-muted-foreground/40" />
-              </div>
-            )}
-            <div className="p-2">
-              <p className="text-[11px] font-medium truncate">{work.project_name}</p>
-              <div className="flex items-center justify-between mt-1">
-                <Badge variant="outline" className="text-[9px] px-1 py-0">{SERVICE_LABELS[work.service_type] || work.service_type}</Badge>
-                <span className="text-[9px] text-primary font-bold">+{work.points_awarded}</span>
+                {work.design_link && (
+                  <a href={work.design_link} target="_blank" rel="noreferrer" className="mt-1.5 inline-flex items-center gap-1 text-[9px] text-primary font-bold">
+                    <Link2 className="w-2.5 h-2.5" /> Live design
+                  </a>
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {works.length > 6 && (
+        <div className="mt-4 text-center">
+          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => setShowAll(v => !v)}>
+            {showAll ? 'Show less' : `Show all ${works.length} works`}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
