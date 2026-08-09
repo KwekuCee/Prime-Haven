@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
-import ParticleBackground from '@/components/ParticleBackground';
 import HeroSection from '@/components/HeroSection';
 import ServicesSection from '@/components/ServicesSection';
 import PortfolioSection from '@/components/PortfolioSection';
@@ -84,7 +83,6 @@ const Index = () => {
           },
         ]}
       />
-      <ParticleBackground />
       <Navbar />
       <main>
         <HeroSection />
