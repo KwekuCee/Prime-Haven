@@ -124,7 +124,7 @@
     min-height: 100vh;
   }
 
-  /* Blueprint grid — the Bartoon canvas */
+  /* Bartoon canvas — flat warm paper with a faint blueprint grid that fades in below the fold */
   body::before {
     content: '';
     position: fixed;
@@ -132,21 +132,13 @@
     background-image:
       linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
       linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-    background-size: 88px 88px;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 100%);
+    background-size: 128px 128px;
+    mask-image: linear-gradient(to bottom, transparent 0%, transparent 42%, black 62%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 42%, black 62%, black 100%);
     pointer-events: none;
     z-index: -2;
   }
 
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(60% 45% at 50% 0%, hsla(13, 100%, 58%, 0.1) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-  }
 
   @keyframes bg-scroll {
     from {
