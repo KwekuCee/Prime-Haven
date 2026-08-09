@@ -25,6 +25,8 @@ const ALLOWED_REDIRECT_DOMAINS = [
   "localhost",
   "127.0.0.1",
   "primehaven.tech",
+  "lovable.app",
+  "lovableproject.com",
 ];
 
 const isAllowedRedirectUrl = (url: string): boolean => {
