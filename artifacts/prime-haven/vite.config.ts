@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const basePath = process.env.BASE_PATH || "/";
@@ -11,7 +12,7 @@ const projectDir = process.cwd();
 
 export default defineConfig({
   base: basePath,
-  plugins: [react()],
+  plugins: [react(), mcpPlugin()],
   css: {
     postcss: {
       plugins: [tailwindcss(), autoprefixer()],
