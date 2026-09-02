@@ -176,19 +176,6 @@ const Settings = () => {
 
           {/* Right Column */}
           <div className="space-y-4">
-            {/* Theme */}
-            <SectionCard icon={settings.theme === 'dark' ? Moon : Sun} title="Theme" delay={0.1}>
-              <Select value={settings.theme} onValueChange={(v) => updateSetting('theme', v)}>
-                <SelectTrigger className="h-9 text-xs bg-muted/20 border-border/40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dark"><div className="flex items-center gap-2"><Moon className="w-3.5 h-3.5" />Dark</div></SelectItem>
-                  <SelectItem value="light"><div className="flex items-center gap-2"><Sun className="w-3.5 h-3.5" />Light</div></SelectItem>
-                  <SelectItem value="system"><div className="flex items-center gap-2"><SettingsIcon className="w-3.5 h-3.5" />System</div></SelectItem>
-                </SelectContent>
-              </Select>
-            </SectionCard>
 
             {/* Language & Currency */}
             <SectionCard icon={Globe} title="Language & Region" delay={0.15}>
