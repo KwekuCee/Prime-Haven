@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import BrandLogo from '@/components/BrandLogo';
-import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
@@ -88,10 +87,6 @@ const Navbar = () => {
                 className="glass border-border/60 bg-card/90 backdrop-blur-xl p-2 rounded-2xl mt-2 w-52 shadow-xl"
               >
                 <div className="flex items-center justify-between p-2 rounded-xl hover:bg-primary/5 transition-colors cursor-default">
-                  <span className="text-sm font-medium">Theme</span>
-                  <ThemeToggle />
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-xl hover:bg-primary/5 transition-colors cursor-default">
                   <span className="text-sm font-medium">Language</span>
                   <LanguageSwitcher />
                 </div>
@@ -168,10 +163,6 @@ const Navbar = () => {
 
               <div className="flex items-center justify-between pt-4 pb-2 border-t border-border/40 mt-2">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Theme</span>
-                    <ThemeToggle />
-                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Lang</span>
                     <LanguageSwitcher />

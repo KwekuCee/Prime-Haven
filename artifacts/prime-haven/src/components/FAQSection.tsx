@@ -1,56 +1,55 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const businessFAQs = [
   {
-    q: "What does Prime Haven actually do?",
-    a: "Prime Haven is a technology solutions company specializing in website design, branding, product development, and digital strategy. We also operate a curated tech talent network for businesses that require contract-based professionals."
+    q: "How do we get started with you?",
+    a: "Send us your project details and we'll come back with a straightforward proposal — scope, timeline and price. No long forms, no sales calls you didn't ask for."
   },
   {
-    q: "Can Prime Haven handle projects end-to-end?",
-    a: "Yes. Our team can manage projects from concept to launch — including research, design, development, testing, and ongoing support — ensuring a seamless and structured execution process."
+    q: "What kind of work do you take on?",
+    a: "Websites, branding, product design and the digital strategy around them. If a project needs extra hands, we bring in vetted people from our talent network."
   },
   {
-    q: "When would we use your freelance network?",
-    a: "If your business needs specialized skills, short-term support, or project-based talent, we can connect you with vetted designers and developers from our network who match your requirements."
+    q: "Can you run the whole project for us?",
+    a: "Yes. Research, design, build, testing and support after launch — you get one team and one point of contact from start to finish."
   },
   {
-    q: "How do you ensure quality and reliability?",
-    a: "We follow structured workflows, clear milestones, and performance standards. Freelancers in our network are screened, and internal projects are handled under strict quality control processes."
+    q: "What if we just need one specialist?",
+    a: "That happens a lot. We'll match you with a screened designer or developer for the length of the contract, and step back once you're set up."
   },
   {
-    q: "How do we get started?",
-    a: "Simply contact us with your project details. We'll review your requirements, recommend the best approach (in-house execution or talent placement), and provide a clear proposal outlining scope, timelines, and pricing."
+    q: "How do you keep the quality consistent?",
+    a: "Clear milestones, a review at every stage, and the same standards applied whether the work is done in-house or by someone from our network."
   },
 ];
 
 const freelancerFAQs = [
   {
-    q: "Who can apply to join Prime Haven?",
-    a: "Designers, developers, and skilled tech professionals with a strong portfolio or proven experience can apply. Every application is reviewed to maintain a high-quality network."
+    q: "Who can join?",
+    a: "Designers, developers and other tech professionals with real work to show. We read every application — a solid portfolio matters more than a long CV."
   },
   {
-    q: "How do I receive contract opportunities?",
-    a: "Once approved, you'll be matched with contract opportunities based on your skills, experience, and availability. Relevant projects are sent directly to you."
+    q: "Is there a fee?",
+    a: "There's a one-time GH₵100 membership. Everything about fees and revenue share is explained during onboarding before you commit."
   },
   {
-    q: "Do I need to bid for jobs?",
-    a: "No. Prime Haven focuses on structured matching. Instead of bidding against dozens of freelancers, qualified members receive curated opportunities."
+    q: "How does work reach me?",
+    a: "We match contracts to your skills and availability and send them straight to you. Nothing to chase, nothing to refresh."
   },
   {
-    q: "Is there a membership or commission fee?",
-    a: "Any membership terms or service fees are clearly communicated during onboarding. Transparency is a core part of how we operate."
+    q: "Do I have to bid against other people?",
+    a: "No. No bidding wars and no racing to the lowest price — approved members get curated opportunities instead."
   },
   {
-    q: "How do I increase my chances of getting contracts?",
-    a: "Maintain an updated portfolio, respond promptly to opportunities, deliver high-quality work, and keep your profile information accurate and detailed."
+    q: "How do I get picked more often?",
+    a: "Keep your portfolio current, reply quickly, and deliver work you'd be happy to show off. That's genuinely most of it."
   },
 ];
 
 const tabs = [
-  { id: 'businesses', label: '🔹 For Businesses', faqs: businessFAQs },
-  { id: 'freelancers', label: '🔹 For Freelancers', faqs: freelancerFAQs },
+  { id: 'businesses', label: 'For businesses', faqs: businessFAQs },
+  { id: 'freelancers', label: 'For freelancers', faqs: freelancerFAQs },
 ];
 
 const faqJsonLd = {
@@ -65,93 +64,68 @@ const faqJsonLd = {
 
 const FAQSection = () => {
   const [activeTab, setActiveTab] = useState('businesses');
-  const activeFAQs = tabs.find(t => t.id === activeTab)!.faqs;
+  const activeFAQs = tabs.find((t) => t.id === activeTab)!.faqs;
 
   return (
-    <section className="py-24 relative overflow-hidden" id="faq">
+    <section className="py-24" id="faq">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] opacity-60" />
-      </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <span className="eyebrow mb-5">
-            Got Questions?
-          </span>
-          <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight leading-[1.02] text-foreground">
-            Frequently Asked <span className="display-italic text-primary">Questions</span>
-          </h2>
-          <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
-            Everything you need to know, whether you're a business or a freelancer.
-          </p>
-        </motion.div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 max-w-6xl mx-auto">
+          {/* Intro */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-32 space-y-6">
+              <span className="eyebrow">Questions people ask us</span>
+              <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight leading-[1.05] text-foreground">
+                Answers, <span className="display-italic text-primary">plainly put</span>
+              </h2>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                These are the questions that come up in almost every first conversation. If yours isn't
+                here, just ask us directly — a real person replies.
+              </p>
 
-        {/* Dual Pane Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 max-w-6xl mx-auto mt-16">
-
-          {/* Sticky Sidebar Tab Switcher */}
-          <div className="lg:col-span-4 relative">
-            <div className="sticky top-32 space-y-6">
-              <h3 className="text-2xl font-bold font-heading border-b border-border/50 pb-4">Select Category</h3>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 overflow-hidden group ${activeTab === tab.id
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                    className={`px-5 py-2.5 rounded-full text-sm font-semibold border transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border/70 text-muted-foreground hover:text-foreground hover:border-foreground/30'
+                    }`}
                   >
-                    {activeTab === tab.id && (
-                      <>
-                        <div className="absolute inset-0 bg-primary/10 blur-xl pointer-events-none" />
-                        <motion.div layoutId="faqTab" className="absolute left-0 top-1/4 bottom-1/4 w-1.5 bg-primary rounded-r-full shadow-[0_0_15px_hsl(var(--primary))]" />
-                      </>
-                    )}
-                    <span className="relative z-10">{tab.label}</span>
+                    {tab.label}
                   </button>
                 ))}
               </div>
+
+              <a
+                href="#contact"
+                className="inline-block text-sm font-semibold text-primary hover:underline pt-2"
+              >
+                Still unsure? Talk to us →
+              </a>
             </div>
           </div>
 
-          {/* Glowing Accordion Items */}
-          <div className="lg:col-span-8">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <Accordion type="single" collapsible className="space-y-4">
-                {activeFAQs.map((faq, i) => (
-                  <AccordionItem
-                    key={i}
-                    value={`item-${i}`}
-                    className="border-b border-border/50 py-2 data-[state=open]:border-primary/40 transition-colors duration-300 relative group"
-                  >
-                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-[[data-state=open]]:opacity-100 blur-3xl transition-opacity duration-500 pointer-events-none -z-10" />
-                    <AccordionTrigger className="text-left text-foreground hover:no-underline py-6 text-lg lg:text-xl font-medium [&[data-state=open]>div]:text-primary transition-colors relative z-10">
-                      <div>{faq.q}</div>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed pb-8 text-base relative z-10">
-                      {faq.a}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </motion.div>
+          {/* Questions */}
+          <div className="lg:col-span-7">
+            <Accordion type="single" collapsible className="divide-y divide-border/60 border-y border-border/60">
+              {activeFAQs.map((faq, i) => (
+                <AccordionItem key={`${activeTab}-${i}`} value={`item-${i}`} className="border-none">
+                  <AccordionTrigger className="text-left text-foreground hover:no-underline py-6 text-lg font-semibold data-[state=open]:text-primary">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-7 text-base max-w-xl">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </div>
       </div>
