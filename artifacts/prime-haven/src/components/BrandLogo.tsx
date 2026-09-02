@@ -1,5 +1,3 @@
-import { useTheme } from 'next-themes';
-import logoDark from '@/assets/prime-haven-logo.png';
 import logoLight from '@/assets/prime-haven-logo-light.png';
 
 interface BrandLogoProps {
@@ -9,8 +7,7 @@ interface BrandLogoProps {
 }
 
 const BrandLogo = ({ className, alt = 'Prime Haven', height = 40 }: BrandLogoProps) => {
-  const { resolvedTheme } = useTheme();
-  const src = resolvedTheme === 'light' ? logoLight : logoDark;
+  const src = logoLight;
 
   return (
     <img
