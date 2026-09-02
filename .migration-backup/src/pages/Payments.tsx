@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
+import {
   CreditCard, Smartphone, Building, Bitcoin, Wallet, DollarSign,
   CheckCircle, Clock, Loader2, Copy, Eye, EyeOff
 } from 'lucide-react';
@@ -72,7 +72,7 @@ const Payments = () => {
     setLoading(true);
     try {
       let parsedDetails: any = formData.payment_details.trim();
-      try { parsedDetails = JSON.parse(parsedDetails); } catch {}
+      try { parsedDetails = JSON.parse(parsedDetails); } catch { }
       const { error } = await supabase.from('designer_details').update({ payment_method: formData.payment_method, payment_details: parsedDetails, updated_at: new Date().toISOString() }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Payment method updated!" });
@@ -174,7 +174,7 @@ const Payments = () => {
                 </Button>
                 <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
                   <p className="text-[10px] text-muted-foreground">
-                    🔒 Payment details are encrypted. Processed on 1st & 15th. Min payout: GH₵100.
+                    🔒 Payment details are encrypted. Processed on 1st & 15th. Min payout:$10.
                   </p>
                 </div>
               </div>
