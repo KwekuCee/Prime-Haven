@@ -1,33 +1,9 @@
 import { motion } from 'framer-motion';
-import { Palette, Layers, Globe, Cpu, ArrowUpRight, ArrowRight } from 'lucide-react';
+import { ArrowUpRight, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { CORE_SERVICES } from '@/lib/coreServices';
 
-const services = [
-  {
-    icon: Palette,
-    title: 'Graphic Design',
-    slug: 'graphic-design',
-    description: 'Eye-catching visual content that captivates audiences and elevates your brand identity.',
-  },
-  {
-    icon: Layers,
-    title: 'UI/UX Design',
-    slug: 'ui-ux-design',
-    description: 'Intuitive interfaces and seamless user experiences that delight and engage users.',
-  },
-  {
-    icon: Globe,
-    title: 'Web Development',
-    slug: 'web-development',
-    description: 'High-performance websites and web applications built with cutting-edge technologies.',
-  },
-  {
-    icon: Cpu,
-    title: 'IT Solutions',
-    slug: 'it-solutions',
-    description: 'Comprehensive technology solutions tailored to streamline your business operations.',
-  },
-];
+const services = CORE_SERVICES;
 
 const ServicesSection = () => {
   return (
@@ -43,7 +19,7 @@ const ServicesSection = () => {
                   Our core <span className="display-italic text-primary">services</span>
                 </h2>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  We offer a comprehensive suite of digital services designed to transform your vision into reality.
+                  Eight disciplines, one team. From brand and product design to code, motion, video, and the IT that keeps it all running.
                 </p>
                 <Link
                   to="/start-project"
