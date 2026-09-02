@@ -61,6 +61,7 @@ const Register = () => {
     portfolioUrl: '', professionalTitle: '', experience: '', availableHours: '',
     previousCompany: '', password: '', confirmPassword: '', agreeToTerms: false,
   });
+  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signUp, user, loading: authLoading } = useAuth();
@@ -149,6 +150,10 @@ const Register = () => {
   };
 
   const handlePayNow = async () => {
+    if (gateway === 'paystack') {
+      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.', variant: 'default' });
+      return;
+    }
 
     if (!window.Korapay) {
       toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
@@ -223,7 +228,7 @@ const Register = () => {
             professional_title: formData.professionalTitle,
             payment_reference: reference,
             promo_code: promoRef,
-            gateway: 'korapay'
+            gateway
           }
         }
       });
@@ -539,11 +544,11 @@ const Register = () => {
                   <div className="text-3xl font-heading font-bold text-primary mb-1">
                     {promoDiscount > 0 ? (
                       <div className="flex flex-col items-center">
-                        <span className="text-sm line-through text-muted-foreground opacity-50">GH₵{REGISTRATION_FEE_GHS.toFixed(2)}</span>
-                        <span>GH₵{getFinalRegistrationFee().toFixed(2)}</span>
+                        <span className="text-sm line-through text-muted-foreground opacity-50">{formatUsd(JOIN_FEE_USD)}</span>
+                        <span>{formatUsd(getFinalRegistrationFee())}</span>
                       </div>
                     ) : (
-                      `GH₵${REGISTRATION_FEE_GHS.toFixed(2)}`
+                      formatUsd(getFinalRegistrationFee())
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">One-time payment to join Prime Haven</p>
@@ -571,10 +576,16 @@ const Register = () => {
                     </div>
                     <div className="mb-4 space-y-2 text-left">
                       <Label className="text-[10px] text-muted-foreground uppercase tracking-widest">Payment Method</Label>
-                      <div className="p-3 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-1">
-                        <CreditCard className="w-5 h-5 text-primary" />
-                        <span className="text-[10px] font-bold uppercase text-center">Korapay</span>
-                        <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer & Card.</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['korapay', 'paystack'] as const).map((provider) => (
+                          <button type="button" key={provider} onClick={() => setGateway(provider)} className={cn('rounded-xl border p-3 text-left transition-all', gateway === provider ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60 hover:border-primary/40')}>
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-primary" />
+                              <span className="text-[10px] font-bold uppercase">{provider}</span>
+                            </div>
+                            <span className="mt-1 block text-[9px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Not configured in this environment'}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 

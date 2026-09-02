@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/BrandLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
+import { getUsdToGhsRate, usdToGhs } from '@/lib/currency';
 
 declare global {
   interface Window {
@@ -57,8 +58,8 @@ const StartProject = () => {
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
-  // Korapay is the only payment gateway
+  const [currency] = useState<'USD'>('USD');
+  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
 
   const [selectedService, setSelectedService] = useState<string>('');
   const [selectedTier, setSelectedTier] = useState<string>('');
@@ -225,6 +226,10 @@ const StartProject = () => {
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault();
+    if (gateway === 'paystack') {
+      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.' });
+      return;
+    }
     if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
@@ -240,7 +245,9 @@ const StartProject = () => {
     setSubmitting(true);
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const finalPrice = calculateTotal(selectedPricing.price);
-    const amount = getPaymentAmount(finalPrice);
+    const amountUsd = getPaymentAmount(finalPrice);
+    const rate = await getUsdToGhsRate(true);
+    const amount = usdToGhs(amountUsd, rate.rate);
 
     // Bypass payment gateway AND edge function for 100% discount (0 GHS)
     // The edge function is only needed for paid orders to verify payment with gateways
@@ -367,7 +374,8 @@ const StartProject = () => {
         key: KORAPAY_PUBLIC_KEY,
         reference,
         amount,
-        currency,
+        currency: 'GHS',
+        metadata: { amount_usd: amountUsd, usd_to_ghs_rate: rate.rate, rate_source: rate.source, gateway },
         customer: {
           name: form.clientName,
           email: form.clientEmail,
@@ -484,21 +492,6 @@ const StartProject = () => {
             <BrandLogo className="h-8" />
           </Link>
           <div className="flex items-center gap-4">
-            {/* Currency Toggle */}
-            <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
-              <button
-                onClick={() => setCurrency('GHS')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'GHS' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Banknote className="w-3 h-3" /> GHS
-              </button>
-              <button
-                onClick={() => setCurrency('USD')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'USD' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Banknote className="w-3 h-3" /> USD
-              </button>
-            </div>
             <div className="flex items-center gap-2">
               {[1, 2, 3].map(s => (
                 <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -660,10 +653,13 @@ const StartProject = () => {
 
                     <div className="space-y-3">
                       <Label>Payment Method</Label>
-                      <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-2">
-                        <Banknote className="w-6 h-6 text-primary" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-center">Korapay</span>
-                        <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer & Card.</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        {(['korapay', 'paystack'] as const).map((provider) => (
+                          <button type="button" key={provider} onClick={() => setGateway(provider)} className={`rounded-xl border p-4 text-left transition-all ${gateway === provider ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60 hover:border-primary/40'}`}>
+                            <div className="flex items-center gap-2"><Banknote className="w-4 h-4 text-primary" /><span className="text-xs font-bold uppercase tracking-widest">{provider}</span></div>
+                            <span className="mt-2 block text-[10px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Not configured in this environment'}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
@@ -726,13 +722,7 @@ const StartProject = () => {
                 <Button variant="ghost" onClick={() => setStep(2)} className="gap-2 text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="w-4 h-4" /> Change Package
                 </Button>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs font-bold text-muted-foreground uppercase opacity-50">Pay in</span>
-                  <div className="flex p-1 bg-muted rounded-full border border-border/50">
-                    <button type="button" onClick={() => setCurrency('GHS')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'GHS' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>GHS</button>
-                    <button type="button" onClick={() => setCurrency('USD')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>USD</button>
-                  </div>
-                </div>
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Prices shown in USD</div>
               </div>
             </motion.div>
           )}
