@@ -12,6 +12,8 @@ const DiscordIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const WhatsApp = MessageCircle;
+
 const socials = [
   { icon: Instagram, href: 'https://instagram.com/primehaven_co', label: 'Instagram' },
   { icon: Linkedin, href: 'https://linkedin.com/company/primehaven', label: 'LinkedIn' },
