@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.17.1",
   "scripts": {
     "dev": "pnpm --filter @workspace/prime-haven dev",
-    "build": "pnpm run install:app && pnpm --filter @workspace/prime-haven build && pnpm run copy:dist",
+    "build": "pnpm --filter @workspace/prime-haven build && pnpm run copy:dist",
     "copy:dist": "rm -rf dist && cp -r artifacts/prime-haven/dist dist",
     "build:dev": "pnpm run build",
     "install:app": "pnpm install --frozen-lockfile --prod=false --filter @workspace/prime-haven...",
