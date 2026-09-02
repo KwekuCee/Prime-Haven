@@ -16,6 +16,7 @@ const socials = [
   { icon: Instagram, href: 'https://instagram.com/primehaven_co', label: 'Instagram' },
   { icon: Linkedin, href: 'https://linkedin.com/company/primehaven', label: 'LinkedIn' },
   { icon: DiscordIcon, href: 'https://discord.gg/meXTeEdF', label: 'Discord' },
+  { icon: WhatsApp, href: 'https://whatsapp.com/channel/0029VbCw6cS5Ejy7kBSQ2H2G', label: 'WhatsApp Community' },
 ];
 
 const ContactSection = () => {
@@ -67,7 +68,7 @@ const ContactSection = () => {
               {t('contact.whatsapp')}
             </Button>
           </a>
-          <a href="mailto:info@primehaven.tech">
+          <a href="mailto:primehaven26@gmail.com">
             <Button variant="outline" size="lg" className="w-full sm:w-auto group">
               <Mail className="mr-2 w-5 h-5" />
               {t('contact.email')}

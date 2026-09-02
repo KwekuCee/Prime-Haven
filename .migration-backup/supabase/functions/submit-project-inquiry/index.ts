@@ -62,7 +62,7 @@ serve(async (req) => {
 
     await transporter.sendMail({
       from: `Prime Haven <${smtpUser}>`,
-      to: "info@primehaven.tech",
+      to: "primehaven26@gmail.com",
       subject: `🚀 New Project Inquiry from ${fullName}`,
       text: `New project inquiry:\n\nName: ${fullName}\nEmail: ${email}\nWhatsApp: ${whatsapp}\nService: ${category}\nBudget: ${budget || "Not specified"}\nDescription: ${description}`,
       html: emailHtml,

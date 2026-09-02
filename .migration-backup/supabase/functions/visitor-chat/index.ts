@@ -111,7 +111,7 @@ Browse design/dev/business articles at /blog. Subscribe via the newsletter signu
 
 ## 📞 Contact (only suggest these for SENSITIVE matters — see rules below)
 - **WhatsApp** (fastest): +233 55 016 0237 — https://wa.me/233550160237
-- **Email**: info@primehaven.tech
+- **Email**: primehaven26@gmail.com
 - **Instagram**: @primehaven_co — https://instagram.com/primehaven_co
 - **LinkedIn**: https://linkedin.com/company/primehaven
 - **Discord**: https://discord.gg/meXTeEdF
