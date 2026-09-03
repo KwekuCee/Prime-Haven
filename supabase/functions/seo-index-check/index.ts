@@ -79,9 +79,10 @@ async function inspectUrl(siteUrl: string, inspectionUrl: string) {
   const verdict = String(index.verdict ?? "VERDICT_UNSPECIFIED");
   const coverage = String(index.coverageState ?? "Unknown");
   const indexed = verdict === "PASS";
+  const fetchState = String(index.pageFetchState ?? "");
   const crawlIssue =
-    index.pageFetchState && index.pageFetchState !== "SUCCESSFUL"
-      ? `Fetch: ${index.pageFetchState}`
+    fetchState && !["SUCCESSFUL", "PAGE_FETCH_STATE_UNSPECIFIED"].includes(fetchState)
+      ? `Fetch problem: ${fetchState}`
       : null;
   const robotsIssue =
     index.robotsTxtState && index.robotsTxtState === "DISALLOWED" ? "Blocked by robots.txt" : null;
