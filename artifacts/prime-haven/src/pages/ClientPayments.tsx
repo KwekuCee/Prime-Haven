@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { generateInvoicePDF } from '@/lib/invoicePDF';
+import { getUsdToGhsRate, ghsToUsd, formatUsd, formatGhs } from '@/lib/currency';
 
 interface PaymentRecord {
     id: string;
@@ -31,6 +32,12 @@ const ClientPayments = () => {
     const [loading, setLoading] = useState(true);
     const [payments, setPayments] = useState<PaymentRecord[]>([]);
     const [totalSpent, setTotalSpent] = useState(0);
+    // Amounts settle in cedis; the portal quotes everything in US dollars.
+    const [rate, setRate] = useState(15.5);
+
+    useEffect(() => {
+        getUsdToGhsRate().then(r => setRate(r.rate)).catch(() => {});
+    }, []);
 
     useEffect(() => {
         if (user?.email) {
@@ -99,7 +106,10 @@ const ClientPayments = () => {
                             <Skeleton className="h-10 w-40" />
                         ) : (
                             <div className="flex items-baseline gap-2">
-                                <p className="text-4xl sm:text-5xl font-heading font-bold text-gradient">GH₵{totalSpent.toLocaleString()}</p>
+                                <div>
+                                    <p className="text-4xl sm:text-5xl font-heading font-bold text-gradient">{formatUsd(ghsToUsd(totalSpent, rate))}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Charged as {formatGhs(totalSpent)}</p>
+                                </div>
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-3">Total investment across all your projects.</p>
@@ -145,7 +155,10 @@ const ClientPayments = () => {
                                                 <span className="text-xs text-muted-foreground capitalize">{payment.tier}</span>
                                             </TableCell>
                                             <TableCell>
-                                                <span className="font-bold">GH₵{(payment.price || 0).toLocaleString()}</span>
+                                                <div>
+                                                    <span className="font-bold">{formatUsd(ghsToUsd(Number(payment.price || 0), rate))}</span>
+                                                    <div className="text-[10px] text-muted-foreground">{formatGhs(Number(payment.price || 0))}</div>
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${getStatusColor(payment.payment_status)}`}>
@@ -167,11 +180,11 @@ const ClientPayments = () => {
                                                     clientName: user?.email?.split('@')[0] || 'Client',
                                                     serviceType: payment.service_type,
                                                     tier: payment.tier,
-                                                    amount: payment.price,
+                                                    amount: ghsToUsd(Number(payment.price || 0), rate),
                                                     paymentReference: payment.payment_reference,
                                                     paymentStatus: payment.payment_status,
                                                     createdAt: payment.created_at,
-                                                    currency: 'GH₵',
+                                                    currency: '$',
                                                   })}
                                                 >
                                                   <Download className="w-4 h-4" />
