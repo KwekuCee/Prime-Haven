@@ -12,6 +12,8 @@ import ClientActivityStreak from '@/components/dashboard/ClientActivityStreak';
 import ClientLiveFeed from '@/components/dashboard/ClientLiveFeed';
 import ClientPostedJobs from '@/components/client/ClientPostedJobs';
 import ClientProjectReview from '@/components/client/ClientProjectReview';
+import ClientVerifyBanner from '@/components/client/ClientVerifyBanner';
+
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
