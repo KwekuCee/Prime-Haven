@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
 import { TechStackLoader } from "./components/ui/TechStackLoader";
+import ClientRoute from "./components/client/ClientRoute";
+
 
 const ReferralHandler = () => {
   const { code } = useParams();
