@@ -325,8 +325,10 @@ const StartProject = () => {
             category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
             status: 'pending',
             budget: 'GH₵0 (Promo)',
+            price_ghs: 0,
+            paid_at: new Date().toISOString(),
             required_professions: dist.professions,
-            max_assignees: dist.max,
+            max_assignees: 1,
             reference_images: uploadedRefUrls,
           } as any);
         } catch (e) {

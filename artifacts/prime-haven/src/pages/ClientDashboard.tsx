@@ -11,6 +11,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ClientActivityStreak from '@/components/dashboard/ClientActivityStreak';
 import ClientLiveFeed from '@/components/dashboard/ClientLiveFeed';
 import ClientPostedJobs from '@/components/client/ClientPostedJobs';
+import ClientProjectReview from '@/components/client/ClientProjectReview';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -238,6 +239,14 @@ const ClientDashboard = () => {
                 </div>
 
                 {/* My Posted Jobs (client → marketplace) */}
+                <div className="mb-8 space-y-4">
+                    <div>
+                        <h2 className="text-lg font-heading font-bold">Your projects</h2>
+                        <p className="text-xs text-muted-foreground">Chat with the professional on the job, review deliveries, and approve when you're happy.</p>
+                    </div>
+                    <ClientProjectReview />
+                </div>
+
                 <ClientPostedJobs />
 
                 {/* Accepted Designers Section */}

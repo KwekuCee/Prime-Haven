@@ -69,6 +69,7 @@ const SubmitWork = () => {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [startedProject, setStartedProject] = useState<{ jobId: string; title: string } | null>(null);
   const [parentSubmission, setParentSubmission] = useState<{ ph_approved: boolean } | null>(null);
+  const [clientProjectIds, setClientProjectIds] = useState<string[]>([]);
 
   const correctionId = searchParams.get('correction');
   const correctionProject = searchParams.get('project');
@@ -148,6 +149,7 @@ const SubmitWork = () => {
 
         const data = [...availableCP, ...availableJC, ...availableLegacy];
         setAvailableJobs(data as JobOption[]);
+        setClientProjectIds(availableCP.map((p: any) => p.id));
 
         // Auto-select job for corrections
         if (correctionId && correctionClient) {
@@ -221,16 +223,6 @@ const SubmitWork = () => {
     setLoading(true);
     try {
       const fileUrls = successfulUploads.map(f => f.url!);
-      let parentApproved = false;
-      if (correctionId) {
-        if (parentSubmission) {
-          parentApproved = !!parentSubmission.ph_approved;
-        } else {
-          const { data, error } = await supabase.from('submissions').select('ph_approved').eq('id', correctionId).maybeSingle();
-          if (!error && data) parentApproved = !!data.ph_approved;
-        }
-      }
-
       const submissionData: any = {
         designer_id: user.id,
         project_name: formData.projectName.trim(),
@@ -238,15 +230,18 @@ const SubmitWork = () => {
         client_ref: formData.clientReference.trim(),
         files_urls: fileUrls,
         submission_date: new Date().toISOString(),
-        status: correctionId ? (parentApproved ? 'ph_approved' : 'pending') : 'pending',
-        ph_approved: correctionId ? parentApproved : false,
-        ph_approved_at: correctionId && parentApproved ? new Date().toISOString() : null,
+        // The client is the only approver — every delivery starts awaiting client review
+        status: 'pending',
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
         ...((isLinkOnlyService && formData.designLink.trim()) ? { design_link: formData.designLink.trim() } : {}),
       };
       if (correctionId) submissionData.parent_submission_id = correctionId;
+      // Link the delivery to the client project so the client can review it in their portal
+      if (formData.selectedJobId && clientProjectIds.includes(formData.selectedJobId)) {
+        submissionData.client_project_id = formData.selectedJobId;
+      }
       const { error } = await supabase.from('submissions').insert([submissionData]);
       if (error) throw error;
 
@@ -307,7 +302,7 @@ const SubmitWork = () => {
       if (user) localStorage.removeItem(`started_project_${user.id}`);
       setAvailableJobs(prev => prev.filter(j => j.id !== formData.selectedJobId));
 
-      toast({ title: "Submission successful!", description: "Your work has been submitted and your account is reset for new job claims." });
+      toast({ title: "Submission successful!", description: "Sent to the client for review. Your points and earnings are released once they approve." });
       uploadedFiles.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview); });
       navigate('/dashboard');
     } catch (error: any) {

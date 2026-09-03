@@ -332,8 +332,12 @@ serve(async (req: Request): Promise<Response> => {
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
       budget: `GH₵${amountInGhs}`,
+      // Payment is confirmed at this point — stamping price + paid_at is what
+      // publishes the job to the designer marketplace.
+      price_ghs: Number(amountInGhs) || 0,
+      paid_at: new Date().toISOString(),
       required_professions: dist.professions,
-      max_assignees: dist.max,
+      max_assignees: 1,
     });
 
 
