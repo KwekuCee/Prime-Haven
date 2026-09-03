@@ -667,6 +667,10 @@ const FinanceDashboard = () => {
                                                 <Button size="sm" variant="ghost" className="text-emerald-600" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'manual')}>
                                                     <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid Manually
                                                 </Button>
+                                                <Button size="sm" variant="ghost" className="text-destructive" disabled={approvingWithdrawal === w.id} onClick={() => openRemoveRequest(w)}>
+                                                    Remove request
+                                                </Button>
+
                                             </div>
                                         </TableCell>
 
