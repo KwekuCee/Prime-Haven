@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
+import { Briefcase, Eye, EyeOff, Loader2, LogIn, Shield } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
@@ -9,9 +9,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
 import ResendVerificationEmail from '@/components/auth/ResendVerificationEmail';
+import ClientSignInForm from '@/components/auth/ClientSignInForm';
+import AdminSignInForm from '@/components/auth/AdminSignInForm';
 import { logAuthEvent } from '@/lib/authLogger';
 
+type AuthMode = 'talent' | 'client' | 'admin';
+
 const Login = () => {
+  const [mode, setMode] = useState<AuthMode>('talent');
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
