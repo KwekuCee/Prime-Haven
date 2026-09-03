@@ -1305,73 +1305,32 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Handle delete designer
-  const handleDeleteDesigner = async (targetUser: User) => {
+  // Permanently delete any account (talent, client or admin) server-side
+  const handleDeleteUser = async (targetUser: User) => {
     try {
       setIsDeleting(true);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('Your session expired. Please sign in again.');
 
-      // Delete in order: submissions, designer_details, user_roles, payments, then profile
-      // Delete submissions
-      await supabase
-        .from('submissions')
-        .delete()
-        .eq('designer_id', targetUser.id);
-
-      // Delete designer_details
-      await supabase
-        .from('designer_details')
-        .delete()
-        .eq('user_id', targetUser.id);
-
-      // Delete user_roles
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', targetUser.id);
-
-      // Delete payments
-      await supabase
-        .from('payments')
-        .delete()
-        .eq('user_id', targetUser.id);
-
-      // Delete email verification tokens
-      await supabase
-        .from('email_verification_tokens')
-        .delete()
-        .eq('user_id', targetUser.id);
-
-      // Delete profile last
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', targetUser.id);
-
-      if (profileError) throw profileError;
-
-      // Log the action
-      if (user) {
-        await supabase.from('system_logs').insert({
-          action_type: 'user_deleted',
-          admin_id: user.id,
-          description: `Deleted designer: ${targetUser.full_name || targetUser.email}`,
-          timestamp: new Date().toISOString(),
-        });
-      }
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: targetUser.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).message || 'Could not delete this account.');
 
       toast({
-        title: 'Designer Deleted',
-        description: `${targetUser.full_name || targetUser.email} has been permanently removed.`,
+        title: 'Account Deleted',
+        description: `${targetUser.full_name || targetUser.email} has been permanently removed from the system.`,
       });
 
       setDeleteConfirmUser(null);
       await loadDashboardDataSafe();
-
     } catch (error: any) {
       console.error('Delete error:', error);
       toast({
         title: 'Delete Failed',
-        description: error.message || 'Could not delete designer.',
+        description: error.message || 'Could not delete this account.',
         variant: 'destructive',
       });
     } finally {
@@ -2134,7 +2093,7 @@ const SuperAdminDashboard = () => {
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs"><Edit className="w-3 h-3 mr-2" />Edit</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs"><Award className="w-3 h-3 mr-2" />Gift Points</DropdownMenuItem>
-                                    {userItem.user_roles?.[0]?.role === 'designer' && userItem.id !== user?.id && (
+                                    {userItem.id !== user?.id && (
                                       <>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive"><Trash2 className="w-3 h-3 mr-2" />Delete</DropdownMenuItem>
@@ -2177,6 +2136,12 @@ const SuperAdminDashboard = () => {
                               <DropdownMenuContent align="end" className="w-44">
                                 <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs"><Edit className="w-3 h-3 mr-2" />Edit</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs"><Award className="w-3 h-3 mr-2" />Gift Points</DropdownMenuItem>
+                                {userItem.id !== user?.id && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive"><Trash2 className="w-3 h-3 mr-2" />Delete</DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -2379,11 +2344,11 @@ const SuperAdminDashboard = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="w-4 h-4" />Delete Designer?</AlertDialogTitle>
-            <AlertDialogDescription>Permanently delete <strong>{deleteConfirmUser?.full_name || deleteConfirmUser?.email}</strong> and all their data. Cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>Permanently delete <strong>{deleteConfirmUser?.full_name || deleteConfirmUser?.email}</strong> — their login, profile, role, submissions, earnings and payment records are all removed. This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteConfirmUser && handleDeleteDesigner(deleteConfirmUser)} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => deleteConfirmUser && handleDeleteUser(deleteConfirmUser)} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {isDeleting ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />Deleting...</> : <><Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete</>}
             </AlertDialogAction>
           </AlertDialogFooter>
