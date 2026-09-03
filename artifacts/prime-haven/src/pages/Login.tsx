@@ -204,17 +204,23 @@ const Login = () => {
           </h1>
         </div>
 
-        <div className="relative z-10">
-          <p className="text-background/60 text-sm max-w-xs">{panelCopy.sub}</p>
-        </div>
+      <div className="relative z-10">
+        <p className="text-background/60 text-sm max-w-xs">{panelCopy.sub}</p>
       </div>
+    </div>
+  );
 
-      {/* Form panel */}
+  const formPanel = (
+    <div
+      className="w-full md:absolute md:inset-y-4 md:right-4 md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      style={{ transform: swapped ? 'translateX(calc(-71.4286% + 32px))' : 'translateX(0)' }}
+    >
       <div
-        className="w-full md:absolute md:inset-y-0 md:right-0 md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
-        style={{ transform: swapped ? 'translateX(-71.4286%)' : 'translateX(0)' }}
+        key={mode}
+        ref={formPanelRef}
+        tabIndex={-1}
+        className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none"
       >
-        <div key={mode} className="w-full max-w-md motion-safe:animate-fade-in">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 mb-12">
             <Link to="/" className="inline-block">
