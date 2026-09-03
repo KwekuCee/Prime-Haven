@@ -11,6 +11,7 @@ import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { format, addDays, isAfter } from 'date-fns';
 import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT, shareOf } from '@/lib/revenue';
 import { useToast } from '@/hooks/use-toast';
+import { useUsdRate } from '@/hooks/useUsdRate';
 
 interface OpenOrder {
     id: string;
@@ -78,6 +79,7 @@ interface ProjectMarketplaceProps {
 }
 
 const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
+    const money = useUsdRate();
     const { user } = useAuth();
     const { toast } = useToast();
     const [orders, setOrders] = useState<OpenOrder[]>([]);
@@ -410,10 +412,10 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                             <span className="text-xs font-bold text-primary flex items-center gap-1">
                                                 <DollarSign className="w-3 h-3" />
                                                 {order.source === 'client_projects'
-                                                    ? (order.your_share ? `GH₵${order.your_share.toLocaleString()}` : (order.budget ? `GH₵${order.budget}` : '—'))
+                                                    ? (order.your_share ? money.usd(order.your_share) : (order.budget ? String(order.budget) : '—'))
                                                     : order.source === 'job_contracts'
-                                                        ? (order.budget ? `GH₵${order.budget}` : '—')
-                                                        : (order.price ? `GH₵${shareOf(order.price, sharePercent).toLocaleString()}` : '—')}
+                                                        ? (order.budget ? String(order.budget) : '—')
+                                                        : (order.price ? money.usd(shareOf(order.price, sharePercent)) : '—')}
                                             </span>
                                         </div>
                                         <div className="flex flex-col">
@@ -472,7 +474,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-                                        <span className="text-emerald-500 font-bold">You earn ({sharePercent}%): {selectedOrder.source === 'client_projects' ? (selectedOrder.your_share ? `GH₵ ${selectedOrder.your_share.toLocaleString()}` : (selectedOrder.budget ? `GH₵ ${selectedOrder.budget}` : '—')) : selectedOrder.source === 'job_contracts' ? (selectedOrder.budget ? `GH₵ ${selectedOrder.budget}` : '—') : (selectedOrder.price ? `GH₵ ${shareOf(selectedOrder.price, sharePercent).toLocaleString()}` : '—')}</span>
+                                        <span className="text-emerald-500 font-bold">You earn ({sharePercent}%): {selectedOrder.source === 'client_projects' ? (selectedOrder.your_share ? money.usd(selectedOrder.your_share) : (selectedOrder.budget ? String(selectedOrder.budget) : '—')) : selectedOrder.source === 'job_contracts' ? (selectedOrder.budget ? String(selectedOrder.budget) : '—') : (selectedOrder.price ? money.usd(shareOf(selectedOrder.price, sharePercent)) : '—')}</span>
                                     </div>
                                 </div>
                             </div>

@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
 import { TechStackLoader } from "./components/ui/TechStackLoader";
 import ClientRoute from "./components/client/ClientRoute";
+import ProfessionalRoute from "./components/auth/ProfessionalRoute";
 
 
 const ReferralHandler = () => {
@@ -169,8 +170,8 @@ const App = () => {
                   <Route path="/client/support" element={<ClientRoute><ClientSupport /></ClientRoute>} />
                   <Route path="/client/messages" element={<ClientRoute><Messages /></ClientRoute>} />
 
-                  <Route path="/affiliate/dashboard" element={<AffiliateDashboard />} />
-                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/affiliate/dashboard" element={<ProfessionalRoute><AffiliateDashboard /></ProfessionalRoute>} />
+                  <Route path="/marketplace" element={<ProfessionalRoute><Marketplace /></ProfessionalRoute>} />
                   <Route path="/dashboard/smm" element={<SMMDashboard />} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="/project-chat/:projectId" element={<ProjectChatPage />} />

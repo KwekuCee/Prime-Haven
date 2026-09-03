@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { ensureJobContract } from "../_shared/jobContract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -23,7 +24,22 @@ const DISCORD_CHANNELS: Record<string, string> = {
 };
 
 // Approximate conversion rate
-const USD_TO_GHS = 15.5;
+const USD_TO_GHS_FALLBACK = 15.5;
+
+// Live USD -> GHS rate so USD charges land in the ledger at the real value.
+async function getUsdToGhsRate(): Promise<number> {
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (res.ok) {
+      const json = await res.json();
+      const ghs = Number(json?.rates?.GHS);
+      if (Number.isFinite(ghs) && ghs > 0) return ghs;
+    }
+  } catch (err) {
+    console.error("FX lookup failed, using fallback:", err);
+  }
+  return USD_TO_GHS_FALLBACK;
+}
 
 function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -241,7 +257,10 @@ serve(async (req: Request): Promise<Response> => {
 
 
 
-    const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
+    const usdRate = verifiedCurrency === 'USD' ? await getUsdToGhsRate() : 1;
+    const amountInGhs = verifiedCurrency === 'USD'
+      ? Math.round(verifiedAmount * usdRate * 100) / 100
+      : verifiedAmount;
 
     if (verifiedCurrency !== "GHS" && verifiedCurrency !== "USD") {
       return new Response(JSON.stringify({ success: false, error: "Invalid payment currency", message: `Invalid currency: ${verifiedCurrency}` }), {
@@ -382,7 +401,7 @@ serve(async (req: Request): Promise<Response> => {
       "web-dev": "web-development",
     };
 
-    const { error: projectError } = await supabase.from("client_projects").insert({
+    const projectPayload = {
       title: `${serviceLabel || serviceType} (${tier.charAt(0).toUpperCase() + tier.slice(1)}) — ${clientName}`,
       client_name: clientName,
       client_email: clientEmail,
@@ -400,11 +419,30 @@ serve(async (req: Request): Promise<Response> => {
       required_professions: dist.professions,
       max_assignees: 1,
       reference_images: Array.isArray(referenceFiles) ? referenceFiles : [],
-    });
+    };
+
+    const { data: createdProject, error: projectError } = await supabase
+      .from("client_projects")
+      .insert(projectPayload)
+      .select("id")
+      .maybeSingle();
 
     if (projectError) {
       console.error("Failed to create client project (non-critical):", projectError);
       // Don't fail the whole request for this
+    } else if (createdProject?.id) {
+      // Mirror the paid project onto the Job Contracts board
+      await ensureJobContract(supabase, {
+        id: createdProject.id,
+        title: projectPayload.title,
+        description: projectPayload.description,
+        category: projectPayload.category,
+        client_name: projectPayload.client_name,
+        budget: projectPayload.budget,
+        reference_images: projectPayload.reference_images,
+        required_professions: projectPayload.required_professions,
+        posted_by: clientUserId,
+      });
     }
 
     // 2b. Record the incoming payment in the finance ledger with the revenue split.

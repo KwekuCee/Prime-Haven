@@ -3,6 +3,7 @@
 // with the 70/30 revenue split, and the matching order/project is marked paid.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { ensureJobContract } from "../_shared/jobContract.ts";
 import { createHmac } from "node:crypto";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -153,7 +154,7 @@ serve(async (req) => {
       if (clientUserId) {
         const { data: project } = await admin
           .from("client_projects")
-          .select("id, paid_at")
+          .select("id, paid_at, title, description, category, client_name, budget, deadline, reference_images, required_professions")
           .eq("created_by", clientUserId)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -166,6 +167,18 @@ serve(async (req) => {
               .update({ paid_at: new Date().toISOString(), price_ghs: amountGhs, status: "pending" })
               .eq("id", project.id);
           }
+          await ensureJobContract(admin, {
+            id: project.id,
+            title: project.title,
+            description: project.description,
+            category: project.category,
+            client_name: project.client_name,
+            budget: project.budget ?? null,
+            deadline: project.deadline,
+            reference_images: project.reference_images,
+            required_professions: project.required_professions,
+            posted_by: clientUserId,
+          });
         }
       }
     }

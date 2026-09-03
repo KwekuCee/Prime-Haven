@@ -662,6 +662,7 @@ export type Database = {
           budget: string | null
           category: string
           client_name: string | null
+          client_project_id: string | null
           created_at: string
           deadline: string | null
           description: string
@@ -683,6 +684,7 @@ export type Database = {
           budget?: string | null
           category: string
           client_name?: string | null
+          client_project_id?: string | null
           created_at?: string
           deadline?: string | null
           description: string
@@ -704,6 +706,7 @@ export type Database = {
           budget?: string | null
           category?: string
           client_name?: string | null
+          client_project_id?: string | null
           created_at?: string
           deadline?: string | null
           description?: string
@@ -719,7 +722,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "job_contracts_client_project_id_fkey"
+            columns: ["client_project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_earnings: {
         Row: {
