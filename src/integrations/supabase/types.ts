@@ -1425,6 +1425,48 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_index_reports: {
+        Row: {
+          created_at: string
+          deployment_signature: string | null
+          id: string
+          indexed_count: number
+          issue_count: number
+          pages: Json
+          site_url: string
+          sitemap_url: string | null
+          total_urls: number
+          trigger: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          deployment_signature?: string | null
+          id?: string
+          indexed_count?: number
+          issue_count?: number
+          pages?: Json
+          site_url: string
+          sitemap_url?: string | null
+          total_urls?: number
+          trigger?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          deployment_signature?: string | null
+          id?: string
+          indexed_count?: number
+          issue_count?: number
+          pages?: Json
+          site_url?: string
+          sitemap_url?: string | null
+          total_urls?: number
+          trigger?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       service_pricing: {
         Row: {
           created_at: string
