@@ -198,9 +198,12 @@ serve(async (req) => {
     const sitemapUrl = `${target.origin}/sitemap.xml`;
     const urls = (await fetchSitemapUrls(sitemapUrl)).slice(0, MAX_URLS);
 
+    // Inspect in small batches so the whole run finishes inside the function timeout.
     const pages: Record<string, unknown>[] = [];
-    for (const url of urls) {
-      pages.push(await inspectUrl(siteUrl, url));
+    const BATCH = 5;
+    for (let i = 0; i < urls.length; i += BATCH) {
+      const batch = urls.slice(i, i + BATCH);
+      pages.push(...(await Promise.all(batch.map((url) => inspectUrl(siteUrl, url)))));
     }
 
     const indexedCount = pages.filter((p) => p.indexed).length;
