@@ -133,7 +133,7 @@ const Login = () => {
 
         <div className="relative z-10">
           <Link to="/" className="inline-block">
-            <BrandLogo variant="light" height={36} />
+            <BrandLogo variant="dark" height={36} />
           </Link>
         </div>
 
@@ -156,7 +156,7 @@ const Login = () => {
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 mb-12">
             <Link to="/" className="inline-block">
-              <BrandLogo variant="dark" height={32} />
+              <BrandLogo variant="light" height={32} />
             </Link>
           </div>
 
