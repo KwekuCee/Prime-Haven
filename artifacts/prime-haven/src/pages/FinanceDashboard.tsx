@@ -693,6 +693,13 @@ const FinanceDashboard = () => {
                                 </SelectContent>
                             </Select>
                             <Button size="sm" variant="outline" className="h-8" onClick={exportLedgerCSV}><FileText className="w-3 h-3 mr-1" /> Export CSV</Button>
+                            <Button size="sm" variant="ghost" className="h-8" onClick={() => setShowArchived(!showArchived)}>
+                                {showArchived ? 'Hide archived' : 'Show archived'}
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-destructive border-destructive/40" onClick={() => setIsClearLedgerOpen(true)}>
+                                Clear ledger
+                            </Button>
+
                         </div>
                     </div>
                     <div className="p-0">
