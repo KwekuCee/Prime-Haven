@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Briefcase, Eye, EyeOff, Loader2, LogIn, Shield } from 'lucide-react';
@@ -18,6 +18,8 @@ type AuthMode = 'talent' | 'client' | 'admin';
 const Login = () => {
   const [mode, setMode] = useState<AuthMode>('talent');
   const [showPassword, setShowPassword] = useState(false);
+  const formPanelRef = useRef<HTMLDivElement>(null);
+  const hasSwitchedMode = useRef(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
