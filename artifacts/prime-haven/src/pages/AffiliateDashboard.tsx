@@ -108,6 +108,32 @@ const AffiliateDashboard = () => {
         }
     };
 
+    const downloadAsset = async (asset: MarketingAsset) => {
+        if (asset.asset_type === 'copy') {
+            await navigator.clipboard.writeText(asset.asset_url);
+            toast({ title: 'Copied!', description: 'Copy text copied to clipboard.' });
+            return;
+        }
+        try {
+            const res = await fetch(asset.asset_url);
+            if (!res.ok) throw new Error('Download failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const ext = (asset.asset_url.split('?')[0].split('.').pop() || 'file').slice(0, 5);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${asset.title.replace(/[^a-z0-9\-_ ]/gi, '').trim() || 'prime-haven-asset'}.${ext}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            toast({ title: 'Downloaded', description: `${asset.title} saved to your device.` });
+        } catch {
+            window.open(asset.asset_url, '_blank');
+        }
+    };
+
+
     const joinProgram = async () => {
         if (!user) return;
         setJoining(true);
