@@ -802,6 +802,58 @@ const FinanceDashboard = () => {
                 </DialogContent>
             </Dialog>
 
+            {/* Remove withdrawal request */}
+            <Dialog open={!!removeTarget} onOpenChange={(open) => { if (!open) { setRemoveTarget(null); setRemoveCheck(null); } }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remove withdrawal request</DialogTitle>
+                        <DialogDescription>
+                            This removes {removeTarget?.client_name}'s pending request for GH₵ {Number(removeTarget?.amount || 0).toFixed(2)}.
+                            Use it only when the talent has already been paid outside the platform. They will be notified.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-sm">
+                        {removeCheck === null ? (
+                            <span className="text-muted-foreground">Checking payout history…</span>
+                        ) : (
+                            <span className={removeCheck.found ? 'text-emerald-600' : 'text-amber-600'}>
+                                {removeCheck.message}
+                            </span>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => { setRemoveTarget(null); setRemoveCheck(null); }}>Cancel</Button>
+                        <Button variant="destructive" disabled={removing} onClick={confirmRemoveRequest}>
+                            {removing ? 'Removing…' : 'Remove request'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Clear ledger */}
+            <Dialog open={isClearLedgerOpen} onOpenChange={setIsClearLedgerOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Clear the ledger?</DialogTitle>
+                        <DialogDescription>
+                            Every current ledger record will be archived and hidden from this view. Nothing is deleted —
+                            use "Show archived" to bring them back at any time.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button variant="ghost" onClick={() => setIsClearLedgerOpen(false)}>Cancel</Button>
+                        <Button variant="outline" disabled={clearingLedger} onClick={() => clearLedger(true)}>
+                            Restore archived
+                        </Button>
+                        <Button variant="destructive" disabled={clearingLedger} onClick={() => clearLedger(false)}>
+                            {clearingLedger ? 'Working…' : 'Archive all records'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+
+
         </SuperAdminLayout>
     );
 };
