@@ -2407,6 +2407,10 @@ export type Database = {
         Args: { p_affiliate_id: string }
         Returns: number
       }
+      request_project_revision: {
+        Args: { p_feedback: string; p_submission_id: string }
+        Returns: Json
+      }
       start_job_contract_work: {
         Args: { p_contract_id: string }
         Returns: Json
