@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { ensureJobContract } from "../_shared/jobContract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -382,7 +383,7 @@ serve(async (req: Request): Promise<Response> => {
       "web-dev": "web-development",
     };
 
-    const { error: projectError } = await supabase.from("client_projects").insert({
+    const projectPayload = {
       title: `${serviceLabel || serviceType} (${tier.charAt(0).toUpperCase() + tier.slice(1)}) — ${clientName}`,
       client_name: clientName,
       client_email: clientEmail,
@@ -400,11 +401,30 @@ serve(async (req: Request): Promise<Response> => {
       required_professions: dist.professions,
       max_assignees: 1,
       reference_images: Array.isArray(referenceFiles) ? referenceFiles : [],
-    });
+    };
+
+    const { data: createdProject, error: projectError } = await supabase
+      .from("client_projects")
+      .insert(projectPayload)
+      .select("id")
+      .maybeSingle();
 
     if (projectError) {
       console.error("Failed to create client project (non-critical):", projectError);
       // Don't fail the whole request for this
+    } else if (createdProject?.id) {
+      // Mirror the paid project onto the Job Contracts board
+      await ensureJobContract(supabase, {
+        id: createdProject.id,
+        title: projectPayload.title,
+        description: projectPayload.description,
+        category: projectPayload.category,
+        client_name: projectPayload.client_name,
+        budget: projectPayload.budget,
+        reference_images: projectPayload.reference_images,
+        required_professions: projectPayload.required_professions,
+        posted_by: clientUserId,
+      });
     }
 
     // 2b. Record the incoming payment in the finance ledger with the revenue split.
