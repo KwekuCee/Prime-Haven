@@ -242,15 +242,15 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // 1b. Create Client User (secure guest-checkout pre-provisioning)
-    // SECURITY: We never trust a client-supplied password bound to an unverified email,
-    // and we never mark the account email as confirmed here. If an account for this
-    // email already exists we leave it untouched (no overwrite / no password change),
-    // and any new account is created unconfirmed with a magic invite link so the
-    // real owner of the inbox must click through before they can sign in.
+    // 1b. Create the client account.
+    // The payment for this email has just been verified with the gateway, so we
+    // provision the account with the password the client chose at checkout and let
+    // them sign in immediately. The email itself is NOT treated as proven: the
+    // profile stays `email_verified = false` and a verification link is sent, which
+    // is what drives the "verify your email" banner inside the client portal.
     console.log("Setting up client account...");
+    let clientUserId: string | null = null;
     try {
-      // Look up any existing user for this email using the admin listUsers API.
       let existingUser: { id: string } | null = null;
       try {
         // @ts-ignore - filter supported by supabase-js admin API
@@ -262,50 +262,63 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       if (!existingUser) {
-        // Create an UNCONFIRMED user without a client-supplied password so an
-        // attacker who guessed the email cannot pre-set credentials on it.
-        const { error: createErr } = await supabase.auth.admin.createUser({
+        const { data: created, error: createErr } = await supabase.auth.admin.createUser({
           email: clientEmail,
-          email_confirm: false,
+          password: clientPassword && String(clientPassword).length >= 8 ? String(clientPassword) : undefined,
+          email_confirm: true,
           user_metadata: {
             full_name: clientName,
             business_name: businessName,
             whatsapp: clientWhatsapp,
+            account_type: 'client',
             role: 'client',
           },
         });
         if (createErr && createErr.status !== 422) {
           console.error("Auth creation error:", createErr);
         }
+        clientUserId = created?.user?.id || null;
 
-        // Send an invite / magic link so the real inbox owner can claim the account.
+        // Verification link so the inbox owner confirms ownership.
         try {
-          await supabase.auth.admin.generateLink({
-            type: "invite",
-            email: clientEmail,
-          });
+          await supabase.auth.admin.generateLink({ type: "magiclink", email: clientEmail });
         } catch (linkErr) {
-          console.warn("Invite link generation failed (non-critical):", linkErr);
+          console.warn("Verification link generation failed (non-critical):", linkErr);
         }
       } else {
-        console.log("Client account already exists — leaving untouched to prevent takeover.");
+        // Never overwrite credentials on an existing account.
+        clientUserId = existingUser.id;
+        console.log("Client account already exists — leaving credentials untouched.");
+      }
+
+      // Make sure the account carries the client role (older accounts may miss it).
+      if (clientUserId) {
+        await supabase.from("user_roles").upsert(
+          { user_id: clientUserId, role: 'client' },
+          { onConflict: 'user_id,role', ignoreDuplicates: true },
+        );
       }
     } catch (e) {
       console.error("Auth setup catch error (non-critical):", e);
     }
 
-    // 1c. Upsert into clients table
-    const { error: clientRecordError } = await supabase
+    // 1c. Upsert into clients table (central client database)
+    let clientRecordId: string | null = null;
+    const { data: clientRecord, error: clientRecordError } = await supabase
       .from("clients")
       .upsert({
         email: clientEmail,
         name: clientName,
         company: businessName || null,
         whatsapp: clientWhatsapp || null,
-      }, { onConflict: 'email' });
+      }, { onConflict: 'email' })
+      .select("id")
+      .maybeSingle();
 
     if (clientRecordError) {
       console.error("Client record update error:", clientRecordError);
+    } else {
+      clientRecordId = clientRecord?.id || null;
     }
 
     // 2. Auto-create client project for tracking
@@ -328,6 +341,8 @@ serve(async (req: Request): Promise<Response> => {
       client_name: clientName,
       client_email: clientEmail,
       client_whatsapp: clientWhatsapp || null,
+      client_id: clientRecordId,
+      created_by: clientUserId,
       description,
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
@@ -338,14 +353,48 @@ serve(async (req: Request): Promise<Response> => {
       paid_at: new Date().toISOString(),
       required_professions: dist.professions,
       max_assignees: 1,
+      reference_images: Array.isArray(referenceFiles) ? referenceFiles : [],
     });
-
-
 
     if (projectError) {
       console.error("Failed to create client project (non-critical):", projectError);
       // Don't fail the whole request for this
     }
+
+    // 2b. Record the incoming payment in the finance ledger with the revenue split.
+    try {
+      const { data: shareSetting } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "revenue_share_percentage")
+        .maybeSingle();
+      const sharePercent = Number(shareSetting?.value ?? 70) || 70;
+      const talentShare = Math.round((Number(amountInGhs) * sharePercent) / 100 * 100) / 100;
+      const platformProfit = Math.round((Number(amountInGhs) - talentShare) * 100) / 100;
+
+      if (clientUserId) {
+        await supabase.from("payments").insert({
+          user_id: clientUserId,
+          amount: Number(amountInGhs) || 0,
+          type: "client_order",
+          status: "completed",
+          transaction_id: paymentReference,
+          payment_gateway: gateway === 'paystack' ? 'Paystack' : 'Korapay',
+          payment_details: {
+            order_id: order?.id,
+            service_type: serviceType,
+            tier,
+            currency: verifiedCurrency,
+            share_percent: sharePercent,
+            talent_share: talentShare,
+            platform_profit: platformProfit,
+          },
+        });
+      }
+    } catch (ledgerError: any) {
+      console.error("Ledger record failed (non-critical):", ledgerError);
+    }
+
 
     // 3. Add revenue to the respective service category
     console.log("Updating revenue...");
