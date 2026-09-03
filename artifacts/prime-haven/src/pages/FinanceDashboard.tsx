@@ -499,6 +499,18 @@ const FinanceDashboard = () => {
                         <div className="text-3xl font-bold tracking-tight">GH₵ {stats.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <div className="mt-2 text-[10px] text-emerald-500 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />Revenue minus payouts</div>
                     </div>
+                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-indigo-500/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Gateway Collections (70 / 30)</span>
+                            <ArrowRightLeft className="w-4 h-4 text-indigo-500" />
+                        </div>
+                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.collected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+                            Talent share GH₵ {stats.talentShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {' • '}Prime Haven GH₵ {stats.platformShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+
                     <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-red-500/50 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Talent Payouts</span>
