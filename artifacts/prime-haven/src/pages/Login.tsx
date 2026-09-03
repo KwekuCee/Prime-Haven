@@ -361,8 +361,23 @@ const Login = () => {
               )}
             </nav>
           </div>
-        </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground md:relative md:overflow-hidden flex flex-col md:block">
+      {swapped ? (
+        <>
+          {formPanel}
+          {brandPanel}
+        </>
+      ) : (
+        <>
+          {brandPanel}
+          {formPanel}
+        </>
+      )}
     </div>
   );
 };
