@@ -484,9 +484,10 @@ const StartProject = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.18)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.18)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
       {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <div className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <BrandLogo className="h-8" />
@@ -503,20 +504,21 @@ const StartProject = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-10 sm:py-14 max-w-6xl relative z-10">
         <AnimatePresence mode="wait">
           {/* Step 1: Select Service */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-              <div className="text-center space-y-3">
-                <h1 className="text-3xl sm:text-4xl font-heading font-bold">What do you need?</h1>
+              <div className="space-y-3 max-w-2xl">
+                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">01 / Scope</p>
+                <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-balance">What do you need?</h1>
                 <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {serviceTypes.map(type => (
                   <Card
                     key={type}
-                    className={`cursor-pointer transition-all hover:border-primary/60 hover:shadow-lg ${selectedService === type ? 'border-primary ring-2 ring-primary/20 shadow-lg' : ''}`}
+                    className={`cursor-pointer transition-all duration-300 bg-card/70 backdrop-blur-sm hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl ${selectedService === type ? 'border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10' : 'border-border/70'}`}
                     onClick={() => setSelectedService(type)}
                   >
                     <CardHeader>
@@ -547,7 +549,7 @@ const StartProject = () => {
                 {tiersForService.map(pricing => (
                   <Card
                     key={pricing.id}
-                    className={`cursor-pointer transition-all hover:shadow-xl relative ${selectedTier === pricing.tier ? tierColors[pricing.tier] : 'hover:border-primary/40'} ${pricing.tier === 'standard' ? 'md:-mt-2 md:mb-[-8px]' : ''}`}
+                    className={`cursor-pointer transition-all duration-300 bg-card/75 backdrop-blur-sm hover:-translate-y-1 hover:shadow-xl relative ${selectedTier === pricing.tier ? `${tierColors[pricing.tier]} shadow-primary/10` : 'border-border/70 hover:border-primary/40'} ${pricing.tier === 'standard' ? 'md:-mt-2 md:mb-[-8px]' : ''}`}
                     onClick={() => handleSelectTier(pricing)}
                   >
                     {pricing.tier === 'standard' && (
@@ -589,15 +591,16 @@ const StartProject = () => {
           {/* Step 3: Details & Payment */}
           {step === 3 && selectedPricing && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
-              <div className="text-center space-y-3">
-                <h1 className="text-3xl sm:text-4xl font-heading font-bold">Project Details</h1>
+              <div className="space-y-3">
+                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">03 / Launch brief</p>
+                <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-balance">Project Details</h1>
                 <p className="text-muted-foreground">
                   {selectedPricing.service_label} — {tierLabels[selectedPricing.tier]} ({formatPrice(selectedPricing.price)})
                 </p>
               </div>
 
-              <Card>
-                <CardContent className="pt-6">
+              <Card className="bg-card/80 backdrop-blur-sm border-border/70 shadow-2xl shadow-primary/5">
+                <CardContent className="pt-6 sm:pt-8">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -616,7 +619,7 @@ const StartProject = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="password">Set Dashboard Password *</Label>
-                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="••••••••" required />
+                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="•••••••���" required />
                       </div>
                     </div>
                     <div className="space-y-2">
