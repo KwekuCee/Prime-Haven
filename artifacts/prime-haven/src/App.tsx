@@ -87,6 +87,7 @@ const ForwardWork = lazy(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazy(() => import("./pages/ManagePromoPopup"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const OurStory = lazy(() => import("./pages/OurStory"));
 const ManageSystemSettings = lazy(() => import("./pages/ManageSystemSettings"));
 
 const queryClient = new QueryClient();
@@ -169,6 +170,7 @@ const App = () => {
                   <Route path="/project-chat/:projectId" element={<ProjectChatPage />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/our-story" element={<OurStory />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

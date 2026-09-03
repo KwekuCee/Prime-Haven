@@ -26,7 +26,7 @@ const Navbar = () => {
   const navLinks = [
     { name: t('nav.services'), href: '/#services' },
     { name: t('nav.portfolio'), href: '/#portfolio' },
-    { name: t('nav.story'), href: '/#founder' },
+    { name: t('nav.story'), href: '/our-story' },
     { name: t('nav.reviews'), href: '/#testimonials' },
     { name: t('nav.about'), href: '/#about' },
     { name: t('nav.blog'), href: '/blog' },

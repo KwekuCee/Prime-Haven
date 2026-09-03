@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { useToast } from '@/hooks/use-toast';
+import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs } from '@/lib/currency';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import AchievementBadges from '@/components/dashboard/AchievementBadges';
 import ActivityStreak from '@/components/dashboard/ActivityStreak';
@@ -88,6 +89,16 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [feeGhs, setFeeGhs] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getUsdToGhsRate()
+      .then((r) => { if (!cancelled) setFeeGhs(usdToGhs(JOIN_FEE_USD, r.rate)); })
+      .catch(() => { /* USD amount alone is fine */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const [designer, setDesigner] = useState<DesignerData | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -552,7 +563,12 @@ const Dashboard = () => {
                 <p className="text-sm font-semibold text-amber-500 mb-1">Action Required</p>
                 <ul className="text-xs text-muted-foreground space-y-0.5">
                   {!profile.email_verified && <li>• Verify your email to unlock all features</li>}
-                  {!profile.registration_fee_paid && <li>• Complete registration fee payment (GH₵100.00)</li>}
+                  {!profile.registration_fee_paid && (
+                    <li>
+                      • Complete registration fee payment ({formatUsd(JOIN_FEE_USD)}
+                      {feeGhs !== null ? ` ≈ ${formatGhs(feeGhs)}` : ''})
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
