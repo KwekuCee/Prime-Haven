@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { format, addDays, isAfter } from 'date-fns';
+import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT, shareOf } from '@/lib/revenue';
 import { useToast } from '@/hooks/use-toast';
 
 interface OpenOrder {
@@ -25,6 +26,8 @@ interface OpenOrder {
     required_professions?: string[];
     max_assignees?: number;
     current_claims?: number;
+    price_ghs?: number;
+    your_share?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -81,6 +84,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
     const [loading, setLoading] = useState(true);
     const [claiming, setClaiming] = useState<string | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<OpenOrder | null>(null);
+    const [sharePercent, setSharePercent] = useState(DEFAULT_REVENUE_SHARE_PERCENT);
 
     useEffect(() => {
         loadOpenOrders();
@@ -104,6 +108,9 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                 .select('professional_title, professions')
                 .eq('user_id', user.id)
                 .maybeSingle();
+
+            const share = await getRevenueSharePercent();
+            setSharePercent(share);
 
             const derivedProf = deriveProfession(designer?.professional_title);
             // Use the professions array if it has items, otherwise fallback to derived
@@ -182,7 +189,9 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     budget: p.budget,
                     required_professions: p.required_professions,
                     max_assignees: p.max_assignees,
-                    current_claims: p.project_assignments?.length || 0
+                    current_claims: p.project_assignments?.length || 0,
+                    price_ghs: Number(p.price_ghs || 0),
+                    your_share: shareOf(Number(p.price_ghs || 0), share)
                 }))
                 .filter((p: any) => (p.current_claims || 0) < (p.max_assignees || 1));
 
@@ -397,12 +406,14 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] text-muted-foreground uppercase">Reward</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase">You earn ({sharePercent}%)</span>
                                             <span className="text-xs font-bold text-primary flex items-center gap-1">
                                                 <DollarSign className="w-3 h-3" />
-                                                {order.source === 'client_projects' || order.source === 'job_contracts'
-                                                    ? (order.budget ? `GH₵${order.budget}` : '—')
-                                                    : (order.price ? `GH₵${order.price.toLocaleString()}` : '—')}
+                                                {order.source === 'client_projects'
+                                                    ? (order.your_share ? `GH₵${order.your_share.toLocaleString()}` : (order.budget ? `GH₵${order.budget}` : '—'))
+                                                    : order.source === 'job_contracts'
+                                                        ? (order.budget ? `GH₵${order.budget}` : '—')
+                                                        : (order.price ? `GH₵${shareOf(order.price, sharePercent).toLocaleString()}` : '—')}
                                             </span>
                                         </div>
                                         <div className="flex flex-col">
@@ -461,14 +472,16 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-                                        <span className="text-emerald-500 font-bold">Reward: {selectedOrder.source === 'client_projects' || selectedOrder.source === 'job_contracts' ? (selectedOrder.budget ? `GH₵ ${selectedOrder.budget}` : '—') : (selectedOrder.price ? `GH₵ ${selectedOrder.price.toLocaleString()}` : '—')}</span>
+                                        <span className="text-emerald-500 font-bold">You earn ({sharePercent}%): {selectedOrder.source === 'client_projects' ? (selectedOrder.your_share ? `GH₵ ${selectedOrder.your_share.toLocaleString()}` : (selectedOrder.budget ? `GH₵ ${selectedOrder.budget}` : '—')) : selectedOrder.source === 'job_contracts' ? (selectedOrder.budget ? `GH₵ ${selectedOrder.budget}` : '—') : (selectedOrder.price ? `GH₵ ${shareOf(selectedOrder.price, sharePercent).toLocaleString()}` : '—')}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-500">
                                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                Once claimed, you are responsible for delivering this project on time.
+                                First come, first served — one professional per job. Once you claim it, the job is
+                                yours to deliver, and your points and {sharePercent}% share are released when the
+                                client approves your work.
                             </div>
                         </div>
                     )}
