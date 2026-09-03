@@ -76,7 +76,7 @@ const StartProjectDialog = ({ trigger }: StartProjectDialogProps) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto border-border/70 bg-card/95 backdrop-blur-xl shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Rocket className="w-5 h-5 text-primary" />
