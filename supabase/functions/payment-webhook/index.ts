@@ -173,7 +173,7 @@ serve(async (req) => {
             description: project.description,
             category: project.category,
             client_name: project.client_name,
-            budget: project.budget ?? `$${amountUsdDisplay(amountGhs)}`,
+            budget: project.budget ?? null,
             deadline: project.deadline,
             reference_images: project.reference_images,
             required_professions: project.required_professions,
