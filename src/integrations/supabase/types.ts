@@ -901,6 +901,7 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          archived_at: string | null
           created_at: string
           id: string
           payment_details: Json | null
@@ -915,6 +916,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          archived_at?: string | null
           created_at?: string
           id?: string
           payment_details?: Json | null
@@ -929,6 +931,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          archived_at?: string | null
           created_at?: string
           id?: string
           payment_details?: Json | null
@@ -2283,12 +2286,21 @@ export type Database = {
       }
     }
     Functions: {
+      admin_archive_ledger: { Args: { p_restore?: boolean }; Returns: number }
+      admin_remove_withdrawal_request: {
+        Args: { p_reason?: string; p_withdrawal_id: string }
+        Returns: Json
+      }
       allocate_client_acceptance_points: {
         Args: { p_designer_id: string; p_points: number }
         Returns: undefined
       }
       approve_project_submission: {
         Args: { p_submission_id: string }
+        Returns: Json
+      }
+      check_withdrawal_already_paid: {
+        Args: { p_withdrawal_id: string }
         Returns: Json
       }
       claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
