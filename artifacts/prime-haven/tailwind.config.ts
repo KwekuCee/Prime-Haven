@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-        body: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        heading: ["Space Grotesk", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        body: ["DM Sans", "Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
 
       colors: {
