@@ -63,8 +63,7 @@ const Footer = () => {
                 { icon: XIcon, href: '#', label: 'X' },
                 { icon: Linkedin, href: '#', label: 'LinkedIn' },
                 { icon: Instagram, href: '#', label: 'Instagram' },
-                // TODO: replace href with the WhatsApp link
-                { icon: MessageCircle, href: '#', label: 'WhatsApp' },
+                { icon: MessageCircle, href: 'https://wa.me/233550160237', label: 'WhatsApp' },
               ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
