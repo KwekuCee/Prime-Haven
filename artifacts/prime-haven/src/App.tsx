@@ -169,6 +169,7 @@ const App = () => {
                   <Route path="/project-chat/:projectId" element={<ProjectChatPage />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/our-story" element={<OurStory />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
