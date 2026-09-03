@@ -340,6 +340,57 @@ const FinanceDashboard = () => {
         }
     };
 
+    const openRemoveRequest = async (withdrawal: any) => {
+        setRemoveTarget(withdrawal);
+        setRemoveCheck(null);
+        try {
+            const { data, error } = await (supabase as any).rpc('check_withdrawal_already_paid', { p_withdrawal_id: withdrawal.id });
+            if (error) throw error;
+            setRemoveCheck(data);
+        } catch (err: any) {
+            setRemoveCheck({ found: false, message: `Could not check payout history: ${err.message}` });
+        }
+    };
+
+    const confirmRemoveRequest = async () => {
+        if (!removeTarget) return;
+        setRemoving(true);
+        try {
+            const { error } = await (supabase as any).rpc('admin_remove_withdrawal_request', {
+                p_withdrawal_id: removeTarget.id,
+                p_reason: 'Your pending withdrawal request was removed because the payment was settled outside the platform.',
+            });
+            if (error) throw error;
+            toast({ title: 'Request Removed', description: `${removeTarget.client_name}'s request was removed and they have been notified.` });
+            setRemoveTarget(null);
+            setRemoveCheck(null);
+            await loadFinancialData();
+        } catch (err: any) {
+            toast({ title: 'Could not remove request', description: err.message, variant: 'destructive' });
+        } finally {
+            setRemoving(false);
+        }
+    };
+
+    const clearLedger = async (restore = false) => {
+        setClearingLedger(true);
+        try {
+            const { data, error } = await (supabase as any).rpc('admin_archive_ledger', { p_restore: restore });
+            if (error) throw error;
+            toast({
+                title: restore ? 'Ledger Restored' : 'Ledger Cleared',
+                description: `${data ?? 0} record(s) ${restore ? 'restored' : 'archived'}. Nothing was deleted.`,
+            });
+            setIsClearLedgerOpen(false);
+            await loadFinancialData();
+        } catch (err: any) {
+            toast({ title: 'Action Failed', description: err.message, variant: 'destructive' });
+        } finally {
+            setClearingLedger(false);
+        }
+    };
+
+
     const exportLedgerCSV = () => {
         if (filteredTransactions.length === 0) {
             toast({ title: 'Nothing to export', description: 'No ledger records match the current filter.' });
