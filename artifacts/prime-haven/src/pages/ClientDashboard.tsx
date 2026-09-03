@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useUsdRate } from '@/hooks/useUsdRate';
 
 interface ClientOrder {
     id: string;
@@ -31,6 +32,7 @@ interface ClientOrder {
 }
 
 const ClientDashboard = () => {
+    const money = useUsdRate();
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
@@ -196,7 +198,10 @@ const ClientDashboard = () => {
                                     </div>
                                     <Badge variant="outline" className="text-[9px] uppercase border-emerald-500/20 text-emerald-500">Paid Out</Badge>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{stats.totalSpent.toLocaleString()}</p>
+                                <div>
+                                    <p className="text-2xl sm:text-3xl font-heading font-bold">{money.usd(stats.totalSpent)}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Charged as {money.ghs(stats.totalSpent)}</p>
+                                </div>
                                 <p className="text-[11px] text-muted-foreground mt-1 tracking-wider uppercase opacity-70">Investment in Growth</p>
                             </SpotlightCard>
                         </motion.div>
