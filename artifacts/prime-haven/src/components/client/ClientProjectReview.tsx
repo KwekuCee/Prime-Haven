@@ -79,7 +79,7 @@ const ClientProjectReview = () => {
       if (claimerIds.length) {
         const names: Record<string, string> = {};
         for (const id of Array.from(new Set(claimerIds))) {
-          const { data } = await supabase.rpc('get_designer_public_profile', { p_designer_id: id });
+          const { data } = await (supabase as any).rpc('get_designer_public_profile', { p_designer_id: id });
           const row = Array.isArray(data) ? data[0] : null;
           if (row) names[id] = (row as any).full_name || (row as any).username || 'Professional';
         }
@@ -99,7 +99,7 @@ const ClientProjectReview = () => {
   const approve = async (delivery: Delivery) => {
     setBusy(delivery.id);
     try {
-      const { error } = await supabase.rpc('approve_project_submission', { p_submission_id: delivery.id });
+      const { error } = await (supabase as any).rpc('approve_project_submission', { p_submission_id: delivery.id });
       if (error) throw error;
       toast({ title: 'Project approved', description: 'Your professional has been paid their share and awarded points.' });
       await load();
@@ -114,7 +114,7 @@ const ClientProjectReview = () => {
     if (!revisionFor || !feedback.trim()) return;
     setBusy(revisionFor.id);
     try {
-      const { error } = await supabase.rpc('request_project_revision', {
+      const { error } = await (supabase as any).rpc('request_project_revision', {
         p_submission_id: revisionFor.id,
         p_feedback: feedback.trim().slice(0, 2000),
       });
