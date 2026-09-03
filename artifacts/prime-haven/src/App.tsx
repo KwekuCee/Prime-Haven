@@ -155,14 +155,16 @@ const App = () => {
                   <Route path="/superadmin/settings" element={<ManageSystemSettings />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
-                  <Route path="/client/dashboard" element={<ClientDashboard />} />
-                  <Route path="/client/projects" element={<ClientProjectsReview />} />
-                  <Route path="/client/profile" element={<ClientProfile />} />
-                  <Route path="/client/settings" element={<ClientSettings />} />
-                  <Route path="/client/start-project" element={<ClientStartProject />} />
-                  <Route path="/client/payments" element={<ClientPayments />} />
-                  <Route path="/client/support" element={<ClientSupport />} />
-                  <Route path="/client/messages" element={<Messages />} />
+                  <Route path="/client/login" element={<ClientLogin />} />
+                  <Route path="/client/dashboard" element={<ClientRoute><ClientDashboard /></ClientRoute>} />
+                  <Route path="/client/projects" element={<ClientRoute><ClientProjectsReview /></ClientRoute>} />
+                  <Route path="/client/profile" element={<ClientRoute><ClientProfile /></ClientRoute>} />
+                  <Route path="/client/settings" element={<ClientRoute><ClientSettings /></ClientRoute>} />
+                  <Route path="/client/start-project" element={<ClientRoute><ClientStartProject /></ClientRoute>} />
+                  <Route path="/client/payments" element={<ClientRoute><ClientPayments /></ClientRoute>} />
+                  <Route path="/client/support" element={<ClientRoute><ClientSupport /></ClientRoute>} />
+                  <Route path="/client/messages" element={<ClientRoute><Messages /></ClientRoute>} />
+
                   <Route path="/affiliate/dashboard" element={<AffiliateDashboard />} />
                   <Route path="/marketplace" element={<Marketplace />} />
                   <Route path="/dashboard/smm" element={<SMMDashboard />} />
