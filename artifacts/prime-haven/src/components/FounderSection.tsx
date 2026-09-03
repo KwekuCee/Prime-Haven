@@ -4,10 +4,10 @@ import { Quote } from 'lucide-react';
 import ceoPhoto from '@/assets/ceo-founder.jpg';
 
 const STORY_PARAGRAPHS = [
-  "Before Prime Haven existed, Michael Kweku Essilfie saw something that troubled him deeply — a generation of brilliantly creative people with no real stage. Graphic designers, UI/UX artists, web developers, and digital creatives across Ghana were producing world-class work, yet struggling to connect with the clients who needed them most. The talent was there. The opportunity was not.",
+  "Before Prime Haven existed, Michael Kweku Essilfie saw something that troubled him deeply — a generation of brilliantly creative people with no real stage. Graphic designers, UI/UX artists, web developers, and digital creatives across Ghana were doing good work, yet struggling to connect with the clients who needed them most. The talent was there. The opportunity was not.",
   "Michael decided to change that. Driven by a conviction that creative talent deserves more than uncertainty, he set out to build something unprecedented — a premium digital agency where talented creatives could thrive, not just survive. Not a marketplace. Not a gig board. A family. A community. A haven.",
-  "Prime Haven was born from that vision. Michael assembled a handpicked team of the finest designers and developers, built a rigorous quality system, and created a platform that bridges the gap between world-class creative talent and businesses hungry for outstanding digital work. Every project accepted is a contract. Every deliverable, a promise.",
-  "Today, Prime Haven stands as proof that when you invest in people and give talent a home, extraordinary things happen. Under Michael's leadership, the agency has grown into a powerhouse of digital excellence — delivering graphic design, UI/UX, web development, and IT solutions that turn client dreams into digital reality. The mission remains the same: Making IT Dreams a Reality, one creative at a time."
+  "Prime Haven was born from that vision. Michael brought together a small team of designers and developers, set up a review process for every deliverable, and built a platform that connects that talent to businesses who need the work done. Every project accepted is a contract. Every deliverable, a promise.",
+  "The studio has grown steadily since — graphic design, UI/UX, web development and IT support, handled by people who are paid properly for it. The mission has not changed: Making IT Dreams a Reality, one creative at a time."
 ];
 
 const FounderSection = () => {

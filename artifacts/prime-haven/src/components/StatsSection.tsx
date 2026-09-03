@@ -382,11 +382,6 @@ const StatsSection = () => {
                   stat.highlight ? 'border-primary/40 bg-primary/[0.04]' : ''
                 }`}
               >
-                {/* Subtle shimmer effect */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </div>
-
                 {stat.highlight && salary.live && (
                   <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-green-500/10 border border-green-500/20 px-2 py-0.5 text-[10px] font-semibold text-green-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
