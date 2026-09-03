@@ -13,7 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/BrandLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
-import { resolveCheckoutAmount, formatUsd } from '@/lib/currency';
+import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
 
 declare global {
   interface Window {
@@ -78,6 +78,7 @@ const StartProject = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
+  const [chargePreview, setChargePreview] = useState<CheckoutAmount | null>(null);
   const [isReturningClient, setIsReturningClient] = useState(false);
   const [referenceImages, setReferenceImages] = useState<{ file: File; preview: string }[]>([]);
   const [uploadingRefs, setUploadingRefs] = useState(false);
@@ -213,6 +214,16 @@ const StartProject = () => {
     const discounted = basePrice * (1 - promoDiscount / 100);
     return discounted;
   };
+
+  // Preview what the gateway will actually charge (cedis in Ghana, dollars elsewhere)
+  useEffect(() => {
+    if (!selectedPricing) { setChargePreview(null); return; }
+    let active = true;
+    resolveCheckoutAmount(calculateTotal(selectedPricing.price))
+      .then(res => { if (active) setChargePreview(res); })
+      .catch(() => { if (active) setChargePreview(null); });
+    return () => { active = false; };
+  }, [selectedPricing, promoDiscount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
 
@@ -619,8 +630,14 @@ const StartProject = () => {
                         <span className="font-medium">{tierLabels[selectedPricing.tier]}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Currency</span>
-                        <span className="font-medium">{currency === 'USD' ? '🌍 USD (International)' : '🇬🇭 GHS (Local)'}</span>
+                        <span className="text-muted-foreground">Charged in</span>
+                        <span className="font-medium">
+                          {chargePreview
+                            ? chargePreview.currency === 'GHS'
+                              ? `🇬🇭 ${formatGhs(chargePreview.amount)}`
+                              : '🌍 US Dollars'
+                            : 'Checking your location…'}
+                        </span>
                       </div>
                       {promoDiscount > 0 && (
                         <div className="flex justify-between text-sm text-emerald-500 font-medium">
