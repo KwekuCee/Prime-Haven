@@ -60,6 +60,8 @@ const Install = lazy(() => import("./pages/Install"));
 const ProjectWorkspace = lazy(() => import("./pages/ProjectWorkspace"));
 const DesignerProfile = lazy(() => import("./pages/DesignerProfile"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const ClientLogin = lazy(() => import("./pages/ClientLogin"));
+
 const ClientProjectsReview = lazy(() => import("./pages/ClientProjectsReview"));
 const ClientProfile = lazy(() => import("./pages/ClientProfile"));
 const ClientSettings = lazy(() => import("./pages/ClientSettings"));
