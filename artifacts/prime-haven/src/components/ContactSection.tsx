@@ -53,7 +53,7 @@ const ContactSection = () => {
           className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 mb-16"
         >
           <Link to="/start-project">
-            <Button variant="primary" size="lg" className="w-full sm:w-auto group glow-primary">
+            <Button variant="primary" size="lg" className="w-full sm:w-auto group">
               <Rocket className="mr-2 w-5 h-5" />
               {t('contact.startProject')}
             </Button>

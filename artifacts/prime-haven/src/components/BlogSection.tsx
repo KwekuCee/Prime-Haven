@@ -202,7 +202,7 @@ const BlogSection = () => {
               required
               className="w-full sm:min-w-[250px]"
             />
-            <Button type="submit" variant="default" disabled={subscribing} className="glow-primary shrink-0">
+            <Button type="submit" variant="default" disabled={subscribing} className="shrink-0">
               {subscribing ? 'Subscribing...' : 'Subscribe'}
             </Button>
           </form>

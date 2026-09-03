@@ -50,7 +50,7 @@ const Footer = () => {
               <BrandLogo height={38} />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Ghana's premier freelance design and tech marketplace — connecting top creative talent with clients who demand excellence.
+              A Ghanaian design and tech studio. Clients brief us, our vetted designers and developers do the work, and we stay accountable for what ships.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground">

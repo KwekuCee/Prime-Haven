@@ -6,35 +6,35 @@ import { Link } from 'react-router-dom';
 const STEPS = [
     {
         title: "Discovery & Strategy",
-        description: "We dive deep into your business goals, target audience, and market landscape to define a razor-sharp strategy.",
+        description: "We start with a call. What the business does, who it is for, what has already been tried — then we write down the scope before anyone opens a design file.",
         icon: Lightbulb,
-        color: "text-amber-500",
-        bg: "bg-amber-500/20",
-        border: "border-amber-500/30"
+        color: "text-primary",
+        bg: "bg-primary/10",
+        border: "border-primary/25"
     },
     {
         title: "UI/UX & Visual Design",
-        description: "Our elite designers craft intuitive, stunning glassmorphic interfaces designed to convert and captivate users.",
+        description: "Wireframes first, then screens. You see work in progress and give notes at each round instead of waiting for one big reveal.",
         icon: PenTool,
-        color: "text-primary",
-        bg: "bg-primary/20",
-        border: "border-primary/30"
+        color: "text-foreground",
+        bg: "bg-muted",
+        border: "border-border"
     },
     {
         title: "Agile Development",
-        description: "We leverage cutting-edge tech (React, Supabase, Tailwind) to build scalable, high-performance digital solutions.",
+        description: "We build in React with a Postgres backend. You get a staging link early so you can click through the real thing, not a slideshow.",
         icon: Code2,
-        color: "text-blue-500",
-        bg: "bg-blue-500/20",
-        border: "border-blue-500/30"
+        color: "text-primary",
+        bg: "bg-primary/10",
+        border: "border-primary/25"
     },
     {
         title: "Launch & Scale",
-        description: "Rigorous testing, optimized deployment, and ongoing post-launch support to ensure your product dominates the market.",
+        description: "We test on real devices, hand over the files and access, and stay on for a month of fixes after launch.",
         icon: Rocket,
-        color: "text-emerald-500",
-        bg: "bg-emerald-500/20",
-        border: "border-emerald-500/30"
+        color: "text-foreground",
+        bg: "bg-muted",
+        border: "border-border"
     }
 ];
 
