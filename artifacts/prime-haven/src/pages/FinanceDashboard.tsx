@@ -221,7 +221,7 @@ const FinanceDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [toast, showArchived]);
 
     useEffect(() => {
         if (authLoading) return;
