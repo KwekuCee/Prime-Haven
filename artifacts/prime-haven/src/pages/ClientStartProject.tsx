@@ -178,19 +178,10 @@ const ClientStartProject = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const formatPrice = (priceGhs: number) => {
-    if (currency === 'USD') {
-      return `$${(priceGhs / exchangeRate).toFixed(2)}`;
-    }
-    return `GH₵${priceGhs.toLocaleString()}`;
-  };
+  // Every price on Prime Haven is quoted in US dollars.
+  const formatPrice = (priceUsd: number) => formatUsd(priceUsd);
 
-  const getPaymentAmount = (priceGhs: number) => {
-    if (currency === 'USD') {
-      return Math.ceil((priceGhs / exchangeRate) * 100) / 100;
-    }
-    return priceGhs;
-  };
+  const getPaymentAmount = (priceUsd: number) => Math.round(priceUsd * 100) / 100;
 
   const applyPromoCode = async () => {
     if (!promoCode.trim()) return;
@@ -239,7 +230,9 @@ const ClientStartProject = () => {
     setSubmitting(true);
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const finalPrice = calculateTotal(selectedPricing.price);
-    const amount = getPaymentAmount(finalPrice);
+    const amountUsd = getPaymentAmount(finalPrice);
+    const checkout = await resolveCheckoutAmount(amountUsd);
+    const amount = checkout.amount;
 
     if (amount === 0) {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -279,7 +272,7 @@ const ClientStartProject = () => {
             description: form.description,
             category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
             status: 'pending',
-            budget: 'GH₵0 (Promo)',
+            budget: '$0 (Promo)',
             required_professions: dist.professions,
             max_assignees: dist.max,
             reference_images: uploadedRefUrls,
@@ -339,7 +332,8 @@ const ClientStartProject = () => {
         key: KORAPAY_PUBLIC_KEY,
         reference,
         amount,
-        currency,
+        currency: checkout.currency,
+        metadata: { amount_usd: amountUsd, charged_currency: checkout.currency, usd_to_ghs_rate: checkout.rate, country: checkout.countryCode },
         customer: {
           name: form.clientName,
           email: form.clientEmail,

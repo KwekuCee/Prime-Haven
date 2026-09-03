@@ -13,7 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/BrandLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
-import { getUsdToGhsRate, usdToGhs } from '@/lib/currency';
+import { resolveCheckoutAmount, formatUsd } from '@/lib/currency';
 
 declare global {
   interface Window {
@@ -179,19 +179,10 @@ const StartProject = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const formatPrice = (priceGhs: number) => {
-    if (currency === 'USD') {
-      return `$${(priceGhs / exchangeRate).toFixed(2)}`;
-    }
-    return `GH₵${priceGhs.toLocaleString()}`;
-  };
+  // Every price on Prime Haven is quoted in US dollars.
+  const formatPrice = (priceUsd: number) => formatUsd(priceUsd);
 
-  const getPaymentAmount = (priceGhs: number) => {
-    if (currency === 'USD') {
-      return Math.ceil((priceGhs / exchangeRate) * 100) / 100; // round up to nearest cent
-    }
-    return priceGhs;
-  };
+  const getPaymentAmount = (priceUsd: number) => Math.round(priceUsd * 100) / 100;
 
   const applyPromoCode = async () => {
     if (!promoCode.trim()) return;
@@ -246,8 +237,9 @@ const StartProject = () => {
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const finalPrice = calculateTotal(selectedPricing.price);
     const amountUsd = getPaymentAmount(finalPrice);
-    const rate = await getUsdToGhsRate(true);
-    const amount = usdToGhs(amountUsd, rate.rate);
+    // Ghanaian visitors are charged in cedis at the live rate; everyone else in dollars.
+    const checkout = await resolveCheckoutAmount(amountUsd);
+    const amount = checkout.amount;
 
     // Bypass payment gateway AND edge function for 100% discount (0 GHS)
     // The edge function is only needed for paid orders to verify payment with gateways
@@ -303,8 +295,8 @@ const StartProject = () => {
         key: KORAPAY_PUBLIC_KEY,
         reference,
         amount,
-        currency: 'GHS',
-        metadata: { amount_usd: amountUsd, usd_to_ghs_rate: rate.rate, rate_source: rate.source, gateway },
+        currency: checkout.currency,
+        metadata: { amount_usd: amountUsd, charged_currency: checkout.currency, usd_to_ghs_rate: checkout.rate, country: checkout.countryCode, gateway },
         customer: {
           name: form.clientName,
           email: form.clientEmail,
