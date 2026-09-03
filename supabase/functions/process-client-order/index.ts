@@ -5,6 +5,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
+const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
+
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 
 
@@ -178,20 +180,39 @@ serve(async (req: Request): Promise<Response> => {
     let verifiedAmount: number;
     let verifiedCurrency: string;
 
-    console.log("Verifying with Korapay...");
-    const korapayResponse = await fetch(
-      `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
-      { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
-    );
-    const korapayData = await korapayResponse.json();
+    if (gateway === "paystack") {
+      console.log("Verifying with Paystack...");
+      const paystackResponse = await fetch(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
+        { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
+      );
+      const paystackData = await paystackResponse.json();
 
-    if (!korapayData.status || korapayData.data?.status !== "success") {
-      return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
-        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      if (!paystackData?.status || paystackData?.data?.status !== "success") {
+        return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      // Paystack reports amounts in the smallest currency unit (pesewas / kobo)
+      verifiedAmount = Number(paystackData.data.amount) / 100;
+      verifiedCurrency = paystackData.data.currency;
+    } else {
+      console.log("Verifying with Korapay...");
+      const korapayResponse = await fetch(
+        `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
+        { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
+      );
+      const korapayData = await korapayResponse.json();
+
+      if (!korapayData.status || korapayData.data?.status !== "success") {
+        return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      verifiedAmount = Number(korapayData.data.amount);
+      verifiedCurrency = korapayData.data.currency;
     }
-    verifiedAmount = korapayData.data.amount;
-    verifiedCurrency = korapayData.data.currency;
+
 
     const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
 
