@@ -452,17 +452,15 @@ const AffiliateDashboard = () => {
                                             </div>
                                         )}
                                         <div className="p-5 flex flex-col flex-1">
-                                            <h3 className="font-bold mb-2">{asset.title}</h3>
+                                            <div className="flex items-center justify-between gap-2 mb-2">
+                                                <h3 className="font-bold">{asset.title}</h3>
+                                                <span className="text-[10px] uppercase tracking-wide text-muted-foreground border border-border/60 rounded-full px-2 py-0.5">
+                                                    {asset.asset_type}
+                                                </span>
+                                            </div>
                                             <p className="text-xs text-muted-foreground mb-4 flex-1">{asset.description}</p>
-                                            <Button variant="secondary" className="w-full text-xs" onClick={() => {
-                                                if (asset.asset_type === 'copy') {
-                                                    navigator.clipboard.writeText(asset.asset_url);
-                                                    toast({ title: "Copied!", description: "Copy text copied to clipboard." });
-                                                } else {
-                                                    window.open(asset.asset_url, '_blank');
-                                                }
-                                            }}>
-                                                {asset.asset_type === 'copy' ? 'Copy Text' : 'Download / View'}
+                                            <Button variant="secondary" className="w-full text-xs" onClick={() => downloadAsset(asset)}>
+                                                {asset.asset_type === 'copy' ? 'Copy Text' : 'Download'}
                                             </Button>
                                         </div>
                                     </div>
