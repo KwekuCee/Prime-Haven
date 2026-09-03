@@ -115,10 +115,51 @@ const Login = () => {
     );
   }
 
+  const swapped = mode !== 'talent';
+
+  const panelCopy = {
+    talent: {
+      heading: (
+        <>
+          Connecting <span className="text-primary">Ghana&apos;s</span> premier design{' '}
+          <span className="italic">talent</span>.
+        </>
+      ),
+      sub: 'Join the elite marketplace for creative professionals across West Africa.',
+    },
+    client: {
+      heading: (
+        <>
+          Follow your <span className="text-primary">project</span> from brief to{' '}
+          <span className="italic">delivery</span>.
+        </>
+      ),
+      sub: 'Message the professional working on your project and approve the final work.',
+    },
+    admin: {
+      heading: (
+        <>
+          The <span className="text-primary">control room</span> of Prime{' '}
+          <span className="italic">Haven</span>.
+        </>
+      ),
+      sub: 'Restricted access. Administrator credentials required.',
+    },
+  }[mode];
+
+  const formHeading = {
+    talent: { title: 'Talent Sign-in', sub: 'Welcome back to the haven.' },
+    client: { title: 'Client Sign-in', sub: 'Sign in to your project portal.' },
+    admin: { title: 'Admin Portal', sub: 'Authorised personnel only.' },
+  }[mode];
+
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground">
-      {/* Left brand panel */}
-      <div className="hidden md:flex md:w-5/12 bg-foreground p-12 lg:p-16 flex-col justify-between relative overflow-hidden">
+    <div className="min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground md:relative md:overflow-hidden flex flex-col md:block">
+      {/* Brand panel */}
+      <div
+        className="hidden md:flex md:absolute md:inset-y-0 md:left-0 md:w-5/12 bg-foreground p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+        style={{ transform: swapped ? 'translateX(140%)' : 'translateX(0)' }}
+      >
         {/* Kente-inspired grid pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -139,20 +180,21 @@ const Login = () => {
 
         <div className="relative z-10">
           <h1 className="text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-background font-heading tracking-tight">
-            Connecting <span className="text-primary">Ghana&apos;s</span> premier design <span className="italic">talent</span>.
+            {panelCopy.heading}
           </h1>
         </div>
 
         <div className="relative z-10">
-          <p className="text-background/60 text-sm max-w-xs">
-            Join the elite marketplace for creative professionals across West Africa.
-          </p>
+          <p className="text-background/60 text-sm max-w-xs">{panelCopy.sub}</p>
         </div>
       </div>
 
-      {/* Right form panel */}
-      <div className="w-full md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-24">
-        <div className="w-full max-w-md">
+      {/* Form panel */}
+      <div
+        className="w-full md:absolute md:inset-y-0 md:right-0 md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+        style={{ transform: swapped ? 'translateX(-71.4286%)' : 'translateX(0)' }}
+      >
+        <div key={mode} className="w-full max-w-md motion-safe:animate-fade-in">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 mb-12">
             <Link to="/" className="inline-block">
@@ -162,84 +204,95 @@ const Login = () => {
 
           <header className="mb-10">
             <div className="flex items-center gap-2 mb-2">
-              <LogIn className="w-5 h-5 text-primary" />
-              <h2 className="text-3xl md:text-4xl font-semibold font-heading tracking-tight">Talent Sign-in</h2>
+              {mode === 'admin' ? (
+                <Shield className="w-5 h-5 text-primary" />
+              ) : mode === 'client' ? (
+                <Briefcase className="w-5 h-5 text-primary" />
+              ) : (
+                <LogIn className="w-5 h-5 text-primary" />
+              )}
+              <h2 className="text-3xl md:text-4xl font-semibold font-heading tracking-tight">{formHeading.title}</h2>
             </div>
-            <p className="text-muted-foreground">Welcome back to the haven.</p>
+            <p className="text-muted-foreground">{formHeading.sub}</p>
           </header>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="name@talent.gh"
-                {...register('email')}
-                className={`w-full bg-transparent border-b-2 px-0 py-3 focus:outline-none focus:border-primary transition-colors placeholder:text-foreground/20 font-body ${
-                  errors.email ? 'border-destructive' : 'border-foreground'
-                }`}
-              />
-              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
-            </div>
+          {mode === 'client' && <ClientSignInForm />}
+          {mode === 'admin' && <AdminSignInForm />}
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Password
+          {mode === 'talent' && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Email Address
                 </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-primary hover:underline underline-offset-4"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
                 <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  {...register('password')}
-                  className={`w-full bg-transparent border-b-2 px-0 py-3 focus:outline-none focus:border-primary transition-colors placeholder:text-foreground/20 font-body pr-10 ${
-                    errors.password ? 'border-destructive' : 'border-foreground'
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@talent.gh"
+                  {...register('email')}
+                  className={`w-full bg-transparent border-b-2 px-0 py-3 focus:outline-none focus:border-primary transition-colors placeholder:text-foreground/20 font-body ${
+                    errors.email ? 'border-destructive' : 'border-foreground'
                   }`}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
               </div>
-              {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
-            </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-foreground text-background py-4 px-6 mt-4 font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="inline-flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in...
-                </span>
-              ) : (
-                'LOG IN TO PORTAL'
-              )}
-            </button>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Password
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-medium text-primary hover:underline underline-offset-4"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    {...register('password')}
+                    className={`w-full bg-transparent border-b-2 px-0 py-3 focus:outline-none focus:border-primary transition-colors placeholder:text-foreground/20 font-body pr-10 ${
+                      errors.password ? 'border-destructive' : 'border-foreground'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
+              </div>
 
-            <div className="pt-4 text-center">
-              <ResendVerificationEmail />
-            </div>
-          </form>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-foreground text-background py-4 px-6 mt-4 font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Signing in...
+                  </span>
+                ) : (
+                  'LOG IN TO PORTAL'
+                )}
+              </button>
+
+              <div className="pt-4 text-center">
+                <ResendVerificationEmail />
+              </div>
+            </form>
+          )}
 
           <div className="mt-16 pt-8 border-t border-border flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -253,18 +306,33 @@ const Login = () => {
             </div>
 
             <nav className="flex flex-wrap gap-x-6 gap-y-2 mt-4">
-              <Link
-                to="/client/login"
-                className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
-              >
-                Client Sign-in
-              </Link>
-              <Link
-                to="/superadmin-login"
-                className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
-              >
-                Admin Portal
-              </Link>
+              {mode !== 'talent' && (
+                <button
+                  type="button"
+                  onClick={() => setMode('talent')}
+                  className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  Talent Sign-in
+                </button>
+              )}
+              {mode !== 'client' && (
+                <button
+                  type="button"
+                  onClick={() => setMode('client')}
+                  className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  Client Sign-in
+                </button>
+              )}
+              {mode !== 'admin' && (
+                <button
+                  type="button"
+                  onClick={() => setMode('admin')}
+                  className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  Admin Portal
+                </button>
+              )}
             </nav>
           </div>
         </div>
@@ -274,3 +342,4 @@ const Login = () => {
 };
 
 export default Login;
+
