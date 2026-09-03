@@ -23,6 +23,7 @@ interface Props {
 }
 
 export default function WithdrawCard({ userId, availableBalance }: Props) {
+  const money = useUsdRate();
   const [methods, setMethods] = useState<Method[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [liveSalary, setLiveSalary] = useState<number | null>(null);
