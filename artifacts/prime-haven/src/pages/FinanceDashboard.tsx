@@ -34,6 +34,12 @@ const FinanceDashboard = () => {
     const [acceptedProjects, setAcceptedProjects] = useState<any[]>([]);
     const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
     const [approvingWithdrawal, setApprovingWithdrawal] = useState<string | null>(null);
+    const [showArchived, setShowArchived] = useState(false);
+    const [clearingLedger, setClearingLedger] = useState(false);
+    const [isClearLedgerOpen, setIsClearLedgerOpen] = useState(false);
+    const [removeTarget, setRemoveTarget] = useState<any>(null);
+    const [removeCheck, setRemoveCheck] = useState<any>(null);
+    const [removing, setRemoving] = useState(false);
 
     // Modals & Inputs
     const [filter, setFilter] = useState('all');
@@ -45,8 +51,12 @@ const FinanceDashboard = () => {
         totalRevenue: 0,
         escrow: 0,
         profit: 0,
-        pendingPayouts: 0
+        pendingPayouts: 0,
+        collected: 0,
+        talentShare: 0,
+        platformShare: 0
     });
+
 
     const loadFinancialData = useCallback(async () => {
         try {
@@ -62,7 +72,11 @@ const FinanceDashboard = () => {
                 { data: submissionsData }
             ] = await Promise.all([
                 (supabase.from('client_orders') as any).select('*').order('created_at', { ascending: false }),
-                (supabase.from('payments') as any).select('*, profiles(full_name)').order('created_at', { ascending: false }),
+                (showArchived
+                    ? (supabase.from('payments') as any).select('*, profiles(full_name)')
+                    : (supabase.from('payments') as any).select('*, profiles(full_name)').is('archived_at', null)
+                ).order('created_at', { ascending: false }),
+
                 supabase.from('designer_details').select('*'),
                 supabase.from('profiles').select('id, full_name, email'),
                 supabase.from('system_settings').select('key, value').eq('key', 'monthly_revenue'),
@@ -120,12 +134,28 @@ const FinanceDashboard = () => {
             // Profit = Revenue (incl. released escrow) - Pending Payouts
             const platformProfit = grossRevenue - pendingPayouts;
 
+            // Client payments collected through Korapay / Paystack, split 70/30.
+            const clientPayments = completedPayments.filter((p: any) => String(p.type) === 'client_order');
+            const collected = clientPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+            const talentShare = clientPayments.reduce((sum: number, p: any) => {
+                const details = (p.payment_details || {}) as any;
+                const share = Number(details.talent_share);
+                if (Number.isFinite(share) && share > 0) return sum + share;
+                const percent = Number(details.share_percent) || 70;
+                return sum + (Number(p.amount || 0) * percent) / 100;
+            }, 0);
+            const platformShare = Math.max(0, collected - talentShare);
+
             setStats({
                 totalRevenue: grossRevenue,
                 escrow: escrow,
                 profit: platformProfit,
-                pendingPayouts: pendingPayouts
+                pendingPayouts: pendingPayouts,
+                collected,
+                talentShare: Math.round(talentShare * 100) / 100,
+                platformShare: Math.round(platformShare * 100) / 100
             });
+
             setDesigners(mappedDesigners);
 
             const { data: pendingWithdrawalsData, error: pendingWithdrawalsError } = await supabase
@@ -191,7 +221,7 @@ const FinanceDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [toast, showArchived]);
 
     useEffect(() => {
         if (authLoading) return;
@@ -310,6 +340,57 @@ const FinanceDashboard = () => {
         }
     };
 
+    const openRemoveRequest = async (withdrawal: any) => {
+        setRemoveTarget(withdrawal);
+        setRemoveCheck(null);
+        try {
+            const { data, error } = await (supabase as any).rpc('check_withdrawal_already_paid', { p_withdrawal_id: withdrawal.id });
+            if (error) throw error;
+            setRemoveCheck(data);
+        } catch (err: any) {
+            setRemoveCheck({ found: false, message: `Could not check payout history: ${err.message}` });
+        }
+    };
+
+    const confirmRemoveRequest = async () => {
+        if (!removeTarget) return;
+        setRemoving(true);
+        try {
+            const { error } = await (supabase as any).rpc('admin_remove_withdrawal_request', {
+                p_withdrawal_id: removeTarget.id,
+                p_reason: 'Your pending withdrawal request was removed because the payment was settled outside the platform.',
+            });
+            if (error) throw error;
+            toast({ title: 'Request Removed', description: `${removeTarget.client_name}'s request was removed and they have been notified.` });
+            setRemoveTarget(null);
+            setRemoveCheck(null);
+            await loadFinancialData();
+        } catch (err: any) {
+            toast({ title: 'Could not remove request', description: err.message, variant: 'destructive' });
+        } finally {
+            setRemoving(false);
+        }
+    };
+
+    const clearLedger = async (restore = false) => {
+        setClearingLedger(true);
+        try {
+            const { data, error } = await (supabase as any).rpc('admin_archive_ledger', { p_restore: restore });
+            if (error) throw error;
+            toast({
+                title: restore ? 'Ledger Restored' : 'Ledger Cleared',
+                description: `${data ?? 0} record(s) ${restore ? 'restored' : 'archived'}. Nothing was deleted.`,
+            });
+            setIsClearLedgerOpen(false);
+            await loadFinancialData();
+        } catch (err: any) {
+            toast({ title: 'Action Failed', description: err.message, variant: 'destructive' });
+        } finally {
+            setClearingLedger(false);
+        }
+    };
+
+
     const exportLedgerCSV = () => {
         if (filteredTransactions.length === 0) {
             toast({ title: 'Nothing to export', description: 'No ledger records match the current filter.' });
@@ -418,6 +499,18 @@ const FinanceDashboard = () => {
                         <div className="text-3xl font-bold tracking-tight">GH₵ {stats.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <div className="mt-2 text-[10px] text-emerald-500 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />Revenue minus payouts</div>
                     </div>
+                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-indigo-500/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Gateway Collections (70 / 30)</span>
+                            <ArrowRightLeft className="w-4 h-4 text-indigo-500" />
+                        </div>
+                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.collected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+                            Talent share GH₵ {stats.talentShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {' • '}Prime Haven GH₵ {stats.platformShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+
                     <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-red-500/50 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Talent Payouts</span>
@@ -574,6 +667,10 @@ const FinanceDashboard = () => {
                                                 <Button size="sm" variant="ghost" className="text-emerald-600" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'manual')}>
                                                     <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid Manually
                                                 </Button>
+                                                <Button size="sm" variant="ghost" className="text-destructive" disabled={approvingWithdrawal === w.id} onClick={() => openRemoveRequest(w)}>
+                                                    Remove request
+                                                </Button>
+
                                             </div>
                                         </TableCell>
 
@@ -600,6 +697,13 @@ const FinanceDashboard = () => {
                                 </SelectContent>
                             </Select>
                             <Button size="sm" variant="outline" className="h-8" onClick={exportLedgerCSV}><FileText className="w-3 h-3 mr-1" /> Export CSV</Button>
+                            <Button size="sm" variant="ghost" className="h-8" onClick={() => setShowArchived(!showArchived)}>
+                                {showArchived ? 'Hide archived' : 'Show archived'}
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-destructive border-destructive/40" onClick={() => setIsClearLedgerOpen(true)}>
+                                Clear ledger
+                            </Button>
+
                         </div>
                     </div>
                     <div className="p-0">
@@ -697,6 +801,58 @@ const FinanceDashboard = () => {
                     <DialogFooter><Button onClick={handleCreateDebt} className="bg-amber-600 hover:bg-amber-700">Record Escrow</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Remove withdrawal request */}
+            <Dialog open={!!removeTarget} onOpenChange={(open) => { if (!open) { setRemoveTarget(null); setRemoveCheck(null); } }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remove withdrawal request</DialogTitle>
+                        <DialogDescription>
+                            This removes {removeTarget?.client_name}'s pending request for GH₵ {Number(removeTarget?.amount || 0).toFixed(2)}.
+                            Use it only when the talent has already been paid outside the platform. They will be notified.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-sm">
+                        {removeCheck === null ? (
+                            <span className="text-muted-foreground">Checking payout history…</span>
+                        ) : (
+                            <span className={removeCheck.found ? 'text-emerald-600' : 'text-amber-600'}>
+                                {removeCheck.message}
+                            </span>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => { setRemoveTarget(null); setRemoveCheck(null); }}>Cancel</Button>
+                        <Button variant="destructive" disabled={removing} onClick={confirmRemoveRequest}>
+                            {removing ? 'Removing…' : 'Remove request'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Clear ledger */}
+            <Dialog open={isClearLedgerOpen} onOpenChange={setIsClearLedgerOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Clear the ledger?</DialogTitle>
+                        <DialogDescription>
+                            Every current ledger record will be archived and hidden from this view. Nothing is deleted —
+                            use "Show archived" to bring them back at any time.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button variant="ghost" onClick={() => setIsClearLedgerOpen(false)}>Cancel</Button>
+                        <Button variant="outline" disabled={clearingLedger} onClick={() => clearLedger(true)}>
+                            Restore archived
+                        </Button>
+                        <Button variant="destructive" disabled={clearingLedger} onClick={() => clearLedger(false)}>
+                            {clearingLedger ? 'Working…' : 'Archive all records'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+
 
         </SuperAdminLayout>
     );

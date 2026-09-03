@@ -12,6 +12,8 @@ import ClientActivityStreak from '@/components/dashboard/ClientActivityStreak';
 import ClientLiveFeed from '@/components/dashboard/ClientLiveFeed';
 import ClientPostedJobs from '@/components/client/ClientPostedJobs';
 import ClientProjectReview from '@/components/client/ClientProjectReview';
+import ClientVerifyBanner from '@/components/client/ClientVerifyBanner';
+
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -147,6 +149,8 @@ const ClientDashboard = () => {
     return (
         <DashboardLayout>
             <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+                <ClientVerifyBanner />
+
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">

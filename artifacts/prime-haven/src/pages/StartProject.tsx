@@ -278,15 +278,18 @@ const StartProject = () => {
         }
 
         // 1b. Create Client Account (Automatic for free orders)
+        let freeClientRecordId: string | null = null;
         try {
           const { error: signUpError } = await supabase.auth.signUp({
             email: form.clientEmail,
             password: form.password,
             options: {
+              emailRedirectTo: `${window.location.origin}/client/login`,
               data: {
                 full_name: form.clientName,
                 business_name: form.businessName,
                 whatsapp: form.clientWhatsapp,
+                account_type: 'client',
               }
             }
           });
@@ -295,13 +298,14 @@ const StartProject = () => {
             console.error('Auto-registration failed:', signUpError);
           }
 
-          // Ensure client exists in clients table
-          await supabase.from('clients').upsert({
+          // Ensure client exists in the central clients table
+          const { data: clientRow } = await supabase.from('clients').upsert({
             email: form.clientEmail,
             name: form.clientName,
             company: form.businessName,
             whatsapp: form.clientWhatsapp,
-          }, { onConflict: 'email' });
+          }, { onConflict: 'email' }).select('id').maybeSingle();
+          freeClientRecordId = clientRow?.id || null;
 
         } catch (authErr) {
           console.error('Auth/Client record error:', authErr);
@@ -321,6 +325,7 @@ const StartProject = () => {
             client_name: form.clientName,
             client_email: form.clientEmail,
             client_whatsapp: form.clientWhatsapp || null,
+            client_id: freeClientRecordId,
             description: form.description,
             category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
             status: 'pending',
@@ -334,6 +339,7 @@ const StartProject = () => {
         } catch (e) {
           console.error('Project tracking insert failed (non-critical):', e);
         }
+
 
 
         // 3. Notify Discord via Database RPC (bypassing edge function)

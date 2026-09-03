@@ -61,21 +61,35 @@ const Login = () => {
     }
 
     if (authData?.user) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('email_verified')
-        .eq('id', authData.user.id)
-        .single();
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authData.user.id)
+        .maybeSingle();
 
-      if (profileData && !profileData.email_verified) {
-        logAuthEvent('login_blocked_unverified', { email: data.email, user_id: authData.user.id });
-        await signOut();
-        toast({
-          variant: 'destructive',
-          title: 'Email Not Verified',
-          description: 'Please verify your email address before signing in. Check your inbox for the verification link.',
-        });
-        return;
+      const role = roleData?.role as string | undefined;
+      const isAdmin = role === 'superadmin' || role === 'masteradmin';
+      const isClient = role === 'client';
+
+      // Clients sign in immediately after paying and verify their email from
+      // inside their portal, so the hard verification gate only applies to talent.
+      if (!isAdmin && !isClient) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email_verified')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileData && !profileData.email_verified) {
+          logAuthEvent('login_blocked_unverified', { email: data.email, user_id: authData.user.id });
+          await signOut();
+          toast({
+            variant: 'destructive',
+            title: 'Email Not Verified',
+            description: 'Please verify your email address before signing in. Check your inbox for the verification link.',
+          });
+          return;
+        }
       }
 
       logAuthEvent('login_success', { email: data.email, user_id: authData.user.id });
@@ -87,44 +101,16 @@ const Login = () => {
         return;
       }
 
-
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authData.user.id)
-        .single();
-
-      if (roleData && (roleData.role === 'superadmin' || roleData.role === 'masteradmin')) {
+      if (isAdmin) {
         navigate('/superadmin');
+      } else if (isClient) {
+        navigate('/client/dashboard');
       } else {
-        // Check if user is a client
-        const { data: clientOrder } = await supabase
-          .from('client_orders')
-          .select('id')
-          .eq('client_email', data.email)
-          .limit(1)
-          .maybeSingle();
-
-        if (clientOrder) {
-          navigate('/client/dashboard');
-        } else {
-          // Check manual clients table
-          const { data: clientRecord } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('email', data.email)
-            .limit(1)
-            .maybeSingle();
-
-          if (clientRecord) {
-            navigate('/client/dashboard');
-          } else {
-            navigate('/dashboard');
-          }
-        }
+        navigate('/dashboard');
       }
     }
   };
+
 
   if (authLoading) {
     return (
@@ -237,12 +223,19 @@ const Login = () => {
                 Join Prime Haven
               </Link>
             </p>
+            <p className="text-sm text-muted-foreground">
+              Ordered a project?{' '}
+              <Link to="/client/login" className="text-primary hover:text-primary/80 font-semibold transition-colors">
+                Client sign in
+              </Link>
+            </p>
             <p className="text-xs text-muted-foreground">
               Admin?{' '}
               <Link to="/superadmin-login" className="text-primary/70 hover:text-primary transition-colors">
                 Admin Portal
               </Link>
             </p>
+
           </div>
         </div>
       </div>
