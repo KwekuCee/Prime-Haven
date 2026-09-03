@@ -1,68 +1,77 @@
-import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
+
+export interface JobEarning {
+    id: string;
+    project_id: string | null;
+    submission_id: string | null;
+    job_price: number | null;
+    share_percent: number | null;
+    amount: number | null;
+    status: string | null;
+    created_at: string;
+    project_title?: string | null;
+}
 
 interface ExpectedSalaryModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    submissions: any[];
+    earnings: JobEarning[];
+    sharePercent: number;
     formatCurrency: (val: number) => string;
 }
 
-const ExpectedSalaryModal = ({ open, onOpenChange, submissions, formatCurrency }: ExpectedSalaryModalProps) => {
-    const { unpaidItems, total } = useMemo(() => {
-        if (!submissions) return { unpaidItems: [], total: 0 };
-        // Assuming unpaid means it hasn't been explicitly marked as paid 
-        // AND it has been approved. If 'paid' doesn't exist, we fallback to just ph_approved items 
-        // that have points attached. (we simulate points * mapping if needed).
-        const items = submissions.filter(s => s.ph_approved && !s.paid);
-
-        // In your system, salary is points * 0.5 roughly, or maybe 1 pt = $1 or GHS 5.
-        // Let's assume standard mapping: points_awarded * 0.5 salary.
-        const mapped = items.map(i => ({
-            ...i,
-            mapped_salary: (i.points_awarded || 0) * 0.5 // Adjust conversion rate as per system settings if needed
-        }));
-
-        const totalCalculated = mapped.reduce((acc, curr) => acc + curr.mapped_salary, 0);
-
-        return { unpaidItems: mapped, total: totalCalculated };
-    }, [submissions]);
+const ExpectedSalaryModal = ({ open, onOpenChange, earnings, sharePercent, formatCurrency }: ExpectedSalaryModalProps) => {
+    const { available, pending } = useMemo(() => {
+        const sum = (rows: JobEarning[]) => rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+        return {
+            available: sum(earnings.filter((e) => e.status === 'earned' || e.status === 'available')),
+            pending: sum(earnings.filter((e) => e.status === 'pending')),
+        };
+    }, [earnings]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] border-primary/20 bg-background/95 backdrop-blur-xl">
+            <DialogContent className="sm:max-w-[620px]">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-heading font-bold text-foreground">Expected Salary Breakdown</DialogTitle>
+                    <DialogTitle className="text-xl font-heading font-bold">Your earnings</DialogTitle>
                     <DialogDescription>
-                        A transparent breakdown of your pending payouts based on your approved submissions.
+                        You keep {sharePercent}% of every job you complete. The money moves from pending to
+                        available the moment your client approves the work.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="mt-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                    {unpaidItems.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground italic text-sm">
-                            No unpaid approved submissions found.
+                <div className="mt-4 max-h-[55vh] overflow-y-auto custom-scrollbar">
+                    {earnings.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground text-sm">
+                            Nothing here yet. Claim a job from the marketplace to get started.
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Project / Submission</TableHead>
-                                    <TableHead className="text-right">Points</TableHead>
-                                    <TableHead className="text-right">Est. Salary</TableHead>
+                                    <TableHead>Job</TableHead>
+                                    <TableHead className="text-right">Job value</TableHead>
+                                    <TableHead className="text-right">Your {sharePercent}%</TableHead>
+                                    <TableHead className="text-right">Status</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {unpaidItems.map((item) => (
+                                {earnings.map((item) => (
                                     <TableRow key={item.id}>
                                         <TableCell className="text-xs">{format(new Date(item.created_at), 'MMM dd, yyyy')}</TableCell>
-                                        <TableCell className="font-medium text-xs">{item.project_name}</TableCell>
-                                        <TableCell className="text-right text-xs text-primary font-bold">{item.points_awarded}</TableCell>
-                                        <TableCell className="text-right text-xs text-emerald-500 font-bold">{formatCurrency(item.mapped_salary)}</TableCell>
+                                        <TableCell className="font-medium text-xs">{item.project_title || 'Project'}</TableCell>
+                                        <TableCell className="text-right text-xs">{formatCurrency(Number(item.job_price || 0))}</TableCell>
+                                        <TableCell className="text-right text-xs font-bold text-emerald-600">{formatCurrency(Number(item.amount || 0))}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Badge variant="outline" className="text-[10px]">
+                                                {item.status === 'pending' ? 'Awaiting client approval' : 'Available'}
+                                            </Badge>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -70,13 +79,14 @@ const ExpectedSalaryModal = ({ open, onOpenChange, submissions, formatCurrency }
                     )}
                 </div>
 
-                <div className="mt-6 flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50">
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Total Pending</p>
-                        <p className="text-xs text-muted-foreground">Will be processed in the next payout cycle</p>
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Available to withdraw</p>
+                        <p className="text-xl font-black font-heading text-emerald-600">{formatCurrency(available)}</p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-2xl font-black font-heading tracking-tight text-emerald-500">{formatCurrency(total)}</p>
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Pending client approval</p>
+                        <p className="text-xl font-black font-heading text-amber-600">{formatCurrency(pending)}</p>
                     </div>
                 </div>
             </DialogContent>
