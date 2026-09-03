@@ -24,7 +24,22 @@ const DISCORD_CHANNELS: Record<string, string> = {
 };
 
 // Approximate conversion rate
-const USD_TO_GHS = 15.5;
+const USD_TO_GHS_FALLBACK = 15.5;
+
+// Live USD -> GHS rate so USD charges land in the ledger at the real value.
+async function getUsdToGhsRate(): Promise<number> {
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (res.ok) {
+      const json = await res.json();
+      const ghs = Number(json?.rates?.GHS);
+      if (Number.isFinite(ghs) && ghs > 0) return ghs;
+    }
+  } catch (err) {
+    console.error("FX lookup failed, using fallback:", err);
+  }
+  return USD_TO_GHS_FALLBACK;
+}
 
 function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -242,7 +257,10 @@ serve(async (req: Request): Promise<Response> => {
 
 
 
-    const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
+    const usdRate = verifiedCurrency === 'USD' ? await getUsdToGhsRate() : 1;
+    const amountInGhs = verifiedCurrency === 'USD'
+      ? Math.round(verifiedAmount * usdRate * 100) / 100
+      : verifiedAmount;
 
     if (verifiedCurrency !== "GHS" && verifiedCurrency !== "USD") {
       return new Response(JSON.stringify({ success: false, error: "Invalid payment currency", message: `Invalid currency: ${verifiedCurrency}` }), {
