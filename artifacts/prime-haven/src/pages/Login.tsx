@@ -223,12 +223,19 @@ const Login = () => {
                 Join Prime Haven
               </Link>
             </p>
+            <p className="text-sm text-muted-foreground">
+              Ordered a project?{' '}
+              <Link to="/client/login" className="text-primary hover:text-primary/80 font-semibold transition-colors">
+                Client sign in
+              </Link>
+            </p>
             <p className="text-xs text-muted-foreground">
               Admin?{' '}
               <Link to="/superadmin-login" className="text-primary/70 hover:text-primary transition-colors">
                 Admin Portal
               </Link>
             </p>
+
           </div>
         </div>
       </div>
