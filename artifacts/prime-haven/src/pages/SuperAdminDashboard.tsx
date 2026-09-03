@@ -63,7 +63,6 @@ import ManageClients from '@/components/admin/ManageClients';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
 import ManageTeam from '@/components/admin/ManageTeam';
 import PromoCodeManager from '@/components/admin/PromoCodeManager';
-import AdminMessagingHub from '@/components/admin/AdminMessagingHub';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import SparklineChart from '@/components/ui/SparklineChart';
@@ -2227,9 +2226,6 @@ const SuperAdminDashboard = () => {
             <MonthlyReports />
           </TabsContent>
 
-          <TabsContent value="messages" className="space-y-6 mt-0">
-            <AdminMessagingHub />
-          </TabsContent>
 
 
           <TabsContent value="analytics" className="space-y-6 mt-0">

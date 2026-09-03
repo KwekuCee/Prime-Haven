@@ -85,13 +85,6 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Support',
-    defaultOpen: true,
-    items: [
-      { label: 'Messaging Hub', icon: MessageSquare, path: '/superadmin', tab: 'messages' },
-    ],
-  },
-  {
     title: 'Management',
     defaultOpen: false,
     items: [
