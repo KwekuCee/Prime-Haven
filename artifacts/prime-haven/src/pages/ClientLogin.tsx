@@ -86,8 +86,10 @@ const ClientLogin = () => {
       <Seo
         title="Client Sign In | Prime Haven"
         description="Sign in to your Prime Haven client portal to follow your project, message your professional and approve delivered work."
+        path="/client/login"
         noindex
       />
+
       <div className="w-full max-w-[440px]">
         <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm">
           <ArrowLeft className="w-4 h-4" />
