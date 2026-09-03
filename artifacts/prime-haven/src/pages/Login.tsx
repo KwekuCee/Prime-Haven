@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Briefcase, Eye, EyeOff, Loader2, LogIn, Shield } from 'lucide-react';
@@ -18,6 +18,8 @@ type AuthMode = 'talent' | 'client' | 'admin';
 const Login = () => {
   const [mode, setMode] = useState<AuthMode>('talent');
   const [showPassword, setShowPassword] = useState(false);
+  const formPanelRef = useRef<HTMLDivElement>(null);
+  const hasSwitchedMode = useRef(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -41,6 +43,18 @@ const Login = () => {
     signOut().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Move keyboard focus into the newly revealed form whenever the mode changes.
+  useEffect(() => {
+    if (!hasSwitchedMode.current) {
+      hasSwitchedMode.current = true;
+      return;
+    }
+    const panel = formPanelRef.current;
+    if (!panel) return;
+    const firstField = panel.querySelector<HTMLElement>('form input:not([type="hidden"]), form select, form textarea');
+    (firstField ?? panel).focus({ preventScroll: true });
+  }, [mode]);
 
   const onSubmit = async (data: LoginFormData) => {
     const { error, data: authData } = await signIn(data.email, data.password);
@@ -158,14 +172,15 @@ const Login = () => {
     admin: { title: 'Admin Portal', sub: 'Authorised personnel only.' },
   }[mode];
 
-  return (
-    <div className="min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground md:relative md:overflow-hidden flex flex-col md:block">
-      {/* Brand panel */}
-      <div
-        className="hidden md:flex md:absolute md:inset-y-0 md:left-0 md:w-5/12 bg-foreground p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
-        style={{ transform: swapped ? 'translateX(140%)' : 'translateX(0)' }}
-      >
-        {/* Kente-inspired grid pattern */}
+  // Brand panel is rendered before or after the form panel in the DOM so that
+  // tab order always follows the on-screen left-to-right order after the slide.
+  const brandPanel = (
+    <div
+      className="hidden md:flex md:absolute md:inset-y-4 md:left-4 md:w-5/12 rounded-[2rem] bg-foreground p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      style={{ transform: swapped ? 'translateX(calc(140% - 32px))' : 'translateX(0)' }}
+      aria-hidden={false}
+    >
+      {/* Kente-inspired grid pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -189,17 +204,23 @@ const Login = () => {
           </h1>
         </div>
 
-        <div className="relative z-10">
-          <p className="text-background/60 text-sm max-w-xs">{panelCopy.sub}</p>
-        </div>
+      <div className="relative z-10">
+        <p className="text-background/60 text-sm max-w-xs">{panelCopy.sub}</p>
       </div>
+    </div>
+  );
 
-      {/* Form panel */}
+  const formPanel = (
+    <div
+      className="w-full md:absolute md:inset-y-4 md:right-4 md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      style={{ transform: swapped ? 'translateX(calc(-71.4286% + 32px))' : 'translateX(0)' }}
+    >
       <div
-        className="w-full md:absolute md:inset-y-0 md:right-0 md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
-        style={{ transform: swapped ? 'translateX(-71.4286%)' : 'translateX(0)' }}
+        key={mode}
+        ref={formPanelRef}
+        tabIndex={-1}
+        className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none"
       >
-        <div key={mode} className="w-full max-w-md motion-safe:animate-fade-in">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 mb-12">
             <Link to="/" className="inline-block">
@@ -281,7 +302,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-foreground text-background py-4 px-6 mt-4 font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-foreground text-background py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <span className="inline-flex items-center justify-center gap-2">
@@ -340,8 +361,23 @@ const Login = () => {
               )}
             </nav>
           </div>
-        </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground md:relative md:overflow-hidden flex flex-col md:block">
+      {swapped ? (
+        <>
+          {formPanel}
+          {brandPanel}
+        </>
+      ) : (
+        <>
+          {brandPanel}
+          {formPanel}
+        </>
+      )}
     </div>
   );
 };

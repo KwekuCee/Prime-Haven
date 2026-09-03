@@ -129,7 +129,7 @@ const AdminSignInForm = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-foreground text-background py-4 px-6 mt-4 font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full bg-foreground text-background py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <span className="inline-flex items-center justify-center gap-2">
