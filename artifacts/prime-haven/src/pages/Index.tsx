@@ -6,8 +6,6 @@ import HeroSection from '@/components/HeroSection';
 import ServicesSection from '@/components/ServicesSection';
 import PortfolioSection from '@/components/PortfolioSection';
 import StatsSection from '@/components/StatsSection';
-import FounderSection from '@/components/FounderSection';
-import TeamSection from '@/components/TeamSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import FAQSection from '@/components/FAQSection';
 import BlogSection from '@/components/BlogSection';
@@ -98,8 +96,6 @@ const Index = () => {
         <StatsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={102} />
-        <FounderSection />
-        <TeamSection />
         <TestimonialsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={103} />
