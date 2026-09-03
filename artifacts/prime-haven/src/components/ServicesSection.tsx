@@ -68,16 +68,16 @@ const ServicesSection = () => {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: '-60px' }}
-                className="flex flex-col divide-y divide-border/60 border-y border-border/60"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 aria-label="Core services"
               >
-                {CORE_SERVICES.map((service) => (
+                {CORE_SERVICES.map((service, index) => (
                   <motion.li
                     key={service.slug}
                     variants={itemVariants}
                     whileHover={{ x: 8 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                    className="group flex items-start gap-5 py-6 sm:py-7"
+                    className={`group flex items-start gap-5 rounded-2xl border border-border/60 bg-card/30 p-5 sm:p-6 ${index === 0 ? 'sm:col-span-2 sm:p-8 bg-primary/[0.04] border-primary/25' : ''}`}
                   >
                     <motion.div
                       variants={iconVariants}

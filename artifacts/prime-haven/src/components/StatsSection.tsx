@@ -26,10 +26,10 @@ interface SalaryStats {
 }
 
 const fallbackStats: StatsData = {
-  totalMembers: 47,
-  projectsDelivered: 124,
-  satisfactionRate: 98,
-  totalSubmissions: 200,
+  totalMembers: 0,
+  projectsDelivered: 0,
+  satisfactionRate: 0,
+  totalSubmissions: 0,
   categoryBreakdown: {},
   roleBreakdown: {},
 };
@@ -319,11 +319,11 @@ const StatsSection = () => {
   }, []);
 
   const statItems = [
-    { key: 'members', icon: Users, value: stats.totalMembers, suffix: '+', label: 'Prime Members', drillLabel: 'Team Breakdown' },
-    { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: '+', label: 'Projects Delivered', drillLabel: 'Projects by Category' },
-    { key: 'salaries', icon: Wallet, value: salary.totalUsd, format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true },
-    { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: '%', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details' },
-    { key: 'submissions', icon: TrendingUp, value: stats.totalSubmissions, suffix: '+', label: 'Total Submissions', drillLabel: 'Submissions by Category' },
+    { key: 'salaries', icon: Wallet, value: salary.totalUsd, format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
+    { key: 'members', icon: Users, value: stats.totalMembers, suffix: stats.totalMembers > 0 ? '+' : '', label: 'Prime Members', drillLabel: 'Team Breakdown', span: 'md:col-span-2' },
+    { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: stats.projectsDelivered > 0 ? '+' : '', label: 'Projects Delivered', drillLabel: 'Projects by Category', span: 'md:col-span-2' },
+    { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: stats.satisfactionRate > 0 ? '%' : '', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details', span: 'md:col-span-2' },
+    { key: 'submissions', icon: TrendingUp, value: stats.totalSubmissions, suffix: stats.totalSubmissions > 0 ? '+' : '', label: 'Total Submissions', drillLabel: 'Submissions by Category', span: 'md:col-span-2' },
   ] as Array<{
     key: string;
     icon: typeof Users;
@@ -333,6 +333,7 @@ const StatsSection = () => {
     label: string;
     drillLabel: string;
     highlight?: boolean;
+    span: string;
   }>;
 
   const activeDrill = statItems.find(s => s.key === drillDown);
@@ -359,12 +360,12 @@ const StatsSection = () => {
           </div>
           <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight mt-6 mb-6 text-foreground">Our Impact in <span className="display-italic text-primary">Numbers</span></h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-            Our growing community of talented designers and developers continue to deliver exceptional results.
+            A transparent view of the work moving through Prime Haven. Figures update from our live records when available.
           </p>
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 lg:gap-5">
           {statItems.map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -372,13 +373,13 @@ const StatsSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={stat.highlight ? 'col-span-2 md:col-span-1' : ''}
+              className={stat.span}
             >
               <motion.div
                 whileHover={{ y: -6, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setDrillDown(stat.key)}
-                className={`lift-card p-6 lg:p-7 text-center group transition-all cursor-pointer relative overflow-hidden h-full ${
+                className={`lift-card p-6 lg:p-7 group transition-all cursor-pointer relative overflow-hidden h-full ${
                   stat.highlight ? 'border-primary/40 bg-primary/[0.04]' : ''
                 }`}
               >
@@ -389,18 +390,25 @@ const StatsSection = () => {
                   </span>
                 )}
 
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/20 transition-colors">
+                <div className={`relative z-10 h-full ${stat.highlight ? 'flex flex-col items-start justify-center gap-6' : 'flex items-center gap-5'}`}>
+                  <div className="w-14 h-14 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                     <stat.icon className="w-7 h-7 text-primary" />
                   </div>
-                  <div className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-foreground mb-2">
-                    <AnimatedCounter value={stat.value} suffix={stat.suffix} format={stat.format} />
-                  </div>
-                  <p className="text-muted-foreground font-medium mb-3 text-sm md:text-base">{stat.label}</p>
-                  <div className="flex items-center justify-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Click to explore</span>
-                    <ChevronRight className="w-3 h-3" />
+                  <div className="flex flex-col min-w-0">
+                    <div className={`font-heading font-extrabold tracking-tight text-foreground ${stat.highlight ? 'text-4xl lg:text-5xl' : 'text-3xl lg:text-4xl'}`}>
+                      <AnimatedCounter value={stat.value} suffix={stat.suffix} format={stat.format} />
+                    </div>
+                    <p className="text-muted-foreground font-medium text-sm md:text-base mt-1">{stat.label}</p>
+                    {stat.highlight && salary.payoutCount > 0 && (
+                      <p className="text-xs text-muted-foreground/80 mt-3 max-w-[22ch] leading-relaxed">
+                        Across {salary.payoutCount.toLocaleString()} completed {salary.payoutCount === 1 ? 'payout' : 'payouts'} to Prime Haven talent
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-2">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Click to explore</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
                   </div>
                 </div>
               </motion.div>
