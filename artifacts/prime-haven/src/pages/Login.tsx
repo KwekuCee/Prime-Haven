@@ -172,14 +172,15 @@ const Login = () => {
     admin: { title: 'Admin Portal', sub: 'Authorised personnel only.' },
   }[mode];
 
-  return (
-    <div className="min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground md:relative md:overflow-hidden flex flex-col md:block">
-      {/* Brand panel */}
-      <div
-        className="hidden md:flex md:absolute md:inset-y-0 md:left-0 md:w-5/12 bg-foreground p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
-        style={{ transform: swapped ? 'translateX(140%)' : 'translateX(0)' }}
-      >
-        {/* Kente-inspired grid pattern */}
+  // Brand panel is rendered before or after the form panel in the DOM so that
+  // tab order always follows the on-screen left-to-right order after the slide.
+  const brandPanel = (
+    <div
+      className="hidden md:flex md:absolute md:inset-y-4 md:left-4 md:w-5/12 rounded-[2rem] bg-foreground p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      style={{ transform: swapped ? 'translateX(calc(140% - 32px))' : 'translateX(0)' }}
+      aria-hidden={false}
+    >
+      {/* Kente-inspired grid pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
