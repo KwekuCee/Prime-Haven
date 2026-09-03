@@ -147,6 +147,8 @@ const ClientDashboard = () => {
     return (
         <DashboardLayout>
             <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+                <ClientVerifyBanner />
+
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
