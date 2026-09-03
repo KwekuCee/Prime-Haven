@@ -89,6 +89,16 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [feeGhs, setFeeGhs] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getUsdToGhsRate()
+      .then((r) => { if (!cancelled) setFeeGhs(usdToGhs(JOIN_FEE_USD, r.rate)); })
+      .catch(() => { /* USD amount alone is fine */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const [designer, setDesigner] = useState<DesignerData | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
