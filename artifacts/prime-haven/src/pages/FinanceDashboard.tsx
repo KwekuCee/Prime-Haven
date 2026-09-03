@@ -72,7 +72,11 @@ const FinanceDashboard = () => {
                 { data: submissionsData }
             ] = await Promise.all([
                 (supabase.from('client_orders') as any).select('*').order('created_at', { ascending: false }),
-                (supabase.from('payments') as any).select('*, profiles(full_name)').order('created_at', { ascending: false }),
+                (showArchived
+                    ? (supabase.from('payments') as any).select('*, profiles(full_name)')
+                    : (supabase.from('payments') as any).select('*, profiles(full_name)').is('archived_at', null)
+                ).order('created_at', { ascending: false }),
+
                 supabase.from('designer_details').select('*'),
                 supabase.from('profiles').select('id, full_name, email'),
                 supabase.from('system_settings').select('key, value').eq('key', 'monthly_revenue'),
