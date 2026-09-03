@@ -26,10 +26,10 @@ interface SalaryStats {
 }
 
 const fallbackStats: StatsData = {
-  totalMembers: 47,
-  projectsDelivered: 124,
-  satisfactionRate: 98,
-  totalSubmissions: 200,
+  totalMembers: 0,
+  projectsDelivered: 0,
+  satisfactionRate: 0,
+  totalSubmissions: 0,
   categoryBreakdown: {},
   roleBreakdown: {},
 };
@@ -319,11 +319,11 @@ const StatsSection = () => {
   }, []);
 
   const statItems = [
-    { key: 'members', icon: Users, value: stats.totalMembers, suffix: '+', label: 'Prime Members', drillLabel: 'Team Breakdown' },
-    { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: '+', label: 'Projects Delivered', drillLabel: 'Projects by Category' },
+    { key: 'members', icon: Users, value: stats.totalMembers, suffix: stats.totalMembers > 0 ? '+' : '', label: 'Prime Members', drillLabel: 'Team Breakdown' },
+    { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: stats.projectsDelivered > 0 ? '+' : '', label: 'Projects Delivered', drillLabel: 'Projects by Category' },
     { key: 'salaries', icon: Wallet, value: salary.totalUsd, format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true },
-    { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: '%', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details' },
-    { key: 'submissions', icon: TrendingUp, value: stats.totalSubmissions, suffix: '+', label: 'Total Submissions', drillLabel: 'Submissions by Category' },
+    { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: stats.satisfactionRate > 0 ? '%' : '', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details' },
+    { key: 'submissions', icon: TrendingUp, value: stats.totalSubmissions, suffix: stats.totalSubmissions > 0 ? '+' : '', label: 'Total Submissions', drillLabel: 'Submissions by Category' },
   ] as Array<{
     key: string;
     icon: typeof Users;
@@ -359,12 +359,12 @@ const StatsSection = () => {
           </div>
           <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight mt-6 mb-6 text-foreground">Our Impact in <span className="display-italic text-primary">Numbers</span></h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-            Our growing community of talented designers and developers continue to deliver exceptional results.
+            A transparent view of the work moving through Prime Haven. Figures update from our live records when available.
           </p>
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-5">
           {statItems.map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -372,7 +372,7 @@ const StatsSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={stat.highlight ? 'col-span-2 md:col-span-1' : ''}
+              className={stat.key === 'salaries' ? 'md:col-span-5 md:row-span-2' : stat.key === 'satisfaction' ? 'md:col-span-4' : 'md:col-span-3'}
             >
               <motion.div
                 whileHover={{ y: -6, scale: 1.02 }}
