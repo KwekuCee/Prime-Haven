@@ -28,6 +28,7 @@ const OurStory = () => {
           <p className="text-lg text-muted-foreground max-w-2xl">
             A short account of why we exist, followed by the team behind every project we ship.
           </p>
+          <h2 className="sr-only">How Prime Haven began</h2>
         </header>
         <FounderSection />
         <TeamSection />

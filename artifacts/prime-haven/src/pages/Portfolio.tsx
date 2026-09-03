@@ -88,6 +88,7 @@ const Portfolio = () => {
 
         {/* Filters & Search */}
         <section className="container mx-auto px-6 mb-12">
+          <h2 className="sr-only">Filter and search projects</h2>
           <div className="glass rounded-2xl p-6">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
               <div className="w-full md:w-1/3">

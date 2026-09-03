@@ -112,6 +112,7 @@ const Blog = () => {
             </p>
           </motion.div>
 
+          <h2 className="sr-only">Browse articles by category</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
             <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
               <TabsList className="flex flex-wrap h-auto gap-1">
