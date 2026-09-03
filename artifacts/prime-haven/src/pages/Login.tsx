@@ -44,6 +44,18 @@ const Login = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Move keyboard focus into the newly revealed form whenever the mode changes.
+  useEffect(() => {
+    if (!hasSwitchedMode.current) {
+      hasSwitchedMode.current = true;
+      return;
+    }
+    const panel = formPanelRef.current;
+    if (!panel) return;
+    const firstField = panel.querySelector<HTMLElement>('form input:not([type="hidden"]), form select, form textarea');
+    (firstField ?? panel).focus({ preventScroll: true });
+  }, [mode]);
+
   const onSubmit = async (data: LoginFormData) => {
     const { error, data: authData } = await signIn(data.email, data.password);
 
