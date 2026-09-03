@@ -223,16 +223,6 @@ const SubmitWork = () => {
     setLoading(true);
     try {
       const fileUrls = successfulUploads.map(f => f.url!);
-      let parentApproved = false;
-      if (correctionId) {
-        if (parentSubmission) {
-          parentApproved = !!parentSubmission.ph_approved;
-        } else {
-          const { data, error } = await supabase.from('submissions').select('ph_approved').eq('id', correctionId).maybeSingle();
-          if (!error && data) parentApproved = !!data.ph_approved;
-        }
-      }
-
       const submissionData: any = {
         designer_id: user.id,
         project_name: formData.projectName.trim(),
