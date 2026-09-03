@@ -133,7 +133,7 @@ serve(async (req: Request): Promise<Response> => {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
       description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay',
-      clientPassword, businessName
+      clientPassword, businessName, promoCode
     } = body as {
       clientName: string;
       clientEmail: string;
@@ -149,17 +149,15 @@ serve(async (req: Request): Promise<Response> => {
       gateway?: string;
       clientPassword?: string;
       businessName?: string;
+      promoCode?: string;
     };
 
     console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
 
-    // PH-FREE-* references are no longer accepted as valid free orders.
-    // Free orders must come from a server-verified 100% promo applied via verify-payment first.
-    if (typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-')) {
-      return new Response(JSON.stringify({ success: false, error: "invalid_reference" }), {
-        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+    // A free order is only legitimate when a 100% promo code is validated
+    // server-side below. The client is never trusted for this.
+    const isFreeOrder = Number(price) === 0 || (typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-'));
+
 
     // For paid orders, all fields including price > 0
     const missingFields: string[] = [];
@@ -177,10 +175,38 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log("Creating Supabase client...");
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
     let verifiedAmount: number;
     let verifiedCurrency: string;
+    let gatewayLabel = gateway === 'paystack' ? 'Paystack' : 'Korapay';
 
-    if (gateway === "paystack") {
+    if (isFreeOrder) {
+      console.log("Validating 100% promo code...");
+      const code = String(promoCode || "").toUpperCase().trim();
+      if (!code) {
+        return new Response(JSON.stringify({ success: false, error: "promo_code_required" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      const { data: promo } = await supabase
+        .from("promo_codes")
+        .select("code, discount_percent, is_active, expiry_date")
+        .eq("code", code)
+        .maybeSingle();
+
+      const expired = promo?.expiry_date ? new Date(promo.expiry_date as string) < new Date() : false;
+      if (!promo || !promo.is_active || expired || Number(promo.discount_percent) < 100) {
+        return new Response(JSON.stringify({ success: false, error: "promo_code_invalid" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      verifiedAmount = 0;
+      verifiedCurrency = "GHS";
+      gatewayLabel = `100% Promo (${code})`;
+    } else if (gateway === "paystack") {
       console.log("Verifying with Paystack...");
       const paystackResponse = await fetch(
         `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
@@ -214,6 +240,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
 
+
     const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
 
     if (verifiedCurrency !== "GHS" && verifiedCurrency !== "USD") {
@@ -222,8 +249,6 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Creating Supabase client...");
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // Check for duplicate payment reference
     const { data: existingOrder } = await supabase
@@ -400,7 +425,7 @@ serve(async (req: Request): Promise<Response> => {
           type: "client_order",
           status: "completed",
           transaction_id: paymentReference,
-          payment_gateway: gateway === 'paystack' ? 'Paystack' : 'Korapay',
+          payment_gateway: gatewayLabel,
           payment_details: {
             order_id: order?.id,
             service_type: serviceType,

@@ -256,112 +256,33 @@ const StartProject = () => {
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
       try {
         const uploadedRefUrls = await uploadReferenceImages(freeReference);
-        // Insert order directly — no payment gateway verification needed
-        const { error: orderError } = await supabase
-          .from('client_orders')
-          .insert({
-            client_name: form.clientName,
-            client_email: form.clientEmail,
-            client_whatsapp: form.clientWhatsapp || null,
-            service_type: selectedPricing.service_type,
+        // The promo code is re-validated server-side; the edge function creates the
+        // order, the client account, the central client record and the marketplace project.
+        const { data, error } = await supabase.functions.invoke('process-client-order', {
+          body: {
+            clientName: form.clientName,
+            clientEmail: form.clientEmail,
+            clientWhatsapp: form.clientWhatsapp,
+            serviceType: selectedPricing.service_type,
+            serviceLabel: selectedPricing.service_label,
             tier: selectedPricing.tier,
             price: 0,
-            description: form.description || null,
-            payment_status: 'completed',
-            payment_reference: freeReference,
-            reference_images: uploadedRefUrls,
-          } as any);
-
-        if (orderError) {
-          console.error('Free order insert error:', orderError);
-          throw new Error(orderError.message);
-        }
-
-        // 1b. Create Client Account (Automatic for free orders)
-        let freeClientRecordId: string | null = null;
-        try {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email: form.clientEmail,
-            password: form.password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/client/login`,
-              data: {
-                full_name: form.clientName,
-                business_name: form.businessName,
-                whatsapp: form.clientWhatsapp,
-                account_type: 'client',
-              }
-            }
-          });
-
-          if (signUpError && signUpError.message !== 'User already registered') {
-            console.error('Auto-registration failed:', signUpError);
-          }
-
-          // Ensure client exists in the central clients table
-          const { data: clientRow } = await supabase.from('clients').upsert({
-            email: form.clientEmail,
-            name: form.clientName,
-            company: form.businessName,
-            whatsapp: form.clientWhatsapp,
-          }, { onConflict: 'email' }).select('id').maybeSingle();
-          freeClientRecordId = clientRow?.id || null;
-
-        } catch (authErr) {
-          console.error('Auth/Client record error:', authErr);
-        }
-
-        const distributionMap: Record<string, { professions: string[], max: number }> = {
-          "graphic-design": { professions: ['Graphic Designer'], max: 2 },
-          "app-design": { professions: ['UI/UX Designer'], max: 1 },
-          "web-dev": { professions: ['UI/UX Designer', 'Web Developer'], max: 1 },
-        };
-        const dist = distributionMap[selectedPricing.discord_category] || { professions: ['Web Developer'], max: 1 };
-
-        // Also create the client project for tracking
-        try {
-          await supabase.from('client_projects').insert({
-            title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
-            client_name: form.clientName,
-            client_email: form.clientEmail,
-            client_whatsapp: form.clientWhatsapp || null,
-            client_id: freeClientRecordId,
             description: form.description,
-            category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
-            status: 'pending',
-            budget: 'GH₵0 (Promo)',
-            price_ghs: 0,
-            paid_at: new Date().toISOString(),
-            required_professions: dist.professions,
-            max_assignees: 1,
-            reference_images: uploadedRefUrls,
-          } as any);
-        } catch (e) {
-          console.error('Project tracking insert failed (non-critical):', e);
-        }
+            discordCategory: selectedPricing.discord_category,
+            paymentReference: freeReference,
+            promoCode: promoCode.toUpperCase().trim(),
+            gateway: 'promo',
+            clientPassword: form.password,
+            businessName: form.businessName,
+            referenceFiles: uploadedRefUrls,
+          },
+        });
 
+        if (error) throw new Error(error.message);
+        if (data && data.success === false) throw new Error(data.error || 'Order processing failed');
 
-
-        // 3. Notify Discord via Database RPC (bypassing edge function)
-        try {
-          await (supabase as any).rpc('notify_discord_order', {
-            p_service_label: selectedPricing.service_label,
-            p_service_type: selectedPricing.service_type,
-            p_tier: selectedPricing.tier,
-            p_client_name: form.clientName,
-            p_client_email: form.clientEmail,
-            p_amount: 0,
-            p_discord_category: selectedPricing.discord_category,
-            p_gateway: '100% Promo Code',
-            p_client_whatsapp: form.clientWhatsapp || null
-          });
-        } catch (discordErr) {
-          console.error('Discord rpc notification failed:', discordErr);
-        }
-
-        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
+        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. Log in to your client dashboard to follow along.' });
         navigate('/?project=success');
-
       } catch (err: any) {
         console.error('Free order error:', err);
         toast({
