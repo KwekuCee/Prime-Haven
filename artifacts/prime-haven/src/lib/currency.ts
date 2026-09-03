@@ -121,3 +121,61 @@ export const formatUsd = (amount: number, opts: Intl.NumberFormatOptions = {}) =
 
 export const formatGhs = (amount: number) =>
   `GH₵${amount.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/* ------------------------------------------------------------------ */
+/* Visitor location → checkout currency                                */
+/* ------------------------------------------------------------------ */
+
+let cachedCountry: { code: string; fetchedAt: number } | null = null;
+const COUNTRY_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Best-effort ISO country code for the current visitor.
+ * Falls back to 'GH' (our settlement market) if lookup fails, so Korapay
+ * always receives a currency it can settle.
+ */
+export const getVisitorCountry = async (): Promise<string> => {
+  if (cachedCountry && Date.now() - cachedCountry.fetchedAt < COUNTRY_TTL_MS) {
+    return cachedCountry.code;
+  }
+  try {
+    const res = await fetchWithTimeout('https://ipapi.co/json/', 4000);
+    if (res.ok) {
+      const json = await res.json();
+      const code = String(json?.country_code || '').toUpperCase();
+      if (code.length === 2) {
+        cachedCountry = { code, fetchedAt: Date.now() };
+        return code;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  cachedCountry = { code: 'GH', fetchedAt: Date.now() };
+  return 'GH';
+};
+
+export interface CheckoutAmount {
+  /** Currency the gateway will actually charge. */
+  currency: 'GHS' | 'USD';
+  /** Amount in that currency. */
+  amount: number;
+  /** The original USD price. */
+  amountUsd: number;
+  /** Rate used when converting (1 when charging USD). */
+  rate: number;
+  countryCode: string;
+}
+
+/**
+ * Prices are quoted in USD everywhere. Visitors in Ghana are charged in cedis
+ * at the live rate; everyone else is charged in dollars.
+ */
+export const resolveCheckoutAmount = async (amountUsd: number): Promise<CheckoutAmount> => {
+  const countryCode = await getVisitorCountry();
+  if (countryCode !== 'GH') {
+    return { currency: 'USD', amount: Math.round(amountUsd * 100) / 100, amountUsd, rate: 1, countryCode };
+  }
+  const { rate } = await getUsdToGhsRate(true);
+  return { currency: 'GHS', amount: usdToGhs(amountUsd, rate), amountUsd, rate, countryCode };
+};
