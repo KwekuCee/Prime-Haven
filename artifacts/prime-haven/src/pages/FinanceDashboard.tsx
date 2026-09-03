@@ -34,6 +34,12 @@ const FinanceDashboard = () => {
     const [acceptedProjects, setAcceptedProjects] = useState<any[]>([]);
     const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
     const [approvingWithdrawal, setApprovingWithdrawal] = useState<string | null>(null);
+    const [showArchived, setShowArchived] = useState(false);
+    const [clearingLedger, setClearingLedger] = useState(false);
+    const [isClearLedgerOpen, setIsClearLedgerOpen] = useState(false);
+    const [removeTarget, setRemoveTarget] = useState<any>(null);
+    const [removeCheck, setRemoveCheck] = useState<any>(null);
+    const [removing, setRemoving] = useState(false);
 
     // Modals & Inputs
     const [filter, setFilter] = useState('all');
@@ -45,8 +51,12 @@ const FinanceDashboard = () => {
         totalRevenue: 0,
         escrow: 0,
         profit: 0,
-        pendingPayouts: 0
+        pendingPayouts: 0,
+        collected: 0,
+        talentShare: 0,
+        platformShare: 0
     });
+
 
     const loadFinancialData = useCallback(async () => {
         try {
