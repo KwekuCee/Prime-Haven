@@ -320,6 +320,8 @@ export type Database = {
           accepted_designer_id: string | null
           budget: string | null
           category: string
+          claimed_at: string | null
+          claimed_by: string | null
           client_email: string | null
           client_id: string | null
           client_name: string
@@ -330,6 +332,9 @@ export type Database = {
           description: string | null
           id: string
           max_assignees: number | null
+          paid_at: string | null
+          price_ghs: number | null
+          price_usd: number | null
           progress_percentage: number
           reference_images: string[]
           required_professions: string[] | null
@@ -343,6 +348,8 @@ export type Database = {
           accepted_designer_id?: string | null
           budget?: string | null
           category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name: string
@@ -353,6 +360,9 @@ export type Database = {
           description?: string | null
           id?: string
           max_assignees?: number | null
+          paid_at?: string | null
+          price_ghs?: number | null
+          price_usd?: number | null
           progress_percentage?: number
           reference_images?: string[]
           required_professions?: string[] | null
@@ -366,6 +376,8 @@ export type Database = {
           accepted_designer_id?: string | null
           budget?: string | null
           category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string
@@ -376,6 +388,9 @@ export type Database = {
           description?: string | null
           id?: string
           max_assignees?: number | null
+          paid_at?: string | null
+          price_ghs?: number | null
+          price_usd?: number | null
           progress_percentage?: number
           reference_images?: string[]
           required_professions?: string[] | null
@@ -702,6 +717,48 @@ export type Database = {
           status?: string
           target_professions?: string[] | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      job_earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          designer_id: string
+          id: string
+          job_price: number
+          project_id: string | null
+          share_percent: number
+          status: string
+          submission_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          designer_id: string
+          id?: string
+          job_price?: number
+          project_id?: string | null
+          share_percent?: number
+          status?: string
+          submission_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          designer_id?: string
+          id?: string
+          job_price?: number
+          project_id?: string | null
+          share_percent?: number
+          status?: string
+          submission_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2188,6 +2245,10 @@ export type Database = {
         Args: { p_designer_id: string; p_points: number }
         Returns: undefined
       }
+      approve_project_submission: {
+        Args: { p_submission_id: string }
+        Returns: Json
+      }
       claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
       generate_monthly_report_now: {
@@ -2250,6 +2311,7 @@ export type Database = {
           description: string
           id: string
           max_assignees: number
+          price_ghs: number
           required_professions: string[]
           status: string
           title: string
@@ -2331,6 +2393,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      release_expired_project_claims: { Args: never; Returns: number }
       release_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       release_job_contract_claim: {
         Args: { p_contract_id: string }
@@ -2362,7 +2425,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "designer" | "superadmin" | "masteradmin"
+      app_role: "designer" | "superadmin" | "masteradmin" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2490,7 +2553,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["designer", "superadmin", "masteradmin"],
+      app_role: ["designer", "superadmin", "masteradmin", "client"],
     },
   },
 } as const
