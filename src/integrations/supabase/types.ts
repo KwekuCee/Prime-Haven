@@ -2435,6 +2435,14 @@ export type Database = {
             }
             Returns: undefined
           }
+      public_total_salaries_paid: {
+        Args: never
+        Returns: {
+          last_paid_at: string
+          payout_count: number
+          total_ghs: number
+        }[]
+      }
       release_expired_project_claims: { Args: never; Returns: number }
       release_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       release_job_contract_claim: {
