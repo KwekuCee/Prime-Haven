@@ -76,6 +76,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="sm"
+                  aria-label="Settings"
                   className="h-9 px-3 rounded-full text-muted-foreground hover:text-foreground gap-1.5"
                 >
                   <Settings className="w-3.5 h-3.5" />
