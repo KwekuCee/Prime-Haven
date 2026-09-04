@@ -309,15 +309,20 @@ const StatsSection = () => {
         const row = Array.isArray(data) ? data[0] : data;
         if (!row) return;
         const totalGhs = Number(row.total_ghs) || 0;
+        const totalUsd = Math.round((totalGhs / fx.rate) * 100) / 100;
+        const baselineUsd = Number(row.baseline_usd) || BASELINE_USD_FALLBACK;
         setSalary({
           totalGhs,
-          totalUsd: Math.round((totalGhs / fx.rate) * 100) / 100,
+          totalUsd,
+          baselineUsd,
+          displayUsd: floorToHundred(Math.max(baselineUsd, totalUsd)),
           payoutCount: Number(row.payout_count) || 0,
           lastPaidAt: row.last_paid_at ?? null,
           rate: fx.rate,
           rateSource: fx.source,
           live: true,
         });
+
       } catch {
         // Keep previous value
       }
