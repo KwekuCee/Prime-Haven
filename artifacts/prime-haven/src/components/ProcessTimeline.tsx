@@ -124,8 +124,8 @@ const ProcessTimeline = () => {
                                     );
                                 })}
                             </div>
-                            {/* Scroll runway so the last card can settle before the section ends */}
-                            <div className="h-24 md:h-32" aria-hidden="true" />
+
+
 
                         </div>
                     </div>
