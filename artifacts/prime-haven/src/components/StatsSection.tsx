@@ -345,7 +345,7 @@ const StatsSection = () => {
   }, []);
 
   const statItems = [
-    { key: 'salaries', icon: Wallet, value: salary.totalUsd, format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
+    { key: 'salaries', icon: Wallet, value: salary.displayUsd, suffix: '+', format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
     { key: 'members', icon: Users, value: stats.totalMembers, suffix: stats.totalMembers > 0 ? '+' : '', label: 'Prime Members', drillLabel: 'Team Breakdown', span: 'md:col-span-2' },
     { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: stats.projectsDelivered > 0 ? '+' : '', label: 'Projects Delivered', drillLabel: 'Projects by Category', span: 'md:col-span-2' },
     { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: stats.satisfactionRate > 0 ? '%' : '', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details', span: 'md:col-span-2' },
