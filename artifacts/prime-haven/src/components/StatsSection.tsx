@@ -18,6 +18,8 @@ interface StatsData {
 interface SalaryStats {
   totalGhs: number;
   totalUsd: number;
+  baselineUsd: number;
+  displayUsd: number;
   payoutCount: number;
   lastPaidAt: string | null;
   rate: number;
@@ -34,9 +36,17 @@ const fallbackStats: StatsData = {
   roleBreakdown: {},
 };
 
+/** Verified payouts made to talent before in-app tracking began (USD). */
+const BASELINE_USD_FALLBACK = 5200;
+
+/** Round down to the nearest $100 so the public figure is never overstated. */
+const floorToHundred = (value: number) => Math.floor(value / 100) * 100;
+
 const fallbackSalary: SalaryStats = {
   totalGhs: 0,
   totalUsd: 0,
+  baselineUsd: BASELINE_USD_FALLBACK,
+  displayUsd: BASELINE_USD_FALLBACK,
   payoutCount: 0,
   lastPaidAt: null,
   rate: 15.5,
@@ -50,6 +60,7 @@ const formatCompactUsd = (value: number) => {
   if (value >= 10_000) return `$${(value / 1_000).toFixed(1)}K`;
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 };
+
 
 const AnimatedCounter = ({
   value,
