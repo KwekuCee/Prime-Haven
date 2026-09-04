@@ -3,19 +3,13 @@ import { motion } from 'framer-motion';
 import BrandLogo from '@/components/BrandLogo';
 import { MapPin, Linkedin, Instagram, MessageCircle } from 'lucide-react';
 
-const XIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
-  </svg>
-);
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const links = {
     company: [
       { label: 'About Us', href: '/#about' },
-      { label: 'Our Story', href: '/#founder' },
+      { label: 'Our Story', href: '/our-story' },
       { label: 'Blog', href: '/blog' },
       { label: 'Careers', href: '/#contact' },
     ],
@@ -50,7 +44,7 @@ const Footer = () => {
               <BrandLogo height={38} />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Ghana's premier freelance design and tech marketplace — connecting top creative talent with clients who demand excellence.
+              A Ghanaian design and tech studio. Clients brief us, our vetted designers and developers do the work, and we stay accountable for what ships.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
@@ -60,11 +54,9 @@ const Footer = () => {
             </div>
             <div className="flex items-center gap-3">
               {[
-                { icon: XIcon, href: '#', label: 'X' },
-                { icon: Linkedin, href: '#', label: 'LinkedIn' },
-                { icon: Instagram, href: '#', label: 'Instagram' },
-                // TODO: replace href with the WhatsApp link
-                { icon: MessageCircle, href: '#', label: 'WhatsApp' },
+                { icon: Linkedin, href: 'https://linkedin.com/company/primehaven', label: 'LinkedIn' },
+                { icon: Instagram, href: 'https://instagram.com/primehaven_co', label: 'Instagram' },
+                { icon: MessageCircle, href: 'https://wa.me/233550160237', label: 'WhatsApp' },
               ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}

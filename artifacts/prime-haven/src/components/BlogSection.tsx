@@ -108,13 +108,13 @@ const BlogSection = () => {
             {posts.length > 1 && (
               <>
                 <div className="absolute top-1/2 -translate-y-1/2 left-2 sm:left-4 z-20">
-                  <Button variant="ghost" size="icon" onClick={prevPost} className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-md border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all">
+                  <Button variant="ghost" size="icon" onClick={prevPost} aria-label="Previous post" className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-md border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all">
                     <ArrowLeft className="w-5 h-5" />
                   </Button>
                 </div>
 
                 <div className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-4 z-20">
-                  <Button variant="ghost" size="icon" onClick={nextPost} className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-md border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all">
+                  <Button variant="ghost" size="icon" onClick={nextPost} aria-label="Next post" className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-md border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all">
                     <ArrowRight className="w-5 h-5" />
                   </Button>
                 </div>
@@ -202,7 +202,7 @@ const BlogSection = () => {
               required
               className="w-full sm:min-w-[250px]"
             />
-            <Button type="submit" variant="default" disabled={subscribing} className="glow-primary shrink-0">
+            <Button type="submit" variant="default" disabled={subscribing} className="shrink-0">
               {subscribing ? 'Subscribing...' : 'Subscribe'}
             </Button>
           </form>

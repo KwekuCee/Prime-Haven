@@ -6,6 +6,11 @@ Disallow: /edit-profile
 Disallow: /settings
 Disallow: /payments
 Disallow: /messages
+Disallow: /client/
+Disallow: /affiliate/
+Disallow: /workspace/
+Disallow: /project-chat/
+Disallow: /designer/
 Disallow: /superadmin
 Disallow: /superadmin-login
 Disallow: /auth/confirm
@@ -20,6 +25,11 @@ Disallow: /edit-profile
 Disallow: /settings
 Disallow: /payments
 Disallow: /messages
+Disallow: /client/
+Disallow: /affiliate/
+Disallow: /workspace/
+Disallow: /project-chat/
+Disallow: /designer/
 Disallow: /superadmin
 Disallow: /superadmin-login
 
@@ -37,6 +47,11 @@ Disallow: /edit-profile
 Disallow: /settings
 Disallow: /payments
 Disallow: /messages
+Disallow: /client/
+Disallow: /affiliate/
+Disallow: /workspace/
+Disallow: /project-chat/
+Disallow: /designer/
 Disallow: /superadmin
 Disallow: /superadmin-login
 Disallow: /auth/confirm

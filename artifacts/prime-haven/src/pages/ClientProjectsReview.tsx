@@ -41,22 +41,29 @@ const ClientProjectsReview = () => {
         try {
             setLoading(true);
 
-            // 1. Fetch user orders to match submissions
-            const { data: ordersData } = await supabase
-                .from('client_orders')
-                .select('id, service_type')
-                .eq('client_email', user?.email ?? '');
+            // Everything the client owns: paid projects and legacy orders.
+            const [{ data: projectsData }, { data: ordersData }] = await Promise.all([
+                supabase.from('client_projects').select('id, title').eq('client_email', user?.email ?? ''),
+                supabase.from('client_orders').select('id, service_type').eq('client_email', user?.email ?? ''),
+            ]);
 
+            const projectIds = (projectsData || []).map(p => p.id);
             const orderIds = (ordersData || []).map(o => o.id);
-            const serviceTypes = (ordersData || []).map(o => o.service_type?.toLowerCase());
+            const refs = Array.from(new Set([...projectIds, ...orderIds]));
 
-            // 2. Fetch submissions that are ph_approved
-            // We use maybe bypass logic if RLS blocks, but we assume RLS allows or RPC
+            if (refs.length === 0) {
+                setSubmissions([]);
+                setLoading(false);
+                return;
+            }
+
+            // Submissions attached to those projects. Prime Haven no longer
+            // pre-approves work — the client's decision is the only gate.
             const { data: subData, error } = await supabase
                 .from('submissions')
                 .select('*')
-                .eq('ph_approved', true)
-                .order('ph_approved_at', { ascending: false });
+                .or(`client_project_id.in.(${projectIds.length ? projectIds.join(',') : '00000000-0000-0000-0000-000000000000'}),client_ref.in.(${refs.join(',')})`)
+                .order('created_at', { ascending: false });
 
             if (error) {
                 console.warn('Submissions fetch error:', error);
@@ -65,18 +72,9 @@ const ClientProjectsReview = () => {
                 return;
             }
 
-            // Filter to ensuring client ownership
-            let clientSubs = (subData || []).filter(sub =>
-                orderIds.includes(sub.client_ref ?? '') ||
-                (sub.project_name && serviceTypes.includes(sub.project_name.toLowerCase()))
+            const clientSubs = (subData || []).filter(s =>
+                filter === 'pending_review' ? !s.client_accepted : !!s.client_accepted
             );
-
-            // Apply specific UI filter
-            if (filter === 'pending_review') {
-                clientSubs = clientSubs.filter(s => !s.client_accepted);
-            } else {
-                clientSubs = clientSubs.filter(s => s.client_accepted);
-            }
 
             setSubmissions(clientSubs);
         } catch (err: any) {
@@ -95,56 +93,19 @@ const ClientProjectsReview = () => {
         if (!selectedId) return;
         setProcessing(true);
         try {
-            const submission = submissions.find(s => s.id === selectedId);
-            if (!submission) throw new Error('Submission not found in local state');
+            // Server-side: verifies ownership, awards points and the 70% earning,
+            // completes the project and notifies the professional.
+            const { data, error } = await (supabase.rpc as any)('approve_project_submission', {
+                p_submission_id: selectedId,
+            });
+            if (error) throw error;
+            if (data && data.success === false) throw new Error(data.error || data.message || 'Approval failed');
 
-            // Map points to service
-            const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 40 };
-            const clientPoints = servicePointsMap[submission.service_type || 'web'] || 40;
-
-            // Update submission status to approved and flag client_accepted
-            const { error: subError } = await supabase.from('submissions').update({
-                client_accepted: true,
-                client_accepted_at: new Date().toISOString(),
-                client_accepted_by: user?.id,
-                points_awarded: (submission.points_awarded || 0) + clientPoints,
-                status: 'approved',
-                final_approval_date: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }).eq('id', selectedId);
-
-            if (subError) throw subError;
-
-            // Distribute points to the designer
-            const { data: designerData } = await supabase.from('designer_details')
-                .select('total_points, monthly_points')
-                .eq('user_id', submission.designer_id)
-                .maybeSingle();
-
-            if (designerData) {
-                await supabase.from('designer_details').update({
-                    total_points: (designerData.total_points || 0) + clientPoints,
-                    monthly_points: (designerData.monthly_points || 0) + clientPoints,
-                    updated_at: new Date().toISOString()
-                }).eq('user_id', submission.designer_id);
-            }
-
-            // Log activity
-            if (user) {
-                await supabase.from('system_logs').insert({
-                    action_type: 'client_acceptance',
-                    admin_id: user.id,
-                    description: `[Client Accept] ${submission.project_name} (+${clientPoints} pts for Designer)`,
-                    timestamp: new Date().toISOString()
-                });
-            }
-
-            toast({ title: 'Success', description: 'Project accepted! The workflow is now officially complete.' });
+            toast({ title: 'Approved', description: 'The work is approved and the project is now marked complete.' });
             setIsAcceptOpen(false);
             loadSubmissions();
-
         } catch (error: any) {
-            toast({ title: 'Failed to accept', description: error.message, variant: 'destructive' });
+            toast({ title: 'Failed to approve', description: error.message, variant: 'destructive' });
         } finally {
             setProcessing(false);
         }
@@ -160,34 +121,18 @@ const ClientProjectsReview = () => {
         if (!selectedId || !revisionFeedback.trim()) return;
         setProcessingRevision(true);
         try {
-            const submission = submissions.find(s => s.id === selectedId);
-            if (!submission) throw new Error('Submission not found');
-
-            // Insert the revision request
-            const { error: revError } = await supabase.from('project_revisions').insert({
-                submission_id: selectedId,
-                client_email: user?.email ?? '',
-                feedback: revisionFeedback
+            const { data, error } = await (supabase.rpc as any)('request_project_revision', {
+                p_submission_id: selectedId,
+                p_feedback: revisionFeedback.trim(),
             });
+            if (error) throw error;
+            if (data && data.success === false) throw new Error(data.error || data.message || 'Could not send feedback');
 
-            if (revError) {
-                if (revError.code === '42P01') {
-                    throw new Error("The revisions database isn't initialized yet. Please run the SQL migration.");
-                }
-                throw revError;
-            }
-
-            // Update submission status
-            await supabase.from('submissions').update({
-                status: 'revision_requested',
-                updated_at: new Date().toISOString()
-            }).eq('id', selectedId);
-
-            toast({ title: 'Revision Requested', description: 'Your feedback has been sent to the designer.' });
+            toast({ title: 'Marked for correction', description: 'Your feedback has been sent to the professional.' });
             setIsRevisionOpen(false);
             loadSubmissions();
         } catch (error: any) {
-            toast({ title: 'Failed to request revision', description: error.message, variant: 'destructive' });
+            toast({ title: 'Failed to request correction', description: error.message, variant: 'destructive' });
         } finally {
             setProcessingRevision(false);
         }

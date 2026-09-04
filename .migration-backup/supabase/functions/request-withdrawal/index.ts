@@ -44,7 +44,7 @@ serve(async (req) => {
     const amount = Number(body?.amount);
     const payoutMethodId = String(body?.payout_method_id || "");
     if (!Number.isFinite(amount) || amount < 100) {
-      return new Response(JSON.stringify({ error: "invalid_amount", message: "Minimum withdrawal is GH₵100." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "invalid_amount", message: "Minimum withdrawal is$10." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (!payoutMethodId) {
       return new Response(JSON.stringify({ error: "missing_payout_method" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });

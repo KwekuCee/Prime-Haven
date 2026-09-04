@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
 import HeroSection from '@/components/HeroSection';
 import ServicesSection from '@/components/ServicesSection';
 import PortfolioSection from '@/components/PortfolioSection';
 import StatsSection from '@/components/StatsSection';
-import FounderSection from '@/components/FounderSection';
-import TeamSection from '@/components/TeamSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import FAQSection from '@/components/FAQSection';
 import BlogSection from '@/components/BlogSection';
@@ -62,29 +61,54 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-transparent relative z-0">
       <Seo
-        title="Prime Haven — IT Services & Creative Design Solutions"
-        description="Prime Haven builds brands, websites and digital products — UI/UX design, graphic design, web development and IT solutions, powered by Ghana's vetted tech talent network."
+        title="Web Design & Development Company in Ghana | Prime Haven"
+        description="Prime Haven is a Ghana-based web design, UI/UX, graphic design and IT services company. Hire vetted designers and developers to build your website, brand and digital product."
         path="/"
         jsonLd={[
           {
             '@context': 'https://schema.org',
-            '@type': 'Organization',
+            '@type': 'ProfessionalService',
             name: 'Prime Haven',
             url: 'https://primehaven.tech',
-            description: 'Technology and design company offering UI/UX design, graphic design, web development and IT solutions, with a vetted tech talent network.',
-            areaServed: 'Worldwide',
+            image: 'https://primehaven.tech/opengraph.jpg',
+            description: 'Web design and development, UI/UX design, graphic design and IT solutions company in Ghana, powered by a vetted tech talent network.',
+            areaServed: ['Ghana', 'Worldwide'],
             address: { '@type': 'PostalAddress', addressCountry: 'GH' },
+            knowsAbout: [
+              'Web design Ghana',
+              'Web development Ghana',
+              'UI/UX design',
+              'Graphic design',
+              'Brand identity design',
+              'IT solutions',
+            ],
+            hasOfferCatalog: {
+              '@type': 'OfferCatalog',
+              name: 'Prime Haven Services',
+              itemListElement: [
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Web Development' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'UI/UX Design' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Graphic Design' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'IT Solutions' } },
+              ],
+            },
           },
           {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: 'Prime Haven',
             url: 'https://primehaven.tech',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://primehaven.tech/blog?q={search_term_string}',
+              'query-input': 'required name=search_term_string',
+            },
           },
         ]}
       />
+
       <Navbar />
-      <main>
+      <motion.main initial={{ opacity: 0, filter: 'blur(10px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.65, ease: 'easeOut' }}>
         <HeroSection />
         <CommunityPulse />
         <ValueBentoGrid />
@@ -97,8 +121,6 @@ const Index = () => {
         <StatsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={102} />
-        <FounderSection />
-        <TeamSection />
         <TestimonialsSection />
         <AdUnit slot="1675197526" />
         <EzoicAd placeholderId={103} />
@@ -106,7 +128,7 @@ const Index = () => {
         <BlogSection />
         <JoinSection />
         <ContactSection />
-      </main>
+      </motion.main>
       <Footer />
       <VisitorChatbot />
       <PromoPopup />

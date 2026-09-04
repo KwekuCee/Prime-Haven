@@ -86,7 +86,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       { label: 'Dashboard', icon: LayoutDashboard, path: '/client/dashboard' },
       { label: 'Projects Submitted', icon: CheckCircle, path: '/client/projects' },
       { label: 'Start a Project', icon: PlusCircle, path: '/client/start-project' },
-      { label: 'Partner Program', icon: TrendingUp, path: '/affiliate/dashboard' },
       { label: 'Talk to the Designer', icon: MessageSquare, path: '/client/messages' },
       { label: 'Payments', icon: Wallet, path: '/client/payments' },
       { label: 'Support Desk', icon: LifeBuoy, path: '/client/support' },

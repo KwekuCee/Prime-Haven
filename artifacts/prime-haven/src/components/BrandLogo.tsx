@@ -1,13 +1,15 @@
 import logoLight from '@/assets/prime-haven-logo-light.png';
+import logoDark from '@/assets/prime-haven-logo.png';
 
 interface BrandLogoProps {
   className?: string;
   alt?: string;
   height?: number;
+  variant?: 'light' | 'dark';
 }
 
-const BrandLogo = ({ className, alt = 'Prime Haven', height = 40 }: BrandLogoProps) => {
-  const src = logoLight;
+const BrandLogo = ({ className, alt = 'Prime Haven', height = 40, variant = 'light' }: BrandLogoProps) => {
+  const src = variant === 'dark' ? logoDark : logoLight;
 
   return (
     <img

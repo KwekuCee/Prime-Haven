@@ -88,6 +88,7 @@ const Portfolio = () => {
 
         {/* Filters & Search */}
         <section className="container mx-auto px-6 mb-12">
+          <h2 className="sr-only">Filter and search projects</h2>
           <div className="glass rounded-2xl p-6">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
               <div className="w-full md:w-1/3">
@@ -96,6 +97,7 @@ const Portfolio = () => {
                   <Input
                     type="search"
                     placeholder="Search projects..."
+                    aria-label="Search portfolio projects"
                     className="pl-10 bg-secondary border-border"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -129,7 +131,7 @@ const Portfolio = () => {
             </div>
           ) : projects.length === 0 ? (
             <div className="text-center py-16 glass rounded-2xl">
-              <h3 className="text-2xl font-heading font-bold mb-4">No projects found</h3>
+              <h2 className="text-2xl font-heading font-bold mb-4">No projects found</h2>
               <p className="text-muted-foreground mb-6">Try adjusting your filters or search term</p>
               <Button
                 variant="outline"
@@ -197,9 +199,9 @@ const Portfolio = () => {
         {/* CTA Section */}
         <section className="container mx-auto px-6">
           <div className="glass rounded-2xl p-8 text-center">
-            <h3 className="text-2xl font-heading font-bold mb-4">
+            <h2 className="text-2xl font-heading font-bold mb-4">
               Want to see your project here?
-            </h3>
+            </h2>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Let's work together to create something amazing for your business.
             </p>

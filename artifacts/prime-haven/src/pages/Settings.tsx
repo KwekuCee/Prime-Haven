@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
+import {
   Bell, Lock, User, Globe, Moon, Sun, Shield, Mail, Smartphone, Trash2,
   Download, CheckCircle, Loader2, Settings as SettingsIcon
 } from 'lucide-react';
@@ -67,7 +67,7 @@ const Settings = () => {
 
   const handleDeleteAccount = () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      toast({ title: "Account deletion requested", description: "Please contact info@primehaven.tech to proceed.", variant: "destructive" });
+      toast({ title: "Account deletion requested", description: "Please contact primehaven26@gmail.com to proceed.", variant: "destructive" });
     }
   };
 

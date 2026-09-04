@@ -27,6 +27,8 @@ import {
   RegisterAccountData,
   getMinimumAgeDate,
 } from '@/lib/validations';
+import { TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
+import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 
 declare global {
   interface Window {
@@ -37,7 +39,6 @@ declare global {
 }
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
-const REGISTRATION_FEE_GHS = 100;
 
 
 const steps = [
@@ -60,6 +61,7 @@ const Register = () => {
     portfolioUrl: '', professionalTitle: '', experience: '', availableHours: '',
     previousCompany: '', password: '', confirmPassword: '', agreeToTerms: false,
   });
+  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signUp, user, loading: authLoading } = useAuth();
@@ -71,10 +73,20 @@ const Register = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
+  const [fx, setFx] = useState<ExchangeRate | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) navigate('/dashboard');
   }, [user, authLoading, navigate]);
+
+  // Pre-fetch today's USD→GHS rate when the user reaches the payment step so the
+  // local-currency estimate is ready before they click Pay.
+  useEffect(() => {
+    if (currentStep !== 4) return;
+    let cancelled = false;
+    getUsdToGhsRate().then((r) => { if (!cancelled) setFx(r); });
+    return () => { cancelled = true; };
+  }, [currentStep]);
 
   const personalForm = useForm<RegisterPersonalData>({
     resolver: zodResolver(registerPersonalSchema),
@@ -132,11 +144,16 @@ const Register = () => {
     }
   };
 
+  /** Final fee in USD after any promo discount. */
   const getFinalRegistrationFee = () => {
-    return REGISTRATION_FEE_GHS * (1 - promoDiscount / 100);
+    return Math.round(JOIN_FEE_USD * (1 - promoDiscount / 100) * 100) / 100;
   };
 
   const handlePayNow = async () => {
+    if (gateway === 'paystack') {
+      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.', variant: 'default' });
+      return;
+    }
 
     if (!window.Korapay) {
       toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
@@ -145,25 +162,43 @@ const Register = () => {
 
     setIsSubmitting(true);
     const reference = `PH-REG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const amount = getFinalRegistrationFee();
+    const amountUsd = getFinalRegistrationFee();
 
-    // Bypass payment gateway for 100% discount (0 GHS)
-    if (amount === 0) {
+    // Bypass payment gateway for 100% discount ($0)
+    if (amountUsd === 0) {
       const freeReference = `PH-FREE-REG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       toast({ title: 'Processing Registration', description: 'Applying your 100% discount...' });
       await finalizeRegistration(freeReference);
       return;
     }
 
+    // Convert the USD fee to GHS at the current international rate right before checkout.
+    let rate: ExchangeRate;
+    try {
+      rate = await getUsdToGhsRate(true);
+      setFx(rate);
+    } catch {
+      setIsSubmitting(false);
+      toast({ variant: 'destructive', title: 'Exchange rate unavailable', description: 'We could not fetch today\'s exchange rate. Please try again in a moment.' });
+      return;
+    }
+    const amountGhs = usdToGhs(amountUsd, rate.rate);
+
     try {
       window.Korapay.initialize({
         key: KORAPAY_PUBLIC_KEY,
         reference,
-        amount: getFinalRegistrationFee(),
+        amount: amountGhs,
         currency: "GHS",
         customer: {
           name: formData.fullName,
           email: formData.email,
+        },
+        metadata: {
+          amount_usd: amountUsd,
+          usd_to_ghs_rate: rate.rate,
+          rate_source: rate.source,
+          purpose: 'registration_fee',
         },
         onSuccess: async () => {
           await finalizeRegistration(reference);
@@ -193,7 +228,7 @@ const Register = () => {
             professional_title: formData.professionalTitle,
             payment_reference: reference,
             promo_code: promoRef,
-            gateway: 'korapay'
+            gateway
           }
         }
       });
@@ -390,11 +425,9 @@ const Register = () => {
                         <SelectValue placeholder="Select your role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="graphic-designer">Graphic Designer</SelectItem>
-                        <SelectItem value="ui-ux-designer">UI/UX Designer</SelectItem>
-                        <SelectItem value="web-developer">Web Developer</SelectItem>
-                        <SelectItem value="social-media-manager">Social Media Manager</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {TALENT_ROLE_OPTIONS.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {personalForm.formState.errors.professionalTitle && <p className="text-xs text-destructive">{personalForm.formState.errors.professionalTitle.message}</p>}
@@ -511,11 +544,11 @@ const Register = () => {
                   <div className="text-3xl font-heading font-bold text-primary mb-1">
                     {promoDiscount > 0 ? (
                       <div className="flex flex-col items-center">
-                        <span className="text-sm line-through text-muted-foreground opacity-50">GH₵{REGISTRATION_FEE_GHS.toFixed(2)}</span>
-                        <span>GH₵{getFinalRegistrationFee().toFixed(2)}</span>
+                        <span className="text-sm line-through text-muted-foreground opacity-50">{formatUsd(JOIN_FEE_USD)}</span>
+                        <span>{formatUsd(getFinalRegistrationFee())}</span>
                       </div>
                     ) : (
-                      `GH₵${REGISTRATION_FEE_GHS.toFixed(2)}`
+                      formatUsd(getFinalRegistrationFee())
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">One-time payment to join Prime Haven</p>
@@ -543,10 +576,16 @@ const Register = () => {
                     </div>
                     <div className="mb-4 space-y-2 text-left">
                       <Label className="text-[10px] text-muted-foreground uppercase tracking-widest">Payment Method</Label>
-                      <div className="p-3 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-1">
-                        <CreditCard className="w-5 h-5 text-primary" />
-                        <span className="text-[10px] font-bold uppercase text-center">Korapay</span>
-                        <span className="text-[8px] text-muted-foreground text-center leading-tight">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer & Card.</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['korapay', 'paystack'] as const).map((provider) => (
+                          <button type="button" key={provider} onClick={() => setGateway(provider)} className={cn('rounded-xl border p-3 text-left transition-all', gateway === provider ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60 hover:border-primary/40')}>
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-primary" />
+                              <span className="text-[10px] font-bold uppercase">{provider}</span>
+                            </div>
+                            <span className="mt-1 block text-[9px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Not configured in this environment'}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 

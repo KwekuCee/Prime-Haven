@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import DashboardLayout from '@/components/DashboardLayout';
 
@@ -59,7 +60,6 @@ const ClientStartProject = () => {
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
   // Korapay is the only payment gateway
 
   const [selectedService, setSelectedService] = useState<string>('');
@@ -78,6 +78,7 @@ const ClientStartProject = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
+  const [chargePreview, setChargePreview] = useState<CheckoutAmount | null>(null);
   const [referenceImages, setReferenceImages] = useState<{ file: File; preview: string }[]>([]);
   const [uploadingRefs, setUploadingRefs] = useState(false);
 
@@ -178,19 +179,10 @@ const ClientStartProject = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const formatPrice = (priceGhs: number) => {
-    if (currency === 'USD') {
-      return `$${(priceGhs / exchangeRate).toFixed(2)}`;
-    }
-    return `GH₵${priceGhs.toLocaleString()}`;
-  };
+  // Every price on Prime Haven is quoted in US dollars.
+  const formatPrice = (priceUsd: number) => formatUsd(priceUsd);
 
-  const getPaymentAmount = (priceGhs: number) => {
-    if (currency === 'USD') {
-      return Math.ceil((priceGhs / exchangeRate) * 100) / 100;
-    }
-    return priceGhs;
-  };
+  const getPaymentAmount = (priceUsd: number) => Math.round(priceUsd * 100) / 100;
 
   const applyPromoCode = async () => {
     if (!promoCode.trim()) return;
@@ -222,6 +214,16 @@ const ClientStartProject = () => {
     return discounted;
   };
 
+  // Preview what the gateway will actually charge (cedis in Ghana, dollars elsewhere)
+  useEffect(() => {
+    if (!selectedPricing) { setChargePreview(null); return; }
+    let active = true;
+    resolveCheckoutAmount(calculateTotal(selectedPricing.price))
+      .then(res => { if (active) setChargePreview(res); })
+      .catch(() => { if (active) setChargePreview(null); });
+    return () => { active = false; };
+  }, [selectedPricing, promoDiscount]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.description) {
@@ -239,7 +241,9 @@ const ClientStartProject = () => {
     setSubmitting(true);
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const finalPrice = calculateTotal(selectedPricing.price);
-    const amount = getPaymentAmount(finalPrice);
+    const amountUsd = getPaymentAmount(finalPrice);
+    const checkout = await resolveCheckoutAmount(amountUsd);
+    const amount = checkout.amount;
 
     if (amount === 0) {
       const freeReference = `PH-FREE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -279,7 +283,7 @@ const ClientStartProject = () => {
             description: form.description,
             category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
             status: 'pending',
-            budget: 'GH₵0 (Promo)',
+            budget: '$0 (Promo)',
             required_professions: dist.professions,
             max_assignees: dist.max,
             reference_images: uploadedRefUrls,
@@ -339,7 +343,8 @@ const ClientStartProject = () => {
         key: KORAPAY_PUBLIC_KEY,
         reference,
         amount,
-        currency,
+        currency: checkout.currency,
+        metadata: { amount_usd: amountUsd, charged_currency: checkout.currency, usd_to_ghs_rate: checkout.rate, country: checkout.countryCode },
         customer: {
           name: form.clientName,
           email: form.clientEmail,
@@ -451,20 +456,6 @@ const ClientStartProject = () => {
           </Button>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
-              <button
-                onClick={() => setCurrency('GHS')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'GHS' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Banknote className="w-3 h-3" /> GHS
-              </button>
-              <button
-                onClick={() => setCurrency('USD')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'USD' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Banknote className="w-3 h-3" /> USD
-              </button>
-            </div>
             <div className="hidden sm:flex items-center gap-2">
               {[1, 2, 3].map(s => (
                 <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -650,8 +641,14 @@ const ClientStartProject = () => {
                         <span className="font-medium">{tierLabels[selectedPricing.tier]}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Currency</span>
-                        <span className="font-medium">{currency === 'USD' ? '🌍 USD (International)' : '🇬🇭 GHS (Local)'}</span>
+                        <span className="text-muted-foreground">Charged in</span>
+                        <span className="font-medium">
+                          {chargePreview
+                            ? chargePreview.currency === 'GHS'
+                              ? `🇬🇭 ${formatGhs(chargePreview.amount)}`
+                              : '🌍 US Dollars'
+                            : 'Checking your location…'}
+                        </span>
                       </div>
                       {promoDiscount > 0 && (
                         <div className="flex justify-between text-sm text-emerald-500 font-medium">
