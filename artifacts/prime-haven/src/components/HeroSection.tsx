@@ -87,7 +87,7 @@ const HeroSection = () => {
             </p>
             <div className="mt-6 relative overflow-hidden max-w-3xl mx-auto [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
               <div className="flex w-max marquee-track gap-3">
-                {[...disciplines, ...disciplines, ...disciplines, ...disciplines, ...disciplines, ...disciplines].map((d, i) => (
+                {[...disciplines, ...disciplines, ...disciplines, ...disciplines].map((d, i) => (
                   <span
                     key={`${d}-${i}`}
                     className="rounded-full border border-border/70 bg-card px-5 py-2 text-sm font-semibold text-muted-foreground whitespace-nowrap"
