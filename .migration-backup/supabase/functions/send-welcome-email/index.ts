@@ -159,7 +159,7 @@ function buildWelcomeHtml(name: string): string {
 
 <!-- Footer -->
 <tr><td align="center" style="padding:28px 40px 40px;">
-<p style="margin:0 0 8px;font-size:12px;color:#555555;">Need help? Reach out to us anytime at <a href="mailto:primehaven26@gmail.com" style="color:#fe4c18;text-decoration:none;">primehaven26@gmail.com</a></p>
+<p style="margin:0 0 8px;font-size:12px;color:#555555;">Need help? Reach out to us anytime at <a href="mailto:info@primehaven.tech" style="color:#fe4c18;text-decoration:none;">info@primehaven.tech</a></p>
 <p style="margin:12px 0 0;font-size:11px;color:#fe4c18;font-weight:600;letter-spacing:2px;text-transform:uppercase;">Making IT Dreams a Reality</p>
 <p style="margin:8px 0 0;font-size:12px;color:#555555;">&copy; 2026 Prime Haven. Youth-driven design &amp; IT solutions.</p>
 </td></tr>
@@ -192,7 +192,7 @@ function buildPlainText(name: string): string {
     '   Client Acceptance: +20-65 points (varies by service)',
     '   Bonus Points: Awarded for exceptional work',
     '',
-    'Need help? primehaven26@gmail.com',
+    'Need help? info@primehaven.tech',
     '',
     '© 2026 Prime Haven - Making IT Dreams a Reality',
   ].join('\n');

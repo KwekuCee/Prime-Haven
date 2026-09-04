@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,11 +15,6 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 const Privacy = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Seo
-        title="Privacy Policy — Prime Haven"
-        description="How Prime Haven collects, uses, stores and shares your data across our design, development and IT services, and the choices you have over it."
-        path="/privacy"
-      />
       <Navbar />
 
       <main className="flex-1 pt-28 pb-20">

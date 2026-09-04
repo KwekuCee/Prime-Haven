@@ -51,6 +51,11 @@ const TeamSection = () => {
 
   return (
     <section className="py-24 relative overflow-hidden" id="team">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/8 blur-[120px] opacity-60 translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-primary/8 blur-[120px] opacity-60 -translate-x-1/2 translate-y-1/2" />
+      </div>
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

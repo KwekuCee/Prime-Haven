@@ -97,7 +97,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
 
   const submitWithdrawal = async () => {
     const amt = Number(amount);
-    if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is$10'); return; }
+    if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is GH₵100'); return; }
     if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
     if (!selectedMethod) { toast.error('Select a payment method'); return; }
     setSubmitting(true);
@@ -141,12 +141,12 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
           <div>
             <p className="text-xs text-muted-foreground">Available balance</p>
             <p className="text-2xl font-bold">GH₵{effectiveBalance.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Minimum$10 • Mobile Money via Korapay</p>
+            <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
           <Button
             onClick={() => setWithdrawOpen(true)}
             disabled={!canWithdraw}
-            title={!isWithdrawalDay ? 'Available only on the 30th' : effectiveBalance < 100 ? 'Balance below$10' : ''}
+            title={!isWithdrawalDay ? 'Available only on the 30th' : effectiveBalance < 100 ? 'Balance below GH₵100' : ''}
           >
             Withdraw
           </Button>

@@ -16,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
-import SeoIndexHealth from '@/components/admin/SeoIndexHealth';
 
 type Json = any;
 
@@ -428,10 +427,6 @@ const ManageSystemSettings = () => {
             </div>
           </CardContent>
         </Card>
-
-        <div className="mt-6">
-          <SeoIndexHealth />
-        </div>
       </motion.div>
     </SuperAdminLayout>
   );

@@ -1,13 +1,10 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { ensureJobContract } from "../_shared/jobContract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
-const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
-
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 
 
@@ -24,22 +21,7 @@ const DISCORD_CHANNELS: Record<string, string> = {
 };
 
 // Approximate conversion rate
-const USD_TO_GHS_FALLBACK = 15.5;
-
-// Live USD -> GHS rate so USD charges land in the ledger at the real value.
-async function getUsdToGhsRate(): Promise<number> {
-  try {
-    const res = await fetch("https://open.er-api.com/v6/latest/USD");
-    if (res.ok) {
-      const json = await res.json();
-      const ghs = Number(json?.rates?.GHS);
-      if (Number.isFinite(ghs) && ghs > 0) return ghs;
-    }
-  } catch (err) {
-    console.error("FX lookup failed, using fallback:", err);
-  }
-  return USD_TO_GHS_FALLBACK;
-}
+const USD_TO_GHS = 15.5;
 
 function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -149,7 +131,7 @@ serve(async (req: Request): Promise<Response> => {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
       description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay',
-      clientPassword, businessName, promoCode
+      clientPassword, businessName
     } = body as {
       clientName: string;
       clientEmail: string;
@@ -165,15 +147,17 @@ serve(async (req: Request): Promise<Response> => {
       gateway?: string;
       clientPassword?: string;
       businessName?: string;
-      promoCode?: string;
     };
 
     console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
 
-    // A free order is only legitimate when a 100% promo code is validated
-    // server-side below. The client is never trusted for this.
-    const isFreeOrder = Number(price) === 0 || (typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-'));
-
+    // PH-FREE-* references are no longer accepted as valid free orders.
+    // Free orders must come from a server-verified 100% promo applied via verify-payment first.
+    if (typeof paymentReference === 'string' && paymentReference.startsWith('PH-FREE-')) {
+      return new Response(JSON.stringify({ success: false, error: "invalid_reference" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // For paid orders, all fields including price > 0
     const missingFields: string[] = [];
@@ -191,76 +175,25 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Creating Supabase client...");
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
     let verifiedAmount: number;
     let verifiedCurrency: string;
-    let gatewayLabel = gateway === 'paystack' ? 'Paystack' : 'Korapay';
 
-    if (isFreeOrder) {
-      console.log("Validating 100% promo code...");
-      const code = String(promoCode || "").toUpperCase().trim();
-      if (!code) {
-        return new Response(JSON.stringify({ success: false, error: "promo_code_required" }), {
-          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-      const { data: promo } = await supabase
-        .from("promo_codes")
-        .select("code, discount_percent, is_active, expiry_date")
-        .eq("code", code)
-        .maybeSingle();
+    console.log("Verifying with Korapay...");
+    const korapayResponse = await fetch(
+      `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
+      { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
+    );
+    const korapayData = await korapayResponse.json();
 
-      const expired = promo?.expiry_date ? new Date(promo.expiry_date as string) < new Date() : false;
-      if (!promo || !promo.is_active || expired || Number(promo.discount_percent) < 100) {
-        return new Response(JSON.stringify({ success: false, error: "promo_code_invalid" }), {
-          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-
-      verifiedAmount = 0;
-      verifiedCurrency = "GHS";
-      gatewayLabel = `100% Promo (${code})`;
-    } else if (gateway === "paystack") {
-      console.log("Verifying with Paystack...");
-      const paystackResponse = await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
-        { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
-      );
-      const paystackData = await paystackResponse.json();
-
-      if (!paystackData?.status || paystackData?.data?.status !== "success") {
-        return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
-          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-      // Paystack reports amounts in the smallest currency unit (pesewas / kobo)
-      verifiedAmount = Number(paystackData.data.amount) / 100;
-      verifiedCurrency = paystackData.data.currency;
-    } else {
-      console.log("Verifying with Korapay...");
-      const korapayResponse = await fetch(
-        `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(paymentReference)}`,
-        { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }
-      );
-      const korapayData = await korapayResponse.json();
-
-      if (!korapayData.status || korapayData.data?.status !== "success") {
-        return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
-          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
-      verifiedAmount = Number(korapayData.data.amount);
-      verifiedCurrency = korapayData.data.currency;
+    if (!korapayData.status || korapayData.data?.status !== "success") {
+      return new Response(JSON.stringify({ success: false, error: "payment_verification_failed" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
+    verifiedAmount = korapayData.data.amount;
+    verifiedCurrency = korapayData.data.currency;
 
-
-
-    const usdRate = verifiedCurrency === 'USD' ? await getUsdToGhsRate() : 1;
-    const amountInGhs = verifiedCurrency === 'USD'
-      ? Math.round(verifiedAmount * usdRate * 100) / 100
-      : verifiedAmount;
+    const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * USD_TO_GHS : verifiedAmount;
 
     if (verifiedCurrency !== "GHS" && verifiedCurrency !== "USD") {
       return new Response(JSON.stringify({ success: false, error: "Invalid payment currency", message: `Invalid currency: ${verifiedCurrency}` }), {
@@ -268,6 +201,8 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log("Creating Supabase client...");
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // Check for duplicate payment reference
     const { data: existingOrder } = await supabase
@@ -307,15 +242,15 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // 1b. Create the client account.
-    // The payment for this email has just been verified with the gateway, so we
-    // provision the account with the password the client chose at checkout and let
-    // them sign in immediately. The email itself is NOT treated as proven: the
-    // profile stays `email_verified = false` and a verification link is sent, which
-    // is what drives the "verify your email" banner inside the client portal.
+    // 1b. Create Client User (secure guest-checkout pre-provisioning)
+    // SECURITY: We never trust a client-supplied password bound to an unverified email,
+    // and we never mark the account email as confirmed here. If an account for this
+    // email already exists we leave it untouched (no overwrite / no password change),
+    // and any new account is created unconfirmed with a magic invite link so the
+    // real owner of the inbox must click through before they can sign in.
     console.log("Setting up client account...");
-    let clientUserId: string | null = null;
     try {
+      // Look up any existing user for this email using the admin listUsers API.
       let existingUser: { id: string } | null = null;
       try {
         // @ts-ignore - filter supported by supabase-js admin API
@@ -327,63 +262,50 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       if (!existingUser) {
-        const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+        // Create an UNCONFIRMED user without a client-supplied password so an
+        // attacker who guessed the email cannot pre-set credentials on it.
+        const { error: createErr } = await supabase.auth.admin.createUser({
           email: clientEmail,
-          password: clientPassword && String(clientPassword).length >= 8 ? String(clientPassword) : undefined,
-          email_confirm: true,
+          email_confirm: false,
           user_metadata: {
             full_name: clientName,
             business_name: businessName,
             whatsapp: clientWhatsapp,
-            account_type: 'client',
             role: 'client',
           },
         });
         if (createErr && createErr.status !== 422) {
           console.error("Auth creation error:", createErr);
         }
-        clientUserId = created?.user?.id || null;
 
-        // Verification link so the inbox owner confirms ownership.
+        // Send an invite / magic link so the real inbox owner can claim the account.
         try {
-          await supabase.auth.admin.generateLink({ type: "magiclink", email: clientEmail });
+          await supabase.auth.admin.generateLink({
+            type: "invite",
+            email: clientEmail,
+          });
         } catch (linkErr) {
-          console.warn("Verification link generation failed (non-critical):", linkErr);
+          console.warn("Invite link generation failed (non-critical):", linkErr);
         }
       } else {
-        // Never overwrite credentials on an existing account.
-        clientUserId = existingUser.id;
-        console.log("Client account already exists — leaving credentials untouched.");
-      }
-
-      // Make sure the account carries the client role (older accounts may miss it).
-      if (clientUserId) {
-        await supabase.from("user_roles").upsert(
-          { user_id: clientUserId, role: 'client' },
-          { onConflict: 'user_id,role', ignoreDuplicates: true },
-        );
+        console.log("Client account already exists — leaving untouched to prevent takeover.");
       }
     } catch (e) {
       console.error("Auth setup catch error (non-critical):", e);
     }
 
-    // 1c. Upsert into clients table (central client database)
-    let clientRecordId: string | null = null;
-    const { data: clientRecord, error: clientRecordError } = await supabase
+    // 1c. Upsert into clients table
+    const { error: clientRecordError } = await supabase
       .from("clients")
       .upsert({
         email: clientEmail,
         name: clientName,
         company: businessName || null,
         whatsapp: clientWhatsapp || null,
-      }, { onConflict: 'email' })
-      .select("id")
-      .maybeSingle();
+      }, { onConflict: 'email' });
 
     if (clientRecordError) {
       console.error("Client record update error:", clientRecordError);
-    } else {
-      clientRecordId = clientRecord?.id || null;
     }
 
     // 2. Auto-create client project for tracking
@@ -401,84 +323,25 @@ serve(async (req: Request): Promise<Response> => {
       "web-dev": "web-development",
     };
 
-    const projectPayload = {
+    const { error: projectError } = await supabase.from("client_projects").insert({
       title: `${serviceLabel || serviceType} (${tier.charAt(0).toUpperCase() + tier.slice(1)}) — ${clientName}`,
       client_name: clientName,
       client_email: clientEmail,
       client_whatsapp: clientWhatsapp || null,
-      client_id: clientRecordId,
-      created_by: clientUserId,
       description,
       category: categoryMap[discordCategory] || "web-development",
       status: "pending",
       budget: `GH₵${amountInGhs}`,
-      // Payment is confirmed at this point — stamping price + paid_at is what
-      // publishes the job to the designer marketplace.
-      price_ghs: Number(amountInGhs) || 0,
-      paid_at: new Date().toISOString(),
       required_professions: dist.professions,
-      max_assignees: 1,
-      reference_images: Array.isArray(referenceFiles) ? referenceFiles : [],
-    };
+      max_assignees: dist.max,
+    });
 
-    const { data: createdProject, error: projectError } = await supabase
-      .from("client_projects")
-      .insert(projectPayload)
-      .select("id")
-      .maybeSingle();
+
 
     if (projectError) {
       console.error("Failed to create client project (non-critical):", projectError);
       // Don't fail the whole request for this
-    } else if (createdProject?.id) {
-      // Mirror the paid project onto the Job Contracts board
-      await ensureJobContract(supabase, {
-        id: createdProject.id,
-        title: projectPayload.title,
-        description: projectPayload.description,
-        category: projectPayload.category,
-        client_name: projectPayload.client_name,
-        budget: projectPayload.budget,
-        reference_images: projectPayload.reference_images,
-        required_professions: projectPayload.required_professions,
-        posted_by: clientUserId,
-      });
     }
-
-    // 2b. Record the incoming payment in the finance ledger with the revenue split.
-    try {
-      const { data: shareSetting } = await supabase
-        .from("system_settings")
-        .select("value")
-        .eq("key", "revenue_share_percentage")
-        .maybeSingle();
-      const sharePercent = Number(shareSetting?.value ?? 70) || 70;
-      const talentShare = Math.round((Number(amountInGhs) * sharePercent) / 100 * 100) / 100;
-      const platformProfit = Math.round((Number(amountInGhs) - talentShare) * 100) / 100;
-
-      if (clientUserId) {
-        await supabase.from("payments").insert({
-          user_id: clientUserId,
-          amount: Number(amountInGhs) || 0,
-          type: "client_order",
-          status: "completed",
-          transaction_id: paymentReference,
-          payment_gateway: gatewayLabel,
-          payment_details: {
-            order_id: order?.id,
-            service_type: serviceType,
-            tier,
-            currency: verifiedCurrency,
-            share_percent: sharePercent,
-            talent_share: talentShare,
-            platform_profit: platformProfit,
-          },
-        });
-      }
-    } catch (ledgerError: any) {
-      console.error("Ledger record failed (non-critical):", ledgerError);
-    }
-
 
     // 3. Add revenue to the respective service category
     console.log("Updating revenue...");

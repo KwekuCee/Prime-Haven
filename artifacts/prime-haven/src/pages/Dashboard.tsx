@@ -22,13 +22,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { useToast } from '@/hooks/use-toast';
-import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs } from '@/lib/currency';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import AchievementBadges from '@/components/dashboard/AchievementBadges';
 import ActivityStreak from '@/components/dashboard/ActivityStreak';
 import LiveFeed from '@/components/dashboard/LiveFeed';
-import ExpectedSalaryModal, { JobEarning } from '@/components/dashboard/ExpectedSalaryModal';
-import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT } from '@/lib/revenue';
+import ExpectedSalaryModal from '@/components/dashboard/ExpectedSalaryModal';
 import EarningsChart from '@/components/dashboard/EarningsChart';
 import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import GoalTracker from '@/components/dashboard/GoalTracker';
@@ -87,22 +85,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { settings, formatCurrency } = useUserSettings();
-  const [earnings, setEarnings] = useState<JobEarning[]>([]);
-  const [sharePercent, setSharePercent] = useState(DEFAULT_REVENUE_SHARE_PERCENT);
-  const [pendingEarnings, setPendingEarnings] = useState(0);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [feeGhs, setFeeGhs] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getUsdToGhsRate()
-      .then((r) => { if (!cancelled) setFeeGhs(usdToGhs(JOIN_FEE_USD, r.rate)); })
-      .catch(() => { /* USD amount alone is fine */ });
-    return () => { cancelled = true; };
-  }, []);
-
   const [designer, setDesigner] = useState<DesignerData | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -361,33 +346,6 @@ const Dashboard = () => {
         }
         if (submissionsResult.data) setSubmissions(submissionsResult.data);
 
-        // Earnings: flat share of every completed job, released on client approval
-        const share = await getRevenueSharePercent();
-        setSharePercent(share);
-        const { data: earningRows } = await (supabase as any)
-          .from('job_earnings')
-          .select('id, project_id, submission_id, job_price, share_percent, amount, status, created_at, client_projects:project_id(title)')
-          .eq('designer_id', user.id)
-          .order('created_at', { ascending: false });
-        const mappedEarnings: JobEarning[] = ((earningRows || []) as any[]).map((r) => ({
-          id: r.id,
-          project_id: r.project_id,
-          submission_id: r.submission_id,
-          job_price: r.job_price,
-          share_percent: r.share_percent,
-          amount: r.amount,
-          status: r.status,
-          created_at: r.created_at,
-          project_title: r.client_projects?.title || null,
-        }));
-        setEarnings(mappedEarnings);
-        const availableEarned = mappedEarnings
-          .filter((e) => e.status === 'earned' || e.status === 'available')
-          .reduce((acc, e) => acc + Number(e.amount || 0), 0);
-        setPendingEarnings(
-          mappedEarnings.filter((e) => e.status === 'pending').reduce((acc, e) => acc + Number(e.amount || 0), 0)
-        );
-
         const profilesMap = new Map((profilesResult.data as any[] || []).map((p: { id: string; full_name?: string }) => [p.id, p.full_name]));
         if (designersResult.data && designersResult.data.length > 0) {
           const processedLeaderboard: LeaderboardEntry[] = (designersResult.data as any[]).map((entry: { user_id: string; total_points?: number; monthly_points?: number; professional_title?: string; talent_score?: number }) => {
@@ -424,7 +382,7 @@ const Dashboard = () => {
             totalPoints: designerResult.data?.total_points || 0,
             monthlyRank: userRank || 0,
             totalDesigners: categoryLeaderboard.length,
-            estSalary: availableEarned,
+            estSalary: designerResult.data?.salary_estimated || 0,
             totalSubmissions: submissionsResult.data?.length || 0,
             approvedSubmissions: submissionsResult.data?.filter((sub: Submission) => sub.status === 'approved' || sub.client_accepted).length || 0,
             monthlyRevenue,
@@ -445,6 +403,7 @@ const Dashboard = () => {
     if (s.client_accepted) return 'client_accepted';
     if (s.status === 'correction_requested') return 'correction_requested';
     if (s.status === 'client_rejected') return 'client_rejected';
+    if (s.ph_approved) return 'ph_approved';
     if (s.client_preference) return 'preference';
     if (s.status === 'approved') return 'approved';
     if (s.status === 'revision') return 'revision';
@@ -454,7 +413,7 @@ const Dashboard = () => {
 
   const getActivityLabel = (type: string) => {
     const labels: Record<string, string> = {
-      client_accepted: 'Client Approved', preference: 'Client Preference',
+      client_accepted: 'Client Accepted', ph_approved: 'PH Approved', preference: 'Client Preference',
       approved: 'Approved', revision: 'Needs Revision', rejected: 'Rejected',
       correction_requested: 'Correction Needed', client_rejected: 'Client Rejected', submitted: 'Submitted',
     };
@@ -463,7 +422,7 @@ const Dashboard = () => {
 
   const getStatusColor = (type: string) => {
     const colors: Record<string, string> = {
-      client_accepted: 'bg-emerald-500', preference: 'bg-primary',
+      client_accepted: 'bg-primary', ph_approved: 'bg-emerald-500', preference: 'bg-primary',
       approved: 'bg-emerald-500', revision: 'bg-amber-500', rejected: 'bg-red-500',
       correction_requested: 'bg-amber-500', client_rejected: 'bg-red-500', submitted: 'bg-muted-foreground',
     };
@@ -593,12 +552,7 @@ const Dashboard = () => {
                 <p className="text-sm font-semibold text-amber-500 mb-1">Action Required</p>
                 <ul className="text-xs text-muted-foreground space-y-0.5">
                   {!profile.email_verified && <li>• Verify your email to unlock all features</li>}
-                  {!profile.registration_fee_paid && (
-                    <li>
-                      • Complete registration fee payment ({formatUsd(JOIN_FEE_USD)}
-                      {feeGhs !== null ? ` ≈ ${formatGhs(feeGhs)}` : ''})
-                    </li>
-                  )}
+                  {!profile.registration_fee_paid && <li>• Complete registration fee payment (GH₵100.00)</li>}
                 </ul>
               </div>
             </div>
@@ -613,7 +567,7 @@ const Dashboard = () => {
           {[
             { label: 'Total Points', value: stats.totalPoints.toLocaleString(), sub: `+ ${ designer?.monthly_points || 0 } this month`, icon: Flame, iconColor: 'text-primary' },
             { label: 'Rank', value: stats.monthlyRank > 0 ? `#${ stats.monthlyRank } ` : '—', sub: `of ${ stats.totalDesigners } designers`, icon: Trophy, iconColor: 'text-yellow-500' },
-            { label: 'Available Earnings', value: showEarnings ? formatCurrency(stats.estSalary) : '••••', sub: showEarnings ? (pendingEarnings > 0 ? `${formatCurrency(pendingEarnings)} awaiting client approval` : 'Click for breakdown') : 'Hidden', icon: showEarnings ? Wallet : EyeOff, iconColor: 'text-emerald-500', action: 'EST_SALARY' },
+            { label: 'Est. Salary', value: showEarnings ? formatCurrency(stats.estSalary) : '••••', sub: showEarnings ? 'Click for breakdown' : 'Hidden', icon: showEarnings ? Wallet : EyeOff, iconColor: 'text-emerald-500', action: 'EST_SALARY' },
             { label: 'Submissions', value: stats.totalSubmissions.toString(), sub: `${ stats.approvedSubmissions } approved`, icon: FileCheck, iconColor: 'text-blue-500' },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }} className="h-full">
@@ -963,8 +917,7 @@ const Dashboard = () => {
       <ExpectedSalaryModal
         open={showSalaryModal}
         onOpenChange={setShowSalaryModal}
-        earnings={earnings}
-        sharePercent={sharePercent}
+        submissions={submissions}
         formatCurrency={formatCurrency}
       />
     </DashboardLayout >

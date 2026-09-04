@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "pnpm --filter @workspace/prime-haven dev",
     "build": "pnpm --filter @workspace/prime-haven build && pnpm run copy:dist",
-    "copy:dist": "sh -c 'rm -rf dist && cp -r artifacts/prime-haven/dist dist' --",
+    "copy:dist": "rm -rf dist && cp -r artifacts/prime-haven/dist dist",
     "build:dev": "pnpm run build",
     "install:app": "pnpm install --frozen-lockfile --prod=false --filter @workspace/prime-haven...",
     "serve": "pnpm --filter @workspace/prime-haven serve",

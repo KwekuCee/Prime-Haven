@@ -88,7 +88,7 @@ serve(async (req) => {
 
     const available = Math.max(0, earned - locked);
 
-    // Rule 1: must have more than$10 of salary available
+    // Rule 1: must have more than GH₵100 of salary available
     if (available < MIN_WITHDRAWAL) {
       return json(
         {

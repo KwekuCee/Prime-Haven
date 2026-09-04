@@ -112,7 +112,6 @@ const Blog = () => {
             </p>
           </motion.div>
 
-          <h2 className="sr-only">Browse articles by category</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
             <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
               <TabsList className="flex flex-wrap h-auto gap-1">
@@ -127,7 +126,6 @@ const Blog = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search posts..."
-                aria-label="Search blog posts"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -204,10 +202,10 @@ const Blog = () => {
             className="glass rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 mt-16"
           >
             <div className="flex-1 space-y-2">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
+              <h3 className="text-2xl font-bold flex items-center gap-2">
                 <Mail className="w-6 h-6 text-primary" />
                 Never miss a post
-              </h2>
+              </h3>
               <p className="text-muted-foreground">
                 Subscribe and get new articles, opportunities, and updates delivered to your inbox.
               </p>

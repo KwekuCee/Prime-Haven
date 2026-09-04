@@ -43,28 +43,32 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
-    const topic = `notifications:${user.id}:${Math.random().toString(36).slice(2)}`;
-    const channel = supabase.channel(topic);
-
-    channel
+    const channel = supabase
+      .channel(`notifications:${user.id}:${Date.now()}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setNotifications(prev => [payload.new as AppNotification, ...prev].slice(0, 30));
-          } else if (payload.eventType === 'UPDATE') {
-            setNotifications(prev =>
-              prev.map(n => n.id === (payload.new as AppNotification).id ? payload.new as AppNotification : n)
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setNotifications(prev => prev.filter(n => n.id !== (payload.old as AppNotification).id));
-          }
+          setNotifications(prev => [payload.new as AppNotification, ...prev].slice(0, 30));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          setNotifications(prev =>
+            prev.map(n => n.id === (payload.new as AppNotification).id ? payload.new as AppNotification : n)
+          );
         }
       )
       .subscribe();
@@ -73,7 +77,6 @@ export const useNotifications = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
-
 
   const markAsRead = useCallback(async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));

@@ -26,7 +26,7 @@ const Navbar = () => {
   const navLinks = [
     { name: t('nav.services'), href: '/#services' },
     { name: t('nav.portfolio'), href: '/#portfolio' },
-    { name: t('nav.story'), href: '/our-story' },
+    { name: t('nav.story'), href: '/#founder' },
     { name: t('nav.reviews'), href: '/#testimonials' },
     { name: t('nav.about'), href: '/#about' },
     { name: t('nav.blog'), href: '/blog' },
@@ -76,7 +76,6 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Settings"
                   className="h-9 px-3 rounded-full text-muted-foreground hover:text-foreground gap-1.5"
                 >
                   <Settings className="w-3.5 h-3.5" />

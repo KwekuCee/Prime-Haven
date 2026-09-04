@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { FileText, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,11 +15,6 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 const Terms = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Seo
-        title="Terms of Service — Prime Haven"
-        description="The terms that govern client projects, professional accounts, payments and revenue sharing on the Prime Haven platform."
-        path="/terms"
-      />
       <Navbar />
 
       <main className="flex-1 pt-28 pb-20">

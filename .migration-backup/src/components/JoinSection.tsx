@@ -72,7 +72,7 @@ const JoinSection = () => {
             </ul>
             <Link to="/register">
               <Button variant="primary" size="lg" className="group animate-pulse-glow">
-                Join as Freelancer — $15.00
+                Join as Freelancer — GH₵100
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

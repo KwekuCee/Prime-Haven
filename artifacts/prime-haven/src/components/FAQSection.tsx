@@ -31,7 +31,7 @@ const freelancerFAQs = [
   },
   {
     q: "Is there a fee?",
-    a: "There's a one-time$10 membership. Everything about fees and revenue share is explained during onboarding before you commit."
+    a: "There's a one-time GH₵100 membership. Everything about fees and revenue share is explained during onboarding before you commit."
   },
   {
     q: "How does work reach me?",
@@ -92,10 +92,11 @@ const FAQSection = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-5 py-2.5 rounded-full text-sm font-semibold border transition-colors ${activeTab === tab.id
+                    className={`px-5 py-2.5 rounded-full text-sm font-semibold border transition-colors ${
+                      activeTab === tab.id
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-border/70 text-muted-foreground hover:text-foreground hover:border-foreground/30'
-                      }`}
+                    }`}
                   >
                     {tab.label}
                   </button>

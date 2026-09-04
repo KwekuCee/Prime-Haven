@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useUsdRate } from '@/hooks/useUsdRate';
 
 interface Payout {
     id: string;
@@ -45,7 +44,6 @@ interface AffiliateProfile {
 }
 
 const AffiliateDashboard = () => {
-    const money = useUsdRate();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
     const location = useLocation();
@@ -109,32 +107,6 @@ const AffiliateDashboard = () => {
             setLoading(false);
         }
     };
-
-    const downloadAsset = async (asset: MarketingAsset) => {
-        if (asset.asset_type === 'copy') {
-            await navigator.clipboard.writeText(asset.asset_url);
-            toast({ title: 'Copied!', description: 'Copy text copied to clipboard.' });
-            return;
-        }
-        try {
-            const res = await fetch(asset.asset_url);
-            if (!res.ok) throw new Error('Download failed');
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const ext = (asset.asset_url.split('?')[0].split('.').pop() || 'file').slice(0, 5);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${asset.title.replace(/[^a-z0-9\-_ ]/gi, '').trim() || 'prime-haven-asset'}.${ext}`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-            toast({ title: 'Downloaded', description: `${asset.title} saved to your device.` });
-        } catch {
-            window.open(asset.asset_url, '_blank');
-        }
-    };
-
 
     const joinProgram = async () => {
         if (!user) return;
@@ -251,7 +223,7 @@ const AffiliateDashboard = () => {
                             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-xs" 
                                 disabled={availableBalance === 0 || hasPendingRequest} onClick={requestPayout}>
                                 {requestingPayout ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />} 
-                                {hasPendingRequest ? 'Payout Pending' : `Withdraw ${money.usd(availableBalance)}`}
+                                {hasPendingRequest ? 'Payout Pending' : `Withdraw GH₵${availableBalance.toLocaleString()}`}
                             </Button>
                         </MagneticEffect>
                     )}
@@ -309,9 +281,9 @@ const AffiliateDashboard = () => {
                                     <div className="flex items-center justify-between mb-3">
                                         <TrendingUp className="w-5 h-5 text-amber-500" />
                                     </div>
-                                    <p className="text-2xl sm:text-3xl font-heading font-bold">{money.usd(pendingPayout + availableBalance)}</p>
+                                    <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{(pendingPayout + availableBalance).toLocaleString()}</p>
                                     <p className="text-[11px] text-muted-foreground mt-1">Pending Commissions</p>
-                                    <p className="text-[10px] text-cyan-500 mt-0.5">{money.usd(availableBalance)} withdrawable</p>
+                                    <p className="text-[10px] text-cyan-500 mt-0.5">GH₵{availableBalance.toLocaleString()} withdrawable</p>
                                 </SpotlightCard>
                             </motion.div>
 
@@ -320,7 +292,7 @@ const AffiliateDashboard = () => {
                                     <div className="flex items-center justify-between mb-3">
                                         <DollarSign className="w-5 h-5 text-emerald-500" />
                                     </div>
-                                    <p className="text-2xl sm:text-3xl font-heading font-bold">{money.usd(totalEarned)}</p>
+                                    <p className="text-2xl sm:text-3xl font-heading font-bold">GH₵{totalEarned.toLocaleString()}</p>
                                     <p className="text-[11px] text-muted-foreground mt-1">Total Lifetime Earned</p>
                                 </SpotlightCard>
                             </motion.div>
@@ -375,7 +347,7 @@ const AffiliateDashboard = () => {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-sm font-bold text-primary">
-                                                    {money.usd(Number(ref.commission))}
+                                                    GH₵{Number(ref.commission).toLocaleString()}
                                                 </TableCell>
                                                 <TableCell className="text-xs text-muted-foreground">
                                                     {new Date(ref.created_at).toLocaleDateString()}
@@ -397,11 +369,11 @@ const AffiliateDashboard = () => {
                             <Wallet className="w-16 h-16 text-primary mx-auto mb-6 opacity-80" />
                             <h2 className="text-2xl font-bold font-heading mb-2">Payout Management</h2>
                             <p className="text-muted-foreground mb-8">
-                                You have <strong className="text-primary">{money.usd(availableBalance)}</strong> available to withdraw, plus <strong>{money.usd(pendingPayout)}</strong> pending admin release. Commissions become withdrawable after end-of-month admin approval.
+                                You have <strong className="text-primary">GH₵{availableBalance.toLocaleString()}</strong> available to withdraw, plus <strong>GH₵{pendingPayout.toLocaleString()}</strong> pending admin release. Commissions become withdrawable after end-of-month admin approval.
                             </p>
                             <Button size="lg" className="px-8 h-14 w-full sm:w-auto" disabled={availableBalance === 0 || hasPendingRequest} onClick={requestPayout}>
                                 {requestingPayout ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                {hasPendingRequest ? 'Payout Request Processing...' : `Withdraw ${money.usd(availableBalance)}`}
+                                {hasPendingRequest ? 'Payout Request Processing...' : `Withdraw GH₵${availableBalance.toLocaleString()}`}
                             </Button>
                         </motion.div>
 
@@ -429,7 +401,7 @@ const AffiliateDashboard = () => {
                                                         {new Date(p.created_at).toLocaleDateString()}
                                                     </TableCell>
                                                     <TableCell className="text-sm font-bold">
-                                                        {money.usd(Number(p.amount))}
+                                                        GH₵{Number(p.amount).toLocaleString()}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${
@@ -480,15 +452,17 @@ const AffiliateDashboard = () => {
                                             </div>
                                         )}
                                         <div className="p-5 flex flex-col flex-1">
-                                            <div className="flex items-center justify-between gap-2 mb-2">
-                                                <h3 className="font-bold">{asset.title}</h3>
-                                                <span className="text-[10px] uppercase tracking-wide text-muted-foreground border border-border/60 rounded-full px-2 py-0.5">
-                                                    {asset.asset_type}
-                                                </span>
-                                            </div>
+                                            <h3 className="font-bold mb-2">{asset.title}</h3>
                                             <p className="text-xs text-muted-foreground mb-4 flex-1">{asset.description}</p>
-                                            <Button variant="secondary" className="w-full text-xs" onClick={() => downloadAsset(asset)}>
-                                                {asset.asset_type === 'copy' ? 'Copy Text' : 'Download'}
+                                            <Button variant="secondary" className="w-full text-xs" onClick={() => {
+                                                if (asset.asset_type === 'copy') {
+                                                    navigator.clipboard.writeText(asset.asset_url);
+                                                    toast({ title: "Copied!", description: "Copy text copied to clipboard." });
+                                                } else {
+                                                    window.open(asset.asset_url, '_blank');
+                                                }
+                                            }}>
+                                                {asset.asset_type === 'copy' ? 'Copy Text' : 'Download / View'}
                                             </Button>
                                         </div>
                                     </div>

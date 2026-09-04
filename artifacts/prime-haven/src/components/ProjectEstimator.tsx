@@ -147,7 +147,7 @@ const ProjectEstimator = () => {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-                        className="w-full paper-card p-6 md:p-8 relative overflow-hidden border border-border/70 shadow-2xl shadow-primary/5"
+                        className="w-full paper-card p-6 md:p-8 relative overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
 

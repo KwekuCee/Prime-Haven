@@ -6,35 +6,35 @@ import { Link } from 'react-router-dom';
 const STEPS = [
     {
         title: "Discovery & Strategy",
-        description: "We start with a call. What the business does, who it is for, what has already been tried — then we write down the scope before anyone opens a design file.",
+        description: "We dive deep into your business goals, target audience, and market landscape to define a razor-sharp strategy.",
         icon: Lightbulb,
-        color: "text-primary",
-        bg: "bg-primary/10",
-        border: "border-primary/25"
+        color: "text-amber-500",
+        bg: "bg-amber-500/20",
+        border: "border-amber-500/30"
     },
     {
         title: "UI/UX & Visual Design",
-        description: "Wireframes first, then screens. You see work in progress and give notes at each round instead of waiting for one big reveal.",
+        description: "Our elite designers craft intuitive, stunning glassmorphic interfaces designed to convert and captivate users.",
         icon: PenTool,
-        color: "text-foreground",
-        bg: "bg-muted",
-        border: "border-border"
+        color: "text-primary",
+        bg: "bg-primary/20",
+        border: "border-primary/30"
     },
     {
         title: "Agile Development",
-        description: "We build in React with a Postgres backend. You get a staging link early so you can click through the real thing, not a slideshow.",
+        description: "We leverage cutting-edge tech (React, Supabase, Tailwind) to build scalable, high-performance digital solutions.",
         icon: Code2,
-        color: "text-primary",
-        bg: "bg-primary/10",
-        border: "border-primary/25"
+        color: "text-blue-500",
+        bg: "bg-blue-500/20",
+        border: "border-blue-500/30"
     },
     {
         title: "Launch & Scale",
-        description: "We test on real devices, hand over the files and access, and stay on for a month of fixes after launch.",
+        description: "Rigorous testing, optimized deployment, and ongoing post-launch support to ensure your product dominates the market.",
         icon: Rocket,
-        color: "text-foreground",
-        bg: "bg-muted",
-        border: "border-border"
+        color: "text-emerald-500",
+        bg: "bg-emerald-500/20",
+        border: "border-emerald-500/30"
     }
 ];
 
@@ -48,13 +48,13 @@ const ProcessTimeline = () => {
     const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
     return (
-        <section className="py-24 relative bg-muted/10">
+        <section className="py-24 relative overflow-hidden bg-muted/10">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-12 lg:gap-20">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
                         {/* Sticky Heading */}
                         <div className="lg:col-span-5">
-                            <div className="self-start lg:sticky lg:top-32 space-y-6">
+                            <div className="lg:sticky lg:top-32 space-y-6">
                                 <span className="eyebrow">Our process</span>
                                 <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight leading-[1.05] text-foreground">
                                     How we execute <span className="display-italic text-primary">web development</span>
@@ -88,7 +88,6 @@ const ProcessTimeline = () => {
 
                                     return (
                                         <div key={index} className="relative flex items-start pl-16">
-
                                             {/* Node */}
                                             <motion.div
                                                 initial={{ scale: 0 }}
@@ -110,7 +109,7 @@ const ProcessTimeline = () => {
                                                 transition={{ duration: 0.6, ease: "easeOut" }}
                                                 className="w-full"
                                             >
-                                                <div className={`p-6 md:p-8 rounded-3xl border bg-card transition-all duration-300 hover:-translate-y-1 ${step.border} shadow-lg hover:shadow-2xl`}>
+                                                <div className={`p-6 md:p-8 rounded-3xl border bg-card/40 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 ${step.border} shadow-lg hover:shadow-2xl`}>
                                                     <div className="flex items-center gap-4 mb-4">
                                                         <span className={`text-4xl font-black opacity-20 ${step.color}`}>0{index + 1}</span>
                                                         <h3 className="text-xl md:text-2xl font-bold">{step.title}</h3>
@@ -124,9 +123,6 @@ const ProcessTimeline = () => {
                                     );
                                 })}
                             </div>
-
-
-
                         </div>
                     </div>
                 </div>

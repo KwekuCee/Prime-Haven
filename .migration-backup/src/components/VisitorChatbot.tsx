@@ -121,7 +121,7 @@ const VisitorChatbot = () => {
       console.error('Chat error:', e);
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please reach out to us on **WhatsApp** at [+233 55 016 0237](https://wa.me/233550160237) or email **primehaven26@gmail.com**." },
+        { role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please reach out to us on **WhatsApp** at [+233 55 016 0237](https://wa.me/233550160237) or email **info@primehaven.tech**." },
       ]);
     } finally {
       setIsLoading(false);
@@ -187,10 +187,11 @@ const VisitorChatbot = () => {
                     </div>
                   )}
                   <div
-                    className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user'
+                    className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                      msg.role === 'user'
                         ? 'bg-primary text-primary-foreground rounded-br-md'
                         : 'bg-muted text-foreground rounded-bl-md'
-                      }`}
+                    }`}
                   >
                     {msg.role === 'assistant' ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0 [&_a]:text-primary [&_a]:underline">

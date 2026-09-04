@@ -18,6 +18,7 @@ const HeroSection = () => {
     <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
       {/* Spectrum rail at the very top of the canvas */}
       <div className="absolute top-0 left-0 right-0 h-[6px] spectrum-bar" />
+      <div className="absolute -top-24 left-0 right-0 h-32 spectrum-bar blur-[100px] opacity-25 pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         {/* ─── Headline block ─── */}
@@ -105,14 +106,14 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 70, rotateX: 12 }}
           animate={{ opacity: 1, y: 0, rotateX: 0 }}
           transition={{ duration: 1.1, delay: 0.35, ease }}
-          className="relative mt-20 max-w-5xl mx-auto"
+          className="relative mt-20 max-w-5xl mx-auto spectrum-glow"
           style={{ perspective: 1400 }}
         >
           <div className="paper-card relative overflow-hidden p-3 sm:p-5 rounded-[2rem]">
             {/* Mock topbar */}
             <div className="flex items-center justify-between gap-4 rounded-full border border-border/70 bg-background px-4 py-2.5">
               <div className="flex items-center gap-2.5">
-                <span className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-[11px] font-black text-primary-foreground">
+                <span className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center text-[11px] font-black text-primary-foreground">
                   PH
                 </span>
                 <span className="font-bold text-sm">Prime Haven</span>
@@ -226,7 +227,7 @@ const HeroSection = () => {
                           initial={{ width: 0 }}
                           animate={{ width: `${d.pct}%` }}
                           transition={{ duration: 1.2, delay: 1 + i * 0.12, ease }}
-                          className="h-full rounded-full bg-primary"
+                          className="h-full rounded-full bg-gradient-primary"
                         />
                       </div>
                     </div>

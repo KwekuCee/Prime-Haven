@@ -13,7 +13,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/BrandLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
-import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
 
 declare global {
   interface Window {
@@ -58,8 +57,8 @@ const StartProject = () => {
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [currency] = useState<'USD'>('USD');
-  const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
+  const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
+  // Korapay is the only payment gateway
 
   const [selectedService, setSelectedService] = useState<string>('');
   const [selectedTier, setSelectedTier] = useState<string>('');
@@ -78,7 +77,6 @@ const StartProject = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isPromoValidating, setIsPromoValidating] = useState(false);
   const [promoRef, setPromoRef] = useState<string | null>(null);
-  const [chargePreview, setChargePreview] = useState<CheckoutAmount | null>(null);
   const [isReturningClient, setIsReturningClient] = useState(false);
   const [referenceImages, setReferenceImages] = useState<{ file: File; preview: string }[]>([]);
   const [uploadingRefs, setUploadingRefs] = useState(false);
@@ -180,10 +178,19 @@ const StartProject = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // Every price on Prime Haven is quoted in US dollars.
-  const formatPrice = (priceUsd: number) => formatUsd(priceUsd);
+  const formatPrice = (priceGhs: number) => {
+    if (currency === 'USD') {
+      return `$${(priceGhs / exchangeRate).toFixed(2)}`;
+    }
+    return `GH₵${priceGhs.toLocaleString()}`;
+  };
 
-  const getPaymentAmount = (priceUsd: number) => Math.round(priceUsd * 100) / 100;
+  const getPaymentAmount = (priceGhs: number) => {
+    if (currency === 'USD') {
+      return Math.ceil((priceGhs / exchangeRate) * 100) / 100; // round up to nearest cent
+    }
+    return priceGhs;
+  };
 
   const applyPromoCode = async () => {
     if (!promoCode.trim()) return;
@@ -215,23 +222,9 @@ const StartProject = () => {
     return discounted;
   };
 
-  // Preview what the gateway will actually charge (cedis in Ghana, dollars elsewhere)
-  useEffect(() => {
-    if (!selectedPricing) { setChargePreview(null); return; }
-    let active = true;
-    resolveCheckoutAmount(calculateTotal(selectedPricing.price))
-      .then(res => { if (active) setChargePreview(res); })
-      .catch(() => { if (active) setChargePreview(null); });
-    return () => { active = false; };
-  }, [selectedPricing, promoDiscount]);
-
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault();
-    if (gateway === 'paystack') {
-      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.' });
-      return;
-    }
     if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
@@ -247,10 +240,7 @@ const StartProject = () => {
     setSubmitting(true);
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const finalPrice = calculateTotal(selectedPricing.price);
-    const amountUsd = getPaymentAmount(finalPrice);
-    // Ghanaian visitors are charged in cedis at the live rate; everyone else in dollars.
-    const checkout = await resolveCheckoutAmount(amountUsd);
-    const amount = checkout.amount;
+    const amount = getPaymentAmount(finalPrice);
 
     // Bypass payment gateway AND edge function for 100% discount (0 GHS)
     // The edge function is only needed for paid orders to verify payment with gateways
@@ -259,33 +249,104 @@ const StartProject = () => {
       toast({ title: 'Processing Order', description: 'Applying your 100% discount...' });
       try {
         const uploadedRefUrls = await uploadReferenceImages(freeReference);
-        // The promo code is re-validated server-side; the edge function creates the
-        // order, the client account, the central client record and the marketplace project.
-        const { data, error } = await supabase.functions.invoke('process-client-order', {
-          body: {
-            clientName: form.clientName,
-            clientEmail: form.clientEmail,
-            clientWhatsapp: form.clientWhatsapp,
-            serviceType: selectedPricing.service_type,
-            serviceLabel: selectedPricing.service_label,
+        // Insert order directly — no payment gateway verification needed
+        const { error: orderError } = await supabase
+          .from('client_orders')
+          .insert({
+            client_name: form.clientName,
+            client_email: form.clientEmail,
+            client_whatsapp: form.clientWhatsapp || null,
+            service_type: selectedPricing.service_type,
             tier: selectedPricing.tier,
             price: 0,
+            description: form.description || null,
+            payment_status: 'completed',
+            payment_reference: freeReference,
+            reference_images: uploadedRefUrls,
+          } as any);
+
+        if (orderError) {
+          console.error('Free order insert error:', orderError);
+          throw new Error(orderError.message);
+        }
+
+        // 1b. Create Client Account (Automatic for free orders)
+        try {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email: form.clientEmail,
+            password: form.password,
+            options: {
+              data: {
+                full_name: form.clientName,
+                business_name: form.businessName,
+                whatsapp: form.clientWhatsapp,
+              }
+            }
+          });
+
+          if (signUpError && signUpError.message !== 'User already registered') {
+            console.error('Auto-registration failed:', signUpError);
+          }
+
+          // Ensure client exists in clients table
+          await supabase.from('clients').upsert({
+            email: form.clientEmail,
+            name: form.clientName,
+            company: form.businessName,
+            whatsapp: form.clientWhatsapp,
+          }, { onConflict: 'email' });
+
+        } catch (authErr) {
+          console.error('Auth/Client record error:', authErr);
+        }
+
+        const distributionMap: Record<string, { professions: string[], max: number }> = {
+          "graphic-design": { professions: ['Graphic Designer'], max: 2 },
+          "app-design": { professions: ['UI/UX Designer'], max: 1 },
+          "web-dev": { professions: ['UI/UX Designer', 'Web Developer'], max: 1 },
+        };
+        const dist = distributionMap[selectedPricing.discord_category] || { professions: ['Web Developer'], max: 1 };
+
+        // Also create the client project for tracking
+        try {
+          await supabase.from('client_projects').insert({
+            title: `${selectedPricing.service_label} (${selectedPricing.tier.charAt(0).toUpperCase() + selectedPricing.tier.slice(1)}) — ${form.clientName}`,
+            client_name: form.clientName,
+            client_email: form.clientEmail,
+            client_whatsapp: form.clientWhatsapp || null,
             description: form.description,
-            discordCategory: selectedPricing.discord_category,
-            paymentReference: freeReference,
-            promoCode: promoCode.toUpperCase().trim(),
-            gateway: 'promo',
-            clientPassword: form.password,
-            businessName: form.businessName,
-            referenceFiles: uploadedRefUrls,
-          },
-        });
+            category: selectedPricing.discord_category === 'graphic-design' ? 'graphic-design' : selectedPricing.discord_category === 'app-design' ? 'ui-ux' : 'web-development',
+            status: 'pending',
+            budget: 'GH₵0 (Promo)',
+            required_professions: dist.professions,
+            max_assignees: dist.max,
+            reference_images: uploadedRefUrls,
+          } as any);
+        } catch (e) {
+          console.error('Project tracking insert failed (non-critical):', e);
+        }
 
-        if (error) throw new Error(error.message);
-        if (data && data.success === false) throw new Error(data.error || 'Order processing failed');
 
-        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. Log in to your client dashboard to follow along.' });
+        // 3. Notify Discord via Database RPC (bypassing edge function)
+        try {
+          await (supabase as any).rpc('notify_discord_order', {
+            p_service_label: selectedPricing.service_label,
+            p_service_type: selectedPricing.service_type,
+            p_tier: selectedPricing.tier,
+            p_client_name: form.clientName,
+            p_client_email: form.clientEmail,
+            p_amount: 0,
+            p_discord_category: selectedPricing.discord_category,
+            p_gateway: '100% Promo Code',
+            p_client_whatsapp: form.clientWhatsapp || null
+          });
+        } catch (discordErr) {
+          console.error('Discord rpc notification failed:', discordErr);
+        }
+
+        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
         navigate('/?project=success');
+
       } catch (err: any) {
         console.error('Free order error:', err);
         toast({
@@ -306,8 +367,7 @@ const StartProject = () => {
         key: KORAPAY_PUBLIC_KEY,
         reference,
         amount,
-        currency: checkout.currency,
-        metadata: { amount_usd: amountUsd, charged_currency: checkout.currency, usd_to_ghs_rate: checkout.rate, country: checkout.countryCode, gateway },
+        currency,
         customer: {
           name: form.clientName,
           email: form.clientEmail,
@@ -416,15 +476,29 @@ const StartProject = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.18)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.18)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <BrandLogo className="h-8" />
           </Link>
           <div className="flex items-center gap-4">
+            {/* Currency Toggle */}
+            <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
+              <button
+                onClick={() => setCurrency('GHS')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'GHS' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Banknote className="w-3 h-3" /> GHS
+              </button>
+              <button
+                onClick={() => setCurrency('USD')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${currency === 'USD' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Banknote className="w-3 h-3" /> USD
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               {[1, 2, 3].map(s => (
                 <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -436,21 +510,20 @@ const StartProject = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-10 sm:py-14 max-w-6xl relative z-10">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <AnimatePresence mode="wait">
           {/* Step 1: Select Service */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-              <div className="space-y-3 max-w-2xl">
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">01 / Scope</p>
-                <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-balance">What do you need?</h1>
+              <div className="text-center space-y-3">
+                <h1 className="text-3xl sm:text-4xl font-heading font-bold">What do you need?</h1>
                 <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {serviceTypes.map(type => (
                   <Card
                     key={type}
-                    className={`cursor-pointer transition-all duration-300 bg-card/70 backdrop-blur-sm hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl ${selectedService === type ? 'border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10' : 'border-border/70'}`}
+                    className={`cursor-pointer transition-all hover:border-primary/60 hover:shadow-lg ${selectedService === type ? 'border-primary ring-2 ring-primary/20 shadow-lg' : ''}`}
                     onClick={() => setSelectedService(type)}
                   >
                     <CardHeader>
@@ -481,7 +554,7 @@ const StartProject = () => {
                 {tiersForService.map(pricing => (
                   <Card
                     key={pricing.id}
-                    className={`cursor-pointer transition-all duration-300 bg-card/75 backdrop-blur-sm hover:-translate-y-1 hover:shadow-xl relative ${selectedTier === pricing.tier ? `${tierColors[pricing.tier]} shadow-primary/10` : 'border-border/70 hover:border-primary/40'} ${pricing.tier === 'standard' ? 'md:-mt-2 md:mb-[-8px]' : ''}`}
+                    className={`cursor-pointer transition-all hover:shadow-xl relative ${selectedTier === pricing.tier ? tierColors[pricing.tier] : 'hover:border-primary/40'} ${pricing.tier === 'standard' ? 'md:-mt-2 md:mb-[-8px]' : ''}`}
                     onClick={() => handleSelectTier(pricing)}
                   >
                     {pricing.tier === 'standard' && (
@@ -523,16 +596,15 @@ const StartProject = () => {
           {/* Step 3: Details & Payment */}
           {step === 3 && selectedPricing && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
-              <div className="space-y-3">
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">03 / Launch brief</p>
-                <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-balance">Project Details</h1>
+              <div className="text-center space-y-3">
+                <h1 className="text-3xl sm:text-4xl font-heading font-bold">Project Details</h1>
                 <p className="text-muted-foreground">
                   {selectedPricing.service_label} — {tierLabels[selectedPricing.tier]} ({formatPrice(selectedPricing.price)})
                 </p>
               </div>
 
-              <Card className="bg-card/80 backdrop-blur-sm border-border/70 shadow-2xl shadow-primary/5">
-                <CardContent className="pt-6 sm:pt-8">
+              <Card>
+                <CardContent className="pt-6">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -551,7 +623,7 @@ const StartProject = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="password">Set Dashboard Password *</Label>
-                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="•••••••���" required />
+                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="••••••••" required />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -588,13 +660,10 @@ const StartProject = () => {
 
                     <div className="space-y-3">
                       <Label>Payment Method</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {(['korapay', 'paystack'] as const).map((provider) => (
-                          <button type="button" key={provider} onClick={() => setGateway(provider)} className={`rounded-xl border p-4 text-left transition-all ${gateway === provider ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60 hover:border-primary/40'}`}>
-                            <div className="flex items-center gap-2"><Banknote className="w-4 h-4 text-primary" /><span className="text-xs font-bold uppercase tracking-widest">{provider}</span></div>
-                            <span className="mt-2 block text-[10px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Not configured in this environment'}</span>
-                          </button>
-                        ))}
+                      <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex flex-col items-center gap-2">
+                        <Banknote className="w-6 h-6 text-primary" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-center">Korapay</span>
+                        <span className="text-[10px] text-muted-foreground text-center">MTN Momo, Telecel Cash, AirtelTigo Cash, Bank Transfer & Card.</span>
                       </div>
                     </div>
 
@@ -630,14 +699,8 @@ const StartProject = () => {
                         <span className="font-medium">{tierLabels[selectedPricing.tier]}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Charged in</span>
-                        <span className="font-medium">
-                          {chargePreview
-                            ? chargePreview.currency === 'GHS'
-                              ? `🇬🇭 ${formatGhs(chargePreview.amount)}`
-                              : '🌍 US Dollars'
-                            : 'Checking your location…'}
-                        </span>
+                        <span className="text-muted-foreground">Currency</span>
+                        <span className="font-medium">{currency === 'USD' ? '🌍 USD (International)' : '🇬🇭 GHS (Local)'}</span>
                       </div>
                       {promoDiscount > 0 && (
                         <div className="flex justify-between text-sm text-emerald-500 font-medium">
@@ -663,7 +726,13 @@ const StartProject = () => {
                 <Button variant="ghost" onClick={() => setStep(2)} className="gap-2 text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="w-4 h-4" /> Change Package
                 </Button>
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Prices shown in USD</div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-bold text-muted-foreground uppercase opacity-50">Pay in</span>
+                  <div className="flex p-1 bg-muted rounded-full border border-border/50">
+                    <button type="button" onClick={() => setCurrency('GHS')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'GHS' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>GHS</button>
+                    <button type="button" onClick={() => setCurrency('USD')} className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}>USD</button>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

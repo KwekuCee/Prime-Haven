@@ -63,28 +63,13 @@ const Messages = () => {
         const myCategory = normalizeCategory(title);
 
         if (isClientUser) {
-          // 2. Client Mode: only the professional(s) actually working on their projects.
-          const { data: myOrders } = await supabase.from('client_orders').select('id, assigned_designer_id').eq('client_email', user.email ?? '');
+          // 2. Client Mode: Find designers linked to their projects
+          // Get designer IDs from submissions belonging to this client's orders
+          const { data: myOrders } = await supabase.from('client_orders').select('id').eq('client_email', user.email ?? '');
           const orderIds = (myOrders || []).map(o => o.id);
 
-          let submissionDesignerIds: string[] = [];
-          if (orderIds.length > 0) {
-            const { data: submissions } = await supabase.from('submissions').select('designer_id').in('client_ref', orderIds);
-            submissionDesignerIds = (submissions || []).map(s => s.designer_id);
-          }
-
-          // Whoever claimed / was accepted on this client's projects
-          const { data: myProjects } = await supabase
-            .from('client_projects')
-            .select('claimed_by, accepted_designer_id')
-            .eq('client_email', user.email ?? '');
-
-          const designerIds = Array.from(new Set([
-            ...submissionDesignerIds,
-            ...(myOrders || []).map(o => (o as any).assigned_designer_id),
-            ...(myProjects || []).flatMap(p => [(p as any).claimed_by, (p as any).accepted_designer_id]),
-          ].filter((id): id is string => !!id)));
-
+          const { data: submissions } = await supabase.from('submissions').select('designer_id').in('client_ref', orderIds);
+          const designerIds = Array.from(new Set((submissions || []).map(s => s.designer_id)));
 
           if (designerIds.length > 0) {
             const { data: designers } = await supabase.from('leaderboard_designer_details').select('user_id, professional_title, profile_photo_url').in('user_id', designerIds);

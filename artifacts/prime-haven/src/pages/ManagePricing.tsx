@@ -40,18 +40,6 @@ const ManagePricing = () => {
   const [saving, setSaving] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<PricingItem | null>(null);
   const [editFeatures, setEditFeatures] = useState('');
-  const [addOpen, setAddOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [newService, setNewService] = useState({
-    service_label: '',
-    service_type: '',
-    tier: 'standard',
-    price: 0,
-    description: '',
-    features: '',
-    discord_category: 'graphic-design',
-    is_active: true,
-  });
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/superadmin-login');
@@ -134,51 +122,6 @@ const ManagePricing = () => {
     setEditItem(null);
   };
 
-  const slugify = (v: string) => v.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-  const createService = async () => {
-    const label = newService.service_label.trim();
-    const type = (newService.service_type.trim() || slugify(label));
-    if (!label || !type) {
-      toast({ title: 'Missing details', description: 'A service name is required.', variant: 'destructive' });
-      return;
-    }
-    if (!(newService.price >= 0)) {
-      toast({ title: 'Invalid price', description: 'Enter a price in US dollars.', variant: 'destructive' });
-      return;
-    }
-    setCreating(true);
-    const { error } = await supabase.from('service_pricing').insert({
-      service_type: type,
-      service_label: label,
-      tier: newService.tier,
-      price: newService.price,
-      description: newService.description || null,
-      features: newService.features.split('\n').map(f => f.trim()).filter(Boolean),
-      discord_category: newService.discord_category,
-      is_active: newService.is_active,
-    });
-    setCreating(false);
-    if (error) {
-      toast({ title: 'Could not add service', description: error.message, variant: 'destructive' });
-      return;
-    }
-    toast({ title: 'Service added', description: `${label} is now available on the Start a Project pages.` });
-    setAddOpen(false);
-    setNewService({ service_label: '', service_type: '', tier: 'standard', price: 0, description: '', features: '', discord_category: 'graphic-design', is_active: true });
-    fetchPricing();
-  };
-
-  const deleteService = async (item: PricingItem) => {
-    const { error } = await supabase.from('service_pricing').delete().eq('id', item.id);
-    if (error) {
-      toast({ title: 'Could not remove', description: error.message, variant: 'destructive' });
-      return;
-    }
-    toast({ title: 'Removed', description: `${item.service_label} (${tierLabels[item.tier] || item.tier}) deleted.` });
-    fetchPricing();
-  };
-
   // Group by service type
   const grouped = pricing.reduce<Record<string, PricingItem[]>>((acc, item) => {
     if (!acc[item.service_type]) acc[item.service_type] = [];
@@ -200,14 +143,9 @@ const ManagePricing = () => {
     <SuperAdminLayout>
       <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-heading font-bold">Service Pricing</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Prices are in US dollars. Active services show on the Start a Project pages.</p>
-          </div>
-          <Button onClick={() => setAddOpen(true)} className="gap-2 self-start sm:self-auto">
-            <Plus className="w-4 h-4" /> Add Service
-          </Button>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-heading font-bold">Service Pricing</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Manage prices for all service tiers</p>
         </div>
 
         {/* Pricing Cards by Service */}
@@ -224,7 +162,7 @@ const ManagePricing = () => {
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="text-xs font-semibold">Tier</TableHead>
-                    <TableHead className="text-xs font-semibold">Price (USD)</TableHead>
+                    <TableHead className="text-xs font-semibold">Price (GH₵)</TableHead>
                     <TableHead className="text-xs font-semibold">Description</TableHead>
                     <TableHead className="text-xs font-semibold">Features</TableHead>
                     <TableHead className="text-xs font-semibold">Active</TableHead>
@@ -261,9 +199,6 @@ const ManagePricing = () => {
                         <Button size="sm" onClick={() => handleSave(item)} disabled={saving === item.id}>
                           {saving === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteService(item)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -272,77 +207,6 @@ const ManagePricing = () => {
             </div>
           </div>
         ))}
-
-        {/* Add Service Dialog */}
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add a Service</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Service Name</Label>
-                <Input value={newService.service_label} onChange={e => setNewService({ ...newService, service_label: e.target.value })} placeholder="Brand Identity Design" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Internal Key</Label>
-                  <Input value={newService.service_type} onChange={e => setNewService({ ...newService, service_type: e.target.value })} placeholder={slugify(newService.service_label) || 'brand-identity'} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tier</Label>
-                  <Select value={newService.tier} onValueChange={v => setNewService({ ...newService, tier: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="basic">Basic</SelectItem>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Price (USD)</Label>
-                  <Input type="number" min={0} value={newService.price} onChange={e => setNewService({ ...newService, price: Number(e.target.value) || 0 })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select value={newService.discord_category} onValueChange={v => setNewService({ ...newService, discord_category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="graphic-design">Graphic Design</SelectItem>
-                      <SelectItem value="app-design">UI/UX Design</SelectItem>
-                      <SelectItem value="web-dev">Web Development</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} rows={3} />
-              </div>
-              <div className="space-y-2">
-                <Label>Features (one per line)</Label>
-                <Textarea value={newService.features} onChange={e => setNewService({ ...newService, features: e.target.value })} rows={5} />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
-                <div>
-                  <div className="text-sm font-medium">Available to clients</div>
-                  <div className="text-xs text-muted-foreground">Shows on both Start a Project pages</div>
-                </div>
-                <Switch checked={newService.is_active} onCheckedChange={v => setNewService({ ...newService, is_active: v })} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-              <Button onClick={createService} disabled={creating}>
-                {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                Add Service
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Edit Dialog */}
         <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>
@@ -357,7 +221,7 @@ const ManagePricing = () => {
                   <Input value={editItem.service_label} onChange={e => setEditItem({ ...editItem, service_label: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Price (USD)</Label>
+                  <Label>Price (GH₵)</Label>
                   <Input type="number" value={editItem.price} onChange={e => setEditItem({ ...editItem, price: Number(e.target.value) || 0 })} />
                 </div>
                 <div className="space-y-2">

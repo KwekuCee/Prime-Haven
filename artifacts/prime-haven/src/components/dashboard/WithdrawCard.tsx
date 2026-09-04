@@ -10,7 +10,6 @@ import { Wallet, Plus, Trash2, Loader2, Copy } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useUsdRate } from '@/hooks/useUsdRate';
 
 type Method = { id: string; provider: 'mtn' | 'vodafone' | 'airteltigo'; phone_number: string; account_name: string; is_default: boolean };
 type Withdrawal = { id: string; amount: number; currency: string; status: string; created_at: string; failure_reason: string | null; korapay_reference: string | null };
@@ -23,7 +22,6 @@ interface Props {
 }
 
 export default function WithdrawCard({ userId, availableBalance }: Props) {
-  const money = useUsdRate();
   const [methods, setMethods] = useState<Method[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [liveSalary, setLiveSalary] = useState<number | null>(null);
@@ -104,7 +102,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
       return;
     }
     if (effectiveBalance < 100) {
-      toast.error(`You have less than$10 salary available (current balance GH₵${effectiveBalance.toFixed(2)}). Withdrawals unlock at$10.`);
+      toast.error(`You have less than GH₵100 salary available (current balance GH₵${effectiveBalance.toFixed(2)}). Withdrawals unlock at GH₵100.`);
       return;
     }
     if (methods.length === 0) {
@@ -118,7 +116,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
 
   const submitWithdrawal = async () => {
     const amt = Number(amount);
-    if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is$10'); return; }
+    if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is GH₵100'); return; }
     if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
     if (!selectedMethod) { toast.error('Select a Mobile Money payment method'); return; }
     setSubmitting(true);
@@ -164,11 +162,8 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Available balance</p>
-            <div>
-              <p className="text-2xl font-bold">{money.usd(effectiveBalance)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Paid out as {money.ghs(effectiveBalance)}</p>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Minimum$10 • Mobile Money via Korapay</p>
+            <p className="text-2xl font-bold">GH₵{effectiveBalance.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
           <Button onClick={openWithdrawDialog}>
             Withdraw
@@ -268,7 +263,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
             <div>
               <Label>Amount (GHS)</Label>
               <Input type="number" min={100} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" />
-              <p className="text-xs text-muted-foreground mt-1">Available: {money.usd(effectiveBalance)} ({money.ghs(effectiveBalance)})</p>
+              <p className="text-xs text-muted-foreground mt-1">Available: GH₵{effectiveBalance.toFixed(2)}</p>
             </div>
             <div>
               <Label>Payment method</Label>
