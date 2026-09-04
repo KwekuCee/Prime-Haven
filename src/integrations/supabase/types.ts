@@ -2462,6 +2462,7 @@ export type Database = {
       public_total_salaries_paid: {
         Args: never
         Returns: {
+          baseline_usd: number
           last_paid_at: string
           payout_count: number
           total_ghs: number
