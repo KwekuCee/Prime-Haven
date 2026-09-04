@@ -87,15 +87,8 @@ const ProcessTimeline = () => {
                                     const Icon = step.icon;
 
                                     return (
-                                        <div
-                                            key={index}
-                                            className="relative flex items-start pl-16 sticky"
-                                            style={{
-                                                top: `${112 + index * 24}px`,
-                                                zIndex: 10 + index,
-                                                paddingBottom: `${(STEPS.length - index - 1) * 8}px`,
-                                            }}
-                                        >
+                                        <div key={index} className="relative flex items-start pl-16">
+
                                             {/* Node */}
                                             <motion.div
                                                 initial={{ scale: 0 }}
@@ -131,8 +124,8 @@ const ProcessTimeline = () => {
                                     );
                                 })}
                             </div>
-                            {/* Scroll runway so the last card can settle before the section ends */}
-                            <div className="h-24 md:h-32" aria-hidden="true" />
+
+
 
                         </div>
                     </div>
