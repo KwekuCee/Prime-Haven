@@ -425,11 +425,14 @@ const StatsSection = () => {
                       <AnimatedCounter value={stat.value} suffix={stat.suffix} format={stat.format} />
                     </div>
                     <p className="text-muted-foreground font-medium text-sm md:text-base mt-1">{stat.label}</p>
-                    {stat.highlight && salary.payoutCount > 0 && (
+                    {stat.highlight && (
                       <p className="text-xs text-muted-foreground/80 mt-3 max-w-[22ch] leading-relaxed">
-                        Across {salary.payoutCount.toLocaleString()} completed {salary.payoutCount === 1 ? 'payout' : 'payouts'} to Prime Haven talent
+                        {salary.payoutCount > 0
+                          ? `Across ${salary.payoutCount.toLocaleString()} completed ${salary.payoutCount === 1 ? 'payout' : 'payouts'} to Prime Haven talent`
+                          : 'Paid out to Prime Haven talent since we started'}
                       </p>
                     )}
+
                     <div className="flex items-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-2">
                       <Sparkles className="w-3 h-3" />
                       <span>Click to explore</span>
