@@ -332,10 +332,13 @@ const StatsSection = () => {
     const interval = setInterval(fetchSalaries, SALARY_REFRESH_MS);
 
     const channel = supabase
-      .channel('public-salaries-paid')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'payments' }, () => fetchSalaries())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'payments' }, () => fetchSalaries())
+      .channel(`public-salaries-paid-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => fetchSalaries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, () => fetchSalaries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'affiliate_payouts' }, () => fetchSalaries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'project_tips' }, () => fetchSalaries())
       .subscribe();
+
 
     return () => {
       cancelled = true;
