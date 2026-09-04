@@ -48,7 +48,7 @@ const ProcessTimeline = () => {
     const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
     return (
-        <section className="py-24 relative overflow-hidden bg-muted/10">
+        <section className="py-24 relative bg-muted/10">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-12 lg:gap-20">
@@ -87,7 +87,15 @@ const ProcessTimeline = () => {
                                     const Icon = step.icon;
 
                                     return (
-                                        <div key={index} className="relative flex items-start pl-16">
+                                        <div
+                                            key={index}
+                                            className="relative flex items-start pl-16 sticky"
+                                            style={{
+                                                top: `${112 + index * 24}px`,
+                                                zIndex: 10 + index,
+                                                paddingBottom: `${(STEPS.length - index - 1) * 8}px`,
+                                            }}
+                                        >
                                             {/* Node */}
                                             <motion.div
                                                 initial={{ scale: 0 }}
@@ -109,7 +117,7 @@ const ProcessTimeline = () => {
                                                 transition={{ duration: 0.6, ease: "easeOut" }}
                                                 className="w-full"
                                             >
-                                                <div className={`p-6 md:p-8 rounded-3xl border bg-card/40 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 ${step.border} shadow-lg hover:shadow-2xl`}>
+                                                <div className={`p-6 md:p-8 rounded-3xl border bg-card transition-all duration-300 hover:-translate-y-1 ${step.border} shadow-lg hover:shadow-2xl`}>
                                                     <div className="flex items-center gap-4 mb-4">
                                                         <span className={`text-4xl font-black opacity-20 ${step.color}`}>0{index + 1}</span>
                                                         <h3 className="text-xl md:text-2xl font-bold">{step.title}</h3>
@@ -123,6 +131,9 @@ const ProcessTimeline = () => {
                                     );
                                 })}
                             </div>
+                            {/* Scroll runway so the last card can settle before the section ends */}
+                            <div className="h-24 md:h-32" aria-hidden="true" />
+
                         </div>
                     </div>
                 </div>
