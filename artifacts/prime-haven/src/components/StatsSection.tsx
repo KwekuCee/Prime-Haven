@@ -18,6 +18,8 @@ interface StatsData {
 interface SalaryStats {
   totalGhs: number;
   totalUsd: number;
+  baselineUsd: number;
+  displayUsd: number;
   payoutCount: number;
   lastPaidAt: string | null;
   rate: number;
@@ -34,9 +36,17 @@ const fallbackStats: StatsData = {
   roleBreakdown: {},
 };
 
+/** Verified payouts made to talent before in-app tracking began (USD). */
+const BASELINE_USD_FALLBACK = 5200;
+
+/** Round down to the nearest $100 so the public figure is never overstated. */
+const floorToHundred = (value: number) => Math.floor(value / 100) * 100;
+
 const fallbackSalary: SalaryStats = {
   totalGhs: 0,
   totalUsd: 0,
+  baselineUsd: BASELINE_USD_FALLBACK,
+  displayUsd: BASELINE_USD_FALLBACK,
   payoutCount: 0,
   lastPaidAt: null,
   rate: 15.5,
@@ -50,6 +60,7 @@ const formatCompactUsd = (value: number) => {
   if (value >= 10_000) return `$${(value / 1_000).toFixed(1)}K`;
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 };
+
 
 const AnimatedCounter = ({
   value,
@@ -107,16 +118,19 @@ const DrillDownContent = ({ stat, stats, salary }: { stat: string; stats: StatsD
     return (
       <div className="flex flex-col gap-4">
         <p className="text-muted-foreground text-sm">
-          Every completed salary and mobile-money withdrawal paid to Prime Haven talent, converted to US dollars at today&apos;s rate.
+          Salaries, mobile-money withdrawals, partner commissions and client tips paid out to Prime Haven talent, converted to US
+          dollars at today&apos;s rate.
         </p>
         <div className="rounded-2xl border border-border/70 bg-background p-5 text-center">
-          <p className="text-3xl font-heading font-extrabold tracking-tight text-primary">{formatUsd(salary.totalUsd)}</p>
-          <p className="text-xs text-muted-foreground mt-1">{formatGhs(salary.totalGhs)} paid out in total</p>
+          <p className="text-3xl font-heading font-extrabold tracking-tight text-primary">{formatUsd(salary.displayUsd)}+</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {salary.payoutCount > 0 ? `${formatGhs(salary.totalGhs)} tracked in-app` : 'Verified payouts to date'}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-center">
           <div className="rounded-xl border border-border/70 bg-background p-3">
             <p className="text-lg font-bold">{salary.payoutCount.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Payouts</p>
+            <p className="text-xs text-muted-foreground">Tracked payouts</p>
           </div>
           <div className="rounded-xl border border-border/70 bg-background p-3">
             <p className="text-lg font-bold">
@@ -128,9 +142,15 @@ const DrillDownContent = ({ stat, stats, salary }: { stat: string; stats: StatsD
         <p className="text-[11px] text-muted-foreground text-center">
           Rate: 1 USD = GH₵{salary.rate.toFixed(2)}
           {salary.rateSource === 'live' ? ' (live international rate)' : salary.rateSource === 'system' ? ' (system rate)' : ''}
-          {' · '}updates automatically as salaries are paid.
+          {' · '}rounded down to the nearest $100 and updated automatically as payouts are made.
         </p>
+        {salary.baselineUsd > 0 && (
+          <p className="text-[11px] text-muted-foreground text-center">
+            Includes verified payouts made to Prime Haven talent before in-app tracking began.
+          </p>
+        )}
       </div>
+
     );
   }
 
@@ -288,15 +308,20 @@ const StatsSection = () => {
         const row = Array.isArray(data) ? data[0] : data;
         if (!row) return;
         const totalGhs = Number(row.total_ghs) || 0;
+        const totalUsd = Math.round((totalGhs / fx.rate) * 100) / 100;
+        const baselineUsd = Number(row.baseline_usd) || BASELINE_USD_FALLBACK;
         setSalary({
           totalGhs,
-          totalUsd: Math.round((totalGhs / fx.rate) * 100) / 100,
+          totalUsd,
+          baselineUsd,
+          displayUsd: floorToHundred(Math.max(baselineUsd, totalUsd)),
           payoutCount: Number(row.payout_count) || 0,
           lastPaidAt: row.last_paid_at ?? null,
           rate: fx.rate,
           rateSource: fx.source,
           live: true,
         });
+
       } catch {
         // Keep previous value
       }
@@ -306,10 +331,13 @@ const StatsSection = () => {
     const interval = setInterval(fetchSalaries, SALARY_REFRESH_MS);
 
     const channel = supabase
-      .channel('public-salaries-paid')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'payments' }, () => fetchSalaries())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'payments' }, () => fetchSalaries())
+      .channel(`public-salaries-paid-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => fetchSalaries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, () => fetchSalaries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'affiliate_payouts' }, () => fetchSalaries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'project_tips' }, () => fetchSalaries())
       .subscribe();
+
 
     return () => {
       cancelled = true;
@@ -319,7 +347,7 @@ const StatsSection = () => {
   }, []);
 
   const statItems = [
-    { key: 'salaries', icon: Wallet, value: salary.totalUsd, format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
+    { key: 'salaries', icon: Wallet, value: salary.displayUsd, suffix: '+', format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
     { key: 'members', icon: Users, value: stats.totalMembers, suffix: stats.totalMembers > 0 ? '+' : '', label: 'Prime Members', drillLabel: 'Team Breakdown', span: 'md:col-span-2' },
     { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: stats.projectsDelivered > 0 ? '+' : '', label: 'Projects Delivered', drillLabel: 'Projects by Category', span: 'md:col-span-2' },
     { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: stats.satisfactionRate > 0 ? '%' : '', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details', span: 'md:col-span-2' },
@@ -399,11 +427,14 @@ const StatsSection = () => {
                       <AnimatedCounter value={stat.value} suffix={stat.suffix} format={stat.format} />
                     </div>
                     <p className="text-muted-foreground font-medium text-sm md:text-base mt-1">{stat.label}</p>
-                    {stat.highlight && salary.payoutCount > 0 && (
+                    {stat.highlight && (
                       <p className="text-xs text-muted-foreground/80 mt-3 max-w-[22ch] leading-relaxed">
-                        Across {salary.payoutCount.toLocaleString()} completed {salary.payoutCount === 1 ? 'payout' : 'payouts'} to Prime Haven talent
+                        {salary.payoutCount > 0
+                          ? `Across ${salary.payoutCount.toLocaleString()} completed ${salary.payoutCount === 1 ? 'payout' : 'payouts'} to Prime Haven talent`
+                          : 'Paid out to Prime Haven talent since we started'}
                       </p>
                     )}
+
                     <div className="flex items-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-2">
                       <Sparkles className="w-3 h-3" />
                       <span>Click to explore</span>
