@@ -151,7 +151,6 @@ const DrillDownContent = ({ stat, stats, salary }: { stat: string; stats: StatsD
         )}
       </div>
 
-      </div>
     );
   }
 
