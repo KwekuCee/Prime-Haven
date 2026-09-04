@@ -118,16 +118,19 @@ const DrillDownContent = ({ stat, stats, salary }: { stat: string; stats: StatsD
     return (
       <div className="flex flex-col gap-4">
         <p className="text-muted-foreground text-sm">
-          Every completed salary and mobile-money withdrawal paid to Prime Haven talent, converted to US dollars at today&apos;s rate.
+          Salaries, mobile-money withdrawals, partner commissions and client tips paid out to Prime Haven talent, converted to US
+          dollars at today&apos;s rate.
         </p>
         <div className="rounded-2xl border border-border/70 bg-background p-5 text-center">
-          <p className="text-3xl font-heading font-extrabold tracking-tight text-primary">{formatUsd(salary.totalUsd)}</p>
-          <p className="text-xs text-muted-foreground mt-1">{formatGhs(salary.totalGhs)} paid out in total</p>
+          <p className="text-3xl font-heading font-extrabold tracking-tight text-primary">{formatUsd(salary.displayUsd)}+</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {salary.payoutCount > 0 ? `${formatGhs(salary.totalGhs)} tracked in-app` : 'Verified payouts to date'}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-center">
           <div className="rounded-xl border border-border/70 bg-background p-3">
             <p className="text-lg font-bold">{salary.payoutCount.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Payouts</p>
+            <p className="text-xs text-muted-foreground">Tracked payouts</p>
           </div>
           <div className="rounded-xl border border-border/70 bg-background p-3">
             <p className="text-lg font-bold">
@@ -139,8 +142,15 @@ const DrillDownContent = ({ stat, stats, salary }: { stat: string; stats: StatsD
         <p className="text-[11px] text-muted-foreground text-center">
           Rate: 1 USD = GH₵{salary.rate.toFixed(2)}
           {salary.rateSource === 'live' ? ' (live international rate)' : salary.rateSource === 'system' ? ' (system rate)' : ''}
-          {' · '}updates automatically as salaries are paid.
+          {' · '}rounded down to the nearest $100 and updated automatically as payouts are made.
         </p>
+        {salary.baselineUsd > 0 && (
+          <p className="text-[11px] text-muted-foreground text-center">
+            Includes verified payouts made to Prime Haven talent before in-app tracking began.
+          </p>
+        )}
+      </div>
+
       </div>
     );
   }
