@@ -35,7 +35,7 @@ const ServicesSection = () => {
     <section id="services" className="py-24 relative">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-12 lg:gap-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
             {/* Sticky Heading */}
             <div className="lg:col-span-5">
               <motion.div
@@ -43,7 +43,7 @@ const ServicesSection = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-80px' }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="self-start lg:sticky lg:top-32 flex flex-col gap-6"
+                className="lg:sticky lg:top-32 flex flex-col gap-6"
               >
                 <span className="eyebrow w-fit">What we do</span>
                 <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight leading-[1.05] text-foreground text-balance">
