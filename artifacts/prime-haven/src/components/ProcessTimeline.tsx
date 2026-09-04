@@ -51,10 +51,10 @@ const ProcessTimeline = () => {
         <section className="py-24 relative bg-muted/10">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-12 lg:gap-20">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
                         {/* Sticky Heading */}
                         <div className="lg:col-span-5">
-                            <div className="self-start lg:sticky lg:top-32 space-y-6">
+                            <div className="lg:sticky lg:top-32 space-y-6">
                                 <span className="eyebrow">Our process</span>
                                 <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight leading-[1.05] text-foreground">
                                     How we execute <span className="display-italic text-primary">web development</span>
@@ -87,15 +87,7 @@ const ProcessTimeline = () => {
                                     const Icon = step.icon;
 
                                     return (
-                                        <div
-                                            key={index}
-                                            className="relative flex items-start pl-16 sticky"
-                                            style={{
-                                                top: `${112 + index * 24}px`,
-                                                zIndex: 10 + index,
-                                                paddingBottom: `${(STEPS.length - index - 1) * 8}px`,
-                                            }}
-                                        >
+                                        <div key={index} className="relative flex items-start pl-16">
                                             {/* Node */}
                                             <motion.div
                                                 initial={{ scale: 0 }}
@@ -131,9 +123,6 @@ const ProcessTimeline = () => {
                                     );
                                 })}
                             </div>
-                            {/* Scroll runway so the last card can settle before the section ends */}
-                            <div className="h-24 md:h-32" aria-hidden="true" />
-
                         </div>
                     </div>
                 </div>
