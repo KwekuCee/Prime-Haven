@@ -166,7 +166,7 @@ const ManageClientProjects = () => {
   };
 
   const clearReviewFlag = async (projectId: string) => {
-    const { error } = await supabase.from('client_projects').update({ needs_review: false }).eq('id', projectId);
+    const { error } = await supabase.from('client_projects').update({ needs_review: false } as never).eq('id', projectId);
     if (error) {
       toast({ title: 'Failed', description: error.message, variant: 'destructive' });
       return;
