@@ -332,6 +332,7 @@ export type Database = {
           description: string | null
           id: string
           max_assignees: number | null
+          needs_review: boolean
           paid_at: string | null
           price_ghs: number | null
           price_usd: number | null
@@ -360,6 +361,7 @@ export type Database = {
           description?: string | null
           id?: string
           max_assignees?: number | null
+          needs_review?: boolean
           paid_at?: string | null
           price_ghs?: number | null
           price_usd?: number | null
@@ -388,6 +390,7 @@ export type Database = {
           description?: string | null
           id?: string
           max_assignees?: number | null
+          needs_review?: boolean
           paid_at?: string | null
           price_ghs?: number | null
           price_usd?: number | null
@@ -2317,6 +2320,10 @@ export type Database = {
       claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
       current_user_email: { Args: never; Returns: string }
+      find_or_create_client: {
+        Args: { p_email: string; p_name: string; p_whatsapp?: string }
+        Returns: string
+      }
       generate_monthly_report_now: {
         Args: { p_month?: number; p_year?: number }
         Returns: undefined

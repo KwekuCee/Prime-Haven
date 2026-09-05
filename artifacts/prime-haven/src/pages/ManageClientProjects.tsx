@@ -31,6 +31,7 @@ interface ClientProject {
   budget: string | null;
   deadline: string | null;
   created_at: string;
+  needs_review?: boolean | null;
 }
 
 interface Milestone {
@@ -164,6 +165,17 @@ const ManageClientProjects = () => {
     loadMilestones(projectId);
   };
 
+  const clearReviewFlag = async (projectId: string) => {
+    const { error } = await supabase.from('client_projects').update({ needs_review: false } as never).eq('id', projectId);
+    if (error) {
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setProjects(prev => prev.map(p => (p.id === projectId ? { ...p, needs_review: false } : p)));
+    toast({ title: 'Cleared', description: 'Review flag removed.' });
+  };
+
+
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = { pending: 'bg-muted', in_progress: 'bg-primary/20 text-primary', review: 'bg-yellow-500/20 text-yellow-500', completed: 'bg-emerald-500/20 text-emerald-500', on_hold: 'bg-orange-500/20 text-orange-500' };
     return <Badge className={colors[status] || 'bg-muted'}>{statusOptions.find(s => s.value === status)?.label || status}</Badge>;
@@ -239,7 +251,20 @@ const ManageClientProjects = () => {
               <TableBody>
                 {projects.map(p => (
                   <TableRow key={p.id} className="group">
-                    <TableCell className="font-medium text-sm">{p.title}</TableCell>
+                    <TableCell className="font-medium text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{p.title}</span>
+                        {p.needs_review && (
+                          <Badge
+                            className="bg-amber-100 text-amber-800 border border-amber-200 cursor-pointer"
+                            title="Marked completed but no work was submitted. Click to clear."
+                            onClick={() => clearReviewFlag(p.id)}
+                          >
+                            Needs review
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm">{p.client_name}</TableCell>
                     <TableCell>{statusBadge(p.status)}</TableCell>
                     <TableCell className="text-sm">{p.progress_percentage}%</TableCell>
