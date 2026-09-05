@@ -31,6 +31,7 @@ interface ClientProject {
   budget: string | null;
   deadline: string | null;
   created_at: string;
+  needs_review?: boolean | null;
 }
 
 interface Milestone {
@@ -239,7 +240,20 @@ const ManageClientProjects = () => {
               <TableBody>
                 {projects.map(p => (
                   <TableRow key={p.id} className="group">
-                    <TableCell className="font-medium text-sm">{p.title}</TableCell>
+                    <TableCell className="font-medium text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{p.title}</span>
+                        {p.needs_review && (
+                          <Badge
+                            className="bg-amber-100 text-amber-800 border border-amber-200 cursor-pointer"
+                            title="Marked completed but no work was submitted. Click to clear."
+                            onClick={() => clearReviewFlag(p.id)}
+                          >
+                            Needs review
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm">{p.client_name}</TableCell>
                     <TableCell>{statusBadge(p.status)}</TableCell>
                     <TableCell className="text-sm">{p.progress_percentage}%</TableCell>
