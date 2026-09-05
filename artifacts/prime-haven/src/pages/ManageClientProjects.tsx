@@ -165,6 +165,17 @@ const ManageClientProjects = () => {
     loadMilestones(projectId);
   };
 
+  const clearReviewFlag = async (projectId: string) => {
+    const { error } = await supabase.from('client_projects').update({ needs_review: false }).eq('id', projectId);
+    if (error) {
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setProjects(prev => prev.map(p => (p.id === projectId ? { ...p, needs_review: false } : p)));
+    toast({ title: 'Cleared', description: 'Review flag removed.' });
+  };
+
+
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = { pending: 'bg-muted', in_progress: 'bg-primary/20 text-primary', review: 'bg-yellow-500/20 text-yellow-500', completed: 'bg-emerald-500/20 text-emerald-500', on_hold: 'bg-orange-500/20 text-orange-500' };
     return <Badge className={colors[status] || 'bg-muted'}>{statusOptions.find(s => s.value === status)?.label || status}</Badge>;
