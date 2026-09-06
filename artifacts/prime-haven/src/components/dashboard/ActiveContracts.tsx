@@ -21,6 +21,7 @@ interface ActiveContract {
     price: number;
     source: 'client_projects' | 'client_orders' | 'job_contracts';
     assignment_status?: 'claimed' | 'in_progress' | 'submitted' | 'active';
+    chat_project_id?: string | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -87,7 +88,8 @@ const ActiveContracts = () => {
                         category,
                         deadline,
                         budget,
-                        status
+                        status,
+                        client_project_id
                     )
                 `)
                 .eq('designer_id', user.id)
@@ -116,6 +118,7 @@ const ActiveContracts = () => {
                         price: 0,
                         source: 'client_projects' as const,
                         assignment_status: a.status,
+                        chat_project_id: a.client_projects.id,
                     })),
                 ...(contractClaims || [])
                     .filter((c: any) => c.job_contracts)
@@ -129,6 +132,7 @@ const ActiveContracts = () => {
                         price: 0,
                         source: 'job_contracts' as const,
                         assignment_status: c.status || 'claimed',
+                        chat_project_id: c.job_contracts.client_project_id || null,
                     })),
                 ...(orders || []).map((o: any) => ({
                     id: o.id,
@@ -139,6 +143,7 @@ const ActiveContracts = () => {
                     project_status: o.project_status,
                     price: o.price,
                     source: 'client_orders' as const,
+                    chat_project_id: null,
                 }))
             ];
 
@@ -231,10 +236,6 @@ const ActiveContracts = () => {
         }
     };
 
-    const handleChatClick = () => {
-        toast({ title: 'Client Messaging Coming Soon', description: 'This feature is currently under development.' });
-    };
-
     const getDeadlineStatus = (deadline: string) => {
         const d = new Date(deadline);
         const isOverdue = isAfter(now, d);
@@ -317,15 +318,17 @@ const ActiveContracts = () => {
                                         >
                                             {unclaiming === contract.id ? 'Releasing...' : 'Release Job'}
                                         </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-8 w-8 p-0"
-                                            onClick={handleChatClick}
-                                            title="Chat with Client"
-                                        >
-                                            <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                                        </Button>
+                                        {contract.assignment_status !== 'claimed' && contract.chat_project_id && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => navigate(`/project-chat/${contract.chat_project_id}`)}
+                                                title="Chat with Client"
+                                            >
+                                                <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                            </Button>
+                                        )}
                                         {contract.assignment_status === 'claimed' ? (
                                             <Button
                                                 size="sm"
