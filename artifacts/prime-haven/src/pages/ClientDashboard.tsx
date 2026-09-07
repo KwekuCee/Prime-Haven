@@ -157,6 +157,12 @@ const ClientDashboard = () => {
         return matchSearch && matchStatus;
     }), [orders, search, statusFilter]);
 
+    const designerIdFor = (order: ClientOrder) => {
+        if (order.assigned_designer_id && professionals[order.assigned_designer_id]) return order.assigned_designer_id;
+        const match = projects.find(p => p.title?.toLowerCase() === order.service_type?.toLowerCase());
+        return match?.accepted_designer_id || match?.claimed_by || null;
+    };
+
     const designerFor = (order: ClientOrder) => {
         if (order.assigned_designer_id && professionals[order.assigned_designer_id]) return professionals[order.assigned_designer_id];
         const match = projects.find(p => p.title?.toLowerCase() === order.service_type?.toLowerCase());
@@ -376,7 +382,11 @@ const ClientDashboard = () => {
                                                 <TableCell><Badge variant="outline" className={`text-[10px] ${statusTone(order.project_status)}`}>{(order.project_status || 'unassigned').replace(/_/g, ' ')}</Badge></TableCell>
                                                 <TableCell className="text-xs">
                                                     {designerFor(order)
-                                                        ? <span className="inline-flex items-center gap-1"><UserCheck className="w-3 h-3 text-primary" />{designerFor(order)}</span>
+                                                        ? (designerIdFor(order)
+                                                            ? <Link to={`/designer/${designerIdFor(order)}`} className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
+                                                                <UserCheck className="w-3 h-3" />{designerFor(order)}
+                                                              </Link>
+                                                            : <span className="inline-flex items-center gap-1"><UserCheck className="w-3 h-3 text-primary" />{designerFor(order)}</span>)
                                                         : <span className="text-muted-foreground">Unclaimed</span>}
                                                 </TableCell>
                                                 <TableCell className="text-[11px] text-muted-foreground">{order.payment_reference || '—'}</TableCell>
@@ -403,7 +413,14 @@ const ClientDashboard = () => {
                                             <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(order.created_at), 'MMM d')}</span>
                                         </div>
                                         <p className="text-[11px] text-muted-foreground">
-                                            {designerFor(order) ? `Professional: ${designerFor(order)}` : 'Not claimed yet'}
+                                            {designerFor(order) ? (
+                                                <>
+                                                    Professional:{' '}
+                                                    {designerIdFor(order)
+                                                        ? <Link to={`/designer/${designerIdFor(order)}`} className="text-primary font-medium hover:underline">{designerFor(order)}</Link>
+                                                        : designerFor(order)}
+                                                </>
+                                            ) : 'Not claimed yet'}
                                         </p>
                                     </div>
                                 ))}
