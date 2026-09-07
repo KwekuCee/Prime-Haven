@@ -115,11 +115,14 @@ const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
 
       {works.length > 5 && (
         <div className="mt-4 text-center">
-          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => setShowAll(v => !v)}>
-            {showAll ? 'Show less' : `Show all ${works.length} works`}
-          </Button>
+          <Link to={`/designer/${userId}`}>
+            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider">
+              View all {works.length} works on public profile
+            </Button>
+          </Link>
         </div>
       )}
+
     </div>
   );
 };
