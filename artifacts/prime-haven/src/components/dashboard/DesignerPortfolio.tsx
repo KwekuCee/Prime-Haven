@@ -31,7 +31,6 @@ const PUBLIC_STATUSES = ['approved', 'ph_approved', 'client_accepted'];
 const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
   const [works, setWorks] = useState<ApprovedWork[]>([]);
   const [media, setMedia] = useState<Record<string, string>>({});
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -57,7 +56,7 @@ const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
 
   if (works.length === 0) return null;
 
-  const visible = showAll ? works : works.slice(0, 5);
+  const visible = works.slice(0, 5);
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
