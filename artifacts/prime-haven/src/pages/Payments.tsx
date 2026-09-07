@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
+import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 
 const paymentMethods = [
@@ -144,6 +145,9 @@ const Payments = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 space-y-4">
+            {/* Withdraw Funds */}
+            {user && <WithdrawCard userId={user.id} availableBalance={paymentStats.nextPayment} />}
+
             {/* Payment Method */}
             <SectionCard icon={CreditCard} title="Payment Method" desc="How you receive earnings" delay={0.05}>
               <div className="space-y-4">
