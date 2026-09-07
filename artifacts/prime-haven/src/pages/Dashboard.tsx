@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Award, Clock, FileCheck, Upload, Wallet, Settings,
-  Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap, Brain,
-  RefreshCw, PlayCircle, ArrowUpRight, Flame, Target, Sparkles
+  Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap,
+  PlayCircle, ArrowUpRight, Flame, Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,8 +29,6 @@ import ActivityStreak from '@/components/dashboard/ActivityStreak';
 import LiveFeed from '@/components/dashboard/LiveFeed';
 import ExpectedSalaryModal, { JobEarning } from '@/components/dashboard/ExpectedSalaryModal';
 import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT } from '@/lib/revenue';
-import EarningsChart from '@/components/dashboard/EarningsChart';
-import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
@@ -110,7 +108,6 @@ const Dashboard = () => {
     totalPoints: 0, monthlyRank: 0, totalDesigners: 0,
     estSalary: 0, totalSubmissions: 0, approvedSubmissions: 0, monthlyRevenue: 0,
   });
-  const [recalculating, setRecalculating] = useState(false);
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
@@ -236,27 +233,6 @@ const Dashboard = () => {
     loadJobs();
     return () => { isMounted = false; };
   }, [startWorkingOpen, user, designer, toast]);
-
-  const recalculateTalentScore = async () => {
-    if (!user) return;
-    setRecalculating(true);
-    try {
-      const { error } = await supabase.functions.invoke('calculate-talent-score', {
-        body: { designer_id: user.id },
-      });
-      if (error) throw error;
-      const { data: updated } = await supabase
-        .from('designer_details')
-        .select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (updated) setDesigner(updated);
-    } catch (err) {
-      console.error('Error recalculating talent score:', err);
-    } finally {
-      setRecalculating(false);
-    }
-  };
 
   const handleStartWorking = async () => {
     if (!user || !startWorkingProject) return;
