@@ -31,7 +31,6 @@ const PUBLIC_STATUSES = ['approved', 'ph_approved', 'client_accepted'];
 const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
   const [works, setWorks] = useState<ApprovedWork[]>([]);
   const [media, setMedia] = useState<Record<string, string>>({});
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -57,7 +56,7 @@ const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
 
   if (works.length === 0) return null;
 
-  const visible = showAll ? works : works.slice(0, 6);
+  const visible = works.slice(0, 5);
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
@@ -113,13 +112,16 @@ const DesignerPortfolio = ({ userId }: DesignerPortfolioProps) => {
         })}
       </div>
 
-      {works.length > 6 && (
+      {works.length > 5 && (
         <div className="mt-4 text-center">
-          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => setShowAll(v => !v)}>
-            {showAll ? 'Show less' : `Show all ${works.length} works`}
-          </Button>
+          <Link to={`/designer/${userId}`}>
+            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider">
+              View all {works.length} works on public profile
+            </Button>
+          </Link>
         </div>
       )}
+
     </div>
   );
 };

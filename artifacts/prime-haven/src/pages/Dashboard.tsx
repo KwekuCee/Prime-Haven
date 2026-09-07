@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Award, Clock, FileCheck, Upload, Wallet, Settings,
-  Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap, Brain,
-  RefreshCw, PlayCircle, ArrowUpRight, Flame, Target, Sparkles
+  Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap,
+  PlayCircle, ArrowUpRight, Flame, Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,8 +29,6 @@ import ActivityStreak from '@/components/dashboard/ActivityStreak';
 import LiveFeed from '@/components/dashboard/LiveFeed';
 import ExpectedSalaryModal, { JobEarning } from '@/components/dashboard/ExpectedSalaryModal';
 import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT } from '@/lib/revenue';
-import EarningsChart from '@/components/dashboard/EarningsChart';
-import WithdrawCard from '@/components/dashboard/WithdrawCard';
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
@@ -110,7 +108,6 @@ const Dashboard = () => {
     totalPoints: 0, monthlyRank: 0, totalDesigners: 0,
     estSalary: 0, totalSubmissions: 0, approvedSubmissions: 0, monthlyRevenue: 0,
   });
-  const [recalculating, setRecalculating] = useState(false);
   const [startWorkingOpen, setStartWorkingOpen] = useState(false);
   const [startWorkingProject, setStartWorkingProject] = useState('');
   const [startWorkingSending, setStartWorkingSending] = useState(false);
@@ -236,27 +233,6 @@ const Dashboard = () => {
     loadJobs();
     return () => { isMounted = false; };
   }, [startWorkingOpen, user, designer, toast]);
-
-  const recalculateTalentScore = async () => {
-    if (!user) return;
-    setRecalculating(true);
-    try {
-      const { error } = await supabase.functions.invoke('calculate-talent-score', {
-        body: { designer_id: user.id },
-      });
-      if (error) throw error;
-      const { data: updated } = await supabase
-        .from('designer_details')
-        .select('total_points, monthly_points, salary_estimated, professional_title, talent_score, talent_score_breakdown, talent_score_updated_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (updated) setDesigner(updated);
-    } catch (err) {
-      console.error('Error recalculating talent score:', err);
-    } finally {
-      setRecalculating(false);
-    }
-  };
 
   const handleStartWorking = async () => {
     if (!user || !startWorkingProject) return;
@@ -726,20 +702,12 @@ const Dashboard = () => {
           <ProjectMarketplace />
         </div>
 
-        {/* Earnings Breakdown & Goal Tracker */}
+        {/* Goal Tracker */}
         {user && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-            <EarningsChart userId={user.id} />
+          <div className="mb-6">
             <GoalTracker userId={user.id} currentPoints={designer?.monthly_points || 0} currentSubmissions={stats.totalSubmissions} />
           </div>
         )}
-
-        {user && (
-          <div className="mb-6">
-            <WithdrawCard userId={user.id} availableBalance={stats.estSalary} />
-          </div>
-        )}
-
 
         {/* Designer Portfolio */}
         {user && (
@@ -747,80 +715,7 @@ const Dashboard = () => {
             <DesignerPortfolio userId={user.id} />
           </div>
         )}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="mb-6 rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5 sm:p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <Brain className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-sm font-heading font-bold">AI Talent Score</h2>
-                <p className="text-[10px] text-muted-foreground">
-                  {designer?.talent_score_updated_at
-                    ? `Updated ${ new Date(designer.talent_score_updated_at).toLocaleDateString() } `
-                    : 'Not yet calculated'}
-                </p>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={recalculateTalentScore} disabled={recalculating} className="text-xs h-8">
-              <RefreshCw className={`w - 3.5 h - 3.5 mr - 1 ${ recalculating ? 'animate-spin' : '' } `} />
-              {recalculating ? 'Calculating...' : 'Refresh'}
-            </Button>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-center gap-5">
-              {/* Score Ring */}
-              <div className="relative w-20 h-20 flex-shrink-0">
-                <svg className="w-20 h-20 -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--primary))" strokeWidth="6"
-                    strokeLinecap="round" strokeDasharray={`${ (designer?.talent_score || 0) * 2.64 } 264`}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xl font-heading font-bold">{designer?.talent_score || 0}</span>
-                </div>
-              </div>
-              <div className="space-y-2 flex-1 min-w-0">
-                {designer?.talent_score_breakdown && Object.entries(designer.talent_score_breakdown)
-                  .filter(([key]) => !['ai_insight', 'total_submissions'].includes(key))
-                  .map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground capitalize w-20 truncate">{key.replace(/_/g, ' ')}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${ Math.min(100, Number(value)) }% ` }}
-                          transition={{ duration: 0.8, delay: 0.5 }}
-                          className="h-full rounded-full bg-primary"
-                        />
-                      </div>
-                      <span className="text-[10px] font-bold w-6 text-right">{Number(value)}</span>
-                    </div>
-                  ))
-                }
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-center">
-              {designer?.talent_score_breakdown?.ai_insight ? (
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-semibold">AI Insight</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{designer.talent_score_breakdown.ai_insight}</p>
-                </div>
-              ) : (
-                <div className="text-center p-4">
-                  <Brain className="w-8 h-8 text-muted mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Click "Refresh" for AI-powered insights</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
 
         {/* Three Column Grid: Submissions, Leaderboard, Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
