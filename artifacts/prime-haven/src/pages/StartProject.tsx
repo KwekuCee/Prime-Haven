@@ -225,6 +225,35 @@ const StartProject = () => {
     return () => { active = false; };
   }, [selectedPricing, promoDiscount]);
 
+  const completeAndRedirectToClientDashboard = async () => {
+    // If visitor is not already authenticated, automatically sign them into their client account
+    if (!user && form.clientEmail && form.password) {
+      try {
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: form.clientEmail.trim(),
+          password: form.password,
+        });
+        if (signInErr) {
+          console.warn('Auto sign-in notice:', signInErr.message);
+          toast({
+            title: 'Project Received! 🎉',
+            description: 'Please sign in to your Client Portal to follow your project.',
+          });
+          navigate(`/client/login?email=${encodeURIComponent(form.clientEmail.trim())}`);
+          return;
+        }
+      } catch (e) {
+        console.warn('Auto sign-in error:', e);
+      }
+    }
+
+    toast({
+      title: 'Welcome to your Client Dashboard! 🎉',
+      description: 'Your project brief has been received and is ready for tracking.',
+    });
+    navigate('/client/dashboard');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault();
@@ -234,6 +263,11 @@ const StartProject = () => {
     }
     if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
+      return;
+    }
+
+    if (!isReturningClient && form.password && form.password.length < 6) {
+      toast({ title: 'Password too short', description: 'Dashboard password must be at least 6 characters.', variant: 'destructive' });
       return;
     }
 
@@ -284,8 +318,7 @@ const StartProject = () => {
         if (error) throw new Error(error.message);
         if (data && data.success === false) throw new Error(data.error || 'Order processing failed');
 
-        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. Log in to your client dashboard to follow along.' });
-        navigate('/?project=success');
+        await completeAndRedirectToClientDashboard();
       } catch (err: any) {
         console.error('Free order error:', err);
         toast({
@@ -392,7 +425,7 @@ const StartProject = () => {
         }
       } catch (e) { console.error('Affiliate attribution failed:', e); }
 
-      navigate('/?project=success');
+      await completeAndRedirectToClientDashboard();
     } catch (err: any) {
       console.error('Order processing error:', err);
       toast({
@@ -551,7 +584,8 @@ const StartProject = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="password">Set Dashboard Password *</Label>
-                        <Input id="password" type="password" value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="•••••••���" required />
+                        <Input id="password" type="password" minLength={6} value={form.password} onChange={e => handleChange('password', e.target.value)} placeholder="••••••••" required={!isReturningClient} />
+                        <p className="text-[11px] text-muted-foreground">Used to access your client dashboard (min. 6 characters).</p>
                       </div>
                     </div>
                     <div className="space-y-2">

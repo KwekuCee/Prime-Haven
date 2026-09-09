@@ -76,15 +76,31 @@ const Login = () => {
     }
 
     if (authData?.user) {
-      const { data: roleData } = await supabase
+      const { data: roleRows } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', authData.user.id)
-        .maybeSingle();
+        .eq('user_id', authData.user.id);
 
-      const role = roleData?.role as string | undefined;
-      const isAdmin = role === 'superadmin' || role === 'masteradmin';
-      const isClient = role === 'client';
+      const roles = (roleRows || []).map((r: any) => String(r.role));
+      const isAdmin = roles.includes('superadmin') || roles.includes('masteradmin');
+      let isClient = roles.includes('client') || mode === 'client';
+
+      if (!isClient && !isAdmin) {
+        const { data: clientOrder } = await supabase
+          .from('client_orders')
+          .select('id')
+          .eq('client_email', data.email.trim())
+          .limit(1)
+          .maybeSingle();
+
+        if (clientOrder) {
+          isClient = true;
+          await supabase.from('user_roles').upsert(
+            { user_id: authData.user.id, role: 'client' },
+            { onConflict: 'user_id,role', ignoreDuplicates: true }
+          );
+        }
+      }
 
       // Clients sign in immediately after paying and verify their email from
       // inside their portal, so the hard verification gate only applies to talent.

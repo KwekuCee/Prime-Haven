@@ -32,7 +32,24 @@ const ClientRoute = ({ children }: { children: ReactNode }) => {
       if (cancelled) return;
 
       const roles = (data || []).map((r: any) => String(r.role));
-      const allowed = roles.includes('client') || roles.includes('superadmin') || roles.includes('masteradmin');
+      let allowed = roles.includes('client') || roles.includes('superadmin') || roles.includes('masteradmin');
+
+      if (!allowed && user.email) {
+        const { data: clientOrder } = await supabase
+          .from('client_orders')
+          .select('id')
+          .eq('client_email', user.email)
+          .limit(1)
+          .maybeSingle();
+
+        if (clientOrder) {
+          allowed = true;
+          await supabase.from('user_roles').upsert(
+            { user_id: user.id, role: 'client' },
+            { onConflict: 'user_id,role', ignoreDuplicates: true }
+          );
+        }
+      }
 
       if (!allowed) {
         navigate('/dashboard', { replace: true });

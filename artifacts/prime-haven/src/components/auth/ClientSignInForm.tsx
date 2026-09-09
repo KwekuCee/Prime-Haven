@@ -41,20 +41,37 @@ const ClientSignInForm = () => {
 
     if (!authData?.user) return;
 
-    const { data: roleData } = await supabase
+    const { data: roleRows } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', authData.user.id)
-      .maybeSingle();
+      .eq('user_id', authData.user.id);
 
-    const role = roleData?.role as string | undefined;
+    const roles = (roleRows || []).map((r: any) => String(r.role));
 
-    if (role === 'superadmin' || role === 'masteradmin') {
+    if (roles.includes('superadmin') || roles.includes('masteradmin')) {
       navigate('/superadmin');
       return;
     }
 
-    if (role !== 'client') {
+    let isClient = roles.includes('client');
+    if (!isClient) {
+      const { data: clientOrder } = await supabase
+        .from('client_orders')
+        .select('id')
+        .eq('client_email', data.email.trim())
+        .limit(1)
+        .maybeSingle();
+
+      if (clientOrder) {
+        isClient = true;
+        await supabase.from('user_roles').upsert(
+          { user_id: authData.user.id, role: 'client' },
+          { onConflict: 'user_id,role', ignoreDuplicates: true }
+        );
+      }
+    }
+
+    if (!isClient) {
       toast({
         title: 'Talent account detected',
         description: 'This is the client portal. Taking you to your talent dashboard instead.',

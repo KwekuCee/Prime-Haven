@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Settings, ChevronDown, ArrowRight } from 'lucide-react';
+import { Menu, X, Settings, ChevronDown, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,17 +11,37 @@ import {
 import BrandLogo from '@/components/BrandLogo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isClientUser, setIsClientUser] = useState(false);
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!user) { setIsClientUser(false); return; }
+    let cancelled = false;
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        if (!cancelled) {
+          const roles = (data || []).map((r: any) => String(r.role));
+          setIsClientUser(roles.includes('client'));
+        }
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
   const navLinks = [
     { name: t('nav.services'), href: '/#services' },
@@ -96,22 +116,34 @@ const Navbar = () => {
 
             <div className="w-px h-5 bg-border/60" />
 
-            <Link to="/login">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 px-4 rounded-full font-semibold hover:text-primary"
-              >
-                {t('nav.login')}
-              </Button>
-            </Link>
+            {isClientUser ? (
+              <Link to="/client/dashboard" className="btn-ink group !py-2.5 !pl-5 !pr-2.5">
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Client Dashboard
+                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 px-4 rounded-full font-semibold hover:text-primary"
+                  >
+                    {t('nav.login')}
+                  </Button>
+                </Link>
 
-            <Link to="/register" className="btn-ink group !py-2.5 !pl-5 !pr-2.5">
-              {t('nav.join')}
-              <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </span>
-            </Link>
+                <Link to="/register" className="btn-ink group !py-2.5 !pl-5 !pr-2.5">
+                  {t('nav.join')}
+                  <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
+                </Link>
+              </>
+            )}
           </div>
 
 
@@ -172,12 +204,23 @@ const Navbar = () => {
               </div>
 
               <div className="flex flex-col gap-2 pt-1">
-                <Link to="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full rounded-xl">{t('nav.login')}</Button>
-                </Link>
-                <Link to="/register" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full rounded-xl font-bold glow-primary">{t('nav.join')}</Button>
-                </Link>
+                {isClientUser ? (
+                  <Link to="/client/dashboard" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full rounded-xl font-bold glow-primary gap-2">
+                      <LayoutDashboard className="w-4 h-4" />
+                      Client Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <Button variant="outline" className="w-full rounded-xl">{t('nav.login')}</Button>
+                    </Link>
+                    <Link to="/register" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full rounded-xl font-bold glow-primary">{t('nav.join')}</Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
