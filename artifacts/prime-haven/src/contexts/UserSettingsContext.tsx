@@ -50,28 +50,18 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [hasRecord, setHasRecord] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState(10); // Default to user requested 10
+  // Single source of truth for USD → GHS (live rate, then admin setting, then 15.5)
+  const [exchangeRate, setExchangeRate] = useState(15.5);
 
   useEffect(() => {
     const loadSettings = async () => {
-      // Fetch exchange rate first (system setting)
       try {
-        const { data: rateData } = await supabase
-          .from('system_settings')
-          .select('value')
-          .eq('key', 'usd_to_ghs_rate')
-          .maybeSingle();
-
-        if (rateData && typeof rateData.value === 'number') {
-          setExchangeRate(rateData.value);
-        } else if (rateData && typeof rateData.value === 'string') {
-          setExchangeRate(parseFloat(rateData.value) || 10);
-        } else if (rateData && typeof rateData.value === 'object' && (rateData.value as any).rate) {
-          setExchangeRate(parseFloat((rateData.value as any).rate) || 10);
-        }
+        const { rate } = await getUsdToGhsRate();
+        if (rate > 0) setExchangeRate(rate);
       } catch (err) {
         console.error('Error fetching exchange rate:', err);
       }
+
 
       if (!user) {
         setLoading(false);
