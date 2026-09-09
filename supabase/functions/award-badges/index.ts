@@ -1,0 +1,85 @@
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authErr || !user) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+    const isAdmin = (roleRow || []).some((r: any) => r.role === 'masteradmin' || r.role === 'superadmin');
+
+    const body = await req.json().catch(() => ({}));
+    const user_id = body.user_id as string | undefined;
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: 'user_id required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (!isAdmin && user_id !== user.id) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Load badges
+    const { data: badges } = await supabase.from('badges').select('id, key, criteria');
+    if (!badges) {
+      return new Response(JSON.stringify({ ok: true, awarded: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Gather user metrics
+    const { data: approvedCountData, count: approvedCountExact } = await supabase
+      .from('submissions')
+      .select('id', { count: 'exact' })
+      .eq('designer_id', user_id)
+      .eq('ph_approved', true);
+
+    const approved_count = typeof approvedCountExact === 'number'
+      ? approvedCountExact
+      : (Array.isArray(approvedCountData) ? approvedCountData.length : 0);
+
+    const { data: designer } = await supabase.from('designer_details').select('total_points, talent_score').eq('user_id', user_id).maybeSingle();
+    const total_points = designer?.total_points || 0;
+    const talent_score = designer?.talent_score || 0;
+
+    let awarded = 0;
+
+    for (const b of badges) {
+      let criteria: any = b.criteria ?? {};
+      if (typeof criteria === 'string') {
+        try { criteria = JSON.parse(criteria); } catch { criteria = {}; }
+      }
+      if (criteria.type === 'threshold') {
+        const metric = criteria.metric;
+        const value = Number(criteria.value || 0);
+        let meets = false;
+        if (metric === 'approved_count') meets = approved_count >= value;
+        if (metric === 'total_points') meets = total_points >= value;
+        if (metric === 'talent_score') meets = talent_score >= value;
+
+        if (meets) {
+          // Insert if not exists (ignore errors)
+          const { error: insertError } = await supabase
+            .from('user_badges')
+            .insert({ user_id, badge_id: b.id, source: 'auto-check', meta: { approved_count, total_points, talent_score } });
+          if (!insertError) awarded += 1;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true, awarded }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (e) {
+    console.error('award-badges error:', e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+});
