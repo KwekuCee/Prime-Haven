@@ -105,56 +105,28 @@ const UIUXAdminDashboard = () => {
     try {
       const submission = submissions.find((s: any) => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
-      const isCorrection = !!submission.parent_submission_id;
-      const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
-
-      await supabase.from('submissions').update({
-        ph_approved: true, ph_approved_at: new Date().toISOString(), ph_approved_by: user?.id,
-        points_awarded: (submission.points_awarded || 0) + phPoints, status: 'ph_approved',
-        updated_at: new Date().toISOString()
-      }).eq('id', submissionId);
-
-      if (phPoints > 0) {
-        const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-        if (designerData) {
-          await supabase.from('designer_details').update({
-            total_points: (designerData.total_points || 0) + phPoints,
-            monthly_points: (designerData.monthly_points || 0) + phPoints,
-            updated_at: new Date().toISOString()
-          }).eq('user_id', submission.designer_id);
-        }
-      }
-      if (user) await supabase.from('system_logs').insert({ action_type: 'ph_approval', admin_id: user.id, description: `[UI/UX Dept] Approved: ${submission.project_name} (+${phPoints} pts)`, timestamp: new Date().toISOString() });
-      toast({ title: 'Approved', description: `+${phPoints} points awarded.` });
+      const phPoints = systemSettings.ph_approval_points?.value || 15;
+      const { data, error } = await (supabase as any).rpc('admin_ph_approve_submission', {
+        p_submission_id: submissionId, p_points: phPoints, p_dept_label: 'UI/UX Dept',
+      });
+      if (error) throw error;
+      toast({ title: 'Approved', description: `+${data?.points ?? 0} points awarded.` });
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
 
   const handleClientAcceptance = async (submissionId: string) => {
     try {
-      const submission = submissions.find((s: any) => s.id === submissionId);
-      if (!submission) throw new Error('Submission not found');
       const clientPoints = systemSettings.client_acceptance_points?.value || 65;
-
-      await supabase.from('submissions').update({
-        client_accepted: true, client_accepted_at: new Date().toISOString(), client_accepted_by: user?.id,
-        points_awarded: (submission.points_awarded || 0) + clientPoints, status: 'approved',
-        final_approval_date: new Date().toISOString(), updated_at: new Date().toISOString()
-      }).eq('id', submissionId);
-
-      const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-      if (designerData) {
-        await supabase.from('designer_details').update({
-          total_points: (designerData.total_points || 0) + clientPoints,
-          monthly_points: (designerData.monthly_points || 0) + clientPoints,
-          updated_at: new Date().toISOString()
-        }).eq('user_id', submission.designer_id);
-      }
-      if (user) await supabase.from('system_logs').insert({ action_type: 'client_acceptance', admin_id: user.id, description: `[UI/UX Dept] Client accepted: ${submission.project_name} (+${clientPoints} pts)`, timestamp: new Date().toISOString() });
-      toast({ title: 'Client Accepted', description: `+${clientPoints} additional points!` });
+      const { data, error } = await (supabase as any).rpc('admin_client_accept_submission', {
+        p_submission_id: submissionId, p_points: clientPoints, p_dept_label: 'UI/UX Dept',
+      });
+      if (error) throw error;
+      toast({ title: 'Client Accepted', description: `+${data?.points ?? 0} additional points!` });
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
+
 
   const handleRejectSubmission = async () => {
     if (!rejectSubmission || !rejectionReason.trim()) return;
