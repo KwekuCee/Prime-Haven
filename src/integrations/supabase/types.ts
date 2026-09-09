@@ -2301,8 +2301,28 @@ export type Database = {
     }
     Functions: {
       admin_archive_ledger: { Args: { p_restore?: boolean }; Returns: number }
+      admin_client_accept_submission: {
+        Args: {
+          p_dept_label?: string
+          p_points: number
+          p_submission_id: string
+        }
+        Returns: Json
+      }
+      admin_ph_approve_submission: {
+        Args: {
+          p_dept_label?: string
+          p_points: number
+          p_submission_id: string
+        }
+        Returns: Json
+      }
       admin_remove_withdrawal_request: {
         Args: { p_reason?: string; p_withdrawal_id: string }
+        Returns: Json
+      }
+      admin_revoke_submission: {
+        Args: { p_dept_label?: string; p_submission_id: string }
         Returns: Json
       }
       allocate_client_acceptance_points: {
