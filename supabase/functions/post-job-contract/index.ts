@@ -1,0 +1,366 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import nodemailer from "npm:nodemailer@6";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const SMTP_HOST = Deno.env.get("SMTP_HOST");
+const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
+const SMTP_USER = Deno.env.get("SMTP_USER");
+const SMTP_PASS = Deno.env.get("SMTP_PASS");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+// Discord channel IDs per category
+const DISCORD_CHANNELS: Record<string, string> = {
+  "graphic-design": "1470244531680186478",
+  "app-design": "1470244675951529984",
+  "web-dev": "1470244738073497704",
+};
+
+// Map service types to categories for email lookup
+const CATEGORY_SKILLS: Record<string, string[]> = {
+  "graphic-design": ["logo", "branding", "print", "flyer", "Logo Design", "Brand Identity", "Print Design", "Flyer Design", "Graphic Design"],
+  "app-design": ["uiux", "UI/UX Design", "UI/UX", "App Design", "Mobile Design"],
+  "web-dev": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
+};
+
+function getCategoryLabel(id: string): string {
+  const categories: Record<string, string> = {
+    "graphic-design": "Graphic Design",
+    "app-design": "UI/UX Design",
+    "web-dev": "Web Development",
+  };
+  return categories[id] || id;
+}
+
+function encodeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const fromAddress = (SMTP_USER || "").trim();
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: fromAddress, pass: SMTP_PASS },
+  });
+  await transporter.sendMail({
+    from: `Prime Haven <${fromAddress}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
+async function downloadFile(url: string): Promise<{ data: Uint8Array; contentType: string; name: string } | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = new Uint8Array(await res.arrayBuffer());
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const urlPath = new URL(url).pathname;
+    const name = urlPath.split("/").pop() || "file";
+    return { data, contentType, name };
+  } catch (e) {
+    console.error("Failed to download file:", url, e);
+    return null;
+  }
+}
+
+async function postToDiscord(channelId: string, embed: any, files?: { name: string; data: Uint8Array; contentType: string }[]): Promise<string | null> {
+  try {
+    let res: Response;
+
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      const attachments = files.map((f, i) => ({ id: i, filename: f.name }));
+      const imageExts = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+      const firstImage = files.find(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+      if (firstImage) {
+        embed.image = { url: `attachment://${firstImage.name}` };
+      }
+      const payload = { embeds: [embed], attachments };
+      formData.append("payload_json", JSON.stringify(payload));
+
+      for (let i = 0; i < files.length; i++) {
+        const blob = new Blob([files[i].data], { type: files[i].contentType });
+        formData.append(`files[${i}]`, blob, files[i].name);
+      }
+
+      res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+        body: formData,
+      });
+    } else {
+      res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ embeds: [embed] }),
+      });
+    }
+
+    if (!res.ok) {
+      console.error("Discord API error:", res.status, await res.text());
+      return null;
+    }
+    const data = await res.json();
+    return data.id || null;
+  } catch (e) {
+    console.error("Discord post error:", e);
+    return null;
+  }
+}
+
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseAuth = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ success: false, error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: { user }, error: authErr } = await supabaseAuth.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authErr || !user) return new Response(JSON.stringify({ success: false, error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { data: roleRow } = await supabaseAuth.from('user_roles').select('role').eq('user_id', user.id);
+    const isAdmin = (roleRow || []).some((r: any) => r.role === 'masteradmin' || r.role === 'superadmin');
+    if (!isAdmin) return new Response(JSON.stringify({ success: false, error: 'forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+    const body = await req.json();
+
+    // Handle status update action
+    if (body.action === "update_status") {
+      const { discordMessageId, discordChannelId, title, newStatus, contractId } = body;
+
+      if (discordMessageId && discordChannelId && DISCORD_BOT_TOKEN) {
+        const statusEmoji: Record<string, string> = {
+          active: "🟢",
+          in_progress: "🔵",
+          completed: "✅",
+          cancelled: "❌",
+        };
+        const emoji = statusEmoji[newStatus] || "🔄";
+
+        const embed = {
+          title: `${emoji} Status Update: ${(title || "").slice(0, 200)}`,
+          description: `This job has been updated to **${newStatus.replace(/_/g, " ").toUpperCase()}**`,
+          color: newStatus === "completed" ? 0x22c55e : newStatus === "cancelled" ? 0xef4444 : newStatus === "in_progress" ? 0x3b82f6 : 0xfe4c18,
+          footer: { text: "Prime Haven • Job Contracts" },
+          timestamp: new Date().toISOString(),
+        };
+
+        await postToDiscord(discordChannelId, embed);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Original create flow
+    const { title, description, category, deadline, budget, requirements, clientName, clientEmail, clientWhatsapp, specialInstructions, contractId, referenceFiles } = body;
+
+    if (!title || !description || !category) {
+      return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // 1. Post to Discord
+    const channelId = DISCORD_CHANNELS[category];
+    let discordMessageId: string | null = null;
+
+    if (channelId && DISCORD_BOT_TOKEN) {
+      const safeTitle = (title || "").slice(0, 256);
+      const safeDesc = (description || "").slice(0, 2048);
+
+      const fields: any[] = [];
+      if (budget) fields.push({ name: "💰 Budget", value: budget.slice(0, 1024), inline: true });
+      if (deadline) fields.push({ name: "📅 Deadline", value: new Date(deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }), inline: true });
+      if (clientName) fields.push({ name: "🏢 Client", value: clientName.slice(0, 1024), inline: true });
+      if (requirements) fields.push({ name: "📋 Requirements", value: requirements.slice(0, 1024) });
+      if (specialInstructions) fields.push({ name: "⚠️ Special Instructions", value: specialInstructions.slice(0, 1024) });
+
+      const embed: any = {
+        title: `🎨 New Job: ${safeTitle}`,
+        description: safeDesc,
+        color: 0xfe4c18,
+        fields,
+        footer: { text: "Prime Haven • Job Contracts" },
+        timestamp: new Date().toISOString(),
+      };
+
+      const downloadedFiles: { name: string; data: Uint8Array; contentType: string }[] = [];
+      if (referenceFiles && referenceFiles.length > 0) {
+        fields.push({ name: "📎 Reference Files", value: `${referenceFiles.length} file(s) attached` });
+        const downloads = await Promise.all(referenceFiles.slice(0, 10).map((url: string) => downloadFile(url)));
+        for (const file of downloads) {
+          if (file) downloadedFiles.push(file);
+        }
+        console.log(`Downloaded ${downloadedFiles.length}/${referenceFiles.length} reference files for Discord`);
+      }
+
+      discordMessageId = await postToDiscord(channelId, embed, downloadedFiles.length > 0 ? downloadedFiles : undefined);
+    }
+
+    // 2. Update contract with discord_message_id if provided
+    if (contractId && discordMessageId) {
+      await supabase
+        .from("job_contracts")
+        .update({ discord_message_id: discordMessageId, discord_channel_id: channelId })
+        .eq("id", contractId);
+    }
+
+    // 3. Look up client details from clients table if clientName is provided
+    let resolvedEmail = clientEmail || null;
+    let resolvedWhatsapp = clientWhatsapp || null;
+
+    if (clientName && (!resolvedEmail || !resolvedWhatsapp)) {
+      const { data: clientRecord } = await supabase
+        .from("clients")
+        .select("email, whatsapp")
+        .eq("name", clientName)
+        .maybeSingle();
+
+      if (clientRecord) {
+        if (!resolvedEmail && clientRecord.email) resolvedEmail = clientRecord.email;
+        if (!resolvedWhatsapp && clientRecord.whatsapp) resolvedWhatsapp = clientRecord.whatsapp;
+      }
+    }
+
+    // 4. Send emails to relevant designers
+    const skills = CATEGORY_SKILLS[category] || [];
+
+    const { data: allDesigners } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, is_active")
+      .eq("is_active", true);
+
+    const { data: allDetails } = await supabase
+      .from("designer_details")
+      .select("user_id, skills, professional_title");
+
+    const detailsMap = new Map((allDetails || []).map((d: any) => [d.user_id, d]));
+
+    const targetDesigners = (allDesigners || []).filter((d: any) => {
+      const detail = detailsMap.get(d.id);
+      if (!detail) return false;
+      const designerSkills = (detail.skills || []).map((s: string) => s.toLowerCase());
+      const designerTitle = (detail.professional_title || "").toLowerCase();
+      return skills.some(skill =>
+        designerSkills.some((ds: string) => ds.includes(skill.toLowerCase())) ||
+        designerTitle.includes(skill.toLowerCase())
+      );
+    });
+
+    console.log(`Found ${targetDesigners.length} designers for category ${category}`);
+
+    // Create in-app notifications
+    const notifications = targetDesigners.map(d => ({
+      user_id: d.id,
+      title: '💼 New Job Available',
+      message: `A new ${getCategoryLabel(category)} job was just posted: "${title}"`,
+      type: 'info',
+      link: '/dashboard',
+    }));
+
+    if (notifications.length > 0) {
+      await supabase.from('notifications').insert(notifications);
+    }
+
+    const emailTargets = targetDesigners; // Notify all relevant designers
+    const safeTitle = encodeHtml((title || "").slice(0, 200));
+    const safeDesc = encodeHtml((description || "").slice(0, 500));
+
+    const emailSubject = `🎨 New Job Opportunity: ${(title || "").slice(0, 100)}`;
+
+    for (const designer of emailTargets) {
+      const safeName = encodeHtml((designer.full_name || "Designer").slice(0, 100));
+      const emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${emailSubject}</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #000 0%, #0a0a0a 50%, #111 100%); color: #fff; margin: 0; padding: 40px 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, rgba(20,20,20,0.95), rgba(10,10,10,0.98)); border-radius: 24px; padding: 48px 40px; border: 1px solid rgba(254,76,24,0.2); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); position: relative; overflow: hidden; }
+    .container::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #fe4c18, #ff7a45, #fe4c18); }
+    .badge { display: inline-block; background: rgba(254,76,24,0.2); border: 1px solid rgba(254,76,24,0.3); color: #fe4c18; padding: 8px 20px; border-radius: 50px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+    h1 { color: #fff; font-size: 24px; font-weight: 800; margin: 0 0 8px; }
+    .name { color: #fe4c18; }
+    p { color: #b0b0b0; line-height: 1.7; font-size: 15px; }
+    .detail-box { background: rgba(254,76,24,0.1); border: 1px solid rgba(254,76,24,0.2); border-radius: 16px; padding: 24px; margin: 20px 0; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .detail-label { color: #888; font-size: 13px; }
+    .detail-value { color: #fff; font-size: 13px; font-weight: 600; }
+    .cta { display: inline-block; background: linear-gradient(135deg, #fe4c18, #ff6b35); color: #000 !important; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 700; font-size: 15px; margin-top: 16px; }
+    .footer { margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; }
+    .footer p { color: #555; font-size: 12px; }
+    .footer a { color: #fe4c18; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="text-align:center; margin-bottom:30px;">
+      <img src="https://kbxijzsrywcwnyvtbruh.supabase.co/storage/v1/object/public/email-assets/prime-haven-logo.png?v=1" alt="Prime Haven" style="max-width:140px;height:auto;" />
+    </div>
+    <div style="text-align:center;">
+      <span class="badge">🎨 NEW JOB</span>
+      <h1>Hey <span class="name">${safeName}</span>!</h1>
+      <h1>${safeTitle}</h1>
+    </div>
+    <p style="text-align:center;">${safeDesc}</p>
+    <div class="detail-box">
+      ${budget ? `<div class="detail-row"><span class="detail-label">Budget</span><span class="detail-value">${encodeHtml(budget)}</span></div>` : ""}
+      ${deadline ? `<div class="detail-row"><span class="detail-label">Deadline</span><span class="detail-value">${new Date(deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span></div>` : ""}
+      ${clientName ? `<div class="detail-row"><span class="detail-label">Client</span><span class="detail-value">${encodeHtml(clientName)}</span></div>` : ""}
+      ${requirements ? `<div class="detail-row"><span class="detail-label">Requirements</span><span class="detail-value">${encodeHtml(requirements.slice(0, 200))}</span></div>` : ""}
+    </div>
+    ${referenceFiles && referenceFiles.length > 0 ? `<div style="text-align:center;margin:20px 0;"><img src="${referenceFiles[0]}" alt="Reference" style="max-width:100%;border-radius:12px;border:1px solid rgba(254,76,24,0.2);" /></div>` : ""}
+    <div style="text-align:center;">
+      <a href="https://primehaven.tech/dashboard" class="cta">View Dashboard</a>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Prime Haven. All rights reserved.</p>
+      <p><a href="https://primehaven.tech">primehaven.tech</a></p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      try {
+        await sendEmail(designer.email, emailSubject, emailHtml);
+        console.log(`Job email sent to ${designer.email}`);
+      } catch (emailErr) {
+        console.error(`Failed to send to ${designer.email}:`, emailErr);
+      }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      discordMessageId,
+      emailsSent: emailTargets.length
+    }), {
+      status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error) {
+    console.error("Error in post-job-contract:", error);
+    return new Response(JSON.stringify({ success: false, error: "server_error" }), {
+      status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+});
