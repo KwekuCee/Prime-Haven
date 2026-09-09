@@ -1,28 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+const DEFAULT_ROLES = ['superadmin', 'masteradmin'];
+
 /**
- * Shared admin access guard hook.
- * Redirects non-admin users away from admin pages.
- * Returns { isAdmin, role, checking } so the page can show a loader.
+ * Single shared admin access guard.
+ * Every admin page should use this instead of re-implementing a role lookup.
+ * Returns { isAdmin, role, checking, user } so the page can show a loader.
  */
-export const useAdminGuard = (allowedRoles: string[] = ['superadmin', 'masteradmin']) => {
+export const useAdminGuard = (allowedRoles: string[] = DEFAULT_ROLES) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
 
+  // Keep the dependency stable even when callers pass an inline array.
+  const rolesKey = useMemo(() => allowedRoles.join(','), [allowedRoles]);
+
   useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
-      navigate('/superadmin-login', { replace: true });
       setChecking(false);
+      navigate('/superadmin-login', { replace: true });
       return;
     }
+
+    let cancelled = false;
+    const roles = rolesKey.split(',');
 
     const verifyRole = async () => {
       try {
@@ -30,25 +38,29 @@ export const useAdminGuard = (allowedRoles: string[] = ['superadmin', 'masteradm
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (!data || !allowedRoles.includes(data.role)) {
-          navigate('/dashboard', { replace: true });
+        if (cancelled) return;
+
+        if (!data || !roles.includes(data.role)) {
           setChecking(false);
+          navigate('/dashboard', { replace: true });
           return;
         }
 
         setRole(data.role);
         setIsAdmin(true);
-      } catch {
-        navigate('/superadmin-login', { replace: true });
-      } finally {
         setChecking(false);
+      } catch {
+        if (cancelled) return;
+        setChecking(false);
+        navigate('/superadmin-login', { replace: true });
       }
     };
 
     verifyRole();
-  }, [user, authLoading, navigate, allowedRoles]);
+    return () => { cancelled = true; };
+  }, [user, authLoading, navigate, rolesKey]);
 
   return { isAdmin, role, checking, user };
 };
