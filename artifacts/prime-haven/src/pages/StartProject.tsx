@@ -313,6 +313,15 @@ const StartProject = () => {
     const checkout = await resolveCheckoutAmount(amountUsd);
     const amount = checkout.amount;
 
+    // Record the client (and their portal account) before any payment happens.
+    const captured = await captureClientLead();
+    if (!captured) {
+      setSubmitting(false);
+      return;
+    }
+
+
+
     // Bypass payment gateway AND edge function for 100% discount (0 GHS)
     // The edge function is only needed for paid orders to verify payment with gateways
     if (amount === 0) {
