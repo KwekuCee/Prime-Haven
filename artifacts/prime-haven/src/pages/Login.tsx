@@ -86,21 +86,12 @@ const Login = () => {
       let isClient = roles.includes('client') || mode === 'client';
 
       if (!isClient && !isAdmin) {
-        const { data: clientOrder } = await supabase
-          .from('client_orders')
-          .select('id')
-          .eq('client_email', data.email.trim())
-          .limit(1)
-          .maybeSingle();
-
-        if (clientOrder) {
-          isClient = true;
-          await supabase.from('user_roles').upsert(
-            { user_id: authData.user.id, role: 'client' },
-            { onConflict: 'user_id,role', ignoreDuplicates: true }
-          );
-        }
+        // Self-service: the server grants the client role only when this email
+        // already exists as a client, order or project.
+        const { data: granted } = await (supabase as any).rpc('ensure_client_role');
+        if (granted === true) isClient = true;
       }
+
 
       // Clients sign in immediately after paying and verify their email from
       // inside their portal, so the hard verification gate only applies to talent.

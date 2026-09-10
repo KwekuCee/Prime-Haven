@@ -55,21 +55,10 @@ const ClientSignInForm = () => {
 
     let isClient = roles.includes('client');
     if (!isClient) {
-      const { data: clientOrder } = await supabase
-        .from('client_orders')
-        .select('id')
-        .eq('client_email', data.email.trim())
-        .limit(1)
-        .maybeSingle();
-
-      if (clientOrder) {
-        isClient = true;
-        await supabase.from('user_roles').upsert(
-          { user_id: authData.user.id, role: 'client' },
-          { onConflict: 'user_id,role', ignoreDuplicates: true }
-        );
-      }
+      const { data: granted } = await (supabase as any).rpc('ensure_client_role');
+      if (granted === true) isClient = true;
     }
+
 
     if (!isClient) {
       toast({

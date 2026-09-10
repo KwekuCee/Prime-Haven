@@ -34,22 +34,14 @@ const ClientRoute = ({ children }: { children: ReactNode }) => {
       const roles = (data || []).map((r: any) => String(r.role));
       let allowed = roles.includes('client') || roles.includes('superadmin') || roles.includes('masteradmin');
 
-      if (!allowed && user.email) {
-        const { data: clientOrder } = await supabase
-          .from('client_orders')
-          .select('id')
-          .eq('client_email', user.email)
-          .limit(1)
-          .maybeSingle();
-
-        if (clientOrder) {
-          allowed = true;
-          await supabase.from('user_roles').upsert(
-            { user_id: user.id, role: 'client' },
-            { onConflict: 'user_id,role', ignoreDuplicates: true }
-          );
-        }
+      if (!allowed) {
+        // Server-side check: grants the client role only when this account's email
+        // is already a known client (client list, order or project).
+        const { data: granted } = await (supabase as any).rpc('ensure_client_role');
+        if (cancelled) return;
+        if (granted === true) allowed = true;
       }
+
 
       if (!allowed) {
         navigate('/dashboard', { replace: true });
