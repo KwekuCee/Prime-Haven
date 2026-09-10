@@ -254,7 +254,34 @@ const StartProject = () => {
     navigate('/client/dashboard');
   };
 
+  // Save the client's details (and create their portal account) before we ever
+  // open the payment window, so an abandoned payment still leaves a record.
+  const captureClientLead = async (): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('capture-client-lead', {
+        body: {
+          clientName: form.clientName,
+          clientEmail: form.clientEmail.trim(),
+          clientWhatsapp: form.clientWhatsapp,
+          businessName: form.businessName,
+          clientPassword: form.password,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data && data.success === false) throw new Error(data.message || data.error || 'Could not save your details');
+      return true;
+    } catch (err: any) {
+      toast({
+        title: 'Could not save your details',
+        description: err.message || 'Please check your details and try again.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
+
 
     e.preventDefault();
     if (gateway === 'paystack') {
