@@ -75,9 +75,11 @@ serve(async (req: Request): Promise<Response> => {
 
     const verifiedAmount = Number(krData.data.amount) || 0;
     const currency = krData.data.currency || "GHS";
-    const amountInGhs = currency === "USD" ? verifiedAmount * 15.5 : verifiedAmount;
+    const amountInUsd = currency === "USD" ? verifiedAmount : verifiedAmount / usdToGhs;
+    const amountInGhs = currency === "USD" ? verifiedAmount * usdToGhs : verifiedAmount;
 
-    if (amountInGhs + 1 < requiredFee) { // Adding small buffer for rounding
+    // Allow a small tolerance for FX drift / rounding between checkout and verification.
+    if (amountInUsd < PROFESSION_UPGRADE_FEE_USD * 0.95) {
       return new Response(JSON.stringify({ success: false, error: "insufficient_amount" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
