@@ -233,7 +233,7 @@ const ProjectEstimator = () => {
                                                 exit={{ opacity: 0, y: 20 }}
                                                 className="text-4xl font-heading font-black text-primary"
                                             >
-                                                {estimatedPrice === 0 ? "—" : `₵${estimatedPrice.toLocaleString()}`}
+                                                {estimatedPrice === 0 ? "—" : `$${estimatedPrice.toLocaleString()}`}
                                             </motion.div>
                                         </AnimatePresence>
                                     </div>
