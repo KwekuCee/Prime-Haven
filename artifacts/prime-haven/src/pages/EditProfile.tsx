@@ -15,9 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
+import { CORE_SERVICES, TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
+import { resolveCheckoutAmount, formatGhs } from '@/lib/currency';
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
-const PROFESSION_UPGRADE_FEE = 80;
+/** Flat one-time fee (USD) to unlock an additional profession. */
+const PROFESSION_UPGRADE_FEE_USD = 8;
 
 const experienceLevels = [
   { value: 'beginner', label: 'Beginner (0-1 years)' },
@@ -33,16 +36,18 @@ const availableHoursOptions = [
   { value: '40', label: '40 hrs/week (Full-time)' },
 ];
 
-const professionalTitles = [
-  'UI/UX Designer', 'Graphic Designer', 'Web Developer', 'Social Media Manager',
-];
+/** Same list the registration flow offers, so both stay in sync. */
+const professionalTitles = TALENT_ROLE_OPTIONS;
 
-const PROFESSION_FEES: Record<string, number> = {
-  'Web Developer': 150,
-  'UI/UX Designer': 120,
-  'Graphic Designer': 90,
-  'Social Media Manager': 90,
-};
+/** Marketplace professions mirror the registration roles. */
+const MARKETPLACE_PROFESSIONS = CORE_SERVICES.map((s) => s.roleLabel);
+
+/** Registration role value / legacy label -> marketplace profession label. */
+const titleToProfession: Record<string, string> = CORE_SERVICES.reduce((acc, s) => {
+  acc[s.roleValue] = s.roleLabel;
+  acc[s.roleLabel] = s.roleLabel;
+  return acc;
+}, {} as Record<string, string>);
 
 const EditProfile = () => {
   const navigate = useNavigate();
