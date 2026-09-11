@@ -32,12 +32,12 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const { reference, profession } = await req.json();
-    if (!reference || !profession || !PROFESSION_FEES[profession]) {
+    if (!reference || typeof profession !== "string" || !profession.trim()) {
       return new Response(JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    const requiredFee = PROFESSION_FEES[profession];
+    const usdToGhs = await getUsdToGhsRate();
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const authHeader = req.headers.get("Authorization");
