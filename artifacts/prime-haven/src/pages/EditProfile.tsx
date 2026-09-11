@@ -135,11 +135,12 @@ const EditProfile = () => {
     setUpgradePaying(true);
     const reference = `PH-PROF-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
     try {
+      const checkout = await resolveCheckoutAmount(PROFESSION_UPGRADE_FEE_USD);
       (window as any).Korapay.initialize({
         key: KORAPAY_PUBLIC_KEY,
         reference,
-        amount: PROFESSION_UPGRADE_FEE,
-        currency: 'GHS',
+        amount: checkout.amount,
+        currency: checkout.currency,
         customer: { name: formData.full_name || 'Designer', email: formData.email },
         onSuccess: async () => {
           try {
@@ -261,14 +262,6 @@ const EditProfile = () => {
                     value={formData.professional_title}
                     disabled={formData.professions.length > 0}
                     onValueChange={(v) => {
-                      // Map title -> implied profession
-                      const titleToProfession: Record<string, string> = {
-                        'UI/UX Designer': 'UI/UX Designer',
-                        'Graphic Designer': 'Graphic Designer',
-                        'Web Designer': 'UI/UX Designer',
-                        'Web Developer': 'Web Developer',
-                        'Social Media Manager': 'Social Media Manager',
-                      };
                       const implied = titleToProfession[v];
                       let newProfessions = [...formData.professions];
                       if (implied && !newProfessions.includes(implied)) {
@@ -283,7 +276,7 @@ const EditProfile = () => {
                     <SelectTrigger className={`h-9 text-xs bg-muted/20 border-border/40 ${formData.professions.length > 0 ? 'opacity-70 cursor-not-allowed' : ''}`}>
                       <SelectValue placeholder="Select title" />
                     </SelectTrigger>
-                    <SelectContent>{professionalTitles.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    <SelectContent>{professionalTitles.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
                   {formData.professions.length > 0 && (
                     <p className="text-[9px] text-muted-foreground italic mt-1">Title is locked after choosing a profession.</p>
