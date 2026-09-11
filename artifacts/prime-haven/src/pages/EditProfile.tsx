@@ -320,7 +320,7 @@ const EditProfile = () => {
                             {prof}
                             {lockedAdd && (
                               <span className="ml-2 text-[9px] font-bold text-primary bg-primary/10 px-1 rounded">
-                                GH₵{fee}
+                                ${PROFESSION_UPGRADE_FEE_USD}
                               </span>
                             )}
                           </Badge>
