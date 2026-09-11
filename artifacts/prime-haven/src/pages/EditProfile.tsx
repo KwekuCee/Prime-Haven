@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 import { CORE_SERVICES, TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
-import { resolveCheckoutAmount, formatGhs } from '@/lib/currency';
+import { resolveCheckoutAmount, formatGhs, getUsdToGhsRate } from '@/lib/currency';
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
 /** Flat one-time fee (USD) to unlock an additional profession. */
@@ -69,6 +69,11 @@ const EditProfile = () => {
   const [upgradePending, setUpgradePending] = useState<string | null>(null);
   const [upgradePaying, setUpgradePaying] = useState(false);
   const [newSkill, setNewSkill] = useState('');
+  const [usdRate, setUsdRate] = useState(15.5);
+
+  useEffect(() => {
+    getUsdToGhsRate().then(r => setUsdRate(r.rate)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const loadProfileData = async () => {
