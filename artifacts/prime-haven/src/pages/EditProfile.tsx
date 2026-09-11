@@ -288,15 +288,14 @@ const EditProfile = () => {
                     {extraProfessionPaid && <Badge variant="outline" className="text-[8px] text-primary border-primary/40">2-PROFESSION ACCESS</Badge>}
                   </Label>
                   <p className="text-[10px] text-muted-foreground">
-                    You can have one profession for free. Adding more requires a one-time upgrade fee per profession. <strong>Once paid, it's unlocked forever.</strong>
+                    You can have one profession for free. Adding another is a flat one-time ${PROFESSION_UPGRADE_FEE_USD} fee. <strong>Once paid, it's unlocked forever.</strong>
                   </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer', 'Social Media Manager'].map(prof => {
+                    {MARKETPLACE_PROFESSIONS.map(prof => {
                       const selected = formData.professions.includes(prof);
                       const isFreeSlot = !selected && formData.professions.length === 0;
                       const isPaid = paidProfessions.includes(prof);
                       const lockedAdd = !selected && !isFreeSlot && !isPaid;
-                      const fee = PROFESSION_FEES[prof];
 
                       return (
                         <div key={prof} className="flex flex-col gap-1">
