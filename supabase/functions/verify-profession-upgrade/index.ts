@@ -5,10 +5,20 @@ const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-const PROFESSION_FEES: Record<string, number> = {
-  "Web Developer": 150,
-  "UI/UX Designer": 120,
-  "Graphic Designer": 90,
+/** Flat one-time fee (USD) to unlock any additional profession. */
+const PROFESSION_UPGRADE_FEE_USD = 8;
+const FALLBACK_USD_TO_GHS = 15.5;
+
+const getUsdToGhsRate = async (): Promise<number> => {
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (res.ok) {
+      const json = await res.json();
+      const ghs = Number(json?.rates?.GHS);
+      if (Number.isFinite(ghs) && ghs > 0) return ghs;
+    }
+  } catch (_e) { /* fall through */ }
+  return FALLBACK_USD_TO_GHS;
 };
 
 const corsHeaders = {
@@ -22,12 +32,12 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const { reference, profession } = await req.json();
-    if (!reference || !profession || !PROFESSION_FEES[profession]) {
+    if (!reference || typeof profession !== "string" || !profession.trim()) {
       return new Response(JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    const requiredFee = PROFESSION_FEES[profession];
+    const usdToGhs = await getUsdToGhsRate();
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     const authHeader = req.headers.get("Authorization");
@@ -65,9 +75,11 @@ serve(async (req: Request): Promise<Response> => {
 
     const verifiedAmount = Number(krData.data.amount) || 0;
     const currency = krData.data.currency || "GHS";
-    const amountInGhs = currency === "USD" ? verifiedAmount * 15.5 : verifiedAmount;
+    const amountInUsd = currency === "USD" ? verifiedAmount : verifiedAmount / usdToGhs;
+    const amountInGhs = currency === "USD" ? verifiedAmount * usdToGhs : verifiedAmount;
 
-    if (amountInGhs + 1 < requiredFee) { // Adding small buffer for rounding
+    // Allow a small tolerance for FX drift / rounding between checkout and verification.
+    if (amountInUsd < PROFESSION_UPGRADE_FEE_USD * 0.95) {
       return new Response(JSON.stringify({ success: false, error: "insufficient_amount" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
