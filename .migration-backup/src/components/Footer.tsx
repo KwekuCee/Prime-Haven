@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import BrandLogo from '@/components/BrandLogo';
+import FooterLogo from '@/components/FooterLogo';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
             <Link to="/">
-              <BrandLogo height={40} />
+              <FooterLogo height={40} />
             </Link>
             <p className="text-muted-foreground text-sm mt-2">
               Making IT Dreams a Reality
