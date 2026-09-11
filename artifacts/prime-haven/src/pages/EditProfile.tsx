@@ -444,22 +444,29 @@ const EditProfile = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" /> Unlock a 2nd Profession
+              <Lock className="w-5 h-5 text-primary" /> Switch or add a profession
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
               You're about to add <span className="text-primary font-semibold">{upgradePending}</span> as an additional profession.
-              This is a one-time payment of <span className="text-primary font-semibold">GH₵{upgradePending ? PROFESSION_FEES[upgradePending] : 0}</span> and unlocks
+              This is a flat one-time payment of <span className="text-primary font-semibold">${PROFESSION_UPGRADE_FEE_USD}</span> and unlocks
               curated jobs from this profession in your marketplace forever.
             </p>
             <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-xs space-y-2">
-              <div className="flex justify-between"><span className="text-muted-foreground">Fee</span><span className="font-bold">GH₵{upgradePending ? PROFESSION_FEES[upgradePending] : 0}.00</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fee</span>
+                <span className="font-bold">${PROFESSION_UPGRADE_FEE_USD}.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Charged in Ghana</span>
+                <span>{formatGhs(PROFESSION_UPGRADE_FEE_USD * usdRate)}</span>
+              </div>
               <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span>Korapay (Mobile Money / Card / Bank)</span></div>
             </div>
             <Button className="w-full glow-primary" disabled={upgradePaying} onClick={handleUpgradePay}>
               {upgradePaying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Pay GH₵{upgradePending ? PROFESSION_FEES[upgradePending] : 0} & Unlock
+              Pay ${PROFESSION_UPGRADE_FEE_USD} & Unlock
             </Button>
           </div>
         </DialogContent>
