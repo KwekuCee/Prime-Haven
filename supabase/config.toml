@@ -1,3 +1,7 @@
 project_id = "kbxijzsrywcwnyvtbruh"
 [functions.payment-webhook]
 verify_jwt = false
+
+[functions.capture-client-lead]
+verify_jwt = false
+

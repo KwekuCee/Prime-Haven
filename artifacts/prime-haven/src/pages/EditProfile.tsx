@@ -15,9 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
+import { CORE_SERVICES, TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
+import { resolveCheckoutAmount, formatGhs, getUsdToGhsRate } from '@/lib/currency';
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
-const PROFESSION_UPGRADE_FEE = 80;
+/** Flat one-time fee (USD) to unlock an additional profession. */
+const PROFESSION_UPGRADE_FEE_USD = 8;
 
 const experienceLevels = [
   { value: 'beginner', label: 'Beginner (0-1 years)' },
@@ -33,16 +36,18 @@ const availableHoursOptions = [
   { value: '40', label: '40 hrs/week (Full-time)' },
 ];
 
-const professionalTitles = [
-  'UI/UX Designer', 'Graphic Designer', 'Web Developer', 'Social Media Manager',
-];
+/** Same list the registration flow offers, so both stay in sync. */
+const professionalTitles = TALENT_ROLE_OPTIONS;
 
-const PROFESSION_FEES: Record<string, number> = {
-  'Web Developer': 150,
-  'UI/UX Designer': 120,
-  'Graphic Designer': 90,
-  'Social Media Manager': 90,
-};
+/** Marketplace professions mirror the registration roles. */
+const MARKETPLACE_PROFESSIONS = CORE_SERVICES.map((s) => s.roleLabel);
+
+/** Registration role value / legacy label -> marketplace profession label. */
+const titleToProfession: Record<string, string> = CORE_SERVICES.reduce((acc, s) => {
+  acc[s.roleValue] = s.roleLabel;
+  acc[s.roleLabel] = s.roleLabel;
+  return acc;
+}, {} as Record<string, string>);
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -64,6 +69,11 @@ const EditProfile = () => {
   const [upgradePending, setUpgradePending] = useState<string | null>(null);
   const [upgradePaying, setUpgradePaying] = useState(false);
   const [newSkill, setNewSkill] = useState('');
+  const [usdRate, setUsdRate] = useState(15.5);
+
+  useEffect(() => {
+    getUsdToGhsRate().then(r => setUsdRate(r.rate)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const loadProfileData = async () => {
@@ -130,11 +140,12 @@ const EditProfile = () => {
     setUpgradePaying(true);
     const reference = `PH-PROF-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
     try {
+      const checkout = await resolveCheckoutAmount(PROFESSION_UPGRADE_FEE_USD);
       (window as any).Korapay.initialize({
         key: KORAPAY_PUBLIC_KEY,
         reference,
-        amount: PROFESSION_UPGRADE_FEE,
-        currency: 'GHS',
+        amount: checkout.amount,
+        currency: checkout.currency,
         customer: { name: formData.full_name || 'Designer', email: formData.email },
         onSuccess: async () => {
           try {
@@ -256,14 +267,6 @@ const EditProfile = () => {
                     value={formData.professional_title}
                     disabled={formData.professions.length > 0}
                     onValueChange={(v) => {
-                      // Map title -> implied profession
-                      const titleToProfession: Record<string, string> = {
-                        'UI/UX Designer': 'UI/UX Designer',
-                        'Graphic Designer': 'Graphic Designer',
-                        'Web Designer': 'UI/UX Designer',
-                        'Web Developer': 'Web Developer',
-                        'Social Media Manager': 'Social Media Manager',
-                      };
                       const implied = titleToProfession[v];
                       let newProfessions = [...formData.professions];
                       if (implied && !newProfessions.includes(implied)) {
@@ -278,7 +281,7 @@ const EditProfile = () => {
                     <SelectTrigger className={`h-9 text-xs bg-muted/20 border-border/40 ${formData.professions.length > 0 ? 'opacity-70 cursor-not-allowed' : ''}`}>
                       <SelectValue placeholder="Select title" />
                     </SelectTrigger>
-                    <SelectContent>{professionalTitles.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    <SelectContent>{professionalTitles.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
                   {formData.professions.length > 0 && (
                     <p className="text-[9px] text-muted-foreground italic mt-1">Title is locked after choosing a profession.</p>
@@ -290,15 +293,14 @@ const EditProfile = () => {
                     {extraProfessionPaid && <Badge variant="outline" className="text-[8px] text-primary border-primary/40">2-PROFESSION ACCESS</Badge>}
                   </Label>
                   <p className="text-[10px] text-muted-foreground">
-                    You can have one profession for free. Adding more requires a one-time upgrade fee per profession. <strong>Once paid, it's unlocked forever.</strong>
+                    You can have one profession for free. Adding another is a flat one-time ${PROFESSION_UPGRADE_FEE_USD} fee. <strong>Once paid, it's unlocked forever.</strong>
                   </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {['Graphic Designer', 'UI/UX Designer', 'Web Developer', 'Social Media Manager'].map(prof => {
+                    {MARKETPLACE_PROFESSIONS.map(prof => {
                       const selected = formData.professions.includes(prof);
                       const isFreeSlot = !selected && formData.professions.length === 0;
                       const isPaid = paidProfessions.includes(prof);
                       const lockedAdd = !selected && !isFreeSlot && !isPaid;
-                      const fee = PROFESSION_FEES[prof];
 
                       return (
                         <div key={prof} className="flex flex-col gap-1">
@@ -323,7 +325,7 @@ const EditProfile = () => {
                             {prof}
                             {lockedAdd && (
                               <span className="ml-2 text-[9px] font-bold text-primary bg-primary/10 px-1 rounded">
-                                GH₵{fee}
+                                ${PROFESSION_UPGRADE_FEE_USD}
                               </span>
                             )}
                           </Badge>
@@ -447,22 +449,29 @@ const EditProfile = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" /> Unlock a 2nd Profession
+              <Lock className="w-5 h-5 text-primary" /> Switch or add a profession
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
               You're about to add <span className="text-primary font-semibold">{upgradePending}</span> as an additional profession.
-              This is a one-time payment of <span className="text-primary font-semibold">GH₵{upgradePending ? PROFESSION_FEES[upgradePending] : 0}</span> and unlocks
+              This is a flat one-time payment of <span className="text-primary font-semibold">${PROFESSION_UPGRADE_FEE_USD}</span> and unlocks
               curated jobs from this profession in your marketplace forever.
             </p>
             <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-xs space-y-2">
-              <div className="flex justify-between"><span className="text-muted-foreground">Fee</span><span className="font-bold">GH₵{upgradePending ? PROFESSION_FEES[upgradePending] : 0}.00</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fee</span>
+                <span className="font-bold">${PROFESSION_UPGRADE_FEE_USD}.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Charged in Ghana</span>
+                <span>{formatGhs(PROFESSION_UPGRADE_FEE_USD * usdRate)}</span>
+              </div>
               <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span>Korapay (Mobile Money / Card / Bank)</span></div>
             </div>
             <Button className="w-full glow-primary" disabled={upgradePaying} onClick={handleUpgradePay}>
               {upgradePaying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Pay GH₵{upgradePending ? PROFESSION_FEES[upgradePending] : 0} & Unlock
+              Pay ${PROFESSION_UPGRADE_FEE_USD} & Unlock
             </Button>
           </div>
         </DialogContent>

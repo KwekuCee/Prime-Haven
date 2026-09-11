@@ -2340,6 +2340,7 @@ export type Database = {
       claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
       current_user_email: { Args: never; Returns: string }
+      ensure_client_role: { Args: never; Returns: boolean }
       find_or_create_client: {
         Args: { p_email: string; p_name: string; p_whatsapp?: string }
         Returns: string
