@@ -183,8 +183,7 @@ const Login = () => {
   // tab order always follows the on-screen left-to-right order after the slide.
   const brandPanel = (
     <div
-      className="hidden md:flex md:absolute md:inset-y-4 md:left-4 md:w-5/12 rounded-[2rem] bg-foreground p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
-      style={{ transform: swapped ? 'translateX(calc(140% - 32px))' : 'translateX(0)' }}
+      className="login-brand-panel flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-[2rem] bg-foreground p-8 sm:p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
       aria-hidden={false}
     >
       {/* Kente-inspired grid pattern */}
@@ -219,8 +218,7 @@ const Login = () => {
 
   const formPanel = (
     <div
-      className="w-full md:absolute md:inset-y-4 md:right-4 md:w-7/12 flex items-center justify-center p-6 md:p-12 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
-      style={{ transform: swapped ? 'translateX(calc(-71.4286% + 32px))' : 'translateX(0)' }}
+      className="login-form-panel w-full lg:absolute lg:inset-y-4 lg:right-4 lg:w-7/12 flex items-center justify-center p-6 sm:p-10 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
     >
       <div
         key={mode}
@@ -229,7 +227,7 @@ const Login = () => {
         className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none"
       >
           {/* Mobile logo */}
-          <div className="md:hidden flex items-center gap-2 mb-12">
+          <div className="lg:hidden flex items-center gap-2 mb-12">
             <Link to="/" className="inline-block">
               <BrandLogo variant="light" height={32} />
             </Link>
@@ -244,7 +242,7 @@ const Login = () => {
               ) : (
                 <LogIn className="w-5 h-5 text-primary" />
               )}
-              <h2 className="text-3xl md:text-4xl font-semibold font-heading tracking-tight">{formHeading.title}</h2>
+              <h2 className="text-3xl sm:text-4xl font-semibold font-heading tracking-tight">{formHeading.title}</h2>
             </div>
             <p className="text-muted-foreground">{formHeading.sub}</p>
           </header>
@@ -373,18 +371,12 @@ const Login = () => {
   );
 
   return (
-    <div className="min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground md:relative md:overflow-hidden flex flex-col md:block">
-      {swapped ? (
-        <>
-          {formPanel}
-          {brandPanel}
-        </>
-      ) : (
-        <>
-          {brandPanel}
-          {formPanel}
-        </>
-      )}
+    <div
+      className="login-stage min-h-screen w-full bg-background font-body text-foreground selection:bg-primary selection:text-primary-foreground lg:relative lg:overflow-hidden flex flex-col lg:block"
+      data-swapped={swapped}
+    >
+      {brandPanel}
+      {formPanel}
     </div>
   );
 };

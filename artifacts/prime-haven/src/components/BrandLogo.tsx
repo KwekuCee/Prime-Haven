@@ -15,8 +15,8 @@ const BrandLogo = ({ className, alt = 'Prime Haven', height = 40, variant = 'lig
     <img
       src={src}
       alt={alt}
-      className={className}
-      style={{ height: `${height}px`, width: 'auto', display: 'block' }}
+      className={`block h-auto max-w-full object-contain ${className ?? ''}`}
+      style={{ height: `${height}px`, width: 'auto' }}
     />
   );
 };
