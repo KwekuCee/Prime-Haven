@@ -647,7 +647,13 @@ const SuperAdminDashboard = () => {
       const approvedSubmissions = processedSubmissions.filter(s => s.status === 'approved' || s.ph_approved).length;
       const totalSubmissions = processedSubmissions.length;
       const completedPayments = processedPayments.filter(p => p.status === 'completed');
-      const totalRevenue = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const feeRevenue = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      // Money paid by clients (service checkouts + custom projects), in GHS.
+      const clientRevenue = await loadClientRevenue().catch(() => null);
+      const clientRevenueGhs = clientRevenue?.totalGhs || 0;
+      setRevenueBreakdown({ clients: clientRevenueGhs, fees: feeRevenue });
+      const totalRevenue = feeRevenue + clientRevenueGhs;
+
       const conversionRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
 
       // average approval time
@@ -667,7 +673,7 @@ const SuperAdminDashboard = () => {
         totalDesigners,
         totalAdmins,
         pendingSubmissions,
-        totalRevenue: systemSettings.monthly_revenue?.amount || totalRevenue,
+        totalRevenue,
         activeProjects: pendingSubmissions + approvedSubmissions,
         conversionRate: Math.round(conversionRate),
         avgApprovalTime: avgApprovalTime || 0

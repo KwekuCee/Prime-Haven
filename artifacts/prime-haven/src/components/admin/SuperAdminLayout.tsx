@@ -197,7 +197,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-200"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -205,11 +205,11 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 h-screen
+          fixed md:sticky md:top-0 inset-y-0 left-0 z-50 h-screen
           ${collapsed ? 'w-[68px]' : 'w-[260px]'}
           bg-sidebar-background/40 backdrop-blur-3xl border-r border-white/5 shadow-2xl
           transform transition-all duration-300 ease-in-out
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           flex flex-col
         `}
       >
@@ -218,14 +218,14 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
           {!collapsed ? (
             <>
               <Link to="/superadmin" className="flex items-center gap-2.5">
-                <BrandLogo height={26} />
+                <BrandLogo height={40} />
               </Link>
               <div className="flex items-center gap-1.5">
                 <Badge className="bg-primary/15 text-primary border-0 text-[10px] font-bold px-1.5 py-0.5 hover:bg-primary/15">
                   <Shield className="w-2.5 h-2.5 mr-0.5" />
                   Admin
                 </Badge>
-                <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 rounded-lg hover:bg-secondary text-muted-foreground">
+                <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 rounded-lg hover:bg-secondary text-muted-foreground">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -272,7 +272,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
           <Button
             variant="ghost"
             size="sm"
-            className="w-full hidden lg:flex items-center justify-center text-muted-foreground hover:text-foreground h-9"
+            className="w-full hidden md:flex items-center justify-center text-muted-foreground hover:text-foreground h-9"
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? <PanelLeft className="w-4 h-4" /> : <><PanelLeftClose className="w-4 h-4 mr-2" /><span className="text-xs">Collapse</span></>}
@@ -315,7 +315,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Mobile Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-white/5 bg-background/40 backdrop-blur-3xl shadow-lg lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-white/5 bg-background/40 backdrop-blur-3xl shadow-lg md:hidden">
           <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-xl hover:bg-white/5 text-foreground">
             <Menu className="w-5 h-5" />
           </button>

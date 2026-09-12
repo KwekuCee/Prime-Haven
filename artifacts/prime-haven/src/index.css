@@ -302,26 +302,22 @@
 }
 
 @layer components {
+  /* Mobile / tablet: panels simply stack and the page scrolls naturally.
+     No viewport-locked heights or vertical sliding, so long forms (client and
+     admin sign-in) are never clipped on small screens. */
   .login-brand-panel,
   .login-form-panel {
-    will-change: transform;
+    min-height: 0;
+    transform: none;
   }
 
-  .login-brand-panel {
-    min-height: 34svh;
+  @media (min-width: 1024px) {
+    .login-brand-panel,
+    .login-form-panel {
+      will-change: transform;
+    }
   }
 
-  .login-form-panel {
-    min-height: 66svh;
-  }
-
-  .login-stage[data-swapped='true'] .login-brand-panel {
-    transform: translateY(66svh);
-  }
-
-  .login-stage[data-swapped='true'] .login-form-panel {
-    transform: translateY(-34svh);
-  }
 
   @media (min-width: 1024px) {
     .login-stage {

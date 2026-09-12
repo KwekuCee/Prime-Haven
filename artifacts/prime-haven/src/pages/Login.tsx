@@ -183,9 +183,10 @@ const Login = () => {
   // tab order always follows the on-screen left-to-right order after the slide.
   const brandPanel = (
     <div
-      className="login-brand-panel flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-[2rem] bg-foreground p-8 sm:p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      className="login-brand-panel relative flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-b-[2rem] lg:rounded-[2rem] bg-foreground px-6 py-10 sm:px-10 sm:py-12 lg:p-16 flex-col justify-between gap-8 lg:gap-0 overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
       aria-hidden={false}
     >
+
       {/* Kente-inspired grid pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -200,12 +201,12 @@ const Login = () => {
 
         <div className="relative z-10">
           <Link to="/" className="inline-block">
-            <BrandLogo variant="dark" height={36} />
+            <BrandLogo variant="dark" height={52} />
           </Link>
         </div>
 
         <div className="relative z-10">
-          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-background font-heading tracking-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-background font-heading tracking-tight">
             {panelCopy.heading}
           </h1>
         </div>
@@ -218,7 +219,7 @@ const Login = () => {
 
   const formPanel = (
     <div
-      className="login-form-panel w-full lg:absolute lg:inset-y-4 lg:right-4 lg:w-7/12 flex items-center justify-center p-6 sm:p-10 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      className="login-form-panel w-full lg:absolute lg:inset-y-4 lg:right-4 lg:w-7/12 flex items-center justify-center px-5 py-10 sm:p-10 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
     >
       <div
         key={mode}
@@ -226,12 +227,8 @@ const Login = () => {
         tabIndex={-1}
         className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none"
       >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-12">
-            <Link to="/" className="inline-block">
-              <BrandLogo variant="light" height={32} />
-            </Link>
-          </div>
+          {/* On small screens the brand panel above already carries the logo. */}
+
 
           <header className="mb-10">
             <div className="flex items-center gap-2 mb-2">
