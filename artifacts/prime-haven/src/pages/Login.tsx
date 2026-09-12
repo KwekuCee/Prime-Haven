@@ -183,9 +183,10 @@ const Login = () => {
   // tab order always follows the on-screen left-to-right order after the slide.
   const brandPanel = (
     <div
-      className="login-brand-panel flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-[2rem] bg-foreground p-8 sm:p-12 lg:p-16 flex-col justify-between overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      className="login-brand-panel relative flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-b-[2rem] lg:rounded-[2rem] bg-foreground px-6 py-10 sm:px-10 sm:py-12 lg:p-16 flex-col justify-between gap-8 lg:gap-0 overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
       aria-hidden={false}
     >
+
       {/* Kente-inspired grid pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
