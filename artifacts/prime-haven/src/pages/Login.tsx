@@ -201,12 +201,12 @@ const Login = () => {
 
         <div className="relative z-10">
           <Link to="/" className="inline-block">
-            <BrandLogo variant="dark" height={36} />
+            <BrandLogo variant="dark" height={52} />
           </Link>
         </div>
 
         <div className="relative z-10">
-          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-background font-heading tracking-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-background font-heading tracking-tight">
             {panelCopy.heading}
           </h1>
         </div>
@@ -219,7 +219,7 @@ const Login = () => {
 
   const formPanel = (
     <div
-      className="login-form-panel w-full lg:absolute lg:inset-y-4 lg:right-4 lg:w-7/12 flex items-center justify-center p-6 sm:p-10 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      className="login-form-panel w-full lg:absolute lg:inset-y-4 lg:right-4 lg:w-7/12 flex items-center justify-center px-5 py-10 sm:p-10 lg:p-20 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
     >
       <div
         key={mode}
@@ -227,12 +227,8 @@ const Login = () => {
         tabIndex={-1}
         className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none"
       >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-12">
-            <Link to="/" className="inline-block">
-              <BrandLogo variant="light" height={32} />
-            </Link>
-          </div>
+          {/* On small screens the brand panel above already carries the logo. */}
+
 
           <header className="mb-10">
             <div className="flex items-center gap-2 mb-2">
