@@ -29,6 +29,7 @@ import {
 } from '@/lib/validations';
 import { TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
+import { openPaystackCheckout } from '@/lib/paystack';
 
 declare global {
   interface Window {
@@ -178,6 +179,29 @@ const Register = () => {
       return;
     }
     const amountGhs = usdToGhs(amountUsd, rate.rate);
+
+    if (gateway === 'paystack') {
+      const opened = await openPaystackCheckout({
+        email: formData.email,
+        amountGhs,
+        reference,
+        metadata: {
+          amount_usd: amountUsd,
+          usd_to_ghs_rate: rate.rate,
+          rate_source: rate.source,
+          purpose: 'registration_fee',
+          full_name: formData.fullName,
+        },
+        onSuccess: () => { finalizeRegistration(reference); },
+        onClose: () => setIsSubmitting(false),
+      });
+      if (!opened) {
+        setIsSubmitting(false);
+        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Paystack. Please try Korapay or refresh the page.' });
+      }
+      return;
+    }
+
 
     try {
       window.Korapay.initialize({
