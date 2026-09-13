@@ -96,12 +96,18 @@ const FinanceDashboard = () => {
                 customMonthlyRevenue = Number(revSettings.amount) || 0;
             }
 
-            // Revenue from completed payments (exactly mimicking SuperAdminDashboard)
+            // Revenue from completed payments (registration fees, manual entries, etc.)
             const completedPayments = (paymentsData || []).filter((p: any) => p.status === 'completed');
             const calculatedRevenue = completedPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
 
-            // Replicate the exact logic from AdminDashboard (use manual revenue if set, else use calculated)
-            const totalCombinedRevenue = customMonthlyRevenue || calculatedRevenue;
+            // Money actually paid by clients (service checkouts + custom projects), in GHS.
+            const clientRev = await loadClientRevenue().catch(() => null);
+            const clientRevenueGhs = clientRev?.totalGhs || 0;
+
+            // Actual revenue; a manually configured figure only applies when it is higher.
+            const actualRevenue = calculatedRevenue + clientRevenueGhs;
+            const totalCombinedRevenue = Math.max(actualRevenue, customMonthlyRevenue);
+
 
             // Escrow calculations from Client Debts
             //   pending debts  -> shown as "funds in escrow"
