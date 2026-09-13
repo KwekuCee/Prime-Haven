@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
+import { loadClientRevenue } from '@/lib/clientRevenue';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -272,6 +273,7 @@ const SuperAdminDashboard = () => {
     conversionRate: 0,
     avgApprovalTime: 0
   });
+  const [revenueBreakdown, setRevenueBreakdown] = useState({ clients: 0, fees: 0 });
   const [users, setUsers] = useState<User[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
