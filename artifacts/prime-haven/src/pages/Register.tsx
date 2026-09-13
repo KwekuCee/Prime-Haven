@@ -150,12 +150,7 @@ const Register = () => {
   };
 
   const handlePayNow = async () => {
-    if (gateway === 'paystack') {
-      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.', variant: 'default' });
-      return;
-    }
-
-    if (!window.Korapay) {
+    if (gateway === 'korapay' && !window.Korapay) {
       toast({ title: 'Payment System Loading', description: 'The payment gateway is still initializing. Please wait a moment and try again.', variant: 'default' });
       return;
     }
