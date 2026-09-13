@@ -284,10 +284,6 @@ const StartProject = () => {
 
 
     e.preventDefault();
-    if (gateway === 'paystack') {
-      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.' });
-      return;
-    }
     if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
@@ -298,7 +294,7 @@ const StartProject = () => {
       return;
     }
 
-    if (!window.Korapay) {
+    if (gateway === 'korapay' && !window.Korapay) {
       toast({ title: 'System Loading', description: 'Korapay is still initializing. Please wait...', variant: 'default' });
       return;
     }
