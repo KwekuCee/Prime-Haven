@@ -1804,10 +1804,8 @@ const SuperAdminDashboard = () => {
                 },
                 {
                   label: 'Revenue',
-                  value: `GH₵${(systemSettings.monthly_revenue?.amount || 0).toFixed(0)}`,
-                  sub: systemSettings.monthly_revenue_by_category
-                    ? `G:${(systemSettings.monthly_revenue_by_category.graphic || 0).toFixed(0)} · UI:${(systemSettings.monthly_revenue_by_category.uiux || 0).toFixed(0)} · W:${(systemSettings.monthly_revenue_by_category.web || 0).toFixed(0)}`
-                    : 'Click Revenue to edit',
+                  value: `GH₵${(stats.totalRevenue || 0).toFixed(0)}`,
+                  sub: `Clients GH₵${revenueBreakdown.clients.toFixed(0)} · Fees GH₵${revenueBreakdown.fees.toFixed(0)}`,
                   icon: DollarSign,
                   color: 'text-emerald-500',
                   bg: 'bg-emerald-500/10',
