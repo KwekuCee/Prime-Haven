@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
+import { loadClientRevenue } from '@/lib/clientRevenue';
 
 const FinanceDashboard = () => {
     const navigate = useNavigate();
@@ -95,12 +96,18 @@ const FinanceDashboard = () => {
                 customMonthlyRevenue = Number(revSettings.amount) || 0;
             }
 
-            // Revenue from completed payments (exactly mimicking SuperAdminDashboard)
+            // Revenue from completed payments (registration fees, manual entries, etc.)
             const completedPayments = (paymentsData || []).filter((p: any) => p.status === 'completed');
             const calculatedRevenue = completedPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
 
-            // Replicate the exact logic from AdminDashboard (use manual revenue if set, else use calculated)
-            const totalCombinedRevenue = customMonthlyRevenue || calculatedRevenue;
+            // Money actually paid by clients (service checkouts + custom projects), in GHS.
+            const clientRev = await loadClientRevenue().catch(() => null);
+            const clientRevenueGhs = clientRev?.totalGhs || 0;
+
+            // Actual revenue; a manually configured figure only applies when it is higher.
+            const actualRevenue = calculatedRevenue + clientRevenueGhs;
+            const totalCombinedRevenue = Math.max(actualRevenue, customMonthlyRevenue);
+
 
             // Escrow calculations from Client Debts
             //   pending debts  -> shown as "funds in escrow"
@@ -136,14 +143,19 @@ const FinanceDashboard = () => {
 
             // Client payments collected through Korapay / Paystack, split 70/30.
             const clientPayments = completedPayments.filter((p: any) => String(p.type) === 'client_order');
-            const collected = clientPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
-            const talentShare = clientPayments.reduce((sum: number, p: any) => {
+            const ledgerCollected = clientPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+            const ledgerTalentShare = clientPayments.reduce((sum: number, p: any) => {
                 const details = (p.payment_details || {}) as any;
                 const share = Number(details.talent_share);
                 if (Number.isFinite(share) && share > 0) return sum + share;
                 const percent = Number(details.share_percent) || 70;
                 return sum + (Number(p.amount || 0) * percent) / 100;
             }, 0);
+            // Fall back to the orders/projects tables when no ledger rows exist yet.
+            const collected = Math.max(ledgerCollected, clientRevenueGhs);
+            const talentShare = ledgerCollected >= clientRevenueGhs && ledgerCollected > 0
+                ? ledgerTalentShare
+                : (collected * 70) / 100;
             const platformShare = Math.max(0, collected - talentShare);
 
             setStats({

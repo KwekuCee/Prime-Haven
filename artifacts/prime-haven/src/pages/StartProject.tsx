@@ -14,6 +14,7 @@ import BrandLogo from '@/components/BrandLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
+import { openPaystackCheckout } from '@/lib/paystack';
 
 declare global {
   interface Window {
@@ -284,10 +285,6 @@ const StartProject = () => {
 
 
     e.preventDefault();
-    if (gateway === 'paystack') {
-      toast({ title: 'Paystack is not configured', description: 'Korapay is currently the available checkout provider for this project.' });
-      return;
-    }
     if (!form.clientName || !form.clientEmail || !form.description || !form.businessName || (!isReturningClient && !form.password)) {
       toast({ title: 'Missing fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
@@ -298,7 +295,7 @@ const StartProject = () => {
       return;
     }
 
-    if (!window.Korapay) {
+    if (gateway === 'korapay' && !window.Korapay) {
       toast({ title: 'System Loading', description: 'Korapay is still initializing. Please wait...', variant: 'default' });
       return;
     }
@@ -369,6 +366,24 @@ const StartProject = () => {
     }
 
 
+
+    if (gateway === 'paystack') {
+      // Paystack settles in cedis, so always charge the GHS equivalent.
+      const amountGhs = checkout.currency === 'GHS' ? amount : Math.round(amountUsd * checkout.rate * 100) / 100;
+      const opened = await openPaystackCheckout({
+        email: form.clientEmail,
+        amountGhs,
+        reference,
+        metadata: { amount_usd: amountUsd, charged_currency: 'GHS', usd_to_ghs_rate: checkout.rate, client_name: form.clientName, gateway },
+        onSuccess: () => handleOrderProcess(reference, finalPrice),
+        onClose: () => setSubmitting(false),
+      });
+      if (!opened) {
+        setSubmitting(false);
+        toast({ title: 'Payment System Error', description: 'Could not open Paystack. Please try Korapay or refresh the page.', variant: 'destructive' });
+      }
+      return;
+    }
 
     try {
       window.Korapay.initialize({
