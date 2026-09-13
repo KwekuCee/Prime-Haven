@@ -266,7 +266,7 @@ const Register = () => {
         console.error('Auto sign-in after signup failed:', signInError);
       } else {
         const { error: verifyError } = await supabase.functions.invoke('verify-payment', {
-          body: { reference, gateway: 'korapay' },
+          body: { reference, gateway },
         });
         if (verifyError) {
           console.error('verify-payment failed:', verifyError);
