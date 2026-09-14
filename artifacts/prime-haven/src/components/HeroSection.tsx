@@ -171,7 +171,7 @@ const HeroSection = () => {
             <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
               <div className="lg:col-span-2 rounded-2xl border border-border/70 bg-background p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm">Project Pipeline</h3>
+                  <h2 className="font-bold text-sm">Project Pipeline</h2>
                   <div className="flex gap-1">
                     {['1W', '1M', '6M', '1Y'].map((r, i) => (
                       <span
@@ -205,7 +205,7 @@ const HeroSection = () => {
 
               <div className="rounded-2xl border border-border/70 bg-background p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm">Top Disciplines</h3>
+                  <h2 className="font-bold text-sm">Top Disciplines</h2>
                   <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="mt-4 space-y-3.5">
