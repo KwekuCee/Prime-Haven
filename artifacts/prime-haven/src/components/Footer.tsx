@@ -44,7 +44,7 @@ const Footer = () => {
               <img
                 src={footerLogo}
                 alt="Prime Haven"
-                className="block h-[38px] w-auto max-w-full object-contain"
+                className="block h-[52px] w-auto max-w-full object-contain"
               />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">

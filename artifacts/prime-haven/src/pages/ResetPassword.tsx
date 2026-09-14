@@ -99,7 +99,7 @@ const ResetPassword = () => {
         <div className="paper-card p-8 rounded-[2rem]">
           <div className="text-center mb-8">
             <Link to="/" className="inline-block mb-5">
-              <BrandLogo height={48} />
+              <BrandLogo height={56} />
             </Link>
 
             {!isValidSession ? (

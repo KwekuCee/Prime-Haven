@@ -201,7 +201,7 @@ const Login = () => {
 
         <div className="relative z-10">
           <Link to="/" className="inline-block">
-            <BrandLogo variant="dark" height={52} />
+            <BrandLogo variant="dark" height={60} />
           </Link>
         </div>
 
