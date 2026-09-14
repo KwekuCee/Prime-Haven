@@ -69,7 +69,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0 z-10">
             <motion.div whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 400 }}>
-              <BrandLogo height={48} />
+              <BrandLogo height={40} />
             </motion.div>
           </Link>
 

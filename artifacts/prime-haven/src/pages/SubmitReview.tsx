@@ -107,7 +107,7 @@ const SubmitReview = () => {
         className="w-full max-w-lg"
       >
         <div className="flex justify-center mb-8">
-          <BrandLogo height={52} />
+          <BrandLogo height={56} />
         </div>
 
         <Card>
