@@ -263,7 +263,7 @@ const TrackProject = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-6">
-          <BrandLogo height={40} className="mx-auto mb-8" />
+          <BrandLogo height={56} className="mx-auto mb-8" />
           <h1 className="text-2xl font-heading font-bold mb-4">Project Not Found</h1>
           <p className="text-muted-foreground">Please check your tracking link and try again.</p>
         </div>
@@ -279,7 +279,7 @@ const TrackProject = () => {
       {/* Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <BrandLogo height={36} />
+          <BrandLogo height={48} />
           <span className="text-sm text-muted-foreground">Project Tracker</span>
         </div>
       </div>

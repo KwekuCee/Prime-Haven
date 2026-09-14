@@ -8,7 +8,7 @@ interface BrandLogoProps {
   variant?: 'light' | 'dark';
 }
 
-const BrandLogo = ({ className, alt = 'Prime Haven', height = 40, variant = 'light' }: BrandLogoProps) => {
+const BrandLogo = ({ className, alt = 'Prime Haven', height = 48, variant = 'light' }: BrandLogoProps) => {
   const src = variant === 'dark' ? logoDark : logoLight;
 
   return (

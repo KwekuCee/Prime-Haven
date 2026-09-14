@@ -327,7 +327,7 @@ const Register = () => {
           {/* Header */}
           <div className="text-center mb-6">
             <Link to="/" className="inline-block mb-4">
-              <BrandLogo height={36} />
+              <BrandLogo height={48} />
             </Link>
             <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-1">
               Join <span className="text-primary">Prime Haven</span>

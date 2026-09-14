@@ -121,7 +121,7 @@ const SuperAdminLogin = () => {
           </Link>
 
           <div className="flex flex-col items-center gap-2 mb-4">
-            <BrandLogo height={40} />
+            <BrandLogo height={52} />
             <p className="text-sm text-muted-foreground font-medium">Admin Portal</p>
           </div>
         </div>
