@@ -134,7 +134,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className={`h-16 border-b border-sidebar-border flex items-center ${collapsed ? 'justify-center px-2' : 'justify-between px-5'}`}>
             {!collapsed && (
               <Link to="/">
-                <BrandLogo height={28} />
+                <BrandLogo height={40} />
               </Link>
             )}
             {collapsed && (

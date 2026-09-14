@@ -218,7 +218,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
           {!collapsed ? (
             <>
               <Link to="/superadmin" className="flex items-center gap-2.5">
-                <BrandLogo height={40} />
+                <BrandLogo height={48} />
               </Link>
               <div className="flex items-center gap-1.5">
                 <Badge className="bg-primary/15 text-primary border-0 text-[10px] font-bold px-1.5 py-0.5 hover:bg-primary/15">
