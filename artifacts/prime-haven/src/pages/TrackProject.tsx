@@ -279,7 +279,7 @@ const TrackProject = () => {
       {/* Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <BrandLogo height={48} />
+          <BrandLogo height={56} />
           <span className="text-sm text-muted-foreground">Project Tracker</span>
         </div>
       </div>
