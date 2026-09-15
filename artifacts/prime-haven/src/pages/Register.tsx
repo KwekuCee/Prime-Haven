@@ -30,6 +30,7 @@ import {
 import { TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
+import registerMark from '@/assets/prime-haven-mark.png.asset.json';
 
 declare global {
   interface Window {
@@ -327,7 +328,7 @@ const Register = () => {
           {/* Header */}
           <div className="text-center mb-6">
             <Link to="/" className="inline-block mb-4">
-              <BrandLogo height={56} />
+              <img src={registerMark.url} alt="Prime Haven" className="block h-auto w-auto mx-auto" style={{ height: '72px' }} />
             </Link>
             <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-1">
               Join <span className="text-primary">Prime Haven</span>
