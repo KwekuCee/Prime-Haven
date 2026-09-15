@@ -70,7 +70,8 @@ const Index = () => {
             '@type': 'ProfessionalService',
             name: 'Prime Haven',
             url: 'https://primehaven.tech',
-            image: 'https://primehaven.tech/opengraph.jpg',
+            image: 'https://primehaven.tech/opengraph.jpg?v=20260915',
+            logo: 'https://primehaven.tech/logo-512.png?v=20260915',
             description: 'Web design and development, UI/UX design, graphic design and IT solutions company in Ghana, powered by a vetted tech talent network.',
             areaServed: ['Ghana', 'Worldwide'],
             address: { '@type': 'PostalAddress', addressCountry: 'GH' },
@@ -98,6 +99,8 @@ const Index = () => {
             '@type': 'WebSite',
             name: 'Prime Haven',
             url: 'https://primehaven.tech',
+            image: 'https://primehaven.tech/opengraph.jpg?v=20260915',
+            publisher: { '@id': 'https://primehaven.tech/#organization' },
             potentialAction: {
               '@type': 'SearchAction',
               target: 'https://primehaven.tech/blog?q={search_term_string}',
