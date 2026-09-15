@@ -30,6 +30,7 @@ import {
 import { TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
+import registerMark from '@/assets/prime-haven-mark.png.asset.json';
 
 declare global {
   interface Window {
@@ -197,7 +198,7 @@ const Register = () => {
       });
       if (!opened) {
         setIsSubmitting(false);
-        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Could not open Paystack. Please try Korapay or refresh the page.' });
+        toast({ variant: 'destructive', title: 'Payment System Error', description: 'Paystack did not open. Please refresh the page or pay with Korapay instead.' });
       }
       return;
     }
@@ -327,7 +328,7 @@ const Register = () => {
           {/* Header */}
           <div className="text-center mb-6">
             <Link to="/" className="inline-block mb-4">
-              <BrandLogo height={56} />
+              <img src={registerMark.url} alt="Prime Haven" className="block h-auto w-auto mx-auto" style={{ height: '72px' }} />
             </Link>
             <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-1">
               Join <span className="text-primary">Prime Haven</span>
@@ -602,7 +603,7 @@ const Register = () => {
                               <CreditCard className="w-4 h-4 text-primary" />
                               <span className="text-[10px] font-bold uppercase">{provider}</span>
                             </div>
-                            <span className="mt-1 block text-[9px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Not configured in this environment'}</span>
+                            <span className="mt-1 block text-[9px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Cards, mobile money & bank — ready to use'}</span>
                           </button>
                         ))}
                       </div>
@@ -620,7 +621,7 @@ const Register = () => {
                   </div>
 
                   <p className="text-[10px] text-center text-muted-foreground">
-                    Secure payment powered by Korapay. Accept Mobile Money, Cards & Bank Transfer.
+                    Secure payments powered by Korapay and Paystack. Both gateways are configured and live — Mobile Money, Cards & Bank Transfer.
                   </p>
 
                   <div className="flex gap-3">
