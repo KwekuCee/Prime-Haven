@@ -380,7 +380,7 @@ const StartProject = () => {
       });
       if (!opened) {
         setSubmitting(false);
-        toast({ title: 'Payment System Error', description: 'Could not open Paystack. Please try Korapay or refresh the page.', variant: 'destructive' });
+        toast({ title: 'Payment System Error', description: 'Paystack did not open. Please refresh the page or pay with Korapay instead.', variant: 'destructive' });
       }
       return;
     }
@@ -677,7 +677,7 @@ const StartProject = () => {
                         {(['korapay', 'paystack'] as const).map((provider) => (
                           <button type="button" key={provider} onClick={() => setGateway(provider)} className={`rounded-xl border p-4 text-left transition-all ${gateway === provider ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60 hover:border-primary/40'}`}>
                             <div className="flex items-center gap-2"><Banknote className="w-4 h-4 text-primary" /><span className="text-xs font-bold uppercase tracking-widest">{provider}</span></div>
-                            <span className="mt-2 block text-[10px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Not configured in this environment'}</span>
+                            <span className="mt-2 block text-[10px] text-muted-foreground">{provider === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Cards, mobile money & bank — ready to use'}</span>
                           </button>
                         ))}
                       </div>
