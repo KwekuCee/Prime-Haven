@@ -20,10 +20,15 @@ const InstallPrompt = () => {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     if ((navigator as any).standalone === true) return;
 
+    // The install card may only appear within the first 15 seconds of the visit.
+    const mountedAt = Date.now();
+    const withinWindow = () => Date.now() - mountedAt <= 15000;
+
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
 
     const handler = (e: Event) => {
       e.preventDefault();
+      if (!withinWindow()) return;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShow(true);
     };
@@ -32,14 +37,18 @@ const InstallPrompt = () => {
 
     // Show fallback prompt after 5 seconds for browsers that don't fire beforeinstallprompt
     const timer = setTimeout(() => {
-      if (!window.matchMedia('(display-mode: standalone)').matches) {
+      if (withinWindow() && !window.matchMedia('(display-mode: standalone)').matches) {
         setShow(true);
       }
     }, 5000);
 
+    // Hard stop: never show after the 15-second window closes.
+    const cutoff = setTimeout(() => setShow(false), 15000);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
       clearTimeout(timer);
+      clearTimeout(cutoff);
     };
   }, []);
 
