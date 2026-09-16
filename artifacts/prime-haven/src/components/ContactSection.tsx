@@ -15,7 +15,7 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 const WhatsApp = MessageCircle;
 
 const socials = [
-  { icon: Instagram, href: 'https://instagram.com/primehaven_co', label: 'Instagram' },
+  { icon: Instagram, href: 'https://instagram.com/primehaven_tech', label: 'Instagram' },
   { icon: Linkedin, href: 'https://linkedin.com/company/primehaven', label: 'LinkedIn' },
   { icon: DiscordIcon, href: 'https://discord.gg/meXTeEdF', label: 'Discord' },
   { icon: WhatsApp, href: 'https://whatsapp.com/channel/0029VbCw6cS5Ejy7kBSQ2H2G', label: 'WhatsApp Community' },
