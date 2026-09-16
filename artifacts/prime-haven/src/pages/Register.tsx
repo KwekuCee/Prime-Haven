@@ -310,6 +310,11 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center p-4 z-0">
+      <Seo
+        title="Join Prime Haven — Register as a Professional"
+        description="Create your Prime Haven professional account as a UI/UX designer, graphic designer or web developer. One-time $15 joining fee, paid securely."
+        path="/register"
+      />
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[140px] opacity-60" />

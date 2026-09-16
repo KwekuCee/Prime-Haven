@@ -3,10 +3,17 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ProjectMarketplace from '@/components/dashboard/ProjectMarketplace';
 import { ShoppingBag, Sparkles, Filter, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Seo from '@/components/Seo';
 
 const Marketplace = () => {
     return (
         <DashboardLayout>
+            <Seo
+                title="Project Marketplace — Prime Haven"
+                description="Claim open client projects that match your profession on the Prime Haven marketplace."
+                path="/marketplace"
+                noindex
+            />
             <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-8">
                 {/* Header Section */}
                 <motion.div
