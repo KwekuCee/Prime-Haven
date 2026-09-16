@@ -31,6 +31,7 @@ import { TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
 import registerMark from '@/assets/prime-haven-mark.png.asset.json';
+import Seo from '@/components/Seo';
 
 declare global {
   interface Window {
@@ -310,6 +311,11 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center p-4 z-0">
+      <Seo
+        title="Join Prime Haven — Register as a Professional"
+        description="Create your Prime Haven professional account as a UI/UX designer, graphic designer or web developer. One-time $15 joining fee, paid securely."
+        path="/register"
+      />
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[140px] opacity-60" />

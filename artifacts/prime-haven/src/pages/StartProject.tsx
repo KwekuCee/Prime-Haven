@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
+import Seo from '@/components/Seo';
 
 declare global {
   interface Window {
@@ -501,6 +502,11 @@ const StartProject = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <Seo
+        title="Start a Project — Prime Haven"
+        description="Tell Prime Haven about your UI/UX design, graphic design or web development project and get matched with a vetted professional. Secure payment via Korapay or Paystack."
+        path="/start-project"
+      />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.18)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.18)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
       {/* Header */}
       <div className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
