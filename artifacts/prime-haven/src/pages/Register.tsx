@@ -31,6 +31,7 @@ import { TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
 import registerMark from '@/assets/prime-haven-mark.png.asset.json';
+import Seo from '@/components/Seo';
 
 declare global {
   interface Window {

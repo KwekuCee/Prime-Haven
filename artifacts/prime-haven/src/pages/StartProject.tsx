@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
+import Seo from '@/components/Seo';
 
 declare global {
   interface Window {
