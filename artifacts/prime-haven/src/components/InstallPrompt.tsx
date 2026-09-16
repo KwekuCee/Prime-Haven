@@ -48,6 +48,7 @@ const InstallPrompt = () => {
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
       clearTimeout(timer);
+      clearTimeout(cutoff);
     };
   }, []);
 
