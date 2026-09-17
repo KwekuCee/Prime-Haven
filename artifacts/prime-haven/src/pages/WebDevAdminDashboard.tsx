@@ -100,16 +100,26 @@ const WebDevAdminDashboard = () => {
     checkAccess();
   }, [user, authLoading, navigate, loadData]);
 
-  const handlePHApproval = async (submissionId: string) => {
-    try {
-      const phPoints = systemSettings.ph_approval_points?.value || 15;
-      const { data, error } = await (supabase as any).rpc('admin_ph_approve_submission', {
-        p_submission_id: submissionId, p_points: phPoints, p_dept_label: 'Web Dept',
-      });
-      if (error) throw error;
-      toast({ title: 'Approved', description: `+${data?.points ?? 0} points awarded.` });
-      await loadData();
-    } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
+  // Admin completion override — clients approve their own work; this closes out
+  // anything left pending in the queue.
+  const handleMarkCompleted = async (submissionId: string) => {
+      try {
+          const submission = submissions.find((s: any) => s.id === submissionId);
+          if (!submission) throw new Error('Submission not found');
+          const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 40 };
+          const basePoints = servicePointsMap[submission.service_type] || systemSettings.client_acceptance_points?.value || 40;
+          const points = submission.parent_submission_id ? 0 : basePoints;
+          const { error } = await (supabase as any).rpc('admin_client_accept_submission', {
+              p_submission_id: submissionId,
+              p_points: points,
+              p_dept_label: 'Web Development',
+          });
+          if (error) throw error;
+          toast({ title: 'Marked Completed', description: points > 0 ? `+${points} points awarded.` : 'Project closed out.' });
+          await loadData();
+      } catch (error: any) {
+          toast({ title: 'Failed', description: error.message || 'Please try again.', variant: 'destructive' });
+      }
   };
 
   const handleClientAcceptance = async (submissionId: string) => {
@@ -317,10 +327,10 @@ const WebDevAdminDashboard = () => {
                               </DropdownMenuItem>
                             )}
                             {(s.design_link || s.files_urls?.length > 0) && <DropdownMenuSeparator className="bg-border/50" />}
-                            {!s.ph_approved && s.status !== 'rejected' && (
+                            {!s.ph_approved && !s.client_accepted && s.status !== 'rejected' && (
                               <>
-                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handlePHApproval(s.id)}>
-                                  <CheckCircle className="w-3.5 h-3.5 mr-2" /> QA Override Pass
+                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
+                                  <CheckCircle className="w-3.5 h-3.5 mr-2" /> Mark Completed
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
                                   <XCircle className="w-3.5 h-3.5 mr-2" /> QA Reject & Return
@@ -329,8 +339,8 @@ const WebDevAdminDashboard = () => {
                             )}
                             {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
                               <>
-                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleClientAcceptance(s.id)}>
-                                  <ThumbsUp className="w-3.5 h-3.5 mr-2" /> Mark Client Accepted
+                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
+                                  <ThumbsUp className="w-3.5 h-3.5 mr-2" /> Mark Completed
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setClientRejectSubmission(s); setClientRejectionReason(''); }}>
                                   <XCircle className="w-3.5 h-3.5 mr-2" /> Mark Client Rejected
