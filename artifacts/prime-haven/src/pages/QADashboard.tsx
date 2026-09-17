@@ -103,37 +103,26 @@ const QADashboard = () => {
     }, [user, authLoading, navigate, loadData]);
 
     // Robust functionalities cloned from earlier versions
-    const handlePHApproval = async (submissionId: string) => {
+    // Admin completion override — clients approve their own work; this closes out
+    // anything left pending in the queue.
+    const handleMarkCompleted = async (submissionId: string) => {
         try {
             const submission = submissions.find((s: any) => s.id === submissionId);
             if (!submission) throw new Error('Submission not found');
-            const isCorrection = !!submission.parent_submission_id;
-            const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
-
-            await supabase.from('submissions').update({
-                ph_approved: true, ph_approved_at: new Date().toISOString(), ph_approved_by: user?.id,
-                points_awarded: (submission.points_awarded || 0) + phPoints, status: 'ph_approved',
-                updated_at: new Date().toISOString()
-            }).eq('id', submissionId);
-
-            if (phPoints > 0) {
-                const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-                if (designerData) {
-                    await supabase.from('designer_details').update({
-                        total_points: (designerData.total_points || 0) + phPoints,
-                        monthly_points: (designerData.monthly_points || 0) + phPoints,
-                        updated_at: new Date().toISOString()
-                    }).eq('user_id', submission.designer_id);
-                }
-            }
-
-            if (user) {
-                await supabase.from('system_logs').insert({ action_type: 'ph_approval', admin_id: user.id, description: `[QA Global] Approved: ${submission.project_name} (+${phPoints} pts)`, timestamp: new Date().toISOString() });
-            }
-
-            toast({ title: 'QA Approved', description: `+${phPoints} points awarded.` });
+            const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 40 };
+            const basePoints = servicePointsMap[submission.service_type] || systemSettings.client_acceptance_points?.value || 40;
+            const points = submission.parent_submission_id ? 0 : basePoints;
+            const { error } = await (supabase as any).rpc('admin_client_accept_submission', {
+                p_submission_id: submissionId,
+                p_points: points,
+                p_dept_label: 'QA Global',
+            });
+            if (error) throw error;
+            toast({ title: 'Marked Completed', description: points > 0 ? `+${points} points awarded.` : 'Project closed out.' });
             await loadData();
-        } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
+        } catch (error: any) {
+            toast({ title: 'Failed', description: error.message || 'Please try again.', variant: 'destructive' });
+        }
     };
 
     const handleClientAcceptance = async (submissionId: string) => {
@@ -240,7 +229,7 @@ const QADashboard = () => {
             Designer: s.designer_name,
             'Service Type': s.service_type,
             Status: s.status,
-            'PH Approved': s.ph_approved ? 'Yes' : 'No',
+            'Mark Completedd': s.ph_approved ? 'Yes' : 'No',
             'Client Accepted': s.client_accepted ? 'Yes' : 'No',
             'Points Awarded': s.points_awarded || 0,
             'Submitted Date': format(new Date(s.created_at), 'yyyy-MM-dd HH:mm'),
@@ -438,10 +427,10 @@ const QADashboard = () => {
                                                             </DropdownMenuItem>
                                                         )}
                                                         {(s.design_link || s.files_urls?.length > 0) && <DropdownMenuSeparator className="bg-border/50" />}
-                                                        {!s.ph_approved && s.status !== 'rejected' && (
+                                                        {!s.ph_approved && !s.client_accepted && s.status !== 'rejected' && (
                                                             <>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handlePHApproval(s.id)}>
-                                                                    <CheckCircle className="w-3.5 h-3.5 mr-2" /> QA Override Pass
+                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
+                                                                    <CheckCircle className="w-3.5 h-3.5 mr-2" /> Mark Completed
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
                                                                     <XCircle className="w-3.5 h-3.5 mr-2" /> QA Reject & Return
@@ -450,8 +439,8 @@ const QADashboard = () => {
                                                         )}
                                                         {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
                                                             <>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleClientAcceptance(s.id)}>
-                                                                    <ThumbsUp className="w-3.5 h-3.5 mr-2" /> Mark Client Accepted
+                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
+                                                                    <ThumbsUp className="w-3.5 h-3.5 mr-2" /> Mark Completed
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setClientRejectSubmission(s); setClientRejectionReason(''); }}>
                                                                     <XCircle className="w-3.5 h-3.5 mr-2" /> Mark Client Rejected

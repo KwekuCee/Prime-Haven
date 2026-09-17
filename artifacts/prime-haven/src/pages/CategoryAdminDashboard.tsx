@@ -121,37 +121,26 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
     checkAccess();
   }, [user, authLoading, navigate, loadData]);
 
-  const handlePHApproval = async (submissionId: string) => {
-    try {
-      const submission = submissions.find((s: any) => s.id === submissionId);
-      if (!submission) throw new Error('Submission not found');
-      const isCorrection = !!submission.parent_submission_id;
-      const phPoints = isCorrection ? 0 : (systemSettings.ph_approval_points?.value || 15);
-
-      await supabase.from('submissions').update({
-        ph_approved: true, ph_approved_at: new Date().toISOString(), ph_approved_by: user?.id,
-        points_awarded: (submission.points_awarded || 0) + phPoints, status: 'ph_approved',
-        updated_at: new Date().toISOString()
-      }).eq('id', submissionId);
-
-      if (phPoints > 0) {
-        const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-        if (designerData) {
-          await supabase.from('designer_details').update({
-            total_points: (designerData.total_points || 0) + phPoints,
-            monthly_points: (designerData.monthly_points || 0) + phPoints,
-            updated_at: new Date().toISOString()
-          }).eq('user_id', submission.designer_id);
-        }
+  // Admin completion override — clients approve their own work; this closes out
+  // anything left pending in the queue.
+  const handleMarkCompleted = async (submissionId: string) => {
+      try {
+          const submission = submissions.find((s: any) => s.id === submissionId);
+          if (!submission) throw new Error('Submission not found');
+          const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 40 };
+          const basePoints = servicePointsMap[submission.service_type] || systemSettings.client_acceptance_points?.value || 40;
+          const points = submission.parent_submission_id ? 0 : basePoints;
+          const { error } = await (supabase as any).rpc('admin_client_accept_submission', {
+              p_submission_id: submissionId,
+              p_points: points,
+              p_dept_label: 'Department',
+          });
+          if (error) throw error;
+          toast({ title: 'Marked Completed', description: points > 0 ? `+${points} points awarded.` : 'Project closed out.' });
+          await loadData();
+      } catch (error: any) {
+          toast({ title: 'Failed', description: error.message || 'Please try again.', variant: 'destructive' });
       }
-
-      if (user) {
-        await supabase.from('system_logs').insert({ action_type: 'ph_approval', admin_id: user.id, description: `[${categoryLabel}] PH approved: ${submission.project_name} (+${phPoints} pts)`, timestamp: new Date().toISOString() });
-      }
-
-      toast({ title: 'PH Approved', description: `+${phPoints} points awarded.` });
-      await loadData();
-    } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
   };
 
   const handleClientAcceptance = async (submissionId: string) => {
@@ -416,10 +405,10 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                                 <ImageIcon className="w-3 h-3 mr-1" />View
                               </Button>
                             )}
-                            {!s.ph_approved && s.status !== 'rejected' && (
+                            {!s.ph_approved && !s.client_accepted && s.status !== 'rejected' && (
                               <>
-                                <Button size="sm" variant="outline" className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white" onClick={() => handlePHApproval(s.id)}>
-                                  <CheckCircle className="w-3 h-3 mr-1" />PH Approve
+                                <Button size="sm" variant="outline" className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white" onClick={() => handleMarkCompleted(s.id)}>
+                                  <CheckCircle className="w-3 h-3 mr-1" />Mark Completed
                                 </Button>
                                 <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
                                   <XCircle className="w-3 h-3" />
@@ -428,7 +417,7 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
                             )}
                             {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
                               <>
-                                <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => handleClientAcceptance(s.id)}>
+                                <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => handleMarkCompleted(s.id)}>
                                   <ThumbsUp className="w-3 h-3 mr-1" />Accept
                                 </Button>
                                 <Button size="sm" variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setClientRejectSubmission(s); setClientRejectionReason(''); }}>
