@@ -648,13 +648,12 @@ const SuperAdminDashboard = () => {
       const pendingSubmissions = processedSubmissions.filter(s => s.status === 'pending' || (!s.ph_approved && s.status !== 'rejected')).length;
       const approvedSubmissions = processedSubmissions.filter(s => s.status === 'approved' || s.ph_approved).length;
       const totalSubmissions = processedSubmissions.length;
-      const completedPayments = processedPayments.filter(p => p.status === 'completed');
-      const feeRevenue = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      // Money paid by clients (service checkouts + custom projects), in GHS.
-      const clientRevenue = await loadClientRevenue().catch(() => null);
-      const clientRevenueGhs = clientRevenue?.totalGhs || 0;
+      // Shared revenue calculation — identical to the Finance Hub.
+      const revenue = await loadPlatformRevenue().catch(() => null);
+      const feeRevenue = revenue?.feeRevenue || 0;
+      const clientRevenueGhs = revenue?.clientRevenueGhs || 0;
       setRevenueBreakdown({ clients: clientRevenueGhs, fees: feeRevenue });
-      const totalRevenue = feeRevenue + clientRevenueGhs;
+      const totalRevenue = revenue?.grossRevenue || 0;
 
       const conversionRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
 
