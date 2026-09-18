@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
-import { loadClientRevenue } from '@/lib/clientRevenue';
+import { loadPlatformRevenue } from '@/lib/platformRevenue';
 import { motion } from 'framer-motion';
 import {
   Users,
