@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
-import { loadClientRevenue } from '@/lib/clientRevenue';
+import { loadPlatformRevenue } from '@/lib/platformRevenue';
 
 const FinanceDashboard = () => {
     const navigate = useNavigate();
@@ -89,35 +89,14 @@ const FinanceDashboard = () => {
             setSystemClients(clientsData || []);
             setAcceptedProjects(submissionsData || []);
 
-            // System Settings (SuperAdmin dashboard defined revenue config)
-            let customMonthlyRevenue = 0;
-            if (settingsData && settingsData.length > 0) {
-                const revSettings = settingsData[0].value as any;
-                customMonthlyRevenue = Number(revSettings.amount) || 0;
-            }
+            // Shared revenue calculation — identical to the SuperAdmin dashboard.
+            const revenue = await loadPlatformRevenue().catch(() => null);
+            const clientRevenueGhs = revenue?.clientRevenueGhs || 0;
+            const escrow = revenue?.escrow || 0;
 
-            // Revenue from completed payments (registration fees, manual entries, etc.)
+            // Completed ledger payments (used for the 70/30 client split below).
             const completedPayments = (paymentsData || []).filter((p: any) => p.status === 'completed');
-            const calculatedRevenue = completedPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
 
-            // Money actually paid by clients (service checkouts + custom projects), in GHS.
-            const clientRev = await loadClientRevenue().catch(() => null);
-            const clientRevenueGhs = clientRev?.totalGhs || 0;
-
-            // Actual revenue; a manually configured figure only applies when it is higher.
-            const actualRevenue = calculatedRevenue + clientRevenueGhs;
-            const totalCombinedRevenue = Math.max(actualRevenue, customMonthlyRevenue);
-
-
-            // Escrow calculations from Client Debts
-            //   pending debts  -> shown as "funds in escrow"
-            //   paid debts     -> counted as realised revenue (adds to Prime Haven profit)
-            let escrow = 0;
-            let paidEscrowRevenue = 0;
-            (debtsData || []).forEach((debt: any) => {
-                if (debt.status === 'pending') escrow += Number(debt.amount_owed);
-                else if (debt.status === 'paid') paidEscrowRevenue += Number(debt.amount_owed);
-            });
             setClientDebts(debtsData || []);
 
             // Users and Salaries
@@ -137,7 +116,7 @@ const FinanceDashboard = () => {
             }).filter(d => d.activeSalary > 0 || (d.total_points ?? 0) > 0);
 
             // Total revenue = configured/payment revenue + realised escrow (paid debts)
-            const grossRevenue = totalCombinedRevenue + paidEscrowRevenue;
+            const grossRevenue = revenue?.grossRevenue || 0;
             // Profit = Revenue (incl. released escrow) - Pending Payouts
             const platformProfit = grossRevenue - pendingPayouts;
 
