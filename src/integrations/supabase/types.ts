@@ -1442,6 +1442,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       seo_index_reports: {
         Row: {
           created_at: string
@@ -2331,6 +2352,10 @@ export type Database = {
       }
       approve_project_submission: {
         Args: { p_submission_id: string }
+        Returns: Json
+      }
+      check_rate_limit: {
+        Args: { p_action: string; p_identifier: string }
         Returns: Json
       }
       check_withdrawal_already_paid: {
