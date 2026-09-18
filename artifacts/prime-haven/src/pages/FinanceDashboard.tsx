@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
-import { loadClientRevenue } from '@/lib/clientRevenue';
+import { loadPlatformRevenue } from '@/lib/platformRevenue';
 
 const FinanceDashboard = () => {
     const navigate = useNavigate();
