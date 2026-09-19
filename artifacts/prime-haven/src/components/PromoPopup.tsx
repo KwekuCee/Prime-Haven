@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,11 @@ const PromoPopup = () => {
     if (!promo || !email.trim()) return;
     setSubmitting(true);
     try {
+      const limit = await checkRateLimit("promo_email", email);
+      if (!limit.allowed) {
+        toast({ title: "Slow down", description: limit.message, variant: "destructive" });
+        return;
+      }
       const { error } = await supabase.functions.invoke("submit-promo-email", {
         body: { popup_id: promo.id, email: email.trim() },
       });

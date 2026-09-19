@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const bookingSchema = z.object({
   fullName: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
@@ -76,6 +77,11 @@ const BookConsultationDialog = ({ children }: BookConsultationDialogProps) => {
   const onSubmit = async (data: BookingFormData) => {
     setSubmitting(true);
     try {
+      const limit = await checkRateLimit('consultation_booking', data.email);
+      if (!limit.allowed) {
+        toast.error(limit.message ?? 'Too many attempts. Please try again later.');
+        return;
+      }
       const { error } = await supabase.from('consultation_bookings').insert({
         full_name: data.fullName,
         email: data.email,

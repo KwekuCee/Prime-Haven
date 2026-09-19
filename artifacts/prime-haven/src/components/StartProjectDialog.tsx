@@ -52,6 +52,11 @@ const StartProjectDialog = ({ trigger }: StartProjectDialogProps) => {
     }
     setSubmitting(true);
     try {
+      const limit = await checkRateLimit('project_inquiry', form.email);
+      if (!limit.allowed) {
+        toast({ title: 'Slow down', description: limit.message, variant: 'destructive' });
+        return;
+      }
       const { error } = await supabase.functions.invoke('submit-project-inquiry', {
         body: form,
       });
