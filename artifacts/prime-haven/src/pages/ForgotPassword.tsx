@@ -33,6 +33,12 @@ const ForgotPassword = () => {
   });
 
   const onSubmit = async (data: ForgotPasswordData) => {
+    const limit = await checkRateLimit('password_reset', data.email);
+    if (!limit.allowed) {
+      toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+      return;
+    }
+
     const { error } = await resetPassword(data.email);
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to send reset email.' });

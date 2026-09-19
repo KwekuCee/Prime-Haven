@@ -38,6 +38,12 @@ const SuperAdminLogin = () => {
     setIsLoading(true);
 
     try {
+      const limit = await checkRateLimit('admin_login', data.username);
+      if (!limit.allowed) {
+        toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+        return;
+      }
+
       // Use the admin-login edge function for secure authentication
       const { data: response, error } = await supabase.functions.invoke('admin-login', {
         body: {

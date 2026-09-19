@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
