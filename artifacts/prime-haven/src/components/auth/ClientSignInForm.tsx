@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const inputClass = (hasError?: boolean) =>
   `w-full bg-transparent border-b-2 px-0 py-3 focus:outline-none focus:border-primary transition-colors placeholder:text-foreground/20 font-body ${
@@ -26,6 +27,12 @@ const ClientSignInForm = () => {
   } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = async (data: LoginFormData) => {
+    const limit = await checkRateLimit('auth_signin', data.email);
+    if (!limit.allowed) {
+      toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+      return;
+    }
+
     const { error, data: authData } = await signIn(data.email, data.password);
 
     if (error) {

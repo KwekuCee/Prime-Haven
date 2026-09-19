@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Seo from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,12 @@ const ClientLogin = () => {
   }, []);
 
   const onSubmit = async (data: LoginFormData) => {
+    const limit = await checkRateLimit('auth_signin', data.email);
+    if (!limit.allowed) {
+      toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+      return;
+    }
+
     const { error, data: authData } = await signIn(data.email, data.password);
 
     if (error) {

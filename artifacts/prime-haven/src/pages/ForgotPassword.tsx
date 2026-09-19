@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuthEvent } from '@/lib/authLogger';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -33,6 +34,12 @@ const ForgotPassword = () => {
   });
 
   const onSubmit = async (data: ForgotPasswordData) => {
+    const limit = await checkRateLimit('password_reset', data.email);
+    if (!limit.allowed) {
+      toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+      return;
+    }
+
     const { error } = await resetPassword(data.email);
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to send reset email.' });

@@ -12,6 +12,7 @@ import ResendVerificationEmail from '@/components/auth/ResendVerificationEmail';
 import ClientSignInForm from '@/components/auth/ClientSignInForm';
 import AdminSignInForm from '@/components/auth/AdminSignInForm';
 import { logAuthEvent } from '@/lib/authLogger';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 type AuthMode = 'talent' | 'client' | 'admin';
 
@@ -57,6 +58,12 @@ const Login = () => {
   }, [mode]);
 
   const onSubmit = async (data: LoginFormData) => {
+    const limit = await checkRateLimit('auth_signin', data.email);
+    if (!limit.allowed) {
+      toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+      return;
+    }
+
     const { error, data: authData } = await signIn(data.email, data.password);
 
     if (error) {

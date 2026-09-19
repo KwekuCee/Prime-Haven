@@ -11,6 +11,7 @@ import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import EzoicAd from '@/components/EzoicAd';
@@ -71,6 +72,11 @@ const Blog = () => {
     if (!email.trim()) return;
     setSubscribing(true);
     try {
+      const limit = await checkRateLimit('newsletter_subscribe', email);
+      if (!limit.allowed) {
+        toast({ title: 'Slow down', description: limit.message, variant: 'destructive' });
+        return;
+      }
       const { error } = await supabase
         .from('newsletter_subscribers')
         .insert({ email: email.trim().toLowerCase() });

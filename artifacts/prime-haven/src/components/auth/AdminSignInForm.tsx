@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { logAuthEvent } from '@/lib/authLogger';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const adminLoginSchema = z.object({
   username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
@@ -35,6 +36,12 @@ const AdminSignInForm = () => {
   const onSubmit = async (data: AdminLoginForm) => {
     setIsLoading(true);
     try {
+      const limit = await checkRateLimit('admin_login', data.username);
+      if (!limit.allowed) {
+        toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+        return;
+      }
+
       const { data: response, error } = await supabase.functions.invoke('admin-login', {
         body: { username: data.username, password: data.password },
       });

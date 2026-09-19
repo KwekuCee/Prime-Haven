@@ -158,6 +158,12 @@ const Register = () => {
       return;
     }
 
+    const limit = await checkRateLimit('registration', formData.email);
+    if (!limit.allowed) {
+      toast({ title: 'Too many attempts', description: limit.message, variant: 'destructive' });
+      return;
+    }
+
     setIsSubmitting(true);
     const reference = `PH-REG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const amountUsd = getFinalRegistrationFee();

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -73,6 +74,11 @@ const ClientSupport = () => {
         setSubmitting(true);
 
         try {
+            const limit = await checkRateLimit('support_ticket', user?.email ?? '');
+            if (!limit.allowed) {
+                toast({ title: 'Slow down', description: limit.message, variant: 'destructive' });
+                return;
+            }
             const { error } = await supabase.from('client_support_tickets').insert({
                 client_email: user?.email ?? '',
                 subject: newTicket.subject,

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const serviceCategories = [
   { value: 'logo-design', label: 'Logo Design' },
@@ -52,6 +53,11 @@ const StartProjectDialog = ({ trigger }: StartProjectDialogProps) => {
     }
     setSubmitting(true);
     try {
+      const limit = await checkRateLimit('project_inquiry', form.email);
+      if (!limit.allowed) {
+        toast({ title: 'Slow down', description: limit.message, variant: 'destructive' });
+        return;
+      }
       const { error } = await supabase.functions.invoke('submit-project-inquiry', {
         body: form,
       });

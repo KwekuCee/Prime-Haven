@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { logAuthEvent } from '@/lib/authLogger';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const superAdminLoginSchema = z.object({
   username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
@@ -38,6 +39,12 @@ const SuperAdminLogin = () => {
     setIsLoading(true);
 
     try {
+      const limit = await checkRateLimit('admin_login', data.username);
+      if (!limit.allowed) {
+        toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
+        return;
+      }
+
       // Use the admin-login edge function for secure authentication
       const { data: response, error } = await supabase.functions.invoke('admin-login', {
         body: {
