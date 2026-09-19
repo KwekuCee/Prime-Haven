@@ -12,6 +12,7 @@ import ResendVerificationEmail from '@/components/auth/ResendVerificationEmail';
 import ClientSignInForm from '@/components/auth/ClientSignInForm';
 import AdminSignInForm from '@/components/auth/AdminSignInForm';
 import { logAuthEvent } from '@/lib/authLogger';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 type AuthMode = 'talent' | 'client' | 'admin';
 

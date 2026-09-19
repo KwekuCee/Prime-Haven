@@ -67,6 +67,12 @@ const ClientPostJobDialog = ({ onPosted }: Props) => {
       });
       return;
     }
+    const limit = await checkRateLimit('client_order', user.email ?? user.id);
+    if (!limit.allowed) {
+      toast({ title: 'Slow down', description: limit.message, variant: 'destructive' });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const cat = CATEGORIES.find((c) => c.value === form.category)!;

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Seo from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations';
 import { supabase } from '@/integrations/supabase/client';
