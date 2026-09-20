@@ -41,6 +41,20 @@ serve(async (req: Request): Promise<Response> => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Server-side rate limit (mirrors the client-side check)
+    try {
+      const { data: rl } = await supabase.rpc("check_rate_limit", {
+        p_action: "client_lead",
+        p_identifier: email,
+      });
+      if (rl && rl.allowed === false) {
+        return json(
+          { success: false, error: "rate_limited", message: "Too many attempts. Please try again later." },
+          429,
+        );
+      }
+    } catch (_) { /* fail open */ }
+
     // ── 1. Find or create the client's account (tagged as a client) ──────────
     let userId: string | null = null;
     try {

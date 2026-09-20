@@ -43,6 +43,20 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Server-side rate limit (mirrors the client-side check)
+    try {
+      const { data: rl } = await supabase.rpc("check_rate_limit", {
+        p_action: "admin_login",
+        p_identifier: loginIdentifier.trim().toLowerCase(),
+      });
+      if (rl && (rl as any).allowed === false) {
+        return new Response(
+          JSON.stringify({ success: false, error: "rate_limited", retry_after_seconds: (rl as any).retry_after_seconds }),
+          { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    } catch (_) { /* fail open */ }
+
     let userEmail = loginIdentifier;
 
     // If username is provided (not an email), look up the email from profiles

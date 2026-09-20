@@ -32,6 +32,7 @@ import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type Exc
 import { openPaystackCheckout } from '@/lib/paystack';
 import registerMark from '@/assets/prime-haven-mark.png.asset.json';
 import Seo from '@/components/Seo';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 declare global {
   interface Window {
