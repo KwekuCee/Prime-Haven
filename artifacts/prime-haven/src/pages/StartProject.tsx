@@ -16,6 +16,7 @@ import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
 import Seo from '@/components/Seo';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 declare global {
   interface Window {
@@ -302,6 +303,12 @@ const StartProject = () => {
     }
 
     if (!selectedPricing) return;
+
+    const limit = await checkRateLimit('client_order', form.clientEmail);
+    if (!limit.allowed) {
+      toast({ title: 'Slow down', description: limit.message, variant: 'destructive' });
+      return;
+    }
 
     setSubmitting(true);
     const reference = `PH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
