@@ -43,7 +43,7 @@ const statusTone: Record<string, string> = {
 };
 
 const ManageHireRequests = () => {
-  const { loading: guardLoading } = useAdminGuard();
+  const { checking: guardLoading } = useAdminGuard();
   const { toast } = useToast();
 
   const [rows, setRows] = useState<HireRequest[]>([]);
