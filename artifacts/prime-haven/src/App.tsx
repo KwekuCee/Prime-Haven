@@ -92,6 +92,7 @@ const ManageClientProjects = lazyWithReload(() => import("./pages/ManageClientPr
 const ManagePricing = lazyWithReload(() => import("./pages/ManagePricing"));
 const ManageClients = lazyWithReload(() => import("./pages/ManageClients"));
 const ManageApplicants = lazyWithReload(() => import("./pages/ManageApplicants"));
+const ManageHireRequests = lazyWithReload(() => import("./pages/ManageHireRequests"));
 const ForwardWork = lazyWithReload(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazyWithReload(() => import("./pages/ManagePromoPopup"));
 const Terms = lazyWithReload(() => import("./pages/Terms"));
