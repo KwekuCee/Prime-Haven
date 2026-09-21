@@ -23,4 +23,7 @@ verify_jwt = false
 [functions.applicant-paid]
 verify_jwt = false
 
+[functions.applicant-integrity]
+verify_jwt = false
+
 

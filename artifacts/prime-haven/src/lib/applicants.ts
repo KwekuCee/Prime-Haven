@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export const TALENT_TRACKS = ['Graphic Design', 'Web Development', 'UI/UX Design'] as const;
-export type TalentTrack = (typeof TALENT_TRACKS)[number];
+export { TALENT_TRACKS, trackHasPractical, TRACKS_WITHOUT_PRACTICAL } from '@/lib/talentTracks';
+export type { TalentTrack } from '@/lib/talentTracks';
+
 
 export const APPLICANT_STATUSES = [
   'submitted',
