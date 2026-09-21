@@ -514,6 +514,7 @@ const ApplicantPortal = () => {
             Continue to registration <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </PortalCard>
+        <NextStepsPanel track={state?.applicant.track} />
       </ApplicantShell>
     );
   }
