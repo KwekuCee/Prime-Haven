@@ -20,7 +20,8 @@ export type RateLimitAction =
   | 'work_submission'
   | 'talent_application'
   | 'applicant_upload'
-  | 'assessment_submit';
+  | 'assessment_submit'
+  | 'hire_request';
 
 export interface RateLimitResult {
   allowed: boolean;
