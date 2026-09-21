@@ -5,3 +5,22 @@ verify_jwt = false
 [functions.capture-client-lead]
 verify_jwt = false
 
+[functions.submit-application]
+verify_jwt = false
+
+[functions.applicant-upload-url]
+verify_jwt = false
+
+[functions.applicant-portal]
+verify_jwt = false
+
+[functions.start-assessment]
+verify_jwt = false
+
+[functions.submit-assessment]
+verify_jwt = false
+
+[functions.applicant-paid]
+verify_jwt = false
+
+
