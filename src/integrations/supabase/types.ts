@@ -123,6 +123,222 @@ export type Database = {
           },
         ]
       }
+      applicant_assessments: {
+        Row: {
+          answers: Json
+          applicant_id: string
+          correct_count: number | null
+          created_at: string
+          id: string
+          passed: boolean | null
+          practical_review_status: string
+          practical_task_id: string | null
+          practical_text: string | null
+          practical_url: string | null
+          question_ids: string[]
+          score: number | null
+          started_at: string
+          submitted_at: string | null
+          total_questions: number | null
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          applicant_id: string
+          correct_count?: number | null
+          created_at?: string
+          id?: string
+          passed?: boolean | null
+          practical_review_status?: string
+          practical_task_id?: string | null
+          practical_text?: string | null
+          practical_url?: string | null
+          question_ids?: string[]
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          applicant_id?: string
+          correct_count?: number | null
+          created_at?: string
+          id?: string
+          passed?: boolean | null
+          practical_review_status?: string
+          practical_task_id?: string | null
+          practical_text?: string | null
+          practical_url?: string | null
+          question_ids?: string[]
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          track?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applicant_assessments_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "applicants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applicant_assessments_practical_task_id_fkey"
+            columns: ["practical_task_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applicants: {
+        Row: {
+          access_token: string
+          admin_notes: string | null
+          created_at: string
+          cv_url: string | null
+          email: string
+          full_name: string
+          id: string
+          invited_at: string | null
+          paid_at: string | null
+          passed: boolean | null
+          payment_reference: string | null
+          phone: string | null
+          portfolio_link: string | null
+          portfolio_url: string | null
+          score: number | null
+          status: string
+          track: string
+          updated_at: string
+          user_id: string | null
+          video_watched_at: string | null
+        }
+        Insert: {
+          access_token?: string
+          admin_notes?: string | null
+          created_at?: string
+          cv_url?: string | null
+          email: string
+          full_name: string
+          id?: string
+          invited_at?: string | null
+          paid_at?: string | null
+          passed?: boolean | null
+          payment_reference?: string | null
+          phone?: string | null
+          portfolio_link?: string | null
+          portfolio_url?: string | null
+          score?: number | null
+          status?: string
+          track: string
+          updated_at?: string
+          user_id?: string | null
+          video_watched_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          admin_notes?: string | null
+          created_at?: string
+          cv_url?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          invited_at?: string | null
+          paid_at?: string | null
+          passed?: boolean | null
+          payment_reference?: string | null
+          phone?: string | null
+          portfolio_link?: string | null
+          portfolio_url?: string | null
+          score?: number | null
+          status?: string
+          track?: string
+          updated_at?: string
+          user_id?: string | null
+          video_watched_at?: string | null
+        }
+        Relationships: []
+      }
+      assessment_questions: {
+        Row: {
+          correct_option: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          options: Json
+          points: number
+          prompt: string
+          question_type: string
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          correct_option?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          options?: Json
+          points?: number
+          prompt: string
+          question_type?: string
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          correct_option?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          options?: Json
+          points?: number
+          prompt?: string
+          question_type?: string
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assessment_tasks: {
+        Row: {
+          brief: string
+          created_at: string
+          id: string
+          is_active: boolean
+          submission_type: string
+          title: string
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          brief: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          submission_type?: string
+          title: string
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          brief?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          submission_type?: string
+          title?: string
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           created_at: string | null

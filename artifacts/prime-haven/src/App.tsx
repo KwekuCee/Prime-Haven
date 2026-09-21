@@ -48,6 +48,8 @@ const BlogPost = lazyWithReload(() => import("./pages/BlogPost"));
 const TrackProject = lazyWithReload(() => import("./pages/TrackProject"));
 const SubmitReview = lazyWithReload(() => import("./pages/SubmitReview"));
 const StartProject = lazyWithReload(() => import("./pages/StartProject"));
+const Apply = lazyWithReload(() => import("./pages/Apply"));
+const ApplicantPortal = lazyWithReload(() => import("./pages/ApplicantPortal"));
 const InstallPrompt = lazyWithReload(() => import("./components/InstallPrompt"));
 const OAuthConsent = lazyWithReload(() => import("./pages/OAuthConsent"));
 const VisitorTracker = lazyWithReload(() => import("./components/VisitorTracker"));
@@ -89,6 +91,7 @@ const JobContracts = lazyWithReload(() => import("./pages/JobContracts"));
 const ManageClientProjects = lazyWithReload(() => import("./pages/ManageClientProjects"));
 const ManagePricing = lazyWithReload(() => import("./pages/ManagePricing"));
 const ManageClients = lazyWithReload(() => import("./pages/ManageClients"));
+const ManageApplicants = lazyWithReload(() => import("./pages/ManageApplicants"));
 const ForwardWork = lazyWithReload(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazyWithReload(() => import("./pages/ManagePromoPopup"));
 const Terms = lazyWithReload(() => import("./pages/Terms"));
@@ -155,8 +158,11 @@ const App = () => {
                   <Route path="/superadmin/projects" element={<ManageClientProjects />} />
                   <Route path="/review" element={<SubmitReview />} />
                   <Route path="/start-project" element={<StartProject />} />
+                  <Route path="/apply" element={<Apply />} />
+                  <Route path="/applicant/:token" element={<ApplicantPortal />} />
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
+                  <Route path="/superadmin/applicants" element={<ManageApplicants />} />
                   <Route path="/superadmin/promo" element={<ManagePromoPopup />} />
                   <Route path="/superadmin/settings" element={<ManageSystemSettings />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
