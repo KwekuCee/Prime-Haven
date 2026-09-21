@@ -132,7 +132,7 @@ const ServiceDetail = () => {
         title={`${service.title} services in Ghana | Prime Haven`}
         description={`${service.description} Prime Haven ${service.title.toLowerCase()} packages${entryPrice ? ` from ${formatUsd(entryPrice)}` : ''} with a vetted professional team. Request a quote today.`}
         path={`/services/${service.slug}`}
-        structuredData={{
+        jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Service',
           name: service.title,
