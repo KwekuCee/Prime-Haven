@@ -21,31 +21,14 @@ import {
   type AssessmentQuestion, type PracticalTask, type PortalState,
 } from '@/lib/applicants';
 
+import ApplicantShell, {
+  PortalCard, TrackPanel, NextStepsPanel, type PortalStage,
+} from '@/components/applicant/ApplicantShell';
+
 const KORAPAY_PUBLIC_KEY = 'pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5';
 const inputClass = 'h-12 bg-background border-border/70 focus:border-primary/50 rounded-xl';
 
-type Stage = 'loading' | 'blocked' | 'video' | 'assessment' | 'result' | 'payment' | 'failed' | 'verify' | 'active';
-
-const Shell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen py-10 px-4">
-    <Seo
-      title="Applicant screening | Prime Haven"
-      description="Your private Prime Haven applicant screening portal."
-      path="/applicant"
-      noindex
-    />
-    <div className="max-w-3xl mx-auto">
-      <div className="flex justify-center mb-8">
-        <BrandLogo height={52} />
-      </div>
-      {children}
-    </div>
-  </div>
-);
-
-const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`rounded-3xl border border-border/60 bg-card p-6 md:p-8 shadow-sm ${className}`}>{children}</div>
-);
+type Stage = PortalStage;
 
 const ApplicantPortal = () => {
   const { token = '' } = useParams();
