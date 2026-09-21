@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6";
-import { corsHeaders, json } from "../_shared/applicants.ts";
+import { corsHeaders, json, trackHasPractical } from "../_shared/applicants.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -72,6 +72,7 @@ serve(async (req: Request): Promise<Response> => {
         <p style="margin:0 0 16px;">Hi ${applicant.full_name},</p>
         <p style="margin:0 0 16px;">Good news — your application for <strong>${applicant.track}</strong> has moved forward. Your private screening portal is ready.</p>
         <p style="margin:0 0 16px;">Inside you'll watch a short intro video about Prime Haven and the registration fee, then take a short assessment for your track.</p>
+        ${trackHasPractical(applicant.track) ? `<p style="margin:0 0 16px;"><strong>Heads-up:</strong> your assessment also includes a short practical exercise for ${applicant.track} — a small hands-on task you submit as a file or a link. Set aside a little time and have your usual tools ready.</p>` : ``}
         <p style="margin:24px 0;"><a href="${link}" style="background:#fe4c18;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:bold;display:inline-block;">Open my screening portal</a></p>
         <p style="margin:0 0 8px;font-size:13px;color:#666;">This link is personal to you — please don't share it.</p>
         <p style="margin:0;font-size:13px;color:#666;">${link}</p>

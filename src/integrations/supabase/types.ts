@@ -207,6 +207,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          integrity_flags: number
+          integrity_status: string | null
           invited_at: string | null
           paid_at: string | null
           passed: boolean | null
@@ -229,6 +231,8 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          integrity_flags?: number
+          integrity_status?: string | null
           invited_at?: string | null
           paid_at?: string | null
           passed?: boolean | null
@@ -251,6 +255,8 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          integrity_flags?: number
+          integrity_status?: string | null
           invited_at?: string | null
           paid_at?: string | null
           passed?: boolean | null

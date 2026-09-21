@@ -16,25 +16,57 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Discord channel IDs per category
-const DISCORD_CHANNELS: Record<string, string> = {
+// Discord channel IDs per category.
+// New tracks are pending channel IDs from the admin — leave "" until supplied.
+// Each entry can also be overridden with a secret named DISCORD_CHANNEL_<KEY>.
+const DISCORD_CHANNEL_IDS: Record<string, string> = {
   "graphic-design": "1470244531680186478",
-  "app-design": "1470244675951529984",
+  "app-design": "1470244675951529984",      // UI/UX Design
+  "ui-ux-design": "1470244675951529984",
   "web-dev": "1470244738073497704",
+  "web-development": "1470244738073497704",
+  "mobile-app-development": "",
+  "video-editing": "",
+  "motion-graphics": "",
+  "social-media-management": "",
+  "it-solutions": "",
 };
+
+const channelEnvKey = (key: string) => `DISCORD_CHANNEL_${key.toUpperCase().replace(/-/g, "_")}`;
+
+const DISCORD_CHANNELS: Record<string, string> = Object.fromEntries(
+  Object.entries(DISCORD_CHANNEL_IDS).map(([key, id]) => [
+    key,
+    (Deno.env.get(channelEnvKey(key)) || id || "").trim(),
+  ]),
+);
 
 // Map service types to categories for email lookup
 const CATEGORY_SKILLS: Record<string, string[]> = {
   "graphic-design": ["logo", "branding", "print", "flyer", "Logo Design", "Brand Identity", "Print Design", "Flyer Design", "Graphic Design"],
   "app-design": ["uiux", "UI/UX Design", "UI/UX", "App Design", "Mobile Design"],
+  "ui-ux-design": ["uiux", "UI/UX Design", "UI/UX", "App Design", "Mobile Design"],
   "web-dev": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
+  "web-development": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
+  "mobile-app-development": ["mobile", "app", "Mobile App Development", "React Native", "Flutter", "iOS", "Android"],
+  "video-editing": ["video", "Video Editing", "Editor", "Premiere", "DaVinci"],
+  "motion-graphics": ["motion", "Motion Graphics", "After Effects", "Animation"],
+  "social-media-management": ["smm", "Social Media Management", "Social Media", "Community Manager"],
+  "it-solutions": ["it", "General IT Solutions", "IT Support", "Networking", "Sysadmin"],
 };
 
 function getCategoryLabel(id: string): string {
   const categories: Record<string, string> = {
     "graphic-design": "Graphic Design",
     "app-design": "UI/UX Design",
+    "ui-ux-design": "UI/UX Design",
     "web-dev": "Web Development",
+    "web-development": "Web Development",
+    "mobile-app-development": "Mobile App Development",
+    "video-editing": "Video Editing",
+    "motion-graphics": "Motion Graphics",
+    "social-media-management": "Social Media Management",
+    "it-solutions": "General IT Solutions",
   };
   return categories[id] || id;
 }

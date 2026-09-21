@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   CheckCircle2, Loader2, PlayCircle, Lock, Trophy, XCircle, CreditCard, Upload,
-  ShieldCheck, MessageCircle, ArrowRight,
+  ShieldCheck, MessageCircle, ArrowRight, AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,7 @@ import Seo from '@/components/Seo';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
 import {
-  fetchPortalState, uploadApplicantFile,
+  fetchPortalState, uploadApplicantFile, reportCopyEvent, trackHasPractical,
   type AssessmentQuestion, type PracticalTask, type PortalState,
 } from '@/lib/applicants';
 
@@ -68,6 +68,7 @@ const ApplicantPortal = () => {
   const [starting, setStarting] = useState(false);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
   const [result, setResult] = useState<{ score: number; passed: boolean; passMark: number; correctCount: number; totalQuestions: number } | null>(null);
+  const [copyWarning, setCopyWarning] = useState<string | null>(null);
 
   // payment
   const [password, setPassword] = useState('');
@@ -104,6 +105,36 @@ const ApplicantPortal = () => {
     getUsdToGhsRate().then(setFx).catch(() => {});
   }, [stage]);
 
+  // ── anti-cheating: copy detection ────────────────────────────────────────
+  const handleCopyAttempt = useCallback(async () => {
+    const res = await reportCopyEvent(token);
+    if (!res?.success) return;
+    if (res.rejected) {
+      setCopyWarning(null);
+      setQuestions([]);
+      setAnswers({});
+      toast({
+        variant: 'destructive',
+        title: 'Assessment closed',
+        description: res.message || 'Copying was detected a second time, so your attempt has ended.',
+      });
+      await load();
+      return;
+    }
+    setCopyWarning(res.message || 'Copying was detected. One more attempt and your application is rejected automatically.');
+    toast({ variant: 'destructive', title: 'Copying detected', description: 'A second attempt ends your assessment automatically.' });
+  }, [token, toast, load]);
+
+  useEffect(() => {
+    if (stage !== 'assessment' || questions.length === 0) return;
+    const onCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      void handleCopyAttempt();
+    };
+    document.addEventListener('copy', onCopy);
+    return () => document.removeEventListener('copy', onCopy);
+  }, [stage, questions.length, handleCopyAttempt]);
+
   // ── video stage ──────────────────────────────────────────────────────────
   const handleVideoEnded = () => setVideoFinished(true);
 
@@ -134,7 +165,7 @@ const ApplicantPortal = () => {
       toast({ variant: 'destructive', title: 'Almost there', description: 'Please answer every question before submitting.' });
       return;
     }
-    if (!practicalFile && !practicalText.trim()) {
+    if (task && !practicalFile && !practicalText.trim()) {
       toast({ variant: 'destructive', title: 'Practical task', description: 'Upload your file or paste a link / short write-up.' });
       return;
     }
@@ -143,7 +174,7 @@ const ApplicantPortal = () => {
     try {
       const practicalUrl = practicalFile ? await uploadApplicantFile('practical', practicalFile) : null;
       const { data, error } = await supabase.functions.invoke('submit-assessment', {
-        body: { token, answers, practicalUrl, practicalText: practicalText.trim() || null },
+        body: { token, answers, practicalUrl, practicalText: practicalText.trim() || null, origin: window.location.origin },
       });
       const payload = data as { success?: boolean; score?: number; passed?: boolean; passMark?: number; correctCount?: number; totalQuestions?: number; message?: string };
       if (error || !payload?.success) {
@@ -351,8 +382,9 @@ const ApplicantPortal = () => {
           <Card>
             <h1 className="text-2xl font-bold mb-2">{state?.applicant.track} assessment</h1>
             <p className="text-muted-foreground mb-6">
-              You'll get a randomised set of questions for your track plus one small practical task. Answer honestly —
-              this is the only stage that decides whether you move forward. You get one attempt.
+              You'll get a randomised set of questions for your track{trackHasPractical(state?.applicant.track) ? ' plus one small practical task' : ''}.
+              Answer honestly — this is the only stage that decides whether you move forward, and you get one attempt.
+              Copying text from this page is detected: the first time is a warning, the second ends your application.
             </p>
             <Button onClick={startAssessment} disabled={starting} className="w-full h-12 rounded-xl">
               {starting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Preparing your questions…</>) : 'Start my assessment'}
@@ -373,6 +405,16 @@ const ApplicantPortal = () => {
             </div>
             <Progress value={(answered / questions.length) * 100} className="h-2" />
           </div>
+
+          {copyWarning && (
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-4">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-destructive">Copying detected</p>
+                <p className="text-sm text-muted-foreground">{copyWarning}</p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-7">
             {questions.map((q, i) => (

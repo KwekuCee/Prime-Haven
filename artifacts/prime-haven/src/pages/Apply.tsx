@@ -157,8 +157,9 @@ const Apply = () => {
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Apply to join Prime Haven</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            We hire graphic designers, web developers and UI/UX designers. No interviews — send your work, then take a
-            short assessment for your track. Strong results move straight to onboarding.
+            We hire across every service we deliver — graphic design, UI/UX, web and app development, motion graphics,
+            video editing, social media management and IT solutions. No interviews: send your work, then take a short
+            assessment for your track. Strong results move straight to onboarding.
           </p>
         </div>
 
@@ -167,8 +168,8 @@ const Apply = () => {
             <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">
               How it works: apply here → we review → you get a private link → watch a short intro video → take a
-              randomised assessment plus one small practical task → pass and complete a one-time $15 registration to
-              activate your professional account.
+              randomised assessment (most tracks also include one small practical task) → pass and complete a one-time
+              $15 registration to activate your professional account.
             </p>
           </div>
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Search, Loader2, Send, FileText, LinkIcon, ExternalLink, RotateCcw, XCircle, Settings2, Copy,
+  Trash2, ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,7 @@ import { useAdminGuard } from '@/hooks/useAdminGuard';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 import {
-  TALENT_TRACKS, APPLICANT_STATUSES, APPLICANT_STATUS_LABELS, getApplicantFileUrl,
+  TALENT_TRACKS, APPLICANT_STATUSES, APPLICANT_STATUS_LABELS, getApplicantFileUrl, deleteApplicant,
 } from '@/lib/applicants';
 
 interface Applicant {
@@ -39,6 +40,8 @@ interface Applicant {
   paid_at: string | null;
   access_token: string;
   admin_notes: string | null;
+  integrity_flags: number | null;
+  integrity_status: string | null;
   created_at: string;
 }
 
@@ -77,6 +80,9 @@ const ManageApplicants = () => {
   const [sortBy, setSortBy] = useState<'date' | 'score'>('date');
   const [detail, setDetail] = useState<Applicant | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Applicant | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
@@ -179,6 +185,24 @@ const ManageApplicants = () => {
       toast({ variant: 'destructive', title: 'Update failed', description: err instanceof Error ? err.message : 'Please try again.' });
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await deleteApplicant(deleteTarget.id);
+      if (!res?.success) throw new Error('This applicant could not be deleted.');
+      toast({ title: 'Applicant deleted', description: `${deleteTarget.full_name} and their files were removed.` });
+      setDeleteTarget(null);
+      setDeleteConfirm('');
+      setDetail(null);
+      await load();
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Delete failed', description: err instanceof Error ? err.message : 'Please try again.' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -301,7 +325,7 @@ const ManageApplicants = () => {
                     <TableCell className="text-sm font-semibold">{a.score === null ? '—' : `${a.score}%`}</TableCell>
                     <TableCell className="text-sm">{a.paid_at ? format(new Date(a.paid_at), 'dd MMM yyyy') : '—'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{format(new Date(a.created_at), 'dd MMM yyyy')}</TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       {a.status === 'submitted' ? (
                         <Button size="sm" disabled={busyId === a.id} onClick={() => invite(a)} className="gap-2">
                           {busyId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Invite
@@ -311,6 +335,15 @@ const ManageApplicants = () => {
                           <Copy className="w-3.5 h-3.5" /> Link
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Delete ${a.full_name}`}
+                        onClick={() => { setDeleteTarget(a); setDeleteConfirm(''); }}
+                        className="ml-1 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -388,6 +421,16 @@ const ManageApplicants = () => {
                   )}
                 </div>
 
+                {!!detail.integrity_flags && (
+                  <div className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+                    <ShieldAlert className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-destructive">Copy attempts: {detail.integrity_flags}</p>
+                      <p className="text-sm text-muted-foreground">{detail.integrity_status || 'Flagged during the assessment.'}</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">Screening link</p>
                   <div className="flex gap-2">
@@ -409,9 +452,51 @@ const ManageApplicants = () => {
                 <Button variant="outline" disabled={busyId === detail.id} onClick={() => setStatus(detail, 'failed')} className="gap-2 text-destructive">
                   <XCircle className="w-4 h-4" /> Reject
                 </Button>
+                <Button
+                  variant="destructive"
+                  disabled={busyId === detail.id}
+                  onClick={() => { setDeleteTarget(detail); setDeleteConfirm(''); }}
+                  className="gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete permanently
+                </Button>
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteConfirm(''); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete this applicant?</DialogTitle>
+            <DialogDescription>
+              This permanently removes {deleteTarget?.full_name}, their assessment attempts and any files they uploaded.
+              It cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="delete-confirm">Type DELETE to confirm</Label>
+            <Input
+              id="delete-confirm"
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirm(''); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              className="gap-2"
+              disabled={deleting || deleteConfirm.trim().toUpperCase() !== 'DELETE'}
+              onClick={confirmDelete}
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete applicant
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
