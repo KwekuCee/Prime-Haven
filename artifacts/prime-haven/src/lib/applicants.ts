@@ -1,0 +1,107 @@
+import { supabase } from '@/integrations/supabase/client';
+
+export const TALENT_TRACKS = ['Graphic Design', 'Web Development', 'UI/UX Design'] as const;
+export type TalentTrack = (typeof TALENT_TRACKS)[number];
+
+export const APPLICANT_STATUSES = [
+  'submitted',
+  'invited',
+  'in_review',
+  'passed',
+  'failed',
+  'paid',
+  'active',
+] as const;
+export type ApplicantStatus = (typeof APPLICANT_STATUSES)[number];
+
+export const APPLICANT_STATUS_LABELS: Record<string, string> = {
+  submitted: 'New application',
+  invited: 'Invited',
+  in_review: 'Taking assessment',
+  passed: 'Passed — awaiting fee',
+  failed: 'Did not pass',
+  paid: 'Fee paid — verifying email',
+  active: 'Active professional',
+};
+
+/** Uploads an applicant file through a one-time signed URL. Returns the stored path. */
+export const uploadApplicantFile = async (
+  kind: 'cv' | 'portfolio' | 'practical',
+  file: File,
+): Promise<string> => {
+  const { data, error } = await supabase.functions.invoke('applicant-upload-url', {
+    body: { kind, fileName: file.name },
+  });
+  if (error) throw new Error('Upload could not be started. Please try again.');
+  const payload = data as { success?: boolean; path?: string; token?: string; message?: string };
+  if (!payload?.success || !payload.path || !payload.token) {
+    throw new Error(payload?.message || 'That file could not be accepted.');
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from('applicant-files')
+    .uploadToSignedUrl(payload.path, payload.token, file);
+  if (uploadError) throw new Error('The file upload failed. Please try again.');
+
+  return payload.path;
+};
+
+/** Signed download link for an applicant file (admins only). */
+export const getApplicantFileUrl = async (path: string): Promise<string | null> => {
+  const { data } = await supabase.storage.from('applicant-files').createSignedUrl(path, 3600);
+  return data?.signedUrl || null;
+};
+
+export interface PortalState {
+  applicant: {
+    fullName: string;
+    email: string;
+    track: TalentTrack;
+    status: ApplicantStatus;
+    score: number | null;
+    passed: boolean | null;
+    videoWatched: boolean;
+  };
+  assessment: {
+    id: string;
+    score: number | null;
+    passed: boolean | null;
+    submitted_at: string | null;
+    total_questions: number | null;
+    correct_count: number | null;
+  } | null;
+  videoUrl: string;
+  discordInvite: string;
+}
+
+export const fetchPortalState = async (token: string, action: 'state' | 'video_watched' = 'state') => {
+  const { data, error } = await supabase.functions.invoke('applicant-portal', { body: { token, action } });
+  if (error) {
+    // Edge functions return a non-2xx body for gated stages; surface it.
+    const ctx = (error as { context?: { json?: () => Promise<any> } }).context;
+    if (ctx?.json) {
+      try {
+        const body = await ctx.json();
+        return body as { success: false; error: string; message?: string };
+      } catch {
+        /* ignore */
+      }
+    }
+    return { success: false as const, error: 'network_error', message: 'Could not load your portal.' };
+  }
+  return data as ({ success: true } & PortalState) | { success: false; error: string; message?: string };
+};
+
+export interface AssessmentQuestion {
+  id: string;
+  prompt: string;
+  options: string[];
+  question_type: string;
+}
+
+export interface PracticalTask {
+  id: string;
+  title: string;
+  brief: string;
+  submissionType: string;
+}
