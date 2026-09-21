@@ -355,14 +355,24 @@ serve(async (req: Request): Promise<Response> => {
         clientUserId = existingUser.id;
         console.log("Client account already exists — ensuring client metadata.");
         try {
+          // Don't downgrade an existing professional/admin account to a client.
+          const { data: otherRoles } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", clientUserId)
+            .in("role", ["designer", "superadmin", "masteradmin"]);
+          const isProfessional = !!otherRoles && otherRoles.length > 0;
+
           await supabase.auth.admin.updateUserById(clientUserId, {
-            user_metadata: {
-              account_type: 'client',
-              role: 'client',
-              full_name: clientName,
-              business_name: businessName,
-              whatsapp: clientWhatsapp,
-            },
+            user_metadata: isProfessional
+              ? { business_name: businessName, whatsapp: clientWhatsapp }
+              : {
+                  account_type: 'client',
+                  role: 'client',
+                  full_name: clientName,
+                  business_name: businessName,
+                  whatsapp: clientWhatsapp,
+                },
           });
         } catch (updateErr) {
           console.warn("Metadata update on existing account failed (non-critical):", updateErr);
