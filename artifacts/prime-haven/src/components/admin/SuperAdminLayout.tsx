@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FileCheck, Users, DollarSign, Palette, Layout, Globe,
-  Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck,
+  Image, Briefcase, FolderKanban, Tag, UserSquare, Newspaper, UserCheck, ClipboardList,
   Star, Download, Activity, LogOut, Menu, X, Shield,
   RefreshCw, PanelLeftClose, PanelLeft, Send, ShoppingCart, Calendar,
   TrendingUp, Ticket, Presentation, MonitorPlay, MessageSquare, Gavel, Zap,
@@ -72,6 +72,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Team', icon: UserCheck, path: '/superadmin', tab: 'team' },
       { label: 'Clients DB', icon: UserSquare, path: '/superadmin/clients' },
+      { label: 'Applicants', icon: ClipboardList, path: '/superadmin/applicants' },
     ],
   },
   {
