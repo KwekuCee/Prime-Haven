@@ -12,8 +12,6 @@ import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import BrandLogo from '@/components/BrandLogo';
-import Seo from '@/components/Seo';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type ExchangeRate } from '@/lib/currency';
 import { openPaystackCheckout } from '@/lib/paystack';
 import {
