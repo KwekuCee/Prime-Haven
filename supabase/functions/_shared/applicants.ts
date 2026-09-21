@@ -13,7 +13,26 @@ export const json = (body: unknown, status = 200) =>
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const TRACKS = ["Graphic Design", "Web Development", "UI/UX Design"] as const;
+/**
+ * Hiring tracks — mirrors src/lib/talentTracks.ts (derived from the homepage
+ * services list). Keep both lists in step.
+ */
+export const TRACKS = [
+  "Graphic Design",
+  "UI/UX Design",
+  "Web Development",
+  "Mobile App Development",
+  "Motion Graphics",
+  "Video Editing",
+  "Social Media Management",
+  "General IT Solutions",
+] as const;
+
+/** Tracks that skip the practical exercise. */
+export const TRACKS_WITHOUT_PRACTICAL = ["Social Media Management"];
+
+export const trackHasPractical = (track: string | null | undefined) =>
+  !!track && !TRACKS_WITHOUT_PRACTICAL.includes(track);
 
 export const TOKEN_RE = /^[a-f0-9]{24,128}$/;
 
@@ -40,3 +59,15 @@ export async function limited(supabase: any, action: string, identifier: string)
     return false;
   }
 }
+
+/** Wraps body HTML in the Prime Haven branded email shell. */
+export const emailShell = (bodyHtml: string) => `
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f7;padding:32px 0;font-family:Arial,Helvetica,sans-serif;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;">
+      <tr><td style="background:#0b0b0d;padding:24px 32px;color:#ffffff;font-size:18px;font-weight:bold;">Prime Haven</td></tr>
+      <tr><td style="padding:32px;color:#1a1a1a;font-size:15px;line-height:1.6;">${bodyHtml}</td></tr>
+      <tr><td style="padding:20px 32px;background:#f6f6f7;color:#888;font-size:12px;">Prime Haven · primehaven.tech</td></tr>
+    </table>
+  </td></tr>
+</table>`;
