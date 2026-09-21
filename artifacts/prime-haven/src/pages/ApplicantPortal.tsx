@@ -363,6 +363,7 @@ const ApplicantPortal = () => {
             {state?.videoUrl && !videoFinished ? 'Finish the video to continue' : (<>Continue to the assessment <ArrowRight className="w-4 h-4 ml-2" /></>)}
           </Button>
         </PortalCard>
+        <TrackPanel track={state?.applicant.track} />
       </ApplicantShell>
     );
   }
