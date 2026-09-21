@@ -122,7 +122,7 @@ const Apply = () => {
   if (done) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Seo title="Application received | Prime Haven" description="Your Prime Haven talent application has been received." />
+        <Seo title="Application received | Prime Haven" description="Your Prime Haven talent application has been received." path="/apply" noindex />
         <div className="w-full max-w-lg text-center rounded-3xl border border-border/60 bg-card p-10 shadow-sm">
           <CheckCircle2 className="w-14 h-14 text-primary mx-auto mb-5" />
           <h1 className="text-2xl font-bold mb-3">Application received</h1>
@@ -143,6 +143,7 @@ const Apply = () => {
       <Seo
         title="Apply to join Prime Haven | Graphic Design, Web Development & UI/UX"
         description="Apply to work with Prime Haven as a graphic designer, web developer or UI/UX designer. Submit your CV and portfolio, take a short skills assessment and join our professional team."
+        path="/apply"
       />
 
       <div className="max-w-2xl mx-auto">
@@ -152,7 +153,7 @@ const Apply = () => {
 
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <BrandLogo size={56} />
+            <BrandLogo height={56} />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Apply to join Prime Haven</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
