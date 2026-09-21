@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
+const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -20,7 +21,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
     const reference = body?.reference;
-    const gateway = 'korapay';
+    const gateway = body?.gateway === 'paystack' ? 'paystack' : 'korapay';
 
 
     // Input validation for reference
