@@ -106,3 +106,17 @@ export interface PracticalTask {
   brief: string;
   submissionType: string;
 }
+
+/** Reports a copy attempt during the assessment. The server decides the outcome. */
+export const reportCopyEvent = async (token: string) => {
+  const { data, error } = await supabase.functions.invoke('applicant-integrity', { body: { token } });
+  if (error) return { success: false as const, rejected: false, warning: false, message: '' };
+  return data as { success: boolean; flags: number; rejected: boolean; warning: boolean; message?: string };
+};
+
+/** Admin: permanently delete an applicant, their attempts and their files. */
+export const deleteApplicant = async (applicantId: string) => {
+  const { data, error } = await supabase.functions.invoke('delete-applicant', { body: { applicantId } });
+  if (error) return { success: false as const, message: 'Could not delete this applicant.' };
+  return data as { success: boolean; error?: string; filesRemoved?: number };
+};
