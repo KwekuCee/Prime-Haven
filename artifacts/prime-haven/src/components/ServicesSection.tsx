@@ -98,7 +98,7 @@ const ServicesSection = () => {
                           {service.description}
                         </p>
                         <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
-                          View track & rates <ArrowRight className="w-3.5 h-3.5" />
+                          View track <ArrowRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
                     </Link>
