@@ -1563,6 +1563,75 @@ export type Database = {
           },
         ]
       }
+      project_tip_intents: {
+        Row: {
+          amount: number
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          currency: string
+          designer_id: string
+          expires_at: string
+          gateway: string
+          id: string
+          message: string | null
+          project_id: string
+          reference: string
+          status: string
+          updated_at: string
+          verified_tip_id: string | null
+        }
+        Insert: {
+          amount: number
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          currency?: string
+          designer_id: string
+          expires_at?: string
+          gateway?: string
+          id?: string
+          message?: string | null
+          project_id: string
+          reference: string
+          status?: string
+          updated_at?: string
+          verified_tip_id?: string | null
+        }
+        Update: {
+          amount?: number
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          currency?: string
+          designer_id?: string
+          expires_at?: string
+          gateway?: string
+          id?: string
+          message?: string | null
+          project_id?: string
+          reference?: string
+          status?: string
+          updated_at?: string
+          verified_tip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tip_intents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tip_intents_verified_tip_id_fkey"
+            columns: ["verified_tip_id"]
+            isOneToOne: false
+            referencedRelation: "project_tips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tips: {
         Row: {
           amount: number

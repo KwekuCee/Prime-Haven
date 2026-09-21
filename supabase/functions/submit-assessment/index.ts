@@ -5,7 +5,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6";
-import { corsHeaders, json, TOKEN_RE, getSetting, limited, emailShell } from "../_shared/applicants.ts";
+import { corsHeaders, json, TOKEN_RE, getSetting, limited, emailShell, escapeHtml, safePublicOrigin } from "../_shared/applicants.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -13,16 +13,19 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 async function sendResultEmail(applicant: any, result: {
   score: number; passed: boolean; passMark: number; correctCount: number; totalQuestions: number; portalLink: string;
 }) {
+  const safeName = escapeHtml(applicant.full_name);
+  const safeTrack = escapeHtml(applicant.track);
+  const safePortalLink = escapeHtml(result.portalLink);
   const body = result.passed
     ? `
-      <p style="margin:0 0 16px;">Hi ${applicant.full_name},</p>
-      <p style="margin:0 0 16px;">You passed the <strong>${applicant.track}</strong> assessment.</p>
+      <p style="margin:0 0 16px;">Hi ${safeName},</p>
+      <p style="margin:0 0 16px;">You passed the <strong>${safeTrack}</strong> assessment.</p>
       <p style="margin:0 0 16px;">Your score: <strong>${result.score}%</strong> (${result.correctCount} of ${result.totalQuestions} correct). Our bar for this round is ${result.passMark}%.</p>
       <p style="margin:0 0 16px;">One step remains — complete your one-time registration to activate your professional account, dashboard and Discord access.</p>
-      <p style="margin:24px 0;"><a href="${result.portalLink}" style="background:#fe4c18;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:bold;display:inline-block;">Complete my registration</a></p>`
+      <p style="margin:24px 0;"><a href="${safePortalLink}" style="background:#fe4c18;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:bold;display:inline-block;">Complete my registration</a></p>`
     : `
-      <p style="margin:0 0 16px;">Hi ${applicant.full_name},</p>
-      <p style="margin:0 0 16px;">Thank you for taking the <strong>${applicant.track}</strong> assessment.</p>
+      <p style="margin:0 0 16px;">Hi ${safeName},</p>
+      <p style="margin:0 0 16px;">Thank you for taking the <strong>${safeTrack}</strong> assessment.</p>
       <p style="margin:0 0 16px;">Your score: <strong>${result.score}%</strong> (${result.correctCount} of ${result.totalQuestions} correct). Our bar for this round is ${result.passMark}%, so we won't be moving forward this time — and there is nothing to pay.</p>
       <p style="margin:0 0 16px;">We'd genuinely welcome another application in the future as your portfolio grows.</p>`;
 
@@ -52,7 +55,7 @@ serve(async (req: Request): Promise<Response> => {
     const answers = body.answers && typeof body.answers === "object" ? body.answers : null;
     const practicalUrl = body.practicalUrl ? String(body.practicalUrl).slice(0, 500) : null;
     const practicalText = body.practicalText ? String(body.practicalText).slice(0, 4000) : null;
-    const origin = body.origin || req.headers.get("origin") || "https://primehaven.tech";
+    const origin = safePublicOrigin(body.origin || req.headers.get("origin"));
 
     if (!TOKEN_RE.test(token)) return json({ success: false, error: "invalid_token" }, 400);
     if (!answers) return json({ success: false, error: "invalid_request", message: "No answers received." }, 400);

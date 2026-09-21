@@ -21,6 +21,13 @@ const SMTP_USER = Deno.env.get("SMTP_USER");
 const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const str = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
+const escapeHtml = (v: unknown) =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -111,14 +118,14 @@ serve(async (req: Request): Promise<Response> => {
           html: `
             <h2 style="font-family:Arial,sans-serif">New hire request</h2>
             <table style="font-family:Arial,sans-serif;font-size:14px" cellpadding="6">
-              <tr><td><b>Name</b></td><td>${fullName}</td></tr>
-              <tr><td><b>Email</b></td><td>${email}</td></tr>
-              <tr><td><b>WhatsApp</b></td><td>${whatsapp || "—"}</td></tr>
-              <tr><td><b>Service</b></td><td>${serviceLabel || serviceSlug}</td></tr>
-              <tr><td><b>Package</b></td><td>${tier || "—"}</td></tr>
-              <tr><td><b>Budget</b></td><td>${budget || "—"}</td></tr>
-              <tr><td><b>Deadline</b></td><td>${deadline || "—"}</td></tr>
-              <tr><td valign="top"><b>Brief</b></td><td>${brief.replace(/</g, "&lt;").replace(/\n/g, "<br/>")}</td></tr>
+              <tr><td><b>Name</b></td><td>${escapeHtml(fullName)}</td></tr>
+              <tr><td><b>Email</b></td><td>${escapeHtml(email)}</td></tr>
+              <tr><td><b>WhatsApp</b></td><td>${escapeHtml(whatsapp || "—")}</td></tr>
+              <tr><td><b>Service</b></td><td>${escapeHtml(serviceLabel || serviceSlug)}</td></tr>
+              <tr><td><b>Package</b></td><td>${escapeHtml(tier || "—")}</td></tr>
+              <tr><td><b>Budget</b></td><td>${escapeHtml(budget || "—")}</td></tr>
+              <tr><td><b>Deadline</b></td><td>${escapeHtml(deadline || "—")}</td></tr>
+              <tr><td valign="top"><b>Brief</b></td><td>${escapeHtml(brief).replace(/\n/g, "<br/>")}</td></tr>
             </table>`,
         });
         emailSent = true;

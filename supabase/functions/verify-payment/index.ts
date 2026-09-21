@@ -13,6 +13,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+
+const limited = async (supabase: any, identifier: string) => {
+  try {
+    const { data } = await supabase.rpc("check_rate_limit", { p_action: "payment_verify", p_identifier: identifier });
+    return data && data.allowed === false ? data : null;
+  } catch {
+    return null;
+  }
+};
+
+const allowedOrigin = (value: string | null) => {
+  const fallback = "https://primehaven.tech";
+  try {
+    const origin = new URL(value || fallback).origin;
+    if (origin === "https://primehaven.tech" || origin.endsWith(".lovableproject.com")) return origin;
+  } catch {
+    // keep fallback
+  }
+  return fallback;
+};
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -26,39 +52,32 @@ serve(async (req: Request): Promise<Response> => {
 
     // Input validation for reference
     if (!reference || typeof reference !== 'string' || reference.length > 200) {
-      return new Response(
-        JSON.stringify({ success: false, error: "invalid_request" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ success: false, error: "invalid_request" }, 400);
     }
 
     if (!/^[a-zA-Z0-9_\-]+$/.test(reference)) {
-      return new Response(
-        JSON.stringify({ success: false, error: "invalid_request" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ success: false, error: "invalid_request" }, 400);
     }
 
     // Verify JWT and extract userId from token
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: "unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ success: false, error: "unauthorized" }, 401);
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: "unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ success: false, error: "unauthorized" }, 401);
     }
     const userId = user.id;
+
+    const rateLimit = await limited(supabase, `${userId}:${gateway}:${reference}`);
+    if (rateLimit) {
+      return json({ success: false, error: "rate_limited", retry_after_seconds: rateLimit.retry_after_seconds }, 429);
+    }
 
     // Check for duplicate payment reference
     const { data: existingPayment } = await supabase
@@ -68,10 +87,7 @@ serve(async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (existingPayment) {
-      return new Response(
-        JSON.stringify({ success: false, error: "payment_already_processed" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ success: false, error: "payment_already_processed" }, 400);
     }
 
     let verifiedAmount: number;
@@ -81,10 +97,7 @@ serve(async (req: Request): Promise<Response> => {
 
     if (gateway === 'paystack') {
       if (!PAYSTACK_SECRET_KEY) {
-        return new Response(
-          JSON.stringify({ success: false, error: "paystack_not_configured" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
+        return json({ success: false, error: "paystack_not_configured" }, 400);
       }
       const paystackResponse = await fetch(
         `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
@@ -94,10 +107,7 @@ serve(async (req: Request): Promise<Response> => {
 
       if (!paystackData?.status || paystackData?.data?.status !== "success") {
         console.error("Paystack verification failed:", paystackData);
-        return new Response(
-          JSON.stringify({ success: false, error: "payment_failed", message: "Payment verification failed" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
+        return json({ success: false, error: "payment_failed", message: "Payment verification failed" }, 400);
       }
       // Paystack reports amounts in the minor unit (pesewas/kobo).
       verifiedAmount = Number(paystackData.data.amount) / 100;
@@ -117,10 +127,7 @@ serve(async (req: Request): Promise<Response> => {
 
       if (!korapayData.status || korapayData.data?.status !== "success") {
         console.error("Korapay verification failed:", korapayData);
-        return new Response(
-          JSON.stringify({ success: false, error: "payment_failed", message: "Payment verification failed" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
+        return json({ success: false, error: "payment_failed", message: "Payment verification failed" }, 400);
       }
       verifiedAmount = korapayData.data.amount;
       verifiedCurrency = korapayData.data.currency;
@@ -184,7 +191,7 @@ serve(async (req: Request): Promise<Response> => {
                 email: profile.email,
                 fullName: profile.full_name || "Designer",
                 userId,
-                redirectUrl: req.headers.get("origin") || "https://primehaven.tech",
+                redirectUrl: allowedOrigin(req.headers.get("origin")),
               }),
             });
             if (res.ok) console.log("Verification email sent for user:", userId);
@@ -226,19 +233,13 @@ serve(async (req: Request): Promise<Response> => {
       await Promise.allSettled(promises);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Payment verified successfully",
-        data: { amount: amountInGhs, currency: verifiedCurrency, reference },
-      }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return json({
+      success: true,
+      message: "Payment verified successfully",
+      data: { amount: amountInGhs, currency: verifiedCurrency, reference },
+    });
   } catch (error: unknown) {
     console.error("Error in verify-payment:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: "server_error" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return json({ success: false, error: "server_error" }, 500);
   }
 });

@@ -13,6 +13,25 @@ export const json = (body: unknown, status = 200) =>
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const escapeHtml = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+export const safePublicOrigin = (value: unknown) => {
+  const fallback = "https://primehaven.tech";
+  try {
+    const origin = new URL(String(value || fallback)).origin;
+    if (origin === "https://primehaven.tech" || origin.endsWith(".lovableproject.com")) return origin;
+  } catch {
+    /* fall through */
+  }
+  return fallback;
+};
+
 /**
  * Hiring tracks — mirrors src/lib/talentTracks.ts (derived from the homepage
  * services list). Keep both lists in step.
@@ -35,6 +54,7 @@ export const trackHasPractical = (track: string | null | undefined) =>
   !!track && !TRACKS_WITHOUT_PRACTICAL.includes(track);
 
 export const TOKEN_RE = /^[a-f0-9]{24,128}$/;
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const APPLICANT_FIELDS =
   "id, full_name, email, phone, track, status, score, passed, video_watched_at, cv_url, portfolio_url, portfolio_link, user_id, payment_reference, created_at";
