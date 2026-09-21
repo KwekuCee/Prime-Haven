@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Loader2, Upload, FileText, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,14 @@ const MAX_FILE_MB = 25;
 
 const Apply = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const requestedTrack = searchParams.get('track') || '';
+  const initialTrack = TALENT_TRACKS.includes(requestedTrack) ? requestedTrack : '';
   const [form, setForm] = useState({
     fullName: '',
     email: '',
     phone: '',
-    track: '' as TalentTrack | '',
+    track: initialTrack as TalentTrack | '',
     portfolioLink: '',
   });
   const [cvFile, setCvFile] = useState<File | null>(null);
