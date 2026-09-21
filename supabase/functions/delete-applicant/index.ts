@@ -3,7 +3,7 @@
 // their uploaded files.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders, json } from "../_shared/applicants.ts";
+import { corsHeaders, json, UUID_RE } from "../_shared/applicants.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -31,7 +31,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const body = await req.json().catch(() => ({}));
     const applicantId = String(body.applicantId || "");
-    if (!/^[0-9a-f-]{36}$/i.test(applicantId)) return json({ success: false, error: "invalid_request" }, 400);
+    if (!UUID_RE.test(applicantId)) return json({ success: false, error: "invalid_request" }, 400);
 
     const { data: applicant } = await supabase
       .from("applicants")

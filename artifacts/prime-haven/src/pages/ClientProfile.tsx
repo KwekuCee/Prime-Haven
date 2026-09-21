@@ -145,7 +145,7 @@ const ClientProfile = () => {
                             <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
                             <div className="relative w-24 h-24 mx-auto mb-4">
                                 {formData.profile_photo_url ? (
-                                    <img src={formData.profile_photo_url} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-primary/10 shadow-xl" />
+                                    <img src={formData.profile_photo_url} alt="Profile" loading="lazy" width={96} height={96} className="w-24 h-24 rounded-full object-cover border-4 border-primary/10 shadow-xl" />
                                 ) : (
                                     <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-primary/10">
                                         {formData.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'CL'}

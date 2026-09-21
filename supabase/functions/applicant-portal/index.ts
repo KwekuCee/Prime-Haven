@@ -3,7 +3,7 @@
 // was watched. Never returns assessment answer keys.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders, json, TOKEN_RE, getSetting } from "../_shared/applicants.ts";
+import { corsHeaders, json, TOKEN_RE, getSetting, limited } from "../_shared/applicants.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -21,6 +21,11 @@ serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (await limited(supabase, "applicant_portal", `${token}:${ip}`)) {
+      return json({ success: false, error: "rate_limited", message: "Too many requests. Please try again shortly." }, 429);
+    }
 
     const { data: applicant } = await supabase
       .from("applicants")

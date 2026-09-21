@@ -272,7 +272,7 @@ const Messages = () => {
       <button key={peer.user_id} className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all text-left ${isSelected ? 'bg-primary/5 border border-primary/15' : 'hover:bg-muted/20 border border-transparent'}`} onClick={() => setSelectedDesigner(peer)}>
         <div className="flex-shrink-0">
           {peer.profile_photo_url ? (
-            <img src={peer.profile_photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+            <img src={peer.profile_photo_url} alt="" loading="lazy" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">{getInitials(peer.full_name)}</div>
           )}
@@ -321,7 +321,7 @@ const Messages = () => {
                 </Button>
                 <div className="flex items-center gap-2.5 min-w-0">
                   {selectedDesigner.profile_photo_url ? (
-                    <img src={selectedDesigner.profile_photo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                    <img src={selectedDesigner.profile_photo_url} alt="" loading="lazy" width={28} height={28} className="w-7 h-7 rounded-full object-cover" />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">{getInitials(selectedDesigner.full_name)}</div>
                   )}
@@ -356,7 +356,7 @@ const Messages = () => {
                                 {isOwn ? (
                                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[9px] font-bold">You</div>
                                 ) : selectedDesigner.profile_photo_url ? (
-                                  <img src={selectedDesigner.profile_photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                  <img src={selectedDesigner.profile_photo_url} alt="" loading="lazy" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
                                 ) : (
                                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[9px] font-bold">{getInitials(selectedDesigner.full_name)}</div>
                                 )}

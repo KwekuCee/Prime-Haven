@@ -165,7 +165,7 @@ const BlogPost = () => {
 
             {post.cover_image_url && (
               <div className="rounded-xl overflow-hidden mb-8">
-                <img src={post.cover_image_url} alt={post.title} className="w-full object-cover max-h-[500px]" />
+                <img src={post.cover_image_url} alt={post.title} loading="lazy" width={1200} height={630} className="w-full object-cover max-h-[500px]" />
               </div>
             )}
 

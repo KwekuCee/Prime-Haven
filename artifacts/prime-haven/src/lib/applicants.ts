@@ -4,6 +4,9 @@ import type { TalentTrack } from '@/lib/talentTracks';
 export { TALENT_TRACKS, trackHasPractical, TRACKS_WITHOUT_PRACTICAL } from '@/lib/talentTracks';
 export type { TalentTrack } from '@/lib/talentTracks';
 
+const MAX_APPLICANT_FILE_BYTES = 25 * 1024 * 1024;
+const ALLOWED_APPLICANT_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'ai', 'psd', 'fig', 'svg']);
+
 
 export const APPLICANT_STATUSES = [
   'submitted',
@@ -31,8 +34,12 @@ export const uploadApplicantFile = async (
   kind: 'cv' | 'portfolio' | 'practical',
   file: File,
 ): Promise<string> => {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  if (file.size > MAX_APPLICANT_FILE_BYTES) throw new Error('Please keep files under 25MB.');
+  if (!ALLOWED_APPLICANT_EXTENSIONS.has(ext)) throw new Error('That file type is not accepted.');
+
   const { data, error } = await supabase.functions.invoke('applicant-upload-url', {
-    body: { kind, fileName: file.name },
+    body: { kind, fileName: file.name, fileSize: file.size, fileType: file.type },
   });
   if (error) throw new Error('Upload could not be started. Please try again.');
   const payload = data as { success?: boolean; path?: string; token?: string; message?: string };

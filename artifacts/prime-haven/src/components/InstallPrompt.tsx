@@ -90,7 +90,7 @@ const InstallPrompt = () => {
 
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <img src="/favicon.png" alt="Prime Haven" className="w-8 h-8 rounded-lg" />
+                <img src="/favicon.png" alt="Prime Haven" loading="lazy" width={32} height={32} className="w-8 h-8 rounded-lg" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-heading font-bold text-sm">Install Prime Haven</h3>

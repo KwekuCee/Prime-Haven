@@ -168,7 +168,7 @@ const TrackProject = () => {
   };
 
   const handleTip = async () => {
-    if (!project) return;
+    if (!project || !token) return;
     const amt = Number(tipAmount);
     if (!amt || amt < 5) {
       toast({ title: 'Minimum tip is GH₵5', variant: 'destructive' });
@@ -179,11 +179,23 @@ const TrackProject = () => {
       return;
     }
     setTipSubmitting(true);
-    const reference = `PH-TIP-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
     try {
+      const intentResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-tip`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ action: 'init', token, amount: amt, message: tipMessage }),
+        }
+      );
+      const intent = await intentResp.json();
+      if (!intentResp.ok || !intent?.success || !intent.reference) {
+        throw new Error(intent?.message || 'Could not start the tip payment.');
+      }
+
       (window as any).Korapay.initialize({
         key: KORAPAY_PUBLIC_KEY,
-        reference,
+        reference: intent.reference,
         amount: amt,
         currency: 'GHS',
         customer: {
@@ -198,9 +210,7 @@ const TrackProject = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
                 body: JSON.stringify({
-                  reference, projectId: project.id,
-                  clientName: project.client_name, clientEmail: project.client_email,
-                  message: tipMessage, amount: amt,
+                  reference: intent.reference,
                 }),
               }
             );
@@ -417,7 +427,7 @@ const TrackProject = () => {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
                 {acceptedDesigner.profile_photo_url ? (
-                  <img src={acceptedDesigner.profile_photo_url} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-primary/30" />
+                  <img src={acceptedDesigner.profile_photo_url} alt="" loading="lazy" width={56} height={56} className="w-14 h-14 rounded-full object-cover border-2 border-primary/30" />
                 ) : (
                   <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                     <UserIcon className="w-6 h-6 text-primary" />
