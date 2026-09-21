@@ -383,6 +383,7 @@ const ApplicantPortal = () => {
               {starting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Preparing your questions…</>) : 'Start my assessment'}
             </Button>
           </PortalCard>
+          <TrackPanel track={state?.applicant.track} />
         </ApplicantShell>
       );
     }
