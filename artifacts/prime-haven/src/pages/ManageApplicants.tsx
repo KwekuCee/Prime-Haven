@@ -121,15 +121,15 @@ const ManageApplicants = () => {
   const saveSettings = async () => {
     setSavingSettings(true);
     try {
-      const rows = [
-        { key: 'applicant_intro_video_url', value: JSON.stringify(videoUrl.trim()) },
-        { key: 'applicant_quiz_size', value: String(Math.max(5, Math.min(60, Number(quizSize) || 15))) },
-        { key: 'applicant_pass_mark', value: String(Math.max(1, Math.min(100, Number(passMark) || 70))) },
+      const updates: { key: string; value: unknown }[] = [
+        { key: 'applicant_intro_video_url', value: videoUrl.trim() },
+        { key: 'applicant_quiz_size', value: Math.max(5, Math.min(60, Number(quizSize) || 15)) },
+        { key: 'applicant_pass_mark', value: Math.max(1, Math.min(100, Number(passMark) || 70)) },
       ];
-      for (const row of rows) {
+      for (const row of updates) {
         const { error } = await supabase
           .from('system_settings')
-          .update({ value: JSON.parse(row.value.startsWith('"') ? row.value : row.value) as never, updated_by: user?.id })
+          .update({ value: row.value as never, updated_by: user?.id })
           .eq('key', row.key);
         if (error) throw error;
       }
@@ -217,15 +217,19 @@ const ManageApplicants = () => {
 
   if (checking) {
     return (
-      <SuperAdminLayout title="Applicants">
+      <SuperAdminLayout onRefresh={load} loading={loading}>
         <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
       </SuperAdminLayout>
     );
   }
 
   return (
-    <SuperAdminLayout title="Applicants">
+    <SuperAdminLayout>
       <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Talent applicants</h1>
+          <p className="text-sm text-muted-foreground">Review applications, invite people into screening and see ranked assessment results.</p>
+        </div>
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
