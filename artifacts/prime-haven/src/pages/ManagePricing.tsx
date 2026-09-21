@@ -314,6 +314,11 @@ const ManagePricing = () => {
                       <SelectItem value="graphic-design">Graphic Design</SelectItem>
                       <SelectItem value="app-design">UI/UX Design</SelectItem>
                       <SelectItem value="web-dev">Web Development</SelectItem>
+                      <SelectItem value="mobile-app-development">Mobile App Development</SelectItem>
+                      <SelectItem value="motion-graphics">Motion Graphics</SelectItem>
+                      <SelectItem value="video-editing">Video Editing</SelectItem>
+                      <SelectItem value="social-media-management">Social Media Management</SelectItem>
+                      <SelectItem value="it-solutions">General IT Solutions</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { TalentTrack } from '@/lib/talentTracks';
 
 export { TALENT_TRACKS, trackHasPractical, TRACKS_WITHOUT_PRACTICAL } from '@/lib/talentTracks';
 export type { TalentTrack } from '@/lib/talentTracks';
