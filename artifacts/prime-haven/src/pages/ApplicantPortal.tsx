@@ -298,19 +298,19 @@ const ApplicantPortal = () => {
 
   // ── render ───────────────────────────────────────────────────────────────
   if (stage === 'loading') {
-    return <Shell><Card className="text-center"><Loader2 className="w-7 h-7 animate-spin mx-auto text-primary" /></Card></Shell>;
+    return <ApplicantShell {...shellProps}><PortalCard className="text-center"><Loader2 className="w-7 h-7 animate-spin mx-auto text-primary" /></PortalCard></ApplicantShell>;
   }
 
   if (stage === 'blocked') {
     return (
-      <Shell>
-        <Card className="text-center">
+      <ApplicantShell {...shellProps}>
+        <PortalCard className="text-center">
           <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-3">Not available</h1>
           <p className="text-muted-foreground mb-6">{blockedMessage}</p>
           <Button asChild variant="outline" className="rounded-xl"><Link to="/">Back to home</Link></Button>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
@@ -318,8 +318,8 @@ const ApplicantPortal = () => {
 
   if (stage === 'video') {
     return (
-      <Shell>
-        <Card>
+      <ApplicantShell {...shellProps}>
+        <PortalCard>
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome, {name} 👋</h1>
           <p className="text-muted-foreground mb-6">
             Watch this short intro all the way through. It covers who we are, the work we deliver, and exactly what the
@@ -353,16 +353,16 @@ const ApplicantPortal = () => {
           >
             {state?.videoUrl && !videoFinished ? 'Finish the video to continue' : (<>Continue to the assessment <ArrowRight className="w-4 h-4 ml-2" /></>)}
           </Button>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
   if (stage === 'assessment') {
     if (questions.length === 0) {
       return (
-        <Shell>
-          <Card>
+        <ApplicantShell {...shellProps}>
+          <PortalCard>
             <h1 className="text-2xl font-bold mb-2">{state?.applicant.track} assessment</h1>
             <p className="text-muted-foreground mb-6">
               You'll get a randomised set of questions for your track{trackHasPractical(state?.applicant.track) ? ' plus one small practical task' : ''}.
@@ -372,15 +372,15 @@ const ApplicantPortal = () => {
             <Button onClick={startAssessment} disabled={starting} className="w-full h-12 rounded-xl">
               {starting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Preparing your questions…</>) : 'Start my assessment'}
             </Button>
-          </Card>
-        </Shell>
+          </PortalCard>
+        </ApplicantShell>
       );
     }
 
     const answered = Object.keys(answers).length;
     return (
-      <Shell>
-        <Card>
+      <ApplicantShell {...shellProps}>
+        <PortalCard>
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-xl font-bold">{state?.applicant.track} assessment</h1>
@@ -466,16 +466,16 @@ const ApplicantPortal = () => {
           <Button onClick={submitAssessment} disabled={submittingQuiz} className="w-full h-12 rounded-xl mt-8">
             {submittingQuiz ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Scoring your answers…</>) : 'Submit my assessment'}
           </Button>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
   if (stage === 'result' && result) {
     if (!result.passed) {
       return (
-        <Shell>
-          <Card className="text-center">
+        <ApplicantShell {...shellProps}>
+          <PortalCard className="text-center">
             <XCircle className="w-14 h-14 text-muted-foreground mx-auto mb-5" />
             <h1 className="text-2xl font-bold mb-3">Thank you for trying, {name}</h1>
             <p className="text-muted-foreground mb-2">
@@ -486,13 +486,13 @@ const ApplicantPortal = () => {
               again in the future.
             </p>
             <Button asChild variant="outline" className="rounded-xl"><Link to="/">Back to home</Link></Button>
-          </Card>
-        </Shell>
+          </PortalCard>
+        </ApplicantShell>
       );
     }
     return (
-      <Shell>
-        <Card className="text-center">
+      <ApplicantShell {...shellProps}>
+        <PortalCard className="text-center">
           <Trophy className="w-14 h-14 text-primary mx-auto mb-5" />
           <h1 className="text-2xl font-bold mb-3">You passed, {name} 🎉</h1>
           <p className="text-muted-foreground mb-6">
@@ -502,15 +502,15 @@ const ApplicantPortal = () => {
           <Button onClick={() => setStage('payment')} className="h-12 rounded-xl px-8">
             Continue to registration <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
   if (stage === 'failed') {
     return (
-      <Shell>
-        <Card className="text-center">
+      <ApplicantShell {...shellProps}>
+        <PortalCard className="text-center">
           <XCircle className="w-14 h-14 text-muted-foreground mx-auto mb-5" />
           <h1 className="text-2xl font-bold mb-3">Thank you for applying</h1>
           <p className="text-muted-foreground mb-6">
@@ -518,16 +518,16 @@ const ApplicantPortal = () => {
             There is nothing to pay. Keep building and feel free to apply again later.
           </p>
           <Button asChild variant="outline" className="rounded-xl"><Link to="/">Back to home</Link></Button>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
   if (stage === 'payment') {
     const amountGhs = fx ? usdToGhs(JOIN_FEE_USD, fx.rate) : null;
     return (
-      <Shell>
-        <Card>
+      <ApplicantShell {...shellProps}>
+        <PortalCard>
           <h1 className="text-2xl font-bold mb-2">Complete your registration</h1>
           <p className="text-muted-foreground mb-6">
             A one-time {formatUsd(JOIN_FEE_USD)} registration activates your professional account: your dashboard, the
@@ -585,15 +585,15 @@ const ApplicantPortal = () => {
           <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-4">
             <ShieldCheck className="w-3.5 h-3.5" /> Payments are verified with the gateway before your account is activated.
           </p>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
   if (stage === 'verify') {
     return (
-      <Shell>
-        <Card className="text-center">
+      <ApplicantShell {...shellProps}>
+        <PortalCard className="text-center">
           <CheckCircle2 className="w-14 h-14 text-primary mx-auto mb-5" />
           <h1 className="text-2xl font-bold mb-3">Payment received — verify your email</h1>
           <p className="text-muted-foreground mb-6">
@@ -604,15 +604,15 @@ const ApplicantPortal = () => {
             <Button onClick={() => load()} variant="outline" className="rounded-xl">I've verified — refresh</Button>
             <Button asChild className="rounded-xl"><Link to="/login">Go to sign in</Link></Button>
           </div>
-        </Card>
-      </Shell>
+        </PortalCard>
+      </ApplicantShell>
     );
   }
 
   // active
   return (
-    <Shell>
-      <Card className="text-center">
+    <ApplicantShell {...shellProps}>
+      <PortalCard className="text-center">
         <Trophy className="w-14 h-14 text-primary mx-auto mb-5" />
         <h1 className="text-2xl font-bold mb-3">You're in, {name}! 🎉</h1>
         <p className="text-muted-foreground mb-6">
@@ -632,8 +632,8 @@ const ApplicantPortal = () => {
           )}
         </div>
         <Button asChild className="h-12 rounded-xl px-8"><Link to="/login">Sign in to my dashboard</Link></Button>
-      </Card>
-    </Shell>
+      </PortalCard>
+    </ApplicantShell>
   );
 };
 
