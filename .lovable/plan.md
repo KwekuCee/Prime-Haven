@@ -27,7 +27,7 @@ All eight homepage services become hiring tracks: Graphic Design, UI/UX Design, 
 - Review and align the screening pages (apply form, applicant portal, admin Applicants) plus the admin shell around them: consistent card padding, heading sizes, table density, button sizes, empty/loading states, and mobile stacking, all using existing design tokens. No new visual language.
 
 ## 7. Discord routing — I need channel IDs from you
-Today only three channels are mapped (Graphic Design, UI/UX, Web Development) and everything else falls through. I'll add named config for every track. **Please send the Discord channel ID for each:** App Development, Video Editing, Motion Graphics, Social Media Management. I'll leave them blank until you do — no placeholder IDs — and postings for those tracks will keep using the current fallback until filled.
+Today only three channels are mapped (Graphic Design, UI/UX, Web Development) and everything else falls through. I'll add named config for every track. **Please send the Discord channel ID for each:** App Development, Video Editing, Motion Graphics, Social Media Management, and General IT Solutions. I'll leave them blank until you do — no placeholder IDs — and postings for those tracks will keep using the current fallback until filled.
 
 ## 8. Verification answers
 Answered in my reply, with the exact place in the flow each step fires.
