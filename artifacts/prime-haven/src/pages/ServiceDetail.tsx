@@ -215,7 +215,7 @@ const ServiceDetail = () => {
                   <p className="mt-1 text-sm text-muted-foreground">
                     We hire for this track through a short screening — no interviews.
                   </p>
-                  <Link to="/apply" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-all hover:gap-3">
+                  <Link to={`/hiring/${service.slug}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-all hover:gap-3">
                     Apply to join this track <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>

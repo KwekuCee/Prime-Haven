@@ -80,7 +80,7 @@ const ServicesSection = () => {
                     className={`group rounded-2xl border border-border/60 bg-card/30 transition-colors hover:border-primary/40 ${index === 0 ? 'bg-primary/[0.04] border-primary/25' : ''}`}
                   >
                     <Link
-                      to={`/services/${service.slug}`}
+                      to={`/hiring/${service.slug}`}
                       className={`flex items-start gap-5 p-5 sm:p-6 ${index === 0 ? 'sm:p-8' : ''}`}
                     >
                       <motion.div
@@ -98,7 +98,7 @@ const ServicesSection = () => {
                           {service.description}
                         </p>
                         <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
-                          View track <ArrowRight className="w-3.5 h-3.5" />
+                          Join this track <ArrowRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
                     </Link>

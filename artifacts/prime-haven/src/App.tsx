@@ -42,6 +42,7 @@ const ResetPassword = lazyWithReload(() => import("./pages/ResetPassword"));
 const AuthConfirm = lazyWithReload(() => import("./pages/AuthConfirm"));
 const Portfolio = lazyWithReload(() => import("./pages/Portfolio"));
 const ServiceDetail = lazyWithReload(() => import("./pages/ServiceDetail"));
+const HiringTrack = lazyWithReload(() => import("./pages/HiringTrack"));
 const SuperAdminLogin = lazyWithReload(() => import("./pages/SuperAdminLogin"));
 const Blog = lazyWithReload(() => import("./pages/Blog"));
 const BlogPost = lazyWithReload(() => import("./pages/BlogPost"));
@@ -142,6 +143,7 @@ const App = () => {
                   <Route path="/submit-work" element={<SubmitWork />} />
                   <Route path="/edit-profile" element={<EditProfile />} />
                   <Route path="/services/:serviceId" element={<ServiceDetail />} />
+                  <Route path="/hiring/:trackSlug" element={<HiringTrack />} />
                   <Route path="/superadmin-login" element={<SuperAdminLogin />} />
                   <Route path="/superadmin" element={<SuperAdminDashboard />} />
                   <Route path="/superadmin/uiux" element={<UIUXAdminDashboard />} />
