@@ -297,6 +297,15 @@ const ApplicantPortal = () => {
   };
 
   // ── render ───────────────────────────────────────────────────────────────
+  const shellProps = {
+    stage,
+    fullName: state?.applicant.fullName,
+    email: state?.applicant.email,
+    track: state?.applicant.track,
+    score: result?.score ?? state?.applicant.score ?? null,
+    passMark: result?.passMark ?? 70,
+  };
+
   if (stage === 'loading') {
     return <ApplicantShell {...shellProps}><PortalCard className="text-center"><Loader2 className="w-7 h-7 animate-spin mx-auto text-primary" /></PortalCard></ApplicantShell>;
   }
