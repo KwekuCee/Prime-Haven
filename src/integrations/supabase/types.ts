@@ -848,6 +848,60 @@ export type Database = {
         }
         Relationships: []
       }
+      hire_requests: {
+        Row: {
+          admin_notes: string | null
+          brief: string
+          budget: string | null
+          created_at: string
+          deadline: string | null
+          email: string
+          full_name: string
+          id: string
+          reference_images: string[]
+          service_label: string | null
+          service_slug: string
+          status: string
+          tier: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          brief: string
+          budget?: string | null
+          created_at?: string
+          deadline?: string | null
+          email: string
+          full_name: string
+          id?: string
+          reference_images?: string[]
+          service_label?: string | null
+          service_slug: string
+          status?: string
+          tier?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          brief?: string
+          budget?: string | null
+          created_at?: string
+          deadline?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          reference_images?: string[]
+          service_label?: string | null
+          service_slug?: string
+          status?: string
+          tier?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       job_contract_claims: {
         Row: {
           claimed_at: string
