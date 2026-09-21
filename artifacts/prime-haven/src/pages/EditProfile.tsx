@@ -393,7 +393,7 @@ const EditProfile = () => {
                 <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
                 <div className="relative w-20 h-20 mx-auto mb-3">
                   {formData.profile_photo_url ? (
-                    <img src={formData.profile_photo_url} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-primary/20" />
+                    <img src={formData.profile_photo_url} alt="Profile" loading="lazy" width={80} height={80} className="w-20 h-20 rounded-full object-cover border-2 border-primary/20" />
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-lg font-bold">
                       {formData.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'PH'}

@@ -79,7 +79,7 @@ const PromoPopup = () => {
       >
         {promo.image_url && (
           <div className="w-full h-48 overflow-hidden">
-            <img src={promo.image_url} alt={promo.title} className="w-full h-full object-cover" />
+            <img src={promo.image_url} alt={promo.title} loading="lazy" width={640} height={360} className="w-full h-full object-cover" />
           </div>
         )}
         <div className="p-6 space-y-4">

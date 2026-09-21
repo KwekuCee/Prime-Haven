@@ -145,7 +145,7 @@ const DesignerProfile = () => {
                         <div className="flex items-center gap-5">
                             <div className="w-24 h-24 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center">
                                 {profile.profile_photo_url ? (
-                                    <img src={profile.profile_photo_url} alt={profile.full_name || 'Designer'} className="w-full h-full object-cover" />
+                                    <img src={profile.profile_photo_url} alt={profile.full_name || 'Designer'} loading="lazy" width={160} height={160} className="w-full h-full object-cover" />
                                 ) : (
                                     <span className="text-3xl font-bold text-primary">{(profile.full_name || '?')[0]}</span>
                                 )}

@@ -174,7 +174,7 @@ const HiringTrack = () => {
 
                 <div className="lg:col-span-5">
                   <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
-                    <img src={service.image} alt={`${service.title} applicant screening`} className="aspect-[4/3] w-full object-cover" />
+                    <img src={service.image} alt={`${service.title} applicant screening`} loading="lazy" width={640} height={480} className="aspect-[4/3] w-full object-cover" />
                     <div className="grid grid-cols-2 gap-3 p-5">
                       <div className="rounded-2xl bg-muted/60 p-4">
                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Fee after passing</p>

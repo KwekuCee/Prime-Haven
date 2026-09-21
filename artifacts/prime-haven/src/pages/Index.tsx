@@ -20,33 +20,9 @@ import VisitorChatbot from '@/components/VisitorChatbot';
 import PromoPopup from '@/components/PromoPopup';
 import AdUnit from '@/components/AdUnit';
 import EzoicAd from '@/components/EzoicAd';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Prefetch all homepage images immediately so they're cached before scrolling
-const prefetchImages = async () => {
-  const [portfolio, team, blog] = await Promise.all([
-    supabase.from('portfolio_items').select('image_url').order('created_at', { ascending: false }).limit(6),
-    supabase.from('team_members').select('photo_url').eq('is_visible', true),
-    supabase.from('blog_posts').select('cover_image_url').eq('is_published', true).order('published_at', { ascending: false }).limit(3),
-  ]);
-
-  const urls: string[] = [];
-  portfolio.data?.forEach(p => p.image_url && urls.push(p.image_url));
-  (team.data as any)?.forEach((m: any) => m.photo_url && urls.push(m.photo_url));
-  blog.data?.forEach(b => b.cover_image_url && urls.push(b.cover_image_url));
-
-  urls.forEach(url => {
-    const img = new Image();
-    img.src = url;
-  });
-};
-
 const Index = () => {
-  useEffect(() => {
-    prefetchImages();
-  }, []);
-
   useEffect(() => {
     if (sessionStorage.getItem('ph_welcomed')) return;
     const t = setTimeout(() => {
