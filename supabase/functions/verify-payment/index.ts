@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
+const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -20,7 +21,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
     const reference = body?.reference;
-    const gateway = 'korapay';
+    const gateway = body?.gateway === 'paystack' ? 'paystack' : 'korapay';
 
 
     // Input validation for reference
@@ -78,10 +79,35 @@ serve(async (req: Request): Promise<Response> => {
     let paymentChannel: string;
     let paidAt: string;
 
-    {
-      // Verify payment with Korapay (only supported gateway). The previous
-      // PH-FREE-* bypass has been removed: free registrations must be granted
-      // server-side via verified promo codes, not by client-supplied references.
+    if (gateway === 'paystack') {
+      if (!PAYSTACK_SECRET_KEY) {
+        return new Response(
+          JSON.stringify({ success: false, error: "paystack_not_configured" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      const paystackResponse = await fetch(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+        { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
+      );
+      const paystackData = await paystackResponse.json();
+
+      if (!paystackData?.status || paystackData?.data?.status !== "success") {
+        console.error("Paystack verification failed:", paystackData);
+        return new Response(
+          JSON.stringify({ success: false, error: "payment_failed", message: "Payment verification failed" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      // Paystack reports amounts in the minor unit (pesewas/kobo).
+      verifiedAmount = Number(paystackData.data.amount) / 100;
+      verifiedCurrency = paystackData.data.currency;
+      paymentChannel = paystackData.data.channel || "paystack";
+      paidAt = paystackData.data.paid_at || new Date().toISOString();
+    } else {
+      // Verify payment with Korapay. The previous PH-FREE-* bypass has been
+      // removed: free registrations must be granted server-side via verified
+      // promo codes, not by client-supplied references.
       const korapayResponse = await fetch(
         `https://api.korapay.com/merchant/api/v1/charges/${encodeURIComponent(reference)}`,
         { headers: { Authorization: `Bearer ${KORAPAY_SECRET_KEY}` } }

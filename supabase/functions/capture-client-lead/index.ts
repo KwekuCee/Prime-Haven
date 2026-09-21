@@ -85,36 +85,37 @@ serve(async (req: Request): Promise<Response> => {
       userId = created?.user?.id || null;
     } else {
       try {
+        // Never downgrade an existing professional/admin account to a client.
+        const { data: proRoles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .in("role", ["designer", "superadmin", "masteradmin"]);
+        const isProfessional = !!proRoles && proRoles.length > 0;
+
         await supabase.auth.admin.updateUserById(userId, {
-          user_metadata: {
-            account_type: "client",
-            role: "client",
-            full_name: name,
-            business_name: company,
-            whatsapp,
-          },
+          user_metadata: isProfessional
+            ? { business_name: company, whatsapp }
+            : {
+                account_type: "client",
+                role: "client",
+                full_name: name,
+                business_name: company,
+                whatsapp,
+              },
         });
       } catch (updateErr) {
         console.warn("Metadata update failed (non-critical):", updateErr);
       }
     }
 
-    // Client role only — strip any accidental professional role/profile row.
+    // Add the client role. Existing professional roles and designer profiles
+    // (points, details) are preserved — a talent may also order work.
     if (userId) {
-      const { data: adminRoles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .in("role", ["superadmin", "masteradmin"]);
-
-      if (!adminRoles || adminRoles.length === 0) {
-        await supabase.from("user_roles").upsert(
-          { user_id: userId, role: "client" },
-          { onConflict: "user_id,role", ignoreDuplicates: true },
-        );
-        await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "designer");
-        await supabase.from("designer_details").delete().eq("user_id", userId);
-      }
+      await supabase.from("user_roles").upsert(
+        { user_id: userId, role: "client" },
+        { onConflict: "user_id,role", ignoreDuplicates: true },
+      );
     }
 
     // ── 2. Upsert the central client record (visible in the admin client list) ──

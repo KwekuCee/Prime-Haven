@@ -355,38 +355,37 @@ serve(async (req: Request): Promise<Response> => {
         clientUserId = existingUser.id;
         console.log("Client account already exists — ensuring client metadata.");
         try {
+          // Don't downgrade an existing professional/admin account to a client.
+          const { data: otherRoles } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", clientUserId)
+            .in("role", ["designer", "superadmin", "masteradmin"]);
+          const isProfessional = !!otherRoles && otherRoles.length > 0;
+
           await supabase.auth.admin.updateUserById(clientUserId, {
-            user_metadata: {
-              account_type: 'client',
-              role: 'client',
-              full_name: clientName,
-              business_name: businessName,
-              whatsapp: clientWhatsapp,
-            },
+            user_metadata: isProfessional
+              ? { business_name: businessName, whatsapp: clientWhatsapp }
+              : {
+                  account_type: 'client',
+                  role: 'client',
+                  full_name: clientName,
+                  business_name: businessName,
+                  whatsapp: clientWhatsapp,
+                },
           });
         } catch (updateErr) {
           console.warn("Metadata update on existing account failed (non-critical):", updateErr);
         }
       }
 
-      // Make sure the account carries the client role exclusively (remove conflicting designer role)
+      // Make sure the account carries the client role. Never remove an existing
+      // professional role or designer profile — a talent may also order work.
       if (clientUserId) {
-        await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", clientUserId)
-          .eq("role", "designer");
-
         await supabase.from("user_roles").upsert(
           { user_id: clientUserId, role: 'client' },
           { onConflict: 'user_id,role', ignoreDuplicates: true },
         );
-
-        // Remove any accidental designer_details row so this account is purely a client
-        await supabase
-          .from("designer_details")
-          .delete()
-          .eq("user_id", clientUserId);
       }
     } catch (e) {
       console.error("Auth setup catch error (non-critical):", e);
