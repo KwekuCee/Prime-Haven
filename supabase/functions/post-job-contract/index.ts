@@ -17,7 +17,7 @@ const corsHeaders = {
 };
 
 // Discord channel IDs per category.
-// New tracks are pending channel IDs from the admin — leave "" until supplied.
+// General IT Solutions intentionally has no channel — those postings use the general fallback.
 // Each entry can also be overridden with a secret named DISCORD_CHANNEL_<KEY>.
 const DISCORD_CHANNEL_IDS: Record<string, string> = {
   "graphic-design": "1470244531680186478",
@@ -25,10 +25,10 @@ const DISCORD_CHANNEL_IDS: Record<string, string> = {
   "ui-ux-design": "1470244675951529984",
   "web-dev": "1470244738073497704",
   "web-development": "1470244738073497704",
-  "mobile-app-development": "",
-  "video-editing": "",
-  "motion-graphics": "",
-  "social-media-management": "",
+  "mobile-app-development": "1551455668115079218",
+  "video-editing": "1551455732300259449",
+  "motion-graphics": "1551455787027795998",
+  "social-media-management": "1551455867843379210",
   "it-solutions": "",
 };
 
