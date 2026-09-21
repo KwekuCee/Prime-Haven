@@ -164,6 +164,7 @@ const App = () => {
                   <Route path="/superadmin/pricing" element={<ManagePricing />} />
                   <Route path="/superadmin/clients" element={<ManageClients />} />
                   <Route path="/superadmin/applicants" element={<ManageApplicants />} />
+                  <Route path="/superadmin/hire-requests" element={<ManageHireRequests />} />
                   <Route path="/superadmin/promo" element={<ManagePromoPopup />} />
                   <Route path="/superadmin/settings" element={<ManageSystemSettings />} />
                   <Route path="/superadmin/forward-work" element={<ForwardWork />} />
