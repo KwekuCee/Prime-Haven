@@ -77,23 +77,31 @@ const ServicesSection = () => {
                     variants={itemVariants}
                     whileHover={{ x: 8 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                    className={`group flex items-start gap-5 rounded-2xl border border-border/60 bg-card/30 p-5 sm:p-6 ${index === 0 ? 'sm:col-span-2 sm:p-8 bg-primary/[0.04] border-primary/25' : ''}`}
+                    className={`group rounded-2xl border border-border/60 bg-card/30 transition-colors hover:border-primary/40 ${index === 0 ? 'bg-primary/[0.04] border-primary/25' : ''}`}
                   >
-                    <motion.div
-                      variants={iconVariants}
-                      className="w-12 h-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300"
+                    <Link
+                      to={`/services/${service.slug}`}
+                      className={`flex items-start gap-5 p-5 sm:p-6 ${index === 0 ? 'sm:p-8' : ''}`}
                     >
-                      <service.icon className="w-6 h-6 text-primary" aria-hidden="true" />
-                    </motion.div>
+                      <motion.div
+                        variants={iconVariants}
+                        className="w-12 h-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300"
+                      >
+                        <service.icon className="w-6 h-6 text-primary" aria-hidden="true" />
+                      </motion.div>
 
-                    <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                      <h3 className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors duration-300">
-                        {service.title}
-                      </h3>
-                      <p className="text-muted-foreground leading-relaxed text-pretty">
-                        {service.description}
-                      </p>
-                    </div>
+                      <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                        <h3 className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+                          {service.title}
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed text-pretty">
+                          {service.description}
+                        </p>
+                        <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
+                          View track & rates <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </Link>
                   </motion.li>
                 ))}
               </motion.ol>
