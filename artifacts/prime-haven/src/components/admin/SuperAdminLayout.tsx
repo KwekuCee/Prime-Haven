@@ -82,6 +82,7 @@ const navSections: NavSection[] = [
       { label: 'Orders', icon: ShoppingCart, path: '/superadmin', tab: 'orders' },
       { label: 'Payments', icon: DollarSign, path: '/superadmin', tab: 'payments' },
       { label: 'Consultations', icon: Calendar, path: '/superadmin', tab: 'consultations' },
+      { label: 'Hire Requests', icon: Gavel, path: '/superadmin/hire-requests' },
       { label: 'Promo Codes', icon: Ticket, path: '/superadmin', tab: 'promos' },
     ],
   },
