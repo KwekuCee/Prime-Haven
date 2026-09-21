@@ -369,24 +369,13 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      // Make sure the account carries the client role exclusively (remove conflicting designer role)
+      // Make sure the account carries the client role. Never remove an existing
+      // professional role or designer profile — a talent may also order work.
       if (clientUserId) {
-        await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", clientUserId)
-          .eq("role", "designer");
-
         await supabase.from("user_roles").upsert(
           { user_id: clientUserId, role: 'client' },
           { onConflict: 'user_id,role', ignoreDuplicates: true },
         );
-
-        // Remove any accidental designer_details row so this account is purely a client
-        await supabase
-          .from("designer_details")
-          .delete()
-          .eq("user_id", clientUserId);
       }
     } catch (e) {
       console.error("Auth setup catch error (non-critical):", e);

@@ -436,7 +436,7 @@ const StartProject = () => {
           discordCategory: selectedPricing!.discord_category,
           paymentReference: reference,
           promoCode: promoRef,
-          gateway: 'korapay',
+          gateway,
           clientPassword: form.password,
           businessName: form.businessName,
           referenceFiles: uploadedRefUrls,
