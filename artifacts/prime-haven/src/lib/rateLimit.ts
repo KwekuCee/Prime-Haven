@@ -17,7 +17,10 @@ export type RateLimitAction =
   | 'project_message'
   | 'tip_payment'
   | 'withdrawal_request'
-  | 'work_submission';
+  | 'work_submission'
+  | 'talent_application'
+  | 'applicant_upload'
+  | 'assessment_submit';
 
 export interface RateLimitResult {
   allowed: boolean;
