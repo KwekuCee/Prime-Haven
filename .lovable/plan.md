@@ -1,12 +1,13 @@
 # Talent Screening — Refinements
 
-## Assumption to confirm
-You listed six hiring tracks (Graphic Design, UI/UX Design, App Development, Video Editing, Motion Graphics, Social Media Management). The homepage services list actually has eight — it also includes **Web Development** and **General IT Solutions**. I will use exactly your six as the hiring tracks, and keep Web Development/IT Solutions as services you sell but don't recruit for. Say the word if you want those two added as tracks too.
+## Tracks
+All eight homepage services become hiring tracks: Graphic Design, UI/UX Design, Web Development, App Development, Motion Graphics, Video Editing, Social Media Management, and General IT Solutions.
 
 ## 1. Service tracks
 - Add one shared track list next to the existing services list, so the apply page, admin filters, question banks and Discord mapping all read the same source and can never drift.
-- Existing applicants already on "Web Development" keep their record and stay filterable; the option simply no longer appears for new applicants.
-- Question banks and practical briefs for the three new tracks (App Development, Video Editing, Motion Graphics) plus Social Media Management get seeded — 20 questions per track, same style as the existing ones. Existing Graphic Design and UI/UX banks are untouched.
+- Existing applicants keep their records and stay filterable.
+- Question banks and practical briefs get seeded for the six tracks that don't have them yet (Web Development already has one) — 20 questions per track, same style as the existing ones. Existing Graphic Design and UI/UX banks are untouched.
+
 
 ## 2. Practical tasks
 - Every track keeps a practical exercise except Social Media Management, which goes quiz → score directly. The portal hides the upload/link step for that track and the server stops requiring it.
@@ -26,7 +27,7 @@ You listed six hiring tracks (Graphic Design, UI/UX Design, App Development, Vid
 - Review and align the screening pages (apply form, applicant portal, admin Applicants) plus the admin shell around them: consistent card padding, heading sizes, table density, button sizes, empty/loading states, and mobile stacking, all using existing design tokens. No new visual language.
 
 ## 7. Discord routing — I need channel IDs from you
-Today only three channels are mapped (Graphic Design, UI/UX, Web Development) and everything else falls through. I'll add named config for every track. **Please send the Discord channel ID for each:** App Development, Video Editing, Motion Graphics, Social Media Management. I'll leave them blank until you do — no placeholder IDs — and postings for those tracks will keep using the current fallback until filled.
+Today only three channels are mapped (Graphic Design, UI/UX, Web Development) and everything else falls through. I'll add named config for every track. **Please send the Discord channel ID for each:** App Development, Video Editing, Motion Graphics, Social Media Management, and General IT Solutions. I'll leave them blank until you do — no placeholder IDs — and postings for those tracks will keep using the current fallback until filled.
 
 ## 8. Verification answers
 Answered in my reply, with the exact place in the flow each step fires.
