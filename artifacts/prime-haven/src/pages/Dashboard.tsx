@@ -593,12 +593,12 @@ const Dashboard = () => {
             { label: 'Submissions', value: stats.totalSubmissions.toString(), sub: `${ stats.approvedSubmissions } approved`, icon: FileCheck, iconColor: 'text-blue-500' },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }} className="h-full">
-              <div onClick={() => { if (stat.action === 'EST_SALARY') setShowSalaryModal(true); }} className={`h - full ${ stat.action && 'cursor-pointer' } `}>
+              <div onClick={() => { if (stat.action === 'EST_SALARY') setShowSalaryModal(true); }} className={`h-full ${stat.action ? 'cursor-pointer' : ''}`}>
                 <SpotlightCard className="h-full rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 sm:p-5 hover:border-primary/20 hover:bg-card/60 transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="relative">
                     <div className="flex items-center justify-between mb-3">
-                      <stat.icon className={`w - 5 h - 5 ${ stat.iconColor } `} />
+                      <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
                     </div>
                     <p className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">{stat.value}</p>
                     <p className="text-[11px] text-muted-foreground mt-1">{stat.label}</p>
@@ -785,16 +785,15 @@ const Dashboard = () => {
                 { label: 'Edit Profile', icon: Settings, action: () => navigate('/edit-profile') },
               ].map((action) => (
                 <button key={action.label} onClick={action.action}
-                  className={`w - full flex items - center gap - 3 p - 3 rounded - xl text - left transition - all duration - 200 group
-                    ${
-      action.primary
-      ? 'bg-primary/10 border border-primary/20 hover:bg-primary/15 hover:border-primary/30'
-      : 'hover:bg-muted/30 border border-transparent'
-    } `}>
-                  <div className={`w - 8 h - 8 rounded - lg flex items - center justify - center flex - shrink - 0 ${ action.primary ? 'bg-primary/20' : 'bg-muted/50' } `}>
-                    <action.icon className={`w - 4 h - 4 ${ action.primary ? 'text-primary' : 'text-muted-foreground' } `} />
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 group ${
+                    action.primary
+                      ? 'bg-primary/10 border border-primary/20 hover:bg-primary/15 hover:border-primary/30'
+                      : 'hover:bg-muted/30 border border-transparent'
+                  }`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${action.primary ? 'bg-primary/20' : 'bg-muted/50'}`}>
+                    <action.icon className={`w-4 h-4 ${action.primary ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
-                  <span className={`text - xs font - medium flex - 1 ${ action.primary ? 'text-primary' : 'text-foreground' } `}>{action.label}</span>
+                  <span className={`text-xs font-medium flex-1 ${action.primary ? 'text-primary' : 'text-foreground'}`}>{action.label}</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ))}
