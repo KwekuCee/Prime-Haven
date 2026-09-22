@@ -104,10 +104,11 @@ serve(async (req: Request): Promise<Response> => {
     let emailSent = false;
     if (SMTP_USER && SMTP_PASS) {
       try {
+        const smtpPort = Number(Deno.env.get("SMTP_PORT") || 465);
         const transporter = nodemailer.createTransport({
           host: Deno.env.get("SMTP_HOST") || "smtp.gmail.com",
-          port: Number(Deno.env.get("SMTP_PORT") || 465),
-          secure: true,
+          port: smtpPort,
+          secure: smtpPort === 465,
           auth: { user: SMTP_USER, pass: SMTP_PASS },
         });
         await transporter.sendMail({
