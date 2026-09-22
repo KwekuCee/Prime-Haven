@@ -79,10 +79,7 @@ const ServicesSection = () => {
                     transition={{ type: 'spring', stiffness: 300, damping: 24 }}
                     className={`group rounded-2xl border border-border/60 bg-card/30 transition-colors hover:border-primary/40 ${index === 0 ? 'bg-primary/[0.04] border-primary/25' : ''}`}
                   >
-                    <Link
-                      to={`/hiring/${service.slug}`}
-                      className={`flex items-start gap-5 p-5 sm:p-6 ${index === 0 ? 'sm:p-8' : ''}`}
-                    >
+                    <div className={`flex items-start gap-5 p-5 sm:p-6 ${index === 0 ? 'sm:p-8' : ''}`}>
                       <motion.div
                         variants={iconVariants}
                         className="w-12 h-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300"
@@ -91,17 +88,30 @@ const ServicesSection = () => {
                       </motion.div>
 
                       <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                        <h3 className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors duration-300">
-                          {service.title}
+                        <h3 className="text-xl font-heading font-bold text-foreground">
+                          <Link to={`/services/${service.slug}`} className="hover:text-primary transition-colors duration-300">
+                            {service.title}
+                          </Link>
                         </h3>
                         <p className="text-muted-foreground leading-relaxed text-pretty">
                           {service.description}
                         </p>
-                        <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
-                          Join this track <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-2">
+                          <Link
+                            to={`/services/${service.slug}`}
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all"
+                          >
+                            View service <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                          <Link
+                            to={`/hiring/${service.slug}`}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            Join this track
+                          </Link>
+                        </div>
                       </div>
-                    </Link>
+                    </div>
                   </motion.li>
                 ))}
               </motion.ol>
