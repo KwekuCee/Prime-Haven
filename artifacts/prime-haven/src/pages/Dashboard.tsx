@@ -684,7 +684,7 @@ const Dashboard = () => {
 
         {/* Project Marketplace Section */}
         <div className="mb-8 space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-heading font-bold">Project Marketplace</h2>
               <p className="text-xs text-muted-foreground mt-1">Claim active contracts matching your skills</p>
