@@ -290,7 +290,7 @@ const Messages = () => {
     <DashboardLayout>
       <div className="h-[calc(100vh-3.5rem)] flex overflow-hidden">
         {/* Sidebar */}
-        <div className={`w-56 border-r border-border/60 bg-card/20 flex flex-col flex-shrink-0 ${selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`w-full md:w-56 border-r border-border/60 bg-card/20 flex flex-col md:flex-shrink-0 ${selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-3 border-b border-border/40 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-primary" />
             <h2 className="text-xs font-heading font-bold">{myTitle === 'Client' ? 'Talk to the Designer' : 'Conversations'}</h2>
