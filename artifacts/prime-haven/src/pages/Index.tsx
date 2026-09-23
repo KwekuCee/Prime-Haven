@@ -37,27 +37,42 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-transparent relative z-0">
       <Seo
-        title="Web Design & Development Company in Ghana | Prime Haven"
-        description="Prime Haven is a Ghana-based web design, UI/UX, graphic design and IT services company. Hire vetted designers and developers to build your website, brand and digital product."
+        title="Prime Haven"
+        description="Prime Haven is a freelance design and technology agency in Ghana. Hire vetted Ghanaian designers, developers, motion artists, video editors and social media managers, or start a project with our team."
         path="/"
         jsonLd={[
           {
             '@context': 'https://schema.org',
             '@type': 'ProfessionalService',
+            '@id': 'https://primehaven.tech/#service',
             name: 'Prime Haven',
+            alternateName: ['Prime Haven Ghana', 'Prime Haven Tech'],
             url: 'https://primehaven.tech',
             image: 'https://primehaven.tech/opengraph.jpg?v=20260915',
             logo: 'https://primehaven.tech/logo-512.png?v=20260915',
-            description: 'Web design and development, UI/UX design, graphic design and IT solutions company in Ghana, powered by a vetted tech talent network.',
-            areaServed: ['Ghana', 'Worldwide'],
-            address: { '@type': 'PostalAddress', addressCountry: 'GH' },
+            description:
+              'Freelance design and technology agency in Ghana offering web development, UI/UX design, graphic design, mobile app development, motion graphics, video editing, social media management and IT solutions through a vetted network of Ghanaian professionals.',
+            areaServed: [
+              { '@type': 'Country', name: 'Ghana' },
+              { '@type': 'Place', name: 'Worldwide' },
+            ],
+            address: { '@type': 'PostalAddress', addressCountry: 'GH', addressRegion: 'Greater Accra' },
+            currenciesAccepted: 'GHS, USD',
+            priceRange: '$$',
+            sameAs: ['https://www.instagram.com/primehaven_tech'],
             knowsAbout: [
+              'Freelance agency Ghana',
+              'Freelance designers Ghana',
               'Web design Ghana',
               'Web development Ghana',
-              'UI/UX design',
-              'Graphic design',
+              'UI/UX design Ghana',
+              'Graphic design Ghana',
               'Brand identity design',
-              'IT solutions',
+              'Mobile app development Ghana',
+              'Motion graphics',
+              'Video editing',
+              'Social media management Ghana',
+              'IT solutions Ghana',
             ],
             hasOfferCatalog: {
               '@type': 'OfferCatalog',
@@ -66,6 +81,10 @@ const Index = () => {
                 { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Web Development' } },
                 { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'UI/UX Design' } },
                 { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Graphic Design' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Mobile App Development' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Motion Graphics' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Video Editing' } },
+                { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Social Media Management' } },
                 { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'IT Solutions' } },
               ],
             },
