@@ -1,25 +1,34 @@
 # Prime Haven
 
-> Prime Haven is a Ghana-based technology and design company offering UI/UX design, graphic design, web development and IT solutions, backed by a vetted network of freelance tech talent.
+> Prime Haven is a freelance design and technology agency in Ghana (Greater Accra), serving clients in Ghana and worldwide. We deliver web development, UI/UX design, graphic design, mobile app development, motion graphics, video editing, social media management and IT solutions through a vetted network of Ghanaian professionals.
 
-Businesses hire Prime Haven for end-to-end project delivery (research, design, development, testing and support) or to place vetted contract designers and developers. Pricing is quoted per project, in USD and Ghana Cedis (GH₵).
+Businesses hire Prime Haven for end-to-end project delivery (research, design, development, testing and support) or to work with vetted freelance designers and developers. Pricing is quoted per project in USD and Ghana Cedis (GH₵). Instagram: https://www.instagram.com/primehaven_tech
 
 ## Pages
 
-- [Home](/): Overview of Prime Haven's services, process, team and client work.
-- [Portfolio](/portfolio): Case studies across UI/UX design, branding, graphic design and web development.
-- [Blog](/blog): News, opportunities and updates from Prime Haven.
-- [Start a project](/start-project): Brief submission and quote request for new client work.
-- [Marketplace](/marketplace): Open contract opportunities for Prime Haven talent.
+- [Home](https://primehaven.tech/): Services, process, team and client work.
+- [Our Story](https://primehaven.tech/our-story): Who we are and why Prime Haven exists.
+- [Portfolio](https://primehaven.tech/portfolio): Case studies across UI/UX, branding, graphic design and web development.
+- [Start a project](https://primehaven.tech/start-project): Brief submission and quote request.
+- [Blog](https://primehaven.tech/blog): News and updates.
+- [Apply](https://primehaven.tech/apply): Join Prime Haven as a vetted freelance professional.
 
 ## Services
 
-- [Graphic Design](/services/graphic-design): Logos, brand identity and print/social design.
-- [UI/UX Design](/services/ui-ux-design): Product, web and app interface design.
-- [Web Development](/services/web-development): Custom websites and web applications.
-- [IT Solutions](/services/it-solutions): Support, infrastructure and business systems.
+- [Graphic Design](https://primehaven.tech/services/graphic-design)
+- [UI/UX Design](https://primehaven.tech/services/ui-ux-design)
+- [Web Development](https://primehaven.tech/services/web-development)
+- [Mobile App Development](https://primehaven.tech/services/mobile-app-development)
+- [Motion Graphics](https://primehaven.tech/services/motion-graphics)
+- [Video Editing](https://primehaven.tech/services/video-editing)
+- [Social Media Management](https://primehaven.tech/services/social-media-management)
+- [IT Solutions](https://primehaven.tech/services/it-solutions)
+
+## Hiring tracks
+
+Freelancers in Ghana can apply to join each track via https://primehaven.tech/hiring/{track}, e.g. [Graphic Design track](https://primehaven.tech/hiring/graphic-design).
 
 ## Optional
 
-- [Terms](/terms): Terms of service.
-- [Privacy](/privacy): Privacy policy.
+- [Terms](https://primehaven.tech/terms)
+- [Privacy](https://primehaven.tech/privacy)
