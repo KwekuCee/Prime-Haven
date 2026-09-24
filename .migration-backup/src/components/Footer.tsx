@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
             <Link to="/">
-              <FooterLogo height={40} />
+              <FooterLogo height={50} />
             </Link>
             <p className="text-muted-foreground text-sm mt-2">
               Making IT Dreams a Reality
