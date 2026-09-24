@@ -18,7 +18,7 @@ Businesses hire Prime Haven for end-to-end project delivery (research, design, d
 - [Graphic Design](https://primehaven.tech/services/graphic-design)
 - [UI/UX Design](https://primehaven.tech/services/ui-ux-design)
 - [Web Development](https://primehaven.tech/services/web-development)
-- [Mobile App Development](https://primehaven.tech/services/app-development)
+- [Mobile App Development](https://primehaven.tech/services/mobile-app-development)
 - [Motion Graphics](https://primehaven.tech/services/motion-graphics)
 - [Video Editing](https://primehaven.tech/services/video-editing)
 - [Social Media Management](https://primehaven.tech/services/social-media-management)
