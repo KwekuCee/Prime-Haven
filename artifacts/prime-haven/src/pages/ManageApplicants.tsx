@@ -571,9 +571,59 @@ const ManageApplicants = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="intro-video">Intro video URL</Label>
-              <Input id="intro-video" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://…/prime-haven-intro.mp4" />
-              <p className="text-xs text-muted-foreground">Direct video file link (mp4). Applicants must watch it fully before the assessment unlocks.</p>
+              <Label htmlFor="intro-video">Onboarding video</Label>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+                {videoPreview ? (
+                  <video
+                    src={videoPreview}
+                    controls
+                    className="w-full aspect-video rounded-lg bg-black"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <PlayCircle className="w-5 h-5" />
+                    <span>{videoUrl ? 'No preview available for this link.' : 'No video uploaded yet.'}</span>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadVideo(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploadingVideo}
+                  >
+                    {uploadingVideo
+                      ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      : <Upload className="w-4 h-4 mr-2" />}
+                    {uploadingVideo ? 'Uploading…' : 'Upload video'}
+                  </Button>
+                  {videoUrl ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-lg text-muted-foreground"
+                      onClick={() => { setVideoUrl(''); setVideoPreview(''); }}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
+                <Input id="intro-video" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="intro/prime-haven-onboarding.mp4 or https://…/intro.mp4" />
+              </div>
+              <p className="text-xs text-muted-foreground">Upload your MP4, MOV or WebM (up to 100MB), or paste a direct video link. Applicants must watch it fully before the assessment unlocks.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
