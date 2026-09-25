@@ -17,8 +17,6 @@ const json = (body: unknown, status = 200) =>
   });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const str = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const escapeHtml = (v: unknown) =>
@@ -102,7 +100,7 @@ serve(async (req: Request): Promise<Response> => {
     } catch (_e) { /* non-fatal */ }
 
     let emailSent = false;
-    if (SMTP_USER && SMTP_PASS) {
+    if (Deno.env.get("RESEND_API_KEY")) {
       try {
         await sendEmail({
           from: FROM_ADDRESS,

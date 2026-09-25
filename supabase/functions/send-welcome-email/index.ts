@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
 const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -220,10 +217,9 @@ serve(async (req: Request): Promise<Response> => {
       ? encodeHtml(fullName.slice(0, 100).trim())
       : "Designer";
 
-    const fromAddress = (SMTP_USER || "").trim();
 
     await sendEmail({
-      from: "Prime Haven <" + fromAddress + ">",
+      from: FROM_ADDRESS,
       to: email,
       subject: "🚀 Welcome to Prime Haven - Your Getting Started Guide",
       html: buildWelcomeHtml(sanitizedName),

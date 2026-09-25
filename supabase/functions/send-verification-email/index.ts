@@ -2,10 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendEmail as resendSend, FROM_ADDRESS } from "../_shared/resend.ts";
 
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
 const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -227,7 +224,6 @@ async function sendEmail(
   html: string,
   text: string,
 ) {
-  const fromAddress = (SMTP_USER || "").trim();
   await resendSend({ from: FROM_ADDRESS, to, subject, html, text });
 }
 

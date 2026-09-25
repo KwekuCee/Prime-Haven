@@ -5,10 +5,7 @@ import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
 const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const CEO_EMAIL = "primehaven26@gmail.com";
 const MIN_WITHDRAWAL = 100;

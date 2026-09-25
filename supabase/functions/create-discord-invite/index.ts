@@ -6,10 +6,7 @@ const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 const DISCORD_CHANNEL_ID = Deno.env.get("DISCORD_CHANNEL_ID");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
 const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +21,6 @@ interface CreateInviteRequest {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const fromAddress = (SMTP_USER || "").trim();
   await resendSend({ from: FROM_ADDRESS, to, subject, html });
 }
 
