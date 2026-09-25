@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
