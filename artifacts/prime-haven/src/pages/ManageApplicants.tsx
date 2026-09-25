@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search, Loader2, Send, FileText, LinkIcon, ExternalLink, RotateCcw, XCircle, Settings2, Copy,
-  Trash2, ShieldAlert,
+  Trash2, ShieldAlert, Upload, PlayCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,18 @@ interface AssessmentRow {
   submitted_at: string | null;
 }
 
+// The onboarding video is stored in the private screening-assets bucket, so the
+// setting holds a path. A full link to another host is still accepted and used as-is.
+const videoPathFrom = (raw: string): string | null => {
+  const value = (raw || '').trim();
+  if (!value) return null;
+  const marker = '/screening-assets/';
+  const idx = value.indexOf(marker);
+  if (idx >= 0) return decodeURIComponent(value.slice(idx + marker.length).split('?')[0]);
+  if (/^https?:\/\//i.test(value)) return null;
+  return value;
+};
+
 const statusTone: Record<string, string> = {
   submitted: 'bg-muted text-foreground',
   invited: 'bg-blue-500/10 text-blue-600',
@@ -86,6 +98,9 @@ const ManageApplicants = () => {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoPreview, setVideoPreview] = useState('');
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [quizSize, setQuizSize] = useState('15');
   const [passMark, setPassMark] = useState('70');
   const [savingSettings, setSavingSettings] = useState(false);
@@ -123,6 +138,53 @@ const ManageApplicants = () => {
       if (row.key === 'applicant_pass_mark') setPassMark(raw || '70');
     });
   };
+
+  const refreshVideoPreview = async (value: string) => {
+    const path = videoPathFrom(value);
+    if (!path) {
+      setVideoPreview(/^https?:\/\//i.test((value || '').trim()) ? value.trim() : '');
+      return;
+    }
+    const { data } = await supabase.storage.from('screening-assets').createSignedUrl(path, 6 * 60 * 60);
+    setVideoPreview(data?.signedUrl || '');
+  };
+
+  const uploadVideo = async (file: File) => {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['mp4', 'm4v', 'mov', 'webm'].includes(ext)) {
+      toast({ variant: 'destructive', title: 'Unsupported file', description: 'Please upload an MP4, MOV or WebM video.' });
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Video too large', description: 'Please keep the onboarding video under 100MB.' });
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      const path = `intro/prime-haven-onboarding-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from('screening-assets')
+        .upload(path, file, { contentType: file.type || `video/${ext}` });
+      if (error) throw error;
+      setVideoUrl(path);
+      await refreshVideoPreview(path);
+      toast({ title: 'Video uploaded', description: 'Save the screening setup so applicants can watch it.' });
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description: err instanceof Error ? err.message : 'Please try again.',
+      });
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
+  };
+
+  useEffect(() => {
+    if (settingsOpen) void refreshVideoPreview(videoUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsOpen]);
 
   const saveSettings = async () => {
     setSavingSettings(true);
@@ -509,9 +571,59 @@ const ManageApplicants = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="intro-video">Intro video URL</Label>
-              <Input id="intro-video" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://…/prime-haven-intro.mp4" />
-              <p className="text-xs text-muted-foreground">Direct video file link (mp4). Applicants must watch it fully before the assessment unlocks.</p>
+              <Label htmlFor="intro-video">Onboarding video</Label>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+                {videoPreview ? (
+                  <video
+                    src={videoPreview}
+                    controls
+                    className="w-full aspect-video rounded-lg bg-black"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <PlayCircle className="w-5 h-5" />
+                    <span>{videoUrl ? 'No preview available for this link.' : 'No video uploaded yet.'}</span>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadVideo(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploadingVideo}
+                  >
+                    {uploadingVideo
+                      ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      : <Upload className="w-4 h-4 mr-2" />}
+                    {uploadingVideo ? 'Uploading…' : 'Upload video'}
+                  </Button>
+                  {videoUrl ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-lg text-muted-foreground"
+                      onClick={() => { setVideoUrl(''); setVideoPreview(''); }}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
+                <Input id="intro-video" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="intro/prime-haven-onboarding.mp4 or https://…/intro.mp4" />
+              </div>
+              <p className="text-xs text-muted-foreground">Upload your MP4, MOV or WebM (up to 100MB), or paste a direct video link. Applicants must watch it fully before the assessment unlocks.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

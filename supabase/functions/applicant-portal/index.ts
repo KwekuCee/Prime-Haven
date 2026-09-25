@@ -8,6 +8,18 @@ import { corsHeaders, json, TOKEN_RE, getSetting, limited } from "../_shared/app
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+// The onboarding video lives in the private screening-assets bucket, so the setting
+// stores a path. External links (http/https to another host) still pass through as-is.
+const videoPathFrom = (raw: string): string | null => {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  const marker = "/screening-assets/";
+  const idx = value.indexOf(marker);
+  if (idx >= 0) return decodeURIComponent(value.slice(idx + marker.length).split("?")[0]);
+  if (/^https?:\/\//i.test(value)) return null;
+  return value;
+};
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -59,7 +71,18 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    const videoUrl = await getSetting<string>(supabase, "applicant_intro_video_url", "");
+    const rawVideo = await getSetting<string>(supabase, "applicant_intro_video_url", "");
+    let videoUrl = "";
+    const videoPath = videoPathFrom(rawVideo);
+    if (videoPath) {
+      // Short-lived link: long enough to watch the intro, gone before it can be shared around.
+      const { data: signed } = await supabase.storage
+        .from("screening-assets")
+        .createSignedUrl(videoPath, 6 * 60 * 60);
+      videoUrl = signed?.signedUrl || "";
+    } else {
+      videoUrl = rawVideo || "";
+    }
     const discordInvite = await getSetting<string>(supabase, "discord_invite_url", "");
 
     const { data: assessment } = await supabase
