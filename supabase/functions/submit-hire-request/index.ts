@@ -2,7 +2,7 @@
 // Public: records a direct hire request from a hiring track page and notifies the team.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import nodemailer from "npm:nodemailer@6";
+import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,8 +17,6 @@ const json = (body: unknown, status = 200) =>
   });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const str = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const escapeHtml = (v: unknown) =>
@@ -102,18 +100,11 @@ serve(async (req: Request): Promise<Response> => {
     } catch (_e) { /* non-fatal */ }
 
     let emailSent = false;
-    if (SMTP_USER && SMTP_PASS) {
+    if (Deno.env.get("RESEND_API_KEY")) {
       try {
-        const smtpPort = Number(Deno.env.get("SMTP_PORT") || 465);
-        const transporter = nodemailer.createTransport({
-          host: Deno.env.get("SMTP_HOST") || "smtp.gmail.com",
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: { user: SMTP_USER, pass: SMTP_PASS },
-        });
-        await transporter.sendMail({
-          from: `"Prime Haven" <${SMTP_USER}>`,
-          to: SMTP_USER,
+        await sendEmail({
+          from: FROM_ADDRESS,
+          to: "primehaven26@gmail.com",
           replyTo: email,
           subject: `New hire request — ${serviceLabel || serviceSlug}`,
           html: `

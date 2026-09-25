@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import nodemailer from "npm:nodemailer@6";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -204,17 +200,9 @@ serve(async (req: Request): Promise<Response> => {
       '© 2026 Prime Haven',
     ].join('\n');
 
-    const fromAddress = (SMTP_USER || "").trim();
-    const smtpPort = SMTP_PORT || 587;
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: { user: fromAddress, pass: SMTP_PASS },
-    });
 
-    await transporter.sendMail({
-      from: `Prime Haven <${fromAddress}>`,
+    await sendEmail({
+      from: FROM_ADDRESS,
       to: project.client_email,
       subject: `Project Update: ${project.title} - ${statusLabels[project.status] || project.status}`,
       html,

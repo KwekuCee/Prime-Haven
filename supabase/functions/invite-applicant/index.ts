@@ -2,8 +2,8 @@
 // Admin action: invite an applicant to the screening portal and email them their link.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import nodemailer from "npm:nodemailer@6";
 import { corsHeaders, json, trackHasPractical, escapeHtml, safePublicOrigin, UUID_RE } from "../_shared/applicants.ts";
+import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -59,12 +59,6 @@ serve(async (req: Request): Promise<Response> => {
 
     let emailSent = false;
     try {
-      const transporter = nodemailer.createTransport({
-        host: Deno.env.get("SMTP_HOST"),
-        port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
-        secure: false,
-        auth: { user: Deno.env.get("SMTP_USER"), pass: Deno.env.get("SMTP_PASS") },
-      });
 
       const html = `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f7;padding:32px 0;font-family:Arial,Helvetica,sans-serif;">
@@ -85,8 +79,8 @@ serve(async (req: Request): Promise<Response> => {
   </td></tr>
 </table>`;
 
-      await transporter.sendMail({
-        from: `"Prime Haven" <${Deno.env.get("SMTP_USER")}>`,
+      await sendEmail({
+        from: FROM_ADDRESS,
         to: applicant.email,
         subject: "You're invited to the Prime Haven screening",
         html,
