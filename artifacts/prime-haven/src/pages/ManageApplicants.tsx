@@ -86,6 +86,9 @@ const ManageApplicants = () => {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoPreview, setVideoPreview] = useState('');
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [quizSize, setQuizSize] = useState('15');
   const [passMark, setPassMark] = useState('70');
   const [savingSettings, setSavingSettings] = useState(false);

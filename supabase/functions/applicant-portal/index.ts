@@ -71,7 +71,18 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    const videoUrl = await getSetting<string>(supabase, "applicant_intro_video_url", "");
+    const rawVideo = await getSetting<string>(supabase, "applicant_intro_video_url", "");
+    let videoUrl = "";
+    const videoPath = videoPathFrom(rawVideo);
+    if (videoPath) {
+      // Short-lived link: long enough to watch the intro, gone before it can be shared around.
+      const { data: signed } = await supabase.storage
+        .from("screening-assets")
+        .createSignedUrl(videoPath, 6 * 60 * 60);
+      videoUrl = signed?.signedUrl || "";
+    } else {
+      videoUrl = rawVideo || "";
+    }
     const discordInvite = await getSetting<string>(supabase, "discord_invite_url", "");
 
     const { data: assessment } = await supabase
