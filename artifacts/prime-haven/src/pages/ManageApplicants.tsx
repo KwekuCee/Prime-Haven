@@ -57,6 +57,18 @@ interface AssessmentRow {
   submitted_at: string | null;
 }
 
+// The onboarding video is stored in the private screening-assets bucket, so the
+// setting holds a path. A full link to another host is still accepted and used as-is.
+const videoPathFrom = (raw: string): string | null => {
+  const value = (raw || '').trim();
+  if (!value) return null;
+  const marker = '/screening-assets/';
+  const idx = value.indexOf(marker);
+  if (idx >= 0) return decodeURIComponent(value.slice(idx + marker.length).split('?')[0]);
+  if (/^https?:\/\//i.test(value)) return null;
+  return value;
+};
+
 const statusTone: Record<string, string> = {
   submitted: 'bg-muted text-foreground',
   invited: 'bg-blue-500/10 text-blue-600',
@@ -126,6 +138,53 @@ const ManageApplicants = () => {
       if (row.key === 'applicant_pass_mark') setPassMark(raw || '70');
     });
   };
+
+  const refreshVideoPreview = async (value: string) => {
+    const path = videoPathFrom(value);
+    if (!path) {
+      setVideoPreview(/^https?:\/\//i.test((value || '').trim()) ? value.trim() : '');
+      return;
+    }
+    const { data } = await supabase.storage.from('screening-assets').createSignedUrl(path, 6 * 60 * 60);
+    setVideoPreview(data?.signedUrl || '');
+  };
+
+  const uploadVideo = async (file: File) => {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['mp4', 'm4v', 'mov', 'webm'].includes(ext)) {
+      toast({ variant: 'destructive', title: 'Unsupported file', description: 'Please upload an MP4, MOV or WebM video.' });
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Video too large', description: 'Please keep the onboarding video under 100MB.' });
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      const path = `intro/prime-haven-onboarding-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from('screening-assets')
+        .upload(path, file, { contentType: file.type || `video/${ext}` });
+      if (error) throw error;
+      setVideoUrl(path);
+      await refreshVideoPreview(path);
+      toast({ title: 'Video uploaded', description: 'Save the screening setup so applicants can watch it.' });
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description: err instanceof Error ? err.message : 'Please try again.',
+      });
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
+  };
+
+  useEffect(() => {
+    if (settingsOpen) void refreshVideoPreview(videoUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsOpen]);
 
   const saveSettings = async () => {
     setSavingSettings(true);
