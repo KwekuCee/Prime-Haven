@@ -4,8 +4,8 @@
 // or a polite decline.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import nodemailer from "npm:nodemailer@6";
 import { corsHeaders, json, TOKEN_RE, getSetting, limited, emailShell, escapeHtml, safePublicOrigin } from "../_shared/applicants.ts";
+import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -29,15 +29,9 @@ async function sendResultEmail(applicant: any, result: {
       <p style="margin:0 0 16px;">Your score: <strong>${result.score}%</strong> (${result.correctCount} of ${result.totalQuestions} correct). Our bar for this round is ${result.passMark}%, so we won't be moving forward this time — and there is nothing to pay.</p>
       <p style="margin:0 0 16px;">We'd genuinely welcome another application in the future as your portfolio grows.</p>`;
 
-  const transporter = nodemailer.createTransport({
-    host: Deno.env.get("SMTP_HOST"),
-    port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
-    secure: false,
-    auth: { user: Deno.env.get("SMTP_USER"), pass: Deno.env.get("SMTP_PASS") },
-  });
 
-  await transporter.sendMail({
-    from: `"Prime Haven" <${Deno.env.get("SMTP_USER")}>`,
+  await sendEmail({
+    from: FROM_ADDRESS,
     to: applicant.email,
     subject: result.passed
       ? `You passed the Prime Haven ${applicant.track} assessment`

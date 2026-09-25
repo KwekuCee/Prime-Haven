@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import nodemailer from "npm:nodemailer@6";
+import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -156,14 +156,8 @@ serve(async (req) => {
 
     // Alert the CEO
     let emailSent = false;
-    if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+    if (Deno.env.get("RESEND_API_KEY")) {
       try {
-        const transporter = nodemailer.createTransport({
-          host: SMTP_HOST,
-          port: SMTP_PORT,
-          secure: SMTP_PORT === 465,
-          auth: { user: SMTP_USER, pass: SMTP_PASS },
-        });
 
         const html = `
         <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6;padding:24px;font-family:Arial,Helvetica,sans-serif">
@@ -192,8 +186,8 @@ serve(async (req) => {
           </td></tr>
         </table>`;
 
-        await transporter.sendMail({
-          from: `"Prime Haven" <${SMTP_USER}>`,
+        await sendEmail({
+          from: FROM_ADDRESS,
           to: CEO_EMAIL,
           subject: `Withdrawal request: GH₵${amount.toFixed(2)} — ${profile?.full_name || "Talent"}`,
           html,

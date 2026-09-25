@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import nodemailer from "npm:nodemailer@6";
+import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 
 const SMTP_HOST = Deno.env.get("SMTP_HOST");
 const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
@@ -221,14 +221,8 @@ serve(async (req: Request): Promise<Response> => {
       : "Designer";
 
     const fromAddress = (SMTP_USER || "").trim();
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
-      auth: { user: fromAddress, pass: SMTP_PASS },
-    });
 
-    await transporter.sendMail({
+    await sendEmail({
       from: "Prime Haven <" + fromAddress + ">",
       to: email,
       subject: "🚀 Welcome to Prime Haven - Your Getting Started Guide",
