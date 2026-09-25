@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search, Loader2, Send, FileText, LinkIcon, ExternalLink, RotateCcw, XCircle, Settings2, Copy,
-  Trash2, ShieldAlert,
+  Trash2, ShieldAlert, Upload, PlayCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
