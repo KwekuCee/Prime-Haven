@@ -18,7 +18,7 @@ Prime Haven is a premium Ghana-based digital agency — *"Making IT Dreams a Rea
 - **Founded & Headquartered**: Ghana 🇬🇭 (serving clients globally)
 - **Official Domain**: primehaven.tech
 - **Primary Currency**: Ghana Cedi (GH₵), with USD support (1 USD ≈ 15.5 GHS)
-- **Discord Community**: https://discord.gg/meXTeEdF
+- **Discord Community**: https://discord.gg/HvHtBVpdm
 - **Brand**: Dark, premium, minimal aesthetic — accent color #fe4c18
 
 ## 🎨 Services We Offer
@@ -114,7 +114,7 @@ Browse design/dev/business articles at /blog. Subscribe via the newsletter signu
 - **Email**: primehaven26@gmail.com
 - **Instagram**: @primehaven_co — https://instagram.com/primehaven_co
 - **LinkedIn**: https://linkedin.com/company/primehaven
-- **Discord**: https://discord.gg/meXTeEdF
+- **Discord**: https://discord.gg/HvHtBVpdm
 
 ---
 
