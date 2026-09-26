@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
+import { sendEmail, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
 
 
 const corsHeaders = {
@@ -118,7 +118,7 @@ function buildWelcomeHtml(name: string): string {
 <td width="40" valign="top"><span style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;background-color:rgba(254,76,24,0.3);color:#fe4c18;border-radius:50%;font-weight:800;font-size:14px;">5</span></td>
 <td style="padding-left:12px;">
 <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#ffffff;">Earn Points & Get Paid</p>
-<p style="margin:0;font-size:14px;color:#999999;">Your work goes through two approval stages: <strong>PH Approval</strong> (internal quality check) and <strong>Client Acceptance</strong>. Each stage earns you points. At month-end, your points determine your share of the revenue pool!</p>
+<p style="margin:0;font-size:14px;color:#999999;">The client reviews your submitted work. Your earnings and points are awarded after the client accepts it.</p>
 </td>
 </tr></table>
 </td></tr></table>
@@ -131,10 +131,7 @@ function buildWelcomeHtml(name: string): string {
 <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#ffffff;letter-spacing:1px;text-transform:uppercase;">Points Breakdown</p>
 <table role="presentation" cellpadding="0" cellspacing="0">
 <tr>
-<td style="padding:4px 16px;"><span style="color:#fe4c18;font-weight:700;">⭐ PH Approval:</span> <span style="color:#ccc;">+15 points</span></td>
-</tr>
-<tr>
-<td style="padding:4px 16px;"><span style="color:#fe4c18;font-weight:700;">🏆 Client Accept:</span> <span style="color:#ccc;">+20-65 points (varies by service)</span></td>
+<td style="padding:4px 16px;"><span style="color:#fe4c18;font-weight:700;">🏆 Client Acceptance:</span> <span style="color:#ccc;">Points awarded after acceptance (varies by service)</span></td>
 </tr>
 <tr>
 <td style="padding:4px 16px;"><span style="color:#fe4c18;font-weight:700;">🎁 Bonus Points:</span> <span style="color:#ccc;">Awarded for exceptional work</span></td>
@@ -184,8 +181,7 @@ function buildPlainText(name: string): string {
     '   Click "Start Work" on your dashboard to notify the admin, then submit via "Submit Work".',
     '',
     '5. EARN POINTS & GET PAID',
-    '   PH Approval: +15 points',
-    '   Client Acceptance: +20-65 points (varies by service)',
+   Client acceptance: points awarded after the client accepts your work',
     '   Bonus Points: Awarded for exceptional work',
     '',
     'Need help? primehaven26@gmail.com',
@@ -218,7 +214,7 @@ serve(async (req: Request): Promise<Response> => {
 
 
     await sendEmail({
-      from: FROM_ADDRESS,
+      from: APPLICATIONS_ADDRESS,
       to: email,
       subject: "🚀 Welcome to Prime Haven - Your Getting Started Guide",
       html: buildWelcomeHtml(sanitizedName),

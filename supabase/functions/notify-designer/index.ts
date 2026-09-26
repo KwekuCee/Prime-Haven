@@ -165,10 +165,10 @@ serve(async (req: Request): Promise<Response> => {
 
     switch (notificationType) {
       case "ph_approved":
-        subject = `🎨 Your design "${sanitizedProject}" has been PH Approved!`;
-        heading = "Design Approved by Prime Haven!";
-        message = `Great news! Your submission <strong>"${sanitizedProject}"</strong> has passed the Prime Haven quality check and earned you <strong>+${pointsAwarded || 15} points</strong>. Your work is now awaiting client review.`;
-        badgeText = "PH APPROVED"; emoji = "🎨";
+        subject = `🎨 Your design "${sanitizedProject}" is ready for client review`;
+        heading = "Ready for Client Review";
+        message = `Your submission <strong>"${sanitizedProject}"</strong> is ready for the client to review. Points and earnings are awarded after client acceptance.`;
+        badgeText = "CLIENT REVIEW"; emoji = "🎨";
 
         break;
       case "client_accepted":

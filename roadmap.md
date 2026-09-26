@@ -1,5 +1,10 @@
 # Security, Performance, and Mobile Polish Pass
 
+## Current request
+- [ ] Brand every outgoing email, remove PH-approval wording, and route senders by purpose
+- [ ] Alert primehaven26@gmail.com on site submissions
+- [ ] Send web/app development inquiries to consultation instead of fixed-price checkout
+
 - [ ] Security baseline and inventory: fresh scan, table policy review, function/access-path inventory
 - [ ] Database and RLS hardening: tighten gaps, review SECURITY DEFINER execute access
 - [ ] Edge Function and input validation hardening: schemas, uploads, payments, public form limits
