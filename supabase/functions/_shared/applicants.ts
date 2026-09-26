@@ -85,7 +85,7 @@ export const emailShell = (bodyHtml: string) => `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f7;padding:32px 0;font-family:Arial,Helvetica,sans-serif;">
   <tr><td align="center">
     <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;">
-      <tr><td style="background:#0b0b0d;padding:24px 32px;color:#ffffff;font-size:18px;font-weight:bold;">Prime Haven</td></tr>
+       <tr><td style="background:#0b0b0d;padding:24px 32px;color:#ffffff;font-size:18px;font-weight:bold;"><img src="https://primehaven.tech/logo-512.png" alt="Prime Haven" width="64" height="64" style="display:block;width:64px;height:64px;" />Prime Haven</td></tr>
       <tr><td style="padding:32px;color:#1a1a1a;font-size:15px;line-height:1.6;">${bodyHtml}</td></tr>
       <tr><td style="padding:20px 32px;background:#f6f6f7;color:#888;font-size:12px;">Prime Haven · primehaven.tech</td></tr>
     </table>
