@@ -55,3 +55,23 @@ export async function sendEmail(opts: SendEmailOptions): Promise<void> {
     throw new Error(`Resend send failed [${res.status}]: ${body}`);
   }
 }
+
+function esc(s: unknown): string {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+/** Best-effort alert to the owner inbox. Never throws. */
+export async function alertOwner(from: string, title: string, fields: Record<string, unknown>, link?: string): Promise<boolean> {
+  try {
+    const rows = Object.entries(fields)
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([k, v]) => `<tr><td style="color:#888;padding:6px 12px 6px 0;vertical-align:top;">${esc(k)}</td><td style="color:#111;padding:6px 0;">${esc(v).slice(0, 2000)}</td></tr>`)
+      .join("");
+    const html = `<!DOCTYPE html><html><body style="margin:0;background:#f6f3ee;font-family:Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;"><tr><td style="padding:24px;"><h2 style="margin:0 0 16px;color:#fe4c18;">${esc(title)}</h2><table cellpadding="0" cellspacing="0" style="font-size:14px;">${rows}</table>${link ? `<p style="margin-top:20px;"><a href="https://primehaven.tech${esc(link)}" style="color:#fe4c18;">Open in dashboard</a></p>` : ""}</td></tr></table></td></tr></table></body></html>`;
+    await sendEmail({ from, to: OWNER_EMAIL, subject: `[Prime Haven] ${title}`, html });
+    return true;
+  } catch (e) {
+    console.error("owner alert failed:", e);
+    return false;
+  }
+}

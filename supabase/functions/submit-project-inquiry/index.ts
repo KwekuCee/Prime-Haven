@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
+import { sendEmail, FROM_ADDRESS, INFO_ADDRESS } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +51,7 @@ serve(async (req) => {
 
 
     await sendEmail({
-      from: FROM_ADDRESS,
+      from: INFO_ADDRESS,
       to: "primehaven26@gmail.com",
       subject: `🚀 New Project Inquiry from ${fullName}`,
       text: `New project inquiry:\n\nName: ${fullName}\nEmail: ${email}\nWhatsApp: ${whatsapp}\nService: ${category}\nBudget: ${budget || "Not specified"}\nDescription: ${description}`,
