@@ -2,7 +2,7 @@
 // Public: records a direct hire request from a hiring track page and notifies the team.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
+import { sendEmail, FROM_ADDRESS, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,7 +103,7 @@ serve(async (req: Request): Promise<Response> => {
     if (Deno.env.get("RESEND_API_KEY")) {
       try {
         await sendEmail({
-          from: FROM_ADDRESS,
+          from: APPLICATIONS_ADDRESS,
           to: "primehaven26@gmail.com",
           replyTo: email,
           subject: `New hire request — ${serviceLabel || serviceSlug}`,

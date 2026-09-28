@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendEmail as resendSend, FROM_ADDRESS } from "../_shared/resend.ts";
+import { sendEmail as resendSend, FROM_ADDRESS, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
 
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 const DISCORD_CHANNEL_ID = Deno.env.get("DISCORD_CHANNEL_ID");
@@ -20,7 +20,7 @@ interface CreateInviteRequest {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  await resendSend({ from: FROM_ADDRESS, to, subject, html });
+  await resendSend({ from: APPLICATIONS_ADDRESS, to, subject, html });
 }
 
 serve(async (req: Request): Promise<Response> => {

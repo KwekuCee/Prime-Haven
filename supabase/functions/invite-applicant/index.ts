@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json, trackHasPractical, escapeHtml, safePublicOrigin, UUID_RE } from "../_shared/applicants.ts";
-import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
+import { sendEmail, FROM_ADDRESS, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -80,7 +80,7 @@ serve(async (req: Request): Promise<Response> => {
 </table>`;
 
       await sendEmail({
-        from: FROM_ADDRESS,
+        from: APPLICATIONS_ADDRESS,
         to: applicant.email,
         subject: "You're invited to the Prime Haven screening",
         html,

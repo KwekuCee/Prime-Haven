@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendEmail as resendSend, FROM_ADDRESS } from "../_shared/resend.ts";
+import { sendEmail as resendSend, FROM_ADDRESS, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -223,7 +223,7 @@ async function sendEmail(
   html: string,
   text: string,
 ) {
-  await resendSend({ from: FROM_ADDRESS, to, subject, html, text });
+  await resendSend({ from: APPLICATIONS_ADDRESS, to, subject, html, text });
 }
 
 serve(async (req: Request): Promise<Response> => {
