@@ -209,7 +209,7 @@ serve(async (req: Request): Promise<Response> => {
       case "client_rejected":
         subject = `⚠️ Client rejected your design "${sanitizedProject}"`;
         heading = "Client Rejected Your Design";
-        message = `The client has rejected your submission <strong>"${sanitizedProject}"</strong>.${rejectionReason ? ` <strong>Feedback:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Your PH-approval points have been retained. Review the feedback and keep improving!`;
+        message = `The client has rejected your submission <strong>"${sanitizedProject}"</strong>.${rejectionReason ? ` <strong>Feedback:</strong> ${encodeHtml(rejectionReason.slice(0, 300).trim())}` : ""} Your earned points are unaffected. Review the feedback and keep improving!`;
         badgeText = "CLIENT REJECTED"; emoji = "⚠️";
 
         break;
