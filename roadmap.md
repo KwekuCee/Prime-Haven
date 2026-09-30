@@ -2,8 +2,8 @@
 
 ## Current request
 - [x] Brand every outgoing email, remove PH-approval wording, and route senders by purpose
-- [ ] Alert primehaven26@gmail.com on site submissions
-- [ ] Send web/app development inquiries to consultation instead of fixed-price checkout
+- [x] Alert primehaven26@gmail.com on site submissions
+- [x] Send web/app development inquiries to consultation instead of fixed-price checkout
 - [x] Fix sticky/stuck scrolling on the homepage and verify it on mobile and desktop
 
 - [ ] Security baseline and inventory: fresh scan, table policy review, function/access-path inventory
