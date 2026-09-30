@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BrandLogo from '@/components/BrandLogo';
+import Seo from '@/components/Seo';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, Mail, CheckCircle, Send } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -51,6 +52,8 @@ const ForgotPassword = () => {
   };
 
   return (
+    <>
+    <Seo title="Forgot Password | Prime Haven" description="Reset access to your Prime Haven account. Enter your email and we'll send you a secure password reset link." path="/forgot-password" noindex />
     <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center p-4 z-0">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
