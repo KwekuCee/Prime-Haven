@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { checkRateLimit } from '@/lib/rateLimit';
 
 const bookingSchema = z.object({
   fullName: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
@@ -53,11 +52,17 @@ const services = [
 ];
 
 interface BookConsultationDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultService?: string;
+  note?: string;
 }
 
-const BookConsultationDialog = ({ children }: BookConsultationDialogProps) => {
-  const [open, setOpen] = useState(false);
+const BookConsultationDialog = ({ children, open: openProp, onOpenChange, defaultService, note }: BookConsultationDialogProps) => {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (v: boolean) => { setOpenState(v); onOpenChange?.(v); };
   const [submitting, setSubmitting] = useState(false);
   const { t } = useTranslation();
 
@@ -68,7 +73,7 @@ const BookConsultationDialog = ({ children }: BookConsultationDialogProps) => {
       email: '',
       phone: '',
       companyName: '',
-      serviceInterest: '',
+      serviceInterest: defaultService ?? '',
       preferredTime: '',
       message: '',
     },
@@ -77,23 +82,22 @@ const BookConsultationDialog = ({ children }: BookConsultationDialogProps) => {
   const onSubmit = async (data: BookingFormData) => {
     setSubmitting(true);
     try {
-      const limit = await checkRateLimit('consultation_booking', data.email);
-      if (!limit.allowed) {
-        toast.error(limit.message ?? 'Too many attempts. Please try again later.');
+      const { data: res, error } = await supabase.functions.invoke('submit-consultation', {
+        body: {
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          companyName: data.companyName || null,
+          serviceInterest: data.serviceInterest,
+          preferredDate: format(data.preferredDate, 'yyyy-MM-dd'),
+          preferredTime: data.preferredTime,
+          message: data.message || null,
+        },
+      });
+      if (error || !res?.success) {
+        toast.error(res?.message ?? 'Failed to book consultation. Please try again.');
         return;
       }
-      const { error } = await supabase.from('consultation_bookings').insert({
-        full_name: data.fullName,
-        email: data.email,
-        phone: data.phone || null,
-        company_name: data.companyName || null,
-        service_interest: data.serviceInterest,
-        preferred_date: format(data.preferredDate, 'yyyy-MM-dd'),
-        preferred_time: data.preferredTime,
-        message: data.message || null,
-      });
-
-      if (error) throw error;
 
       toast.success('Consultation booked successfully! We\'ll get back to you shortly.');
       form.reset();
@@ -107,14 +111,14 @@ const BookConsultationDialog = ({ children }: BookConsultationDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/60">
         <DialogHeader>
           <DialogTitle className="text-2xl font-heading font-bold">
             Book a Free Consultation
           </DialogTitle>
           <p className="text-muted-foreground text-sm">
-            Fill in your details and we'll schedule a call with you.
+            {note ?? "Fill in your details and we'll schedule a call with you."}
           </p>
         </DialogHeader>
 
