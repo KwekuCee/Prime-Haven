@@ -489,7 +489,7 @@ const ClientStartProject = () => {
                     <CardHeader>
                       <CardTitle className="text-lg">{serviceLabels[type]}</CardTitle>
                       <CardDescription>
-                        From {formatPrice(Math.min(...services.filter(s => s.service_type === type).map(s => s.price)))}
+                        {isDevService(type) ? "Price varies, book a free consultation" : <>From {formatPrice(Math.min(...services.filter(s => s.service_type === type).map(s => s.price)))}</>}
                       </CardDescription>
                     </CardHeader>
                   </Card>
