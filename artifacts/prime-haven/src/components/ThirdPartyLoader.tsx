@@ -56,8 +56,8 @@ export default function ThirdPartyLoader() {
     };
 
     window.addEventListener('scroll', onInteraction, { passive: true });
-    window.addEventListener('pointerdown', onInteraction);
-    window.addEventListener('touchstart', onInteraction);
+    window.addEventListener('pointerdown', onInteraction, { passive: true });
+    window.addEventListener('touchstart', onInteraction, { passive: true });
 
     return () => {
       clearTimeout(timer);
