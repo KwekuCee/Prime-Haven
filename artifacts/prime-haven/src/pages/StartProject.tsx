@@ -17,6 +17,9 @@ import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from
 import { openPaystackCheckout } from '@/lib/paystack';
 import Seo from '@/components/Seo';
 import { checkRateLimit } from '@/lib/rateLimit';
+import BookConsultationDialog from '@/components/BookConsultationDialog';
+const isDevService = (t: string) => /web|app|mobile/i.test(t);
+const DEV_NOTE = 'Web and app development prices vary with your requirements, so we start with a free consultation to scope your project and give you an accurate quote.';
 
 declare global {
   interface Window {
@@ -58,6 +61,7 @@ const StartProject = () => {
   const navigate = useNavigate();
   const { exchangeRate } = useUserSettings();
   const [step, setStep] = useState(1);
+  const [consultOpen, setConsultOpen] = useState(false);
   const [services, setServices] = useState<ServicePricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -544,6 +548,7 @@ const StartProject = () => {
                 <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <BookConsultationDialog open={consultOpen} onOpenChange={setConsultOpen} defaultService={selectedService.toLowerCase().includes('web') ? 'web-development' : 'mobile-app'} note={DEV_NOTE} />
                 {serviceTypes.map(type => (
                   <Card
                     key={type}
@@ -553,14 +558,14 @@ const StartProject = () => {
                     <CardHeader>
                       <CardTitle className="text-lg">{serviceLabels[type]}</CardTitle>
                       <CardDescription>
-                        From {formatPrice(Math.min(...services.filter(s => s.service_type === type).map(s => s.price)))}
+                        {isDevService(type) ? "Price varies, book a free consultation" : <>From {formatPrice(Math.min(...services.filter(s => s.service_type === type).map(s => s.price)))}</>}
                       </CardDescription>
                     </CardHeader>
                   </Card>
                 ))}
               </div>
               <div className="flex justify-end">
-                <Button disabled={!selectedService} onClick={() => setStep(2)} className="gap-2">
+                <Button disabled={!selectedService} onClick={() => (isDevService(selectedService) ? setConsultOpen(true) : setStep(2))} className="gap-2">
                   Continue <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>

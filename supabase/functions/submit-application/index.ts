@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json, EMAIL_RE, TRACKS, limited } from "../_shared/applicants.ts";
+import { alertOwner, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -86,6 +87,8 @@ serve(async (req: Request): Promise<Response> => {
         link: "/superadmin/applicants",
       });
     } catch (_) { /* non-critical */ }
+
+    await alertOwner(APPLICATIONS_ADDRESS, "New talent application", { Name: fullName, Email: email, Phone: phone, Track: track, Portfolio: portfolioLink }, "/superadmin/applicants");
 
     return json({ success: true, applicantId: inserted.id });
   } catch (err) {

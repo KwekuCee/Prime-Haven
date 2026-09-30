@@ -30,3 +30,6 @@ verify_jwt = false
 [functions.submit-hire-request]
 verify_jwt = false
 
+
+[functions.submit-consultation]
+verify_jwt = false
