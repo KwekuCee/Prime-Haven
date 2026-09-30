@@ -37,7 +37,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-transparent relative z-0">
       <Seo
-        title="Prime Haven"
+        title="Prime Haven — Freelance Design & Tech Agency in Ghana"
         description="Prime Haven is a freelance design and technology agency in Ghana. Hire vetted Ghanaian designers, developers, motion artists, video editors and social media managers, or start a project with our team."
         path="/"
         jsonLd={[

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
+import Seo from '@/components/Seo';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Lock, CheckCircle, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -82,6 +83,8 @@ const ResetPassword = () => {
   }
 
   return (
+    <>
+    <Seo title="Reset Password | Prime Haven" description="Choose a new password for your Prime Haven account." path="/reset-password" noindex />
     <div className="min-h-screen bg-transparent relative z-0 overflow-hidden flex items-center justify-center p-4">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[140px] opacity-60" />
