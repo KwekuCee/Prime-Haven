@@ -3,16 +3,14 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@10.17.1",
   "scripts": {
-    "dev": "pnpm --filter @workspace/prime-haven dev",
-    "build": "pnpm --filter @workspace/prime-haven build && pnpm run copy:dist",
-    "copy:dist": "sh -c 'rm -rf dist && cp -r artifacts/prime-haven/dist dist' --",
-    "build:dev": "pnpm run build",
-    "install:app": "pnpm install --frozen-lockfile --prod=false --filter @workspace/prime-haven...",
-    "serve": "pnpm --filter @workspace/prime-haven serve",
-    "typecheck": "pnpm --filter @workspace/prime-haven typecheck",
-    "lint": "pnpm --filter @workspace/prime-haven typecheck"
+    "dev": "vite --config artifacts/prime-haven/vite.config.ts --host 0.0.0.0 --port 3000",
+    "build": "vite build --config artifacts/prime-haven/vite.config.ts && npm run copy:dist",
+    "copy:dist": "node -e \"const fs=require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.cpSync('artifacts/prime-haven/dist', 'dist', { recursive: true });\"",
+    "build:dev": "npm run build",
+    "serve": "vite preview --config artifacts/prime-haven/vite.config.ts --host 0.0.0.0 --port 3000",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit"
   },
   "workspaces": [
     "artifacts/prime-haven"

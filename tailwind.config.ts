@@ -4,8 +4,8 @@ import path from "path";
 export default {
   darkMode: ["class"],
   content: [
-    path.join(__dirname, "index.html"),
-    path.join(__dirname, "src/**/*.{ts,tsx,js,jsx}"),
+    path.join(__dirname, "artifacts/prime-haven/index.html"),
+    path.join(__dirname, "artifacts/prime-haven/src/**/*.{ts,tsx,js,jsx}"),
     "./artifacts/prime-haven/index.html",
     "./artifacts/prime-haven/src/**/*.{ts,tsx,js,jsx}",
   ],
@@ -97,7 +97,6 @@ export default {
         },
         "fade-in": {
           "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
         },
         "scale-in": {
           "0%": { transform: "scale(0.9)", opacity: "0" },

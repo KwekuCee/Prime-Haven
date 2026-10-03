@@ -1,0 +1,8 @@
+{
+  "name": "Prime Haven",
+  "description": "Prime Haven is a freelance design and technology agency delivering web development, UI/UX design, graphic design, and IT solutions.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

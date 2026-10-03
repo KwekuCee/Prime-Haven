@@ -3,19 +3,22 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
-import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
-const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+const projectDir = __dirname;
+const port = 3000;
 const basePath = process.env.BASE_PATH || "/";
-
-const projectDir = process.cwd();
 
 export default defineConfig({
   base: basePath,
-  plugins: [react(), mcpPlugin()],
+  plugins: [react()],
   css: {
     postcss: {
-      plugins: [tailwindcss(), autoprefixer()],
+      plugins: [
+        tailwindcss({
+          config: path.join(projectDir, "tailwind.config.ts"),
+        }),
+        autoprefixer(),
+      ],
     },
   },
   resolve: {
@@ -29,9 +32,6 @@ export default defineConfig({
   build: {
     outDir: path.join(projectDir, "dist"),
     emptyOutDir: true,
-    // Deployment hosts compress static assets when serving them. Calculating
-    // every chunk's gzip size here only delays the build and can exceed the
-    // deployment executor deadline on cold workers.
     reportCompressedSize: false,
     target: "es2022",
   },
