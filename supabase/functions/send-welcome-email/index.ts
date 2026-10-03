@@ -184,7 +184,7 @@ function buildPlainText(name: string): string {
     '   Client acceptance: points awarded after the client accepts your work',
     '   Bonus Points: Awarded for exceptional work',
     '',
-    'Need help? primehaven26@gmail.com',
+    'Need help? info@primehaven.tech',
     '',
     '© 2026 Prime Haven - Making IT Dreams a Reality',
   ].join('\n');

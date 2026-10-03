@@ -79,6 +79,12 @@ const BookConsultationDialog = ({ children, open: openProp, onOpenChange, defaul
     },
   });
 
+  // defaultService arrives after mount (the dialog is rendered before a service
+  // is picked), so sync it into the form whenever the dialog opens or it changes.
+  useEffect(() => {
+    if (open && defaultService) form.setValue('serviceInterest', defaultService);
+  }, [open, defaultService]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = async (data: BookingFormData) => {
     setSubmitting(true);
     try {
