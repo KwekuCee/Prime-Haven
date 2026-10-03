@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
 import HeroSection from '@/components/HeroSection';

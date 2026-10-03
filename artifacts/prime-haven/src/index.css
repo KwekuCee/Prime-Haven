@@ -186,8 +186,8 @@
   .bg-hero-surface { background-color: hsl(var(--hero-surface)); }
   .text-hero-foreground { color: hsl(var(--hero-foreground)); }
   .text-hero-muted { color: hsl(var(--hero-muted)); }
-  .border-hero-foreground\/60 { border-color: hsla(var(--hero-foreground) / 0.6); }
-  .hover\:bg-hero-foreground\/10:hover { background-color: hsla(var(--hero-foreground) / 0.1); }
+  .border-hero-foreground\/60 { border-color: hsl(var(--hero-foreground) / 0.6); }
+  .hover\:bg-hero-foreground\/10:hover { background-color: hsl(var(--hero-foreground) / 0.1); }
   .hero-image-shade { background: var(--hero-shade); }
   .text-gradient {
     @apply bg-clip-text text-transparent;
