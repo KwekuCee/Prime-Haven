@@ -16,16 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [isClientUser, setIsClientUser] = useState(false);
   const { t } = useTranslation();
   const { user } = useAuth();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     if (!user) { setIsClientUser(false); return; }
@@ -57,14 +50,10 @@ const Navbar = () => {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-background/85 backdrop-blur-xl border-b border-border/60'
-          : 'bg-transparent'
-      }`}
+      className="fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1480px] rounded-lg border border-border/70 bg-background/95 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:top-5 sm:left-6 sm:right-6"
     >
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+      <div className="px-4 sm:px-6">
+        <div className="flex items-center justify-between h-14 lg:h-16">
 
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0 z-10">
@@ -152,7 +141,7 @@ const Navbar = () => {
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={isOpen}
-            className="lg:hidden p-2 rounded-xl text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors z-10"
+            className="lg:hidden p-2 rounded-md text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors z-10"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -177,7 +166,7 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="lg:hidden overflow-hidden bg-background/95 backdrop-blur-xl border-t border-border/40"
+            className="lg:hidden overflow-hidden border-t border-border/40"
           >
             <div className="container mx-auto px-6 py-5 flex flex-col gap-1">
               {navLinks.map((item, i) => (
