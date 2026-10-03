@@ -33,6 +33,10 @@
     --border: 32 22% 88%;
     --input: 32 22% 90%;
     --ring: 13 100% 58%;
+    --hero-surface: 24 12% 7%;
+    --hero-foreground: 0 0% 100%;
+    --hero-muted: 32 30% 89%;
+    --hero-shade: linear-gradient(180deg, hsla(24, 12%, 7%, 0.72) 0%, hsla(24, 12%, 7%, 0.42) 48%, hsla(24, 12%, 7%, 0.04) 100%);
 
     --radius: 1.25rem;
 
@@ -91,6 +95,10 @@
     --border: 24 8% 18%;
     --input: 24 8% 15%;
     --ring: 13 100% 58%;
+    --hero-surface: 24 12% 7%;
+    --hero-foreground: 0 0% 100%;
+    --hero-muted: 32 30% 89%;
+    --hero-shade: linear-gradient(180deg, hsla(24, 12%, 7%, 0.72) 0%, hsla(24, 12%, 7%, 0.42) 48%, hsla(24, 12%, 7%, 0.04) 100%);
 
     --ink: 0 0% 100%;
     --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
@@ -175,6 +183,12 @@
 
 
 @layer utilities {
+  .bg-hero-surface { background-color: hsl(var(--hero-surface)); }
+  .text-hero-foreground { color: hsl(var(--hero-foreground)); }
+  .text-hero-muted { color: hsl(var(--hero-muted)); }
+  .border-hero-foreground\/60 { border-color: hsl(var(--hero-foreground) / 0.6); }
+  .hover\:bg-hero-foreground\/10:hover { background-color: hsl(var(--hero-foreground) / 0.1); }
+  .hero-image-shade { background: var(--hero-shade); }
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);

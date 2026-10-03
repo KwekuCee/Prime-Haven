@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
 import HeroSection from '@/components/HeroSection';
@@ -106,8 +105,9 @@ const Index = () => {
       />
 
       <Navbar />
-      <motion.main initial={{ opacity: 0, filter: 'blur(10px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.65, ease: 'easeOut' }}>
+      <main>
         <HeroSection />
+        <div className="relative z-10 bg-background">
         <CommunityPulse />
         <ValueBentoGrid />
         <ProcessTimeline />
@@ -126,7 +126,8 @@ const Index = () => {
         <BlogSection />
         <JoinSection />
         <ContactSection />
-      </motion.main>
+        </div>
+      </main>
       <Footer />
       <VisitorChatbot />
       <PromoPopup />
