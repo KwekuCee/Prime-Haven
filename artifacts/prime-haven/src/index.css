@@ -36,7 +36,7 @@
     --hero-surface: 24 12% 7%;
     --hero-foreground: 0 0% 100%;
     --hero-muted: 32 30% 89%;
-    --hero-shade: linear-gradient(180deg, hsla(24, 12%, 7%, 0.72) 0%, hsla(24, 12%, 7%, 0.42) 48%, hsla(24, 12%, 7%, 0.04) 100%);
+    --hero-shade: linear-gradient(180deg, hsl(var(--hero-surface) / 0.28) 0%, transparent 42%, hsl(var(--hero-surface) / 0.58) 100%);
 
     --radius: 1.25rem;
 
@@ -98,7 +98,7 @@
     --hero-surface: 24 12% 7%;
     --hero-foreground: 0 0% 100%;
     --hero-muted: 32 30% 89%;
-    --hero-shade: linear-gradient(180deg, hsla(24, 12%, 7%, 0.72) 0%, hsla(24, 12%, 7%, 0.42) 48%, hsla(24, 12%, 7%, 0.04) 100%);
+    --hero-shade: linear-gradient(180deg, hsl(var(--hero-surface) / 0.28) 0%, transparent 42%, hsl(var(--hero-surface) / 0.58) 100%);
 
     --ink: 0 0% 100%;
     --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
