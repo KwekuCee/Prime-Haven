@@ -1777,101 +1777,207 @@ const SuperAdminDashboard = () => {
           {/* ========== OVERVIEW TAB ========== */}
           <TabsContent value="overview" className="mt-0 space-y-6">
             <AdsToggleCard />
-            {/* Stats Grid — Perfectly aligned light & dark cards with uniform height and baselines */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 items-stretch">
-              {[
-                {
-                  label: 'Total Users',
-                  value: stats.totalUsers,
-                  sub: `${stats.totalDesigners} designers · ${stats.totalAdmins} admins`,
-                  icon: Users,
-                  color: 'text-primary',
-                  bg: 'bg-primary/10',
-                  isDark: false,
-                  trend: [12, 18, 15, 24, 28, 35, 42],
-                },
-                {
-                  label: 'Total Points',
-                  value: users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString(),
-                  sub: `${users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month`,
-                  icon: Award,
-                  color: 'text-purple-400',
-                  bg: 'bg-purple-500/20',
-                  isDark: true,
-                  trend: [45, 60, 52, 78, 85, 95, 115],
-                },
-                {
-                  label: 'Pending Reviews',
-                  value: stats.pendingSubmissions,
-                  sub: `${stats.activeProjects} active projects`,
-                  icon: FileCheck,
-                  color: 'text-blue-600',
-                  bg: 'bg-blue-50',
-                  isDark: false,
-                  trend: [2, 6, 4, 8, 5, 7, 6],
-                },
-                {
-                  label: 'Gross Revenue',
-                  value: `GH₵${(stats.totalRevenue || 0).toFixed(0)}`,
-                  sub: `GH₵${revenueBreakdown.clients.toFixed(0)} client vol`,
-                  icon: DollarSign,
-                  color: 'text-emerald-400',
-                  bg: 'bg-emerald-500/20',
-                  isDark: true,
-                  trend: [500, 600, 450, 700, 800, 750, 900],
-                },
-                {
-                  label: 'Avg Approval Time',
-                  value: stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A',
-                  sub: 'Benchmark: < 24h',
-                  icon: Activity,
-                  color: 'text-amber-600',
-                  bg: 'bg-amber-50',
-                  isDark: false,
-                  trend: [4, 6, 3, 5, 2, 4, 3],
-                },
-              ].map((card, i) => (
-                <motion.div
-                  key={card.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  className={`h-full flex flex-col ${i === 4 ? 'col-span-2 md:col-span-1 lg:col-span-1' : 'col-span-1'}`}
-                >
-                  <div
-                    className={`h-full min-h-[145px] flex flex-col justify-between rounded-2xl p-4.5 transition-all shadow-xs group ${
-                      card.isDark
-                        ? 'bg-slate-950 text-white border border-slate-800 shadow-lg ring-1 ring-white/10 hover:border-slate-700'
-                        : 'bg-white text-slate-900 border border-slate-200/90 hover:border-slate-300 hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 h-8 mb-2">
-                      <span className={`text-[11px] uppercase tracking-wider font-semibold truncate leading-none pt-1.5 ${card.isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {card.label}
-                      </span>
-                      <div className={`w-8 h-8 rounded-lg shrink-0 ${card.bg} border ${card.isDark ? 'border-white/10' : 'border-slate-100'} flex items-center justify-center`}>
-                        <card.icon className={`w-4 h-4 ${card.color}`} />
+            {/* Executive Bento Metrics Hub — Featured Dark Treasury Card & Symmetrical Operational Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              {/* 1. Marquee Platform Treasury & Revenue Hero Card (Featured Black Card) */}
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="lg:col-span-5 h-full"
+              >
+                <div className="h-full min-h-[220px] rounded-3xl bg-slate-950 text-white p-6 shadow-xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group">
+                  {/* Subtle Ambient Glow */}
+                  <div className="absolute top-0 right-0 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+                          Treasury &amp; Escrow
+                        </span>
+                      </div>
+                      <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                        Live Settlement
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-400 font-medium">Gross Platform Volume</p>
+                      <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono tabular-nums text-white">
+                        GH₵{(stats.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
-                    <div className={`flex items-end justify-between gap-2 mt-auto pt-2.5 border-t ${card.isDark ? 'border-white/10' : 'border-slate-100'}`}>
-                      <div className="min-w-0 flex-1">
-                        <div className={`text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums leading-none ${card.isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {card.value}
-                        </div>
-                        <p className={`text-[11px] mt-2 font-mono truncate h-4 leading-4 ${card.isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {card.sub}
-                        </p>
+                  </div>
+
+                  {/* Financial Breakdown & Sparkline Wave */}
+                  <div className="space-y-3 mt-6 pt-4 border-t border-slate-800/80">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="bg-white/[0.04] border border-white/5 rounded-2xl p-2.5">
+                        <span className="text-[10px] uppercase text-slate-400 font-mono block">Client Escrow</span>
+                        <span className="text-sm font-bold font-mono text-emerald-300">GH₵{revenueBreakdown.clients.toFixed(0)}</span>
                       </div>
-                      <div className={`w-16 h-8 shrink-0 flex items-end justify-end transition-opacity ${card.isDark ? 'opacity-70 group-hover:opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
-                        <SparklineChart
-                          data={card.trend}
-                          color={card.color.includes('emerald') ? '#34d399' : card.color.includes('purple') ? '#c084fc' : card.color.includes('primary') ? 'hsl(var(--primary))' : card.color.includes('blue') ? '#3b82f6' : '#f59e0b'}
-                        />
+                      <div className="bg-white/[0.04] border border-white/5 rounded-2xl p-2.5">
+                        <span className="text-[10px] uppercase text-slate-400 font-mono block">Platform Net</span>
+                        <span className="text-sm font-bold font-mono text-white">GH₵{revenueBreakdown.fees.toFixed(0)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold font-mono">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>Nominal Run-Rate</span>
+                      </div>
+                      <div className="w-28 h-8 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <SparklineChart data={[500, 600, 450, 700, 800, 750, 900]} color="#34d399" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* 2. Four Operational Metric Cards — Balanced 2x2 Grid on Tablet/Desktop */}
+              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                {/* Metric 1: Total Users Directory */}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
+                  className="h-full"
+                >
+                  <div className="h-full min-h-[175px] rounded-3xl bg-white border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold block">User Directory</span>
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums text-slate-900 mt-1">
+                          {stats.totalUsers.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-100 text-primary flex items-center justify-center shrink-0">
+                        <Users className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span>{stats.totalDesigners} talent</span>
+                        <span>·</span>
+                        <span>{stats.totalAdmins} staff</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSearchParams({ tab: 'users' })}
+                        className="text-[11px] font-bold text-primary hover:underline"
+                      >
+                        Manage →
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Metric 2: Milestone Production Points */}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  className="h-full"
+                >
+                  <div className="h-full min-h-[175px] rounded-3xl bg-white border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold block">Production Points</span>
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums text-slate-900 mt-1">
+                          {users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                        <Award className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <span className="font-mono text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">
+                        +{users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this cycle
+                      </span>
+                      <div className="w-14 h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <SparklineChart data={[45, 60, 52, 78, 85, 95, 115]} color="#9333ea" />
                       </div>
                     </div>
                   </div>
                 </motion.div>
-              ))}
+
+                {/* Metric 3: Pending QA Reviews */}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                  className="h-full"
+                >
+                  <div className="h-full min-h-[175px] rounded-3xl bg-white border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold block">QA Review Gate</span>
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums text-slate-900 mt-1 flex items-baseline gap-2">
+                          <span>{stats.pendingSubmissions}</span>
+                          {stats.pendingSubmissions > 0 ? (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                              In Queue
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              Clear
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <FileCheck className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <span className="font-mono text-[11px] text-slate-600">{stats.activeProjects} active builds</span>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/superadmin/qa-reviewer')}
+                        className="text-[11px] font-bold text-blue-600 hover:underline"
+                      >
+                        Queue →
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Metric 4: SLA Turnaround Latency */}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                  className="h-full"
+                >
+                  <div className="h-full min-h-[175px] rounded-3xl bg-white border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold block">Approval Latency</span>
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums text-slate-900 mt-1 flex items-baseline gap-2">
+                          <span>{stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : '18h'}</span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            SLA Met
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                        <Activity className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <span className="font-mono text-[11px] text-slate-600">Target: &lt; 24h</span>
+                      <div className="w-14 h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <SparklineChart data={[4, 6, 3, 5, 2, 4, 3]} color="#d97706" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             </div>
 
             {/* Overview Grid — Recent Submissions + Top Designers + Dark Quick Actions */}
