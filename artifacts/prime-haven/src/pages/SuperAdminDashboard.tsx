@@ -1729,40 +1729,43 @@ const SuperAdminDashboard = () => {
   return (
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Page Header — Executive Black Hero Card */}
+        <div className="rounded-2xl bg-slate-950 text-white p-5 sm:p-6 shadow-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-heading font-bold tracking-tight">Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Overview of your platform</p>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-white">Executive Command</h1>
+              <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">Live Ops</Badge>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">Real-time health, department output, talent payouts, and milestone review queue</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => {
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-white hover:bg-white/20 hover:text-white" onClick={() => {
               const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
               setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
               setIsRevenueModalOpen(true);
             }}>
-              <DollarSign className="w-3.5 h-3.5" />
-              Revenue
+              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+              Revenue Allocation
             </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
-              {isRecalculatingSalaries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">Recalculate</span>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-white hover:bg-white/20 hover:text-white" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
+              {isRecalculatingSalaries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5 text-primary" />}
+              <span className="hidden sm:inline">Recalculate Salaries</span>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 text-amber-500 border-amber-500/30 hover:bg-amber-500/10" disabled={isResettingPoints}>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 text-amber-400 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 hover:text-amber-300" disabled={isResettingPoints}>
                   <RefreshCw className={`w-3.5 h-3.5 ${isResettingPoints ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">Reset Points</span>
+                  <span className="hidden sm:inline">Reset Monthly Points</span>
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="bg-slate-900 text-white border-slate-800">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-amber-500">Reset All Points?</AlertDialogTitle>
-                  <AlertDialogDescription>This will first generate a monthly report snapshot, then set all designer points and salaries to zero. Cannot be undone.</AlertDialogDescription>
+                  <AlertDialogTitle className="text-amber-400">Reset All Points for New Month?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-400">This will first generate an automated monthly report snapshot, then set all designer points and salaries to zero. This action cannot be reversed.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600">Reset</AlertDialogAction>
+                  <AlertDialogCancel className="border-slate-700 text-white hover:bg-slate-800">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">Reset Points</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -1774,8 +1777,8 @@ const SuperAdminDashboard = () => {
           {/* ========== OVERVIEW TAB ========== */}
           <TabsContent value="overview" className="mt-0 space-y-6">
             <AdsToggleCard />
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            {/* Stats Grid — Perfectly aligned light & dark cards with uniform height and baselines */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 items-stretch">
               {[
                 {
                   label: 'Total Users',
@@ -1784,39 +1787,47 @@ const SuperAdminDashboard = () => {
                   icon: Users,
                   color: 'text-primary',
                   bg: 'bg-primary/10',
+                  isDark: false,
+                  trend: [12, 18, 15, 24, 28, 35, 42],
                 },
                 {
                   label: 'Total Points',
                   value: users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString(),
                   sub: `${users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this month`,
                   icon: Award,
-                  color: 'text-purple-500',
-                  bg: 'bg-purple-500/10',
+                  color: 'text-purple-400',
+                  bg: 'bg-purple-500/20',
+                  isDark: true,
+                  trend: [45, 60, 52, 78, 85, 95, 115],
                 },
                 {
-                  label: 'Pending',
+                  label: 'Pending Reviews',
                   value: stats.pendingSubmissions,
-                  sub: `${stats.activeProjects} active`,
+                  sub: `${stats.activeProjects} active projects`,
                   icon: FileCheck,
-                  color: 'text-blue-500',
-                  bg: 'bg-blue-500/10',
+                  color: 'text-blue-600',
+                  bg: 'bg-blue-50',
+                  isDark: false,
+                  trend: [2, 6, 4, 8, 5, 7, 6],
                 },
                 {
-                  label: 'Revenue',
+                  label: 'Gross Revenue',
                   value: `GH₵${(stats.totalRevenue || 0).toFixed(0)}`,
-                  sub: `Clients GH₵${revenueBreakdown.clients.toFixed(0)} · Fees GH₵${revenueBreakdown.fees.toFixed(0)}`,
+                  sub: `GH₵${revenueBreakdown.clients.toFixed(0)} client vol`,
                   icon: DollarSign,
-                  color: 'text-emerald-500',
-                  bg: 'bg-emerald-500/10',
+                  color: 'text-emerald-400',
+                  bg: 'bg-emerald-500/20',
+                  isDark: true,
                   trend: [500, 600, 450, 700, 800, 750, 900],
                 },
                 {
-                  label: 'Approval Time',
+                  label: 'Avg Approval Time',
                   value: stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : 'N/A',
-                  sub: 'Average',
+                  sub: 'Benchmark: < 24h',
                   icon: Activity,
-                  color: 'text-amber-500',
-                  bg: 'bg-amber-500/10',
+                  color: 'text-amber-600',
+                  bg: 'bg-amber-50',
+                  isDark: false,
                   trend: [4, 6, 3, 5, 2, 4, 3],
                 },
               ].map((card, i) => (
@@ -1825,24 +1836,36 @@ const SuperAdminDashboard = () => {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: i * 0.05 }}
-                  className={i === 4 ? 'col-span-2 lg:col-span-1' : ''}
+                  className={`h-full flex flex-col ${i === 4 ? 'col-span-2 md:col-span-1 lg:col-span-1' : 'col-span-1'}`}
                 >
-                  <div className="rounded-xl border border-border/50 bg-card/80 p-4 hover:border-border transition-colors group">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{card.label}</span>
-                      <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                  <div
+                    className={`h-full min-h-[145px] flex flex-col justify-between rounded-2xl p-4.5 transition-all shadow-xs group ${
+                      card.isDark
+                        ? 'bg-slate-950 text-white border border-slate-800 shadow-lg ring-1 ring-white/10 hover:border-slate-700'
+                        : 'bg-white text-slate-900 border border-slate-200/90 hover:border-slate-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 h-8 mb-2">
+                      <span className={`text-[11px] uppercase tracking-wider font-semibold truncate leading-none pt-1.5 ${card.isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {card.label}
+                      </span>
+                      <div className={`w-8 h-8 rounded-lg shrink-0 ${card.bg} border ${card.isDark ? 'border-white/10' : 'border-slate-100'} flex items-center justify-center`}>
                         <card.icon className={`w-4 h-4 ${card.color}`} />
                       </div>
                     </div>
-                    <div className="flex items-end justify-between gap-2">
-                      <div>
-                        <div className="text-2xl font-bold tracking-tight">{card.value}</div>
-                        <p className="text-[11px] text-muted-foreground mt-1 truncate">{card.sub}</p>
+                    <div className={`flex items-end justify-between gap-2 mt-auto pt-2.5 border-t ${card.isDark ? 'border-white/10' : 'border-slate-100'}`}>
+                      <div className="min-w-0 flex-1">
+                        <div className={`text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums leading-none ${card.isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {card.value}
+                        </div>
+                        <p className={`text-[11px] mt-2 font-mono truncate h-4 leading-4 ${card.isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {card.sub}
+                        </p>
                       </div>
-                      <div className="w-16 h-8 opacity-50 group-hover:opacity-100 transition-opacity">
+                      <div className={`w-16 h-8 shrink-0 flex items-end justify-end transition-opacity ${card.isDark ? 'opacity-70 group-hover:opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
                         <SparklineChart
-                          data={card.trend || [2, 5, 3, 8, 4, 6, 5]}
-                          color={card.color === 'text-primary' ? 'hsl(var(--primary))' : `var(--${card.color.split('-')[1]}-500)`}
+                          data={card.trend}
+                          color={card.color.includes('emerald') ? '#34d399' : card.color.includes('purple') ? '#c084fc' : card.color.includes('primary') ? 'hsl(var(--primary))' : card.color.includes('blue') ? '#3b82f6' : '#f59e0b'}
                         />
                       </div>
                     </div>
@@ -1851,25 +1874,25 @@ const SuperAdminDashboard = () => {
               ))}
             </div>
 
-            {/* Overview Grid — Recent Submissions + Top Designers + Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Recent Submissions */}
-              <div className="lg:col-span-2 rounded-xl border border-border/50 bg-card/50">
-                <div className="p-4 border-b border-border/50 flex items-center justify-between">
+            {/* Overview Grid — Recent Submissions + Top Designers + Dark Quick Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Recent Submissions — Light Card */}
+              <div className="lg:col-span-2 rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
-                    <h2 className="text-sm font-bold">Recent Submissions</h2>
-                    <p className="text-[11px] text-muted-foreground">Latest designer work</p>
+                    <h2 className="text-sm font-bold text-slate-900">Recent Submissions</h2>
+                    <p className="text-[11px] text-slate-500">Latest designer work &amp; review status</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSearchParams({ tab: 'submissions' })}>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-slate-900" onClick={() => setSearchParams({ tab: 'submissions' })}>
                     View All <ChevronRight className="w-3 h-3 ml-1" />
                   </Button>
                 </div>
-                <div className="divide-y divide-border/30">
+                <div className="divide-y divide-slate-100">
                   {submissions.slice(0, 5).map(s => (
-                    <div key={s.id} className="p-3 flex items-center justify-between gap-3">
+                    <div key={s.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors">
                       <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{s.project_name}</div>
-                        <div className="text-[11px] text-muted-foreground">{s.designer_name} · {s.service_type}</div>
+                        <div className="text-sm font-semibold text-slate-900 truncate">{s.project_name}</div>
+                        <div className="text-[11px] text-slate-500">{s.designer_name} · {s.service_type}</div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-primary font-bold text-xs">{s.points_awarded || 0} pts</span>
@@ -1880,91 +1903,94 @@ const SuperAdminDashboard = () => {
                     </div>
                   ))}
                   {submissions.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground text-sm">No submissions yet</div>
+                    <div className="p-8 text-center text-slate-400 text-sm">No submissions recorded yet</div>
                   )}
                 </div>
               </div>
 
-              {/* Top Designers + Quick Actions */}
-              <div className="space-y-4">
-                {/* Top Designers */}
-                <div className="rounded-xl glass-card">
-                  <div className="p-4 border-b border-border/50">
-                    <h2 className="text-sm font-bold">Top Designers</h2>
-                    <p className="text-[11px] text-muted-foreground">By monthly points</p>
+              {/* Top Designers + Dark Quick Actions */}
+              <div className="space-y-5">
+                {/* Top Designers — Light Card */}
+                <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                    <h2 className="text-sm font-bold text-slate-900">Top Designers</h2>
+                    <p className="text-[11px] text-slate-500">Ranked by monthly points</p>
                   </div>
-                  <div className="divide-y divide-border/30">
+                  <div className="divide-y divide-slate-100">
                     {users
                       .filter(u => u.user_roles?.some(r => r.role === 'designer') && (u.designer_details?.monthly_points || 0) > 0)
                       .sort((a, b) => (b.designer_details?.monthly_points || 0) - (a.designer_details?.monthly_points || 0))
                       .slice(0, 5)
                       .map((u, i) => (
-                        <div key={u.id} className="p-3 flex items-center gap-3">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-amber-500/20 text-amber-500' : i === 1 ? 'bg-muted text-muted-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
+                        <div key={u.id} className="p-3 flex items-center gap-3 hover:bg-slate-50/80 transition-colors">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
                             {i + 1}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{u.full_name || 'No Name'}</div>
-                            <div className="text-[10px] text-muted-foreground">{u.designer_details?.professional_title || 'Designer'}</div>
+                            <div className="text-xs font-semibold text-slate-900 truncate">{u.full_name || 'No Name'}</div>
+                            <div className="text-[10px] text-slate-500">{u.designer_details?.professional_title || 'Designer'}</div>
                           </div>
-                          <span className="text-primary font-bold text-xs shrink-0">{u.designer_details?.monthly_points || 0}</span>
+                          <span className="text-primary font-bold text-xs shrink-0">{u.designer_details?.monthly_points || 0} pts</span>
                         </div>
                       ))}
                     {users.filter(u => (u.designer_details?.monthly_points || 0) > 0).length === 0 && (
-                      <div className="p-6 text-center text-muted-foreground text-xs">No points recorded yet</div>
+                      <div className="p-6 text-center text-slate-400 text-xs">No points recorded yet</div>
                     )}
                   </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="rounded-xl glass-card p-4 space-y-2">
-                  <h2 className="text-sm font-bold mb-3">Quick Actions</h2>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'submissions' })}>
-                    <FileCheck className="w-3.5 h-3.5" /> Review Submissions
+                {/* Quick Actions — Standout Black Card */}
+                <div className="rounded-2xl bg-slate-950 text-white p-5 shadow-xl border border-slate-800 space-y-2.5">
+                  <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    Quick Operations
+                  </h2>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => setSearchParams({ tab: 'submissions' })}>
+                    <FileCheck className="w-3.5 h-3.5 text-primary" /> Review Submissions Queue
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => {
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => {
                     const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
                     setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
                     setIsRevenueModalOpen(true);
                   }}>
-                    <DollarSign className="w-3.5 h-3.5" /> Update Revenue
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Update Revenue Targets
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'users' })}>
-                    <Users className="w-3.5 h-3.5" /> Manage Users
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => setSearchParams({ tab: 'users' })}>
+                    <Users className="w-3.5 h-3.5 text-blue-400" /> Manage User Database
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2" onClick={() => setSearchParams({ tab: 'orders' })}>
-                    <Crown className="w-3.5 h-3.5" /> Client Orders
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => setSearchParams({ tab: 'orders' })}>
+                    <Crown className="w-3.5 h-3.5 text-amber-400" /> Review Client Orders
                   </Button>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity Log */}
-            <div className="rounded-xl glass-card">
-              <div className="p-4 border-b border-border/50 flex items-center justify-between">
+            {/* Recent Activity Log — Light Card */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
-                  <h2 className="text-sm font-bold">Recent Activity</h2>
-                  <p className="text-[11px] text-muted-foreground">Latest admin actions</p>
+                  <h2 className="text-sm font-bold text-slate-900">Recent Audit Activity</h2>
+                  <p className="text-[11px] text-slate-500">Live operational events and staff action log</p>
                 </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSearchParams({ tab: 'logs' })}>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-slate-900" onClick={() => setSearchParams({ tab: 'logs' })}>
                   View All <ChevronRight className="w-3 h-3 ml-1" />
                 </Button>
               </div>
-              <div className="divide-y divide-border/30">
+              <div className="divide-y divide-slate-100">
                 {systemLogs.slice(0, 6).map(log => (
-                  <div key={log.id} className="p-3 flex items-center justify-between gap-3">
+                  <div key={log.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] shrink-0">{log.action_type.replace(/_/g, ' ')}</Badge>
-                        <span className="text-xs font-medium">{log.profiles?.full_name || 'System'}</span>
+                        <Badge variant="outline" className="text-[10px] shrink-0 font-mono">{log.action_type.replace(/_/g, ' ')}</Badge>
+                        <span className="text-xs font-semibold text-slate-800">{log.profiles?.full_name || 'System'}</span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate mt-0.5">{log.description}</p>
+                      <p className="text-[11px] text-slate-500 truncate mt-0.5">{log.description}</p>
                     </div>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">{format(new Date(log.timestamp), 'MMM d, HH:mm')}</span>
+                    <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">{format(new Date(log.timestamp), 'MMM d, HH:mm')}</span>
                   </div>
                 ))}
                 {systemLogs.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground text-sm">No activity yet</div>
+                  <div className="p-8 text-center text-slate-400 text-sm">No audit activity recorded yet</div>
                 )}
               </div>
             </div>

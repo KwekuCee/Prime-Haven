@@ -297,10 +297,182 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        {/* Page Content with Mobile Bottom Clearance */}
+        <main className="flex-1 overflow-auto pb-24 lg:pb-0">
           {children}
         </main>
+
+        {/* Native Mobile App Bottom Tab Bar */}
+        <nav
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-2xl border-t border-border/80 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] px-2 pt-1 pb-safe"
+          aria-label="Mobile Dashboard Navigation"
+        >
+          <div className="grid grid-cols-5 items-center h-14">
+            {effectiveIsClient ? (
+              <>
+                <Link
+                  to="/client/dashboard"
+                  className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/client/dashboard' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Home</span>
+                </Link>
+
+                <Link
+                  to="/client/projects"
+                  className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/client/projects' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Projects</span>
+                </Link>
+
+                <Link
+                  to="/client/start-project"
+                  className="flex flex-col items-center justify-center h-full gap-0.5 -mt-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_20px_hsla(var(--primary)/0.4)] group-active:scale-95 transition-transform">
+                    <PlusCircle className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-bold text-primary tracking-tight">New Brief</span>
+                </Link>
+
+                <Link
+                  to="/client/messages"
+                  className={`relative flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/client/messages' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Chat</span>
+                  {unreadMessages > 0 && (
+                    <span className="absolute top-1 right-3 w-4 h-4 rounded-full bg-primary text-[9px] text-primary-foreground flex items-center justify-center font-bold">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                >
+                  <Menu className="w-4 h-4 text-primary" />
+                  <span className="text-[10px] tracking-tight">Menu</span>
+                </button>
+              </>
+            ) : isAffiliateMode ? (
+              <>
+                <Link
+                  to="/affiliate/dashboard"
+                  className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/affiliate/dashboard' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Overview</span>
+                </Link>
+
+                <Link
+                  to="/affiliate/dashboard#referrals"
+                  className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Referrals</span>
+                </Link>
+
+                <Link
+                  to="/affiliate/dashboard#payouts"
+                  className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                >
+                  <Wallet className="w-4 h-4 text-primary" />
+                  <span className="text-[10px] tracking-tight">Payouts</span>
+                </Link>
+
+                <Link
+                  to="/affiliate/dashboard#assets"
+                  className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                >
+                  <Presentation className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Assets</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                >
+                  <Menu className="w-4 h-4 text-primary" />
+                  <span className="text-[10px] tracking-tight">Menu</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/dashboard"
+                  className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/dashboard' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Workspace</span>
+                </Link>
+
+                <Link
+                  to="/marketplace"
+                  className={`relative flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/marketplace' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Market</span>
+                  {unreadNotifications > 0 && (
+                    <span className="absolute top-1 right-3 w-3.5 h-3.5 rounded-full bg-amber-500 text-[8px] text-white flex items-center justify-center font-bold">
+                      •
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/submit-work"
+                  className="flex flex-col items-center justify-center h-full gap-0.5 -mt-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_20px_hsla(var(--primary)/0.4)] group-active:scale-95 transition-transform">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-bold text-primary tracking-tight">Submit</span>
+                </Link>
+
+                <Link
+                  to="/messages"
+                  className={`relative flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+                    location.pathname === '/messages' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-[10px] tracking-tight">Chat</span>
+                  {unreadMessages > 0 && (
+                    <span className="absolute top-1 right-3 w-4 h-4 rounded-full bg-primary text-[9px] text-primary-foreground flex items-center justify-center font-bold">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                >
+                  <Menu className="w-4 h-4 text-primary" />
+                  <span className="text-[10px] tracking-tight">More</span>
+                </button>
+              </>
+            )}
+          </div>
+        </nav>
       </div>
     </div>
   );

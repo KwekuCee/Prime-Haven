@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Sparkles,
   ArrowUpRight,
-  Layers
+  Layers,
+  Compass
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -162,7 +163,8 @@ const Navbar = () => {
   ];
 
   return (
-    <motion.nav
+    <>
+      <motion.nav
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -593,6 +595,63 @@ const Navbar = () => {
         )}
       </AnimatePresence>
     </motion.nav>
+
+    {/* Native Mobile App Bottom Tab Bar for Public Site */}
+    <nav
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#090d16]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_35px_rgba(0,0,0,0.7)] px-2 pt-1 pb-safe"
+      aria-label="Mobile Bottom App Bar"
+    >
+      <div className="grid grid-cols-5 items-center h-14">
+        <Link
+          to="/"
+          className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+            location.pathname === '/' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Compass className="w-4 h-4" />
+          <span className="text-[10px] tracking-tight">Explore</span>
+        </Link>
+
+        <a
+          href="/#services"
+          className="flex flex-col items-center justify-center h-full gap-1 text-zinc-400 hover:text-white active:scale-95 transition-transform"
+        >
+          <Code className="w-4 h-4" />
+          <span className="text-[10px] tracking-tight">Services</span>
+        </a>
+
+        <Link
+          to="/start-project"
+          className="flex flex-col items-center justify-center h-full gap-0.5 -mt-3.5 group"
+        >
+          <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shadow-[0_0_20px_hsla(13,100%,58%,0.5)] group-active:scale-95 transition-transform">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-[9px] font-bold text-primary tracking-tight">Build</span>
+        </Link>
+
+        <Link
+          to="/portfolio"
+          className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+            location.pathname === '/portfolio' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span className="text-[10px] tracking-tight">Portfolio</span>
+        </Link>
+
+        <Link
+          to="/blog"
+          className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
+            location.pathname === '/blog' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span className="text-[10px] tracking-tight">Insights</span>
+        </Link>
+      </div>
+    </nav>
+  </>
   );
 };
 

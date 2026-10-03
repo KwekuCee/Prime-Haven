@@ -1,36 +1,52 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Palette, Layout, Globe, Image, Briefcase, FolderKanban, DollarSign, Megaphone } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Palette,
+  Layout,
+  Globe,
+  Image,
+  Briefcase,
+  FolderKanban,
+  DollarSign,
+  Ticket
+} from 'lucide-react';
 
 export const AdminNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const links = [
-    { path: '/superadmin', label: 'Graphic Design', icon: Palette },
+    { path: '/superadmin', label: 'Overview', icon: LayoutDashboard },
+    { path: '/superadmin/graphic-design', label: 'Graphic Design', icon: Palette },
     { path: '/superadmin/uiux', label: 'UI/UX Design', icon: Layout },
-    { path: '/superadmin/web', label: 'Web Development', icon: Globe },
-    { path: '/superadmin/portfolio', label: 'Portfolio', icon: Image },
-    { path: '/superadmin/contracts', label: 'Contracts', icon: Briefcase },
+    { path: '/superadmin/web', label: 'Web Dev', icon: Globe },
     { path: '/superadmin/projects', label: 'Projects', icon: FolderKanban },
+    { path: '/superadmin/contracts', label: 'Contracts', icon: Briefcase },
+    { path: '/superadmin/portfolio', label: 'Portfolio', icon: Image },
     { path: '/superadmin/pricing', label: 'Pricing', icon: DollarSign },
-    { path: '/superadmin/promo', label: 'Promo Popup', icon: Megaphone },
+    { path: '/superadmin/promo', label: 'Promo', icon: Ticket },
   ];
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 pb-1">
-      {links.map(link => {
+    <div className="flex items-center gap-1.5 sm:gap-2 pb-1 overflow-x-auto no-scrollbar">
+      {links.map((link) => {
         const isActive = location.pathname === link.path;
+        const Icon = link.icon;
         return (
           <Button
             key={link.path}
             variant={isActive ? 'default' : 'outline'}
             size="sm"
             onClick={() => navigate(link.path)}
-            className="font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0"
+            className={`font-semibold text-xs whitespace-nowrap shrink-0 rounded-full h-8 px-3.5 transition-all ${
+              isActive
+                ? 'bg-primary text-white shadow-xs'
+                : 'border-slate-200 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-2xs'
+            }`}
           >
-            <link.icon className="w-4 h-4 sm:mr-1.5" />
-            <span className="hidden sm:inline">{link.label}</span>
+            <Icon className="w-3.5 h-3.5 mr-1.5 text-primary" />
+            <span>{link.label}</span>
           </Button>
         );
       })}
