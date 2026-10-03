@@ -1,6 +1,7 @@
 # Security, Performance, and Mobile Polish Pass
 
 ## Current request
+- [ ] Earth-horizon hero with homepage content scrolling over it and a fixed rounded navbar
 - [x] Brand every outgoing email, remove PH-approval wording, and route senders by purpose
 - [x] Alert primehaven26@gmail.com on site submissions
 - [x] Send web/app development inquiries to consultation instead of fixed-price checkout
