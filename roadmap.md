@@ -3,7 +3,7 @@
 - [x] Phase 2: Protect all admin pages at one central point (AdminRoute wraps every /superadmin page)
 - [x] Phase 3: Merge the three department admin dashboards into one (DepartmentAdminDashboard + config)
 - [~] Phase 4: Shared data cache in place (lib/queryClient + cached system settings on 4 dashboards); remaining pages to migrate incrementally
-- [ ] Phase 5: Applicant funnel drop-off tracking (video, quiz, payment) + admin view
+- [x] Phase 5: Screening funnel chart on admin Applicants page (built from existing screening timestamps)
 - [ ] Phase 6: UI cleanup — theme colors, empty states, icon-button labels, consistent loading skeletons, remove dead dark-mode code
 - [ ] Phase 7: Architecture — type money/scoring logic, shared function boilerplate, load heavy extras only where needed
 - [ ] Phase 8: Features — request-changes flow, payout reconciliation, in-app price estimator, unified admin audit log
