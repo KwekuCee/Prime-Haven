@@ -6,7 +6,7 @@
 - [x] Phase 5: Screening funnel chart on admin Applicants page (built from existing screening timestamps)
 - [x] Phase 6: UI cleanup — shared dark-surface colours, icon-button labels, dead theme-switching code removed (site is light-only); remaining "Loading…" texts are inside dropdowns, skeletons already cover dashboards
 - [x] Phase 7: Architecture — verified money logic is typed and centralised (lib/revenue, clientRevenue, platformRevenue), backend functions share _shared helpers (cors, resend, applicants, jobContract), jsPDF and charts load only on demand/lazy routes
-- [ ] Phase 8: Features — request-changes flow, payout reconciliation, in-app price estimator, unified admin audit log
+- [x] Phase 8: Features — request-changes history, payout reconciliation, unified activity log (price estimator skipped by user)
 - Known pre-existing bug: seed-admin function has a duplicate variable and won't deploy
 
 # Security, Performance, and Mobile Polish Pass
