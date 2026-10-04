@@ -96,6 +96,8 @@ const ManagePricing = lazyWithReload(() => import("./pages/ManagePricing"));
 const ManageClients = lazyWithReload(() => import("./pages/ManageClients"));
 const ManageApplicants = lazyWithReload(() => import("./pages/ManageApplicants"));
 const ManageHireRequests = lazyWithReload(() => import("./pages/ManageHireRequests"));
+const ActivityLog = lazyWithReload(() => import("./pages/ActivityLog"));
+const PayoutReconciliation = lazyWithReload(() => import("./pages/PayoutReconciliation"));
 const ForwardWork = lazyWithReload(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazyWithReload(() => import("./pages/ManagePromoPopup"));
 const Terms = lazyWithReload(() => import("./pages/Terms"));
@@ -168,6 +170,8 @@ const App = () => {
                   <Route path="/superadmin/clients" element={<AdminRoute><ManageClients /></AdminRoute>} />
                   <Route path="/superadmin/applicants" element={<AdminRoute><ManageApplicants /></AdminRoute>} />
                   <Route path="/superadmin/hire-requests" element={<AdminRoute><ManageHireRequests /></AdminRoute>} />
+                  <Route path="/superadmin/activity" element={<AdminRoute><ActivityLog /></AdminRoute>} />
+                  <Route path="/superadmin/payouts" element={<AdminRoute><PayoutReconciliation /></AdminRoute>} />
                   <Route path="/superadmin/promo" element={<AdminRoute><ManagePromoPopup /></AdminRoute>} />
                   <Route path="/superadmin/settings" element={<AdminRoute><ManageSystemSettings /></AdminRoute>} />
                   <Route path="/superadmin/forward-work" element={<AdminRoute><ForwardWork /></AdminRoute>} />

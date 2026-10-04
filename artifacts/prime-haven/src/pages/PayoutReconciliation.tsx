@@ -45,7 +45,7 @@ const PayoutReconciliation = () => {
       const r = get(w.user_id);
       const amt = Number(w.amount) || 0;
       if (['completed', 'paid', 'success', 'successful'].includes(w.status)) r.paidOut += amt;
-      else if (['pending', 'processing'].includes(w.status)) {
+      else if (['pending', 'approved', 'processing'].includes(w.status)) {
         r.inFlight += amt;
         if (now - new Date(w.created_at).getTime() > STUCK_DAYS * 864e5) r.issues.push(`Withdrawal waiting over ${STUCK_DAYS} days`);
       }

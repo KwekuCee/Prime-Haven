@@ -150,7 +150,8 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Service Pricing & Rates', icon: Tag, path: '/superadmin/pricing' },
       { label: 'Monthly Snapshots', icon: Download, path: '/superadmin', tab: 'reports' },
-      { label: 'Security & Audit Logs', icon: Activity, path: '/superadmin', tab: 'logs' },
+      { label: 'Activity Log', icon: Activity, path: '/superadmin/activity' },
+      { label: 'Payout Reconciliation', icon: Banknote, path: '/superadmin/payouts' },
       { label: 'System Configuration', icon: SettingsIcon, path: '/superadmin/settings' },
     ],
   },
