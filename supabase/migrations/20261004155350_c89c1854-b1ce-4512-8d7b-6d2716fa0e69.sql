@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.manage_talent_payout_method(text, uuid, text, text, text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.manage_talent_payout_method(text, uuid, text, text, text) TO service_role;
