@@ -177,7 +177,7 @@ const ManageHireRequests = () => {
                       <TableCell className="whitespace-nowrap text-right">
                         <Button
                           variant="ghost"
-                          size="icon" aria-label="Delete"
+                          size="icon"
                           className="text-destructive hover:text-destructive"
                           onClick={(e) => { e.stopPropagation(); setDeleting(r); }}
                           aria-label={`Delete request from ${r.full_name}`}
