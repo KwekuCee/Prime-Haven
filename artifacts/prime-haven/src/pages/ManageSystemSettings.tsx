@@ -145,6 +145,7 @@ const ManageSystemSettings = () => {
       return false;
     }
     toast({ title: 'Saved', description: `${key} updated.` });
+    invalidateSystemSettings();
     await fetchSettings();
     return true;
   };
