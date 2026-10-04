@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import footerLogo from '@/assets/footer-logo.png';
+import BrandLogo from '@/components/BrandLogo';
 import { MapPin, Linkedin, Instagram, MessageCircle } from 'lucide-react';
 
 const Footer = () => {
@@ -41,11 +41,7 @@ const Footer = () => {
           {/* Brand column */}
           <div className="lg:col-span-2 space-y-6">
             <Link to="/">
-              <img
-                src={footerLogo}
-                alt="Prime Haven"
-                className="block h-[52px] w-auto max-w-full object-contain"
-              />
+              <BrandLogo height={52} variant="dark" />
             </Link>
             <p className="text-sm text-zinc-400 leading-relaxed max-w-xs">
               A Ghanaian design and tech studio. Clients brief us, our vetted designers and developers do the work, and we stay accountable for what ships.

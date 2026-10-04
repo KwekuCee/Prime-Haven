@@ -28,6 +28,7 @@ const PromoPopup = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (sessionStorage.getItem("promo-popup-seen")) return;
     let cancelled = false;
     const load = async () => {
       const { data } = await supabase
@@ -37,7 +38,12 @@ const PromoPopup = () => {
         .maybeSingle();
       if (cancelled || !data) return;
       setPromo(data as Promo);
-      setTimeout(() => !cancelled && setOpen(true), 2500);
+      setTimeout(() => {
+        if (!cancelled) {
+          setOpen(true);
+          sessionStorage.setItem("promo-popup-seen", "true");
+        }
+      }, 8000);
     };
     load();
     return () => { cancelled = true; };
@@ -72,17 +78,17 @@ const PromoPopup = () => {
   const accent = promo.accent_color || "#fe4c18";
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal={false}>
       <DialogContent
-        className="max-w-md p-0 overflow-hidden border-0 shadow-2xl animate-scale-in"
-        style={{ background: bg, color: "#fff" }}
+        className="left-auto right-5 top-auto bottom-5 w-[calc(100%-2.5rem)] max-w-sm translate-x-0 translate-y-0 overflow-hidden rounded-3xl border border-white/15 p-0 shadow-2xl data-[state=open]:slide-in-from-bottom-6 data-[state=open]:slide-in-from-left-0 sm:right-7"
+        style={{ background: `linear-gradient(145deg, ${bg}, #141414)`, color: "#fff" }}
       >
         {promo.image_url && (
           <div className="w-full h-48 overflow-hidden">
             <img src={promo.image_url} alt={promo.title} loading="lazy" width={640} height={360} className="w-full h-full object-cover" />
           </div>
         )}
-        <div className="p-6 space-y-4">
+        <div className="p-6 pr-8 space-y-4">
           <h2 className="text-2xl font-bold leading-tight" style={{ color: accent }}>
             {promo.title}
           </h2>

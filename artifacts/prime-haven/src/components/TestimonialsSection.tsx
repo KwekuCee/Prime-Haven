@@ -92,7 +92,7 @@ const TestimonialsSection = () => {
         <div className="max-w-3xl mx-auto">
           <div className="relative">
             {/* Large quote icon */}
-            <Quote className="absolute -top-6 -left-4 w-16 h-16 text-primary/10 rotate-180" />
+            <Quote className="absolute -top-8 -left-7 z-10 h-24 w-24 rotate-180 text-primary opacity-[0.06]" />
 
             <div className="relative overflow-hidden paper-card rounded-[2rem] p-8 sm:p-12 min-h-[260px] flex flex-col justify-between">
               <AnimatePresence custom={direction} mode="wait">

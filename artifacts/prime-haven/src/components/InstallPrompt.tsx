@@ -78,12 +78,13 @@ const InstallPrompt = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 60 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed bottom-4 left-4 right-4 z-[100] md:left-auto md:right-6 md:max-w-sm"
+           className="fixed bottom-20 left-4 right-4 z-[100] md:bottom-6 md:left-auto md:right-6 md:max-w-sm"
         >
-          <div className="bg-card border border-border rounded-2xl shadow-2xl p-5 relative">
+           <div className="rounded-3xl border border-white/15 bg-gradient-to-br from-ink to-ink-soft p-5 text-on-ink shadow-2xl relative">
             <button
               onClick={handleDismiss}
-              className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+               className="absolute top-3 right-3 text-zinc-400 hover:text-on-ink transition-colors"
+              aria-label="Dismiss install prompt"
             >
               <X className="w-4 h-4" />
             </button>
@@ -96,14 +97,14 @@ const InstallPrompt = () => {
                 <h3 className="font-heading font-bold text-sm">Install Prime Haven</h3>
                 {isIOS ? (
                   <div className="mt-1 space-y-1">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                   <p className="text-xs text-zinc-400 flex items-center gap-1.5">
                       <span>Tap</span>
                       <Share className="w-3.5 h-3.5 text-primary inline" />
                       <span>then <strong>"Add to Home Screen"</strong></span>
                     </p>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-1">
+                   <p className="text-xs text-zinc-400 mt-1">
                     Add to your home screen for a faster, app-like experience.
                   </p>
                 )}

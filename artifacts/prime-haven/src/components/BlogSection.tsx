@@ -152,6 +152,7 @@ const BlogSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
+            whileHover={{ scale: 0.99, transition: { duration: 0.35 } }}
             className="mb-10 rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden backdrop-blur-xl group hover:border-white/20 transition-all duration-300"
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
@@ -186,7 +187,7 @@ const BlogSection = () => {
                   </div>
 
                   <Link to={`/blog/${featuredPost.slug}`}>
-                    <h3 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-on-ink group-hover:text-primary transition-colors leading-[1.2]">
+                    <h3 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-extrabold tracking-tight text-on-ink group-hover:text-primary transition-colors leading-[1.08]">
                       {featuredPost.title}
                     </h3>
                   </Link>
