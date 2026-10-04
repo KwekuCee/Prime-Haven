@@ -1,6 +1,6 @@
 # App Improvement Phases (from whole-app review)
 - [x] Phase 1: Backend functions only accept requests from Prime Haven sites (shared origin check, deployed)
-- [ ] Phase 2: Protect all admin pages at one central point
+- [x] Phase 2: Protect all admin pages at one central point (AdminRoute wraps every /superadmin page)
 - [ ] Phase 3: Merge the three copy-pasted department admin dashboards into one
 - [ ] Phase 4: Move page data loading to the shared data-loading system (incremental)
 - [ ] Phase 5: Applicant funnel drop-off tracking (video, quiz, payment) + admin view

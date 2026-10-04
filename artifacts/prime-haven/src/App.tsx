@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
 import { TechStackLoader } from "./components/ui/TechStackLoader";
 import ClientRoute from "./components/client/ClientRoute";
+import AdminRoute from "./components/auth/AdminRoute";
 import ProfessionalRoute from "./components/auth/ProfessionalRoute";
 
 
@@ -145,31 +146,31 @@ const App = () => {
                   <Route path="/services/:serviceId" element={<ServiceDetail />} />
                   <Route path="/hiring/:trackSlug" element={<HiringTrack />} />
                   <Route path="/superadmin-login" element={<SuperAdminLogin />} />
-                  <Route path="/superadmin" element={<SuperAdminDashboard />} />
-                  <Route path="/superadmin/uiux" element={<UIUXAdminDashboard />} />
-                  <Route path="/superadmin/web" element={<WebDevAdminDashboard />} />
-                  <Route path="/superadmin/graphic-design" element={<GraphicDesignAdminDashboard />} />
-                  <Route path="/superadmin/finance" element={<FinanceDashboard />} />
-                  <Route path="/superadmin/qa-reviewer" element={<QADashboard />} />
-                  <Route path="/superadmin/portfolio" element={<ManagePortfolio />} />
-                  <Route path="/superadmin/contracts" element={<JobContracts />} />
+                  <Route path="/superadmin" element={<AdminRoute><SuperAdminDashboard /></AdminRoute>} />
+                  <Route path="/superadmin/uiux" element={<AdminRoute><UIUXAdminDashboard /></AdminRoute>} />
+                  <Route path="/superadmin/web" element={<AdminRoute><WebDevAdminDashboard /></AdminRoute>} />
+                  <Route path="/superadmin/graphic-design" element={<AdminRoute><GraphicDesignAdminDashboard /></AdminRoute>} />
+                  <Route path="/superadmin/finance" element={<AdminRoute><FinanceDashboard /></AdminRoute>} />
+                  <Route path="/superadmin/qa-reviewer" element={<AdminRoute><QADashboard /></AdminRoute>} />
+                  <Route path="/superadmin/portfolio" element={<AdminRoute><ManagePortfolio /></AdminRoute>} />
+                  <Route path="/superadmin/contracts" element={<AdminRoute><JobContracts /></AdminRoute>} />
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/install" element={<Install />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/track/:token" element={<TrackProject />} />
-                  <Route path="/superadmin/projects" element={<ManageClientProjects />} />
+                  <Route path="/superadmin/projects" element={<AdminRoute><ManageClientProjects /></AdminRoute>} />
                   <Route path="/review" element={<SubmitReview />} />
                   <Route path="/start-project" element={<StartProject />} />
                   <Route path="/apply" element={<Apply />} />
                   <Route path="/applicant/:token" element={<ApplicantPortal />} />
-                  <Route path="/superadmin/pricing" element={<ManagePricing />} />
-                  <Route path="/superadmin/clients" element={<ManageClients />} />
-                  <Route path="/superadmin/applicants" element={<ManageApplicants />} />
-                  <Route path="/superadmin/hire-requests" element={<ManageHireRequests />} />
-                  <Route path="/superadmin/promo" element={<ManagePromoPopup />} />
-                  <Route path="/superadmin/settings" element={<ManageSystemSettings />} />
-                  <Route path="/superadmin/forward-work" element={<ForwardWork />} />
+                  <Route path="/superadmin/pricing" element={<AdminRoute><ManagePricing /></AdminRoute>} />
+                  <Route path="/superadmin/clients" element={<AdminRoute><ManageClients /></AdminRoute>} />
+                  <Route path="/superadmin/applicants" element={<AdminRoute><ManageApplicants /></AdminRoute>} />
+                  <Route path="/superadmin/hire-requests" element={<AdminRoute><ManageHireRequests /></AdminRoute>} />
+                  <Route path="/superadmin/promo" element={<AdminRoute><ManagePromoPopup /></AdminRoute>} />
+                  <Route path="/superadmin/settings" element={<AdminRoute><ManageSystemSettings /></AdminRoute>} />
+                  <Route path="/superadmin/forward-work" element={<AdminRoute><ForwardWork /></AdminRoute>} />
                   <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
                   <Route path="/client/login" element={<ClientLogin />} />
                   <Route path="/client/dashboard" element={<ClientRoute><ClientDashboard /></ClientRoute>} />
