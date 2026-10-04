@@ -2911,16 +2911,6 @@ export type Database = {
           username: string
         }[]
       }
-      manage_talent_payout_method: {
-        Args: {
-          p_account_name?: string
-          p_action: string
-          p_method_id?: string
-          p_phone_number?: string
-          p_provider?: string
-        }
-        Returns: Json
-      }
       manage_talent_payout_method_service: {
         Args: {
           p_account_name?: string
