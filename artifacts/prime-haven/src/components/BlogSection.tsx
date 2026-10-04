@@ -93,6 +93,10 @@ const BlogSection = () => {
     }
   };
 
+  // Hide the whole section when there are no published posts — never show
+  // placeholder articles, since their links would lead to "Post not found".
+  if (posts.length === 0) return null;
+
   return (
     <section id="blog" className="py-24 relative overflow-hidden bg-[#07090e] text-white border-y border-white/10">
       {/* Background subtle radial ambient glows */}
