@@ -145,7 +145,7 @@ const App = () => {
                   <Route path="/edit-profile" element={<EditProfile />} />
                   <Route path="/services/:serviceId" element={<ServiceDetail />} />
                   <Route path="/hiring/:trackSlug" element={<HiringTrack />} />
-                  <Route path="/superadmin-login" element={<AdminRoute><SuperAdminLogin /></AdminRoute>} />
+                  <Route path="/superadmin-login" element={<SuperAdminLogin />} />
                   <Route path="/superadmin" element={<AdminRoute><SuperAdminDashboard /></AdminRoute>} />
                   <Route path="/superadmin/uiux" element={<AdminRoute><UIUXAdminDashboard /></AdminRoute>} />
                   <Route path="/superadmin/web" element={<AdminRoute><WebDevAdminDashboard /></AdminRoute>} />
