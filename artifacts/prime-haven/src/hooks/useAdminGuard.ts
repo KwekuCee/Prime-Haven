@@ -34,21 +34,22 @@ export const useAdminGuard = (allowedRoles: string[] = DEFAULT_ROLES) => {
 
     const verifyRole = async () => {
       try {
+        // A user can hold several roles (e.g. client + designer), so read all.
         const { data } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('user_id', user.id);
 
         if (cancelled) return;
 
-        if (!data || !roles.includes(data.role)) {
+        const match = (data ?? []).map((r) => r.role as string).find((r) => roles.includes(r));
+        if (!match) {
           setChecking(false);
           navigate('/dashboard', { replace: true });
           return;
         }
 
-        setRole(data.role);
+        setRole(match);
         setIsAdmin(true);
         setChecking(false);
       } catch {
