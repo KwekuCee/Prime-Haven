@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
+import ApplicantFunnel from '@/components/admin/ApplicantFunnel';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 import {
@@ -316,6 +317,7 @@ const ManageApplicants = () => {
           <h1 className="text-2xl font-bold">Talent applicants</h1>
           <p className="text-sm text-muted-foreground">Review applications, invite people into screening and see ranked assessment results.</p>
         </div>
+        <ApplicantFunnel applicants={applicants as any} assessments={assessments as any} track={trackFilter} />
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
