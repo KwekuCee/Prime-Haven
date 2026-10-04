@@ -80,6 +80,7 @@ const PromoPopup = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={false}>
       <DialogContent
+        hideOverlay
         className="left-auto right-5 top-auto bottom-5 w-[calc(100%-2.5rem)] max-w-sm translate-x-0 translate-y-0 overflow-hidden rounded-3xl border border-white/15 p-0 shadow-2xl data-[state=open]:slide-in-from-bottom-6 data-[state=open]:slide-in-from-left-0 sm:right-7"
         style={{ background: `linear-gradient(145deg, ${bg}, #141414)`, color: "#fff" }}
       >
