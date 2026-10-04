@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { withCors } from "../_shared/cors.ts";
+import { TRACKS } from "../_shared/applicants.ts";
 
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -33,7 +34,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
   try {
     const { reference, profession } = await req.json();
-    if (!reference || typeof profession !== "string" || !profession.trim()) {
+    if (typeof reference !== "string" || !/^PH-PROF-[A-Za-z0-9-]{8,100}$/.test(reference) || typeof profession !== "string" || !TRACKS.includes(profession)) {
       return new Response(JSON.stringify({ success: false, error: "invalid_request" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
@@ -50,6 +51,11 @@ serve(withCors(async (req: Request): Promise<Response> => {
     if (authErr || !user) {
       return new Response(JSON.stringify({ success: false, error: "unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    const { data: rate } = await supabase.rpc("check_rate_limit", { p_action: "profession_upgrade", p_identifier: user.id });
+    if (rate && !(rate as { allowed?: boolean }).allowed) {
+      return new Response(JSON.stringify({ success: false, error: "too_many_attempts" }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
     // Idempotency check
@@ -86,7 +92,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
     }
 
     // Record payment
-    await supabase.from("payments").insert({
+    const { error: paymentError } = await supabase.from("payments").insert({
       user_id: user.id,
       amount: amountInGhs,
       type: "profession_upgrade",
@@ -95,6 +101,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
       transaction_id: reference,
       payment_details: { channel: krData.data.payment_method || "korapay", currency, unlocked_profession: profession },
     });
+    if (paymentError) throw paymentError;
 
     // Update paid_professions array in designer_details
     const { data: designer } = await supabase
@@ -105,7 +112,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     const currentPaid = designer?.paid_professions || [];
     if (!currentPaid.includes(profession)) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("designer_details")
         .update({ 
           paid_professions: [...currentPaid, profession],
@@ -113,7 +120,13 @@ serve(withCors(async (req: Request): Promise<Response> => {
           updated_at: new Date().toISOString() 
         })
         .eq("user_id", user.id);
+      if (updateError) throw updateError;
     }
+
+    await Promise.all([
+      supabase.from("talent_activity_logs").insert({ user_id: user.id, action_type: "profession_unlocked", entity_type: "profile", summary: `Unlocked ${profession}`, metadata: { profession, reference, amount_ghs: amountInGhs } }),
+      supabase.from("system_logs").insert({ admin_id: user.id, action_type: "talent_profession_unlocked", description: `Talent unlocked ${profession}`, new_value: { profession, reference, amount_ghs: amountInGhs } }),
+    ]);
 
     return new Response(JSON.stringify({ success: true }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
