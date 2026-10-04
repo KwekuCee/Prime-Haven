@@ -159,7 +159,13 @@ serve(withCors(async (req: Request): Promise<Response> => {
       });
 
 
-    if (paymentError) {
+    if (paymentError && (paymentError as any).code === "23505") {
+      // Reference already recorded — only the original payer may reuse it
+      const { data: prior } = await supabase.from("payments").select("user_id").eq("transaction_id", reference).maybeSingle();
+      if (prior && prior.user_id !== userId) {
+        return json({ success: false, error: "payment_failed", message: "This payment reference has already been used." }, 400);
+      }
+    } else if (paymentError) {
       console.error("Failed to record payment:", paymentError);
     }
 
