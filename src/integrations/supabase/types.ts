@@ -2332,6 +2332,39 @@ export type Database = {
         }
         Relationships: []
       }
+      talent_activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          summary: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           bio: string
@@ -2497,6 +2530,7 @@ export type Database = {
           provider: string
           updated_at: string
           user_id: string
+          withdrawal_available_at: string
         }
         Insert: {
           account_name: string
@@ -2507,6 +2541,7 @@ export type Database = {
           provider: string
           updated_at?: string
           user_id: string
+          withdrawal_available_at?: string
         }
         Update: {
           account_name?: string
@@ -2517,6 +2552,7 @@ export type Database = {
           provider?: string
           updated_at?: string
           user_id?: string
+          withdrawal_available_at?: string
         }
         Relationships: []
       }
@@ -2870,6 +2906,16 @@ export type Database = {
           id: string
           username: string
         }[]
+      }
+      manage_talent_payout_method: {
+        Args: {
+          p_account_name?: string
+          p_action: string
+          p_method_id?: string
+          p_phone_number?: string
+          p_provider?: string
+        }
+        Returns: Json
       }
       mark_affiliate_payout_paid: {
         Args: { p_payout_id: string }
