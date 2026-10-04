@@ -75,58 +75,11 @@ serve(withCors(async (req) => {
     const reference = withdrawal.korapay_reference || `ph_wd_${Date.now()}_${withdrawal.user_id.slice(0, 8)}`;
 
     const finalise = async (status: string, gateway: string) => {
-      await admin
-        .from("withdrawals")
-        .update({ status, korapay_reference: reference, processed_at: new Date().toISOString(), failure_reason: null })
-        .eq("id", withdrawalId);
-
-      // Accurate transaction record in the ledger
-      await admin.from("payments").insert({
-        user_id: withdrawal.user_id,
-        amount,
-        type: "withdrawal",
-        status: "completed",
-        transaction_id: reference,
-        payment_gateway: gateway,
-        processed_by_admin_id: adminUserId,
-        payment_details: {
-          withdrawal_id: withdrawalId,
-          mode,
-          provider: (withdrawal as any).payout_method?.provider || null,
-          phone_number: (withdrawal as any).payout_method?.phone_number || null,
-        },
+      const { error } = await admin.rpc("finalise_withdrawal_payout_service", {
+        p_withdrawal_id: withdrawalId, p_admin_id: adminUserId, p_status: status,
+        p_gateway: gateway, p_reference: reference,
       });
-
-      // Points + estimated salary reset for the new cycle
-      await admin
-        .from("designer_details")
-        .update({
-          salary_estimated: 0,
-          monthly_points: 0,
-          total_points: 0,
-          salary_payment_status: "paid",
-          salary_paid_at: new Date().toISOString(),
-          salary_paid_by: adminUserId,
-        })
-        .eq("user_id", withdrawal.user_id);
-
-      await admin.from("notifications").insert({
-        user_id: withdrawal.user_id,
-        title: "Withdrawal Paid",
-        message:
-          mode === "manual"
-            ? `Your withdrawal of GH₵${amount.toFixed(2)} has been paid manually by Prime Haven. Your accumulated points have been reset for the new cycle.`
-            : `Your withdrawal of GH₵${amount.toFixed(2)} has been sent to your Mobile Money account via Korapay. Your accumulated points have been reset for the new cycle.`,
-        type: "payment",
-        link: "/payments",
-      });
-
-      await admin.from("system_logs").insert({
-        admin_id: adminUserId,
-        action_type: "withdrawal_approved",
-        description: `Approved withdrawal of GH₵${amount.toFixed(2)} for ${profile?.full_name || withdrawal.user_id} (${mode})`,
-        new_value: { withdrawal_id: withdrawalId, amount, mode, reference, status },
-      });
+      if (error) throw error;
     };
 
     // --- Manual (paid outside Korapay) ---

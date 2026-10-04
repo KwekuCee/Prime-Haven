@@ -2804,6 +2804,16 @@ export type Database = {
       }
       current_user_email: { Args: never; Returns: string }
       ensure_client_role: { Args: never; Returns: boolean }
+      finalise_withdrawal_payout_service: {
+        Args: {
+          p_admin_id: string
+          p_gateway: string
+          p_reference: string
+          p_status: string
+          p_withdrawal_id: string
+        }
+        Returns: Json
+      }
       find_or_create_client: {
         Args: { p_email: string; p_name: string; p_whatsapp?: string }
         Returns: string
