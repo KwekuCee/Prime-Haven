@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Seo from '@/components/Seo';
 import HeroSection from '@/components/HeroSection';
@@ -18,20 +17,8 @@ import VisitorChatbot from '@/components/VisitorChatbot';
 import PromoPopup from '@/components/PromoPopup';
 import AdUnit from '@/components/AdUnit';
 import EzoicAd from '@/components/EzoicAd';
-import { toast } from 'sonner';
 
 const Index = () => {
-  useEffect(() => {
-    if (sessionStorage.getItem('ph_welcomed')) return;
-    const t = setTimeout(() => {
-      toast('Welcome to Prime Haven 👋', {
-        description: 'Premium design, built in Ghana.',
-      });
-      sessionStorage.setItem('ph_welcomed', '1');
-    }, 800);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <div className="min-h-screen bg-transparent relative z-0">
       <Seo

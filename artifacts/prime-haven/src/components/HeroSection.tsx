@@ -14,15 +14,15 @@ const HeroSection = () => {
 
   return (
     <section className="sticky top-0 flex h-[100svh] min-h-[620px] flex-col overflow-hidden bg-background text-foreground" aria-label="Prime Haven introduction">
-      <div className="mx-auto flex w-full max-w-5xl shrink-0 flex-col items-center px-5 pb-7 pt-28 text-center sm:pb-9 sm:pt-32 lg:pt-36">
+      <div className="mx-auto flex w-full max-w-5xl shrink-0 flex-col items-center px-5 pb-5 pt-24 text-center sm:pb-7 sm:pt-28 lg:pt-32">
         <motion.p {...reveal(0)} className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground sm:text-xs">
           Ghana's creative talent. Global ambition.
         </motion.p>
-        <motion.h1 {...reveal(0.08)} className="mt-4 max-w-4xl font-heading text-4xl font-extrabold leading-[1.08] sm:text-6xl lg:text-7xl">
-          Prime Haven.<br />Creative work, without limits.
+        <motion.h1 {...reveal(0.08)} className="mt-3 max-w-5xl font-heading text-[2.65rem] font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl lg:text-[4.75rem]">
+          Digital craft from Ghana,<br /><span className="text-primary">built for the world.</span>
         </motion.h1>
         <motion.p {...reveal(0.16)} className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:mt-5 sm:text-base">
-          Great projects meet vetted designers and developers. Built in Ghana, ready for wherever you're going next.
+          One accountable team for design, development, motion and digital growth — from first brief to approved delivery.
         </motion.p>
         <motion.div {...reveal(0.24)} className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:mt-6">
           <Button asChild className="h-11 rounded-full bg-foreground pl-5 pr-2 text-sm font-semibold text-background hover:bg-foreground/90">
@@ -32,8 +32,8 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      <motion.div {...reveal(0.32)} className="relative mx-4 mb-5 min-h-0 flex-1 rounded-[24px] sm:mx-6 sm:mb-6 lg:mx-8">
-        <div className="relative h-full w-full overflow-hidden rounded-[24px] bg-hero-surface">
+      <motion.div {...reveal(0.32)} className="relative mx-4 mb-5 min-h-0 flex-1 rounded-[28px] sm:mx-6 sm:mb-6 lg:mx-8">
+        <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-hero-surface">
           <img
             src={earthHorizon}
             alt="Earth's curved horizon glowing at sunrise, seen from space"

@@ -13,24 +13,24 @@ const STEPS = [
         border: "border-primary/25"
     },
     {
-        title: "UI/UX & Visual Design",
-        description: "Wireframes first, then screens. You see work in progress and give notes at each round instead of waiting for one big reveal.",
+        title: "Direction & Production",
+        description: "We establish the right direction, then produce the design, content, motion or technical solution in clear working stages.",
         icon: PenTool,
         color: "text-foreground",
         bg: "bg-muted",
         border: "border-border"
     },
     {
-        title: "Agile Development",
-        description: "We build in React with a Postgres backend. You get a staging link early so you can click through the real thing, not a slideshow.",
+        title: "Build & Review",
+        description: "You review real progress at agreed milestones, share direct feedback, and request corrections before approving the final work.",
         icon: Code2,
         color: "text-primary",
         bg: "bg-primary/10",
         border: "border-primary/25"
     },
     {
-        title: "Launch & Scale",
-        description: "We test on real devices, hand over the files and access, and stay on for a month of fixes after launch.",
+        title: "Delivery & Support",
+        description: "We complete final checks, hand over the approved files or product, and make sure your team knows what happens next.",
         icon: Rocket,
         color: "text-foreground",
         bg: "bg-muted",
@@ -57,16 +57,16 @@ const ProcessTimeline = () => {
                             <div className="lg:sticky lg:top-32 space-y-6">
                                 <span className="eyebrow">Our process</span>
                                 <h2 className="text-4xl md:text-5xl font-heading font-extrabold tracking-tight leading-[1.05] text-foreground">
-                                    How we execute <span className="display-italic text-primary">web development</span>
+                                    How we move from <span className="display-italic text-primary">brief to delivery</span>
                                 </h2>
                                 <p className="text-lg text-muted-foreground leading-relaxed">
-                                    A proven, transparent process designed to turn complex ideas into refined, high-performance web applications with absolute precision.
+                                    A clear, accountable process across every service — with visible progress and client approval at the centre.
                                 </p>
                                 <Link
-                                    to="/services/web-development"
+                                    to="/start-project"
                                     className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all"
                                 >
-                                    Explore web development <ArrowRight className="w-4 h-4" />
+                                    Start a project <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
                         </div>

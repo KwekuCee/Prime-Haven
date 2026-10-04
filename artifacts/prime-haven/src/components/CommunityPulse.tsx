@@ -1,76 +1,24 @@
-import { motion } from 'framer-motion';
-import { Target, Star, CheckCircle, Zap } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { CheckCircle2, MapPin, ShieldCheck, WalletCards } from 'lucide-react';
 
-const MOCK_PULSES = [
-    { text: "Sarah earned 40 client points", icon: Star, color: "text-amber-500" },
-    { text: "New Full Stack Web project approved", icon: CheckCircle, color: "text-emerald-500" },
-    { text: "Michael promoted to Lead Designer", icon: Zap, color: "text-primary" },
-    { text: "UI/UX App Design delivered 2 days early", icon: Target, color: "text-blue-500" },
-    { text: "Jessica maintained a 99% AI Talent Score", icon: Star, color: "text-amber-500" },
-    { text: "Global client onboarding complete", icon: CheckCircle, color: "text-emerald-500" },
+const TRUST_POINTS = [
+    { text: 'Based in Accra, serving clients worldwide', icon: MapPin },
+    { text: 'Vetted specialists across eight disciplines', icon: CheckCircle2 },
+    { text: 'Client approval controls completion', icon: ShieldCheck },
+    { text: 'USD pricing with live Ghana cedi conversion', icon: WalletCards },
 ];
 
 const CommunityPulse = () => {
-    const [pulses, setPulses] = useState(MOCK_PULSES);
-
-    useEffect(() => {
-        // Optionally fetch real latest submissions or logs from supabase
-        const fetchRealData = async () => {
-            try {
-                const { data } = await supabase
-                    .from('submissions')
-                    .select('project_name, service_type')
-                    .in('status', ['approved', 'ph_approved'])
-                    .order('updated_at', { ascending: false })
-                    .limit(3);
-
-                if (data && data.length > 0) {
-                    const mapped = data.map(d => ({
-                        text: `Project approved: ${d.project_name} (${d.service_type})`,
-                        icon: CheckCircle,
-                        color: "text-primary"
-                    }));
-                    setPulses([...mapped, ...MOCK_PULSES].slice(0, 8));
-                }
-            } catch (err) {
-                console.error("Pulse fetch err", err);
-            }
-        };
-        fetchRealData();
-    }, []);
-
     return (
-        <div className="w-full relative overflow-hidden bg-background py-8 border-y border-border/30">
-            {/* Fade edges */}
-            <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-            <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
-
-            <div className="flex w-fit">
-                <motion.div
-                    animate={{ x: [0, -1035] }}
-                    transition={{
-                        repeat: Infinity,
-                        repeatType: 'loop',
-                        duration: 25,
-                        ease: 'linear',
-                    }}
-                    className="flex whitespace-nowrap gap-6"
-                >
-                    {/* Double up the array to make the infinite loop seamless */}
-                    {[...pulses, ...pulses, ...pulses].map((item, idx) => (
-                        <div
-                            key={idx}
-                            className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-card/40 border border-border/50 backdrop-blur-md"
-                        >
-                            <item.icon className={`w-4 h-4 ${item.color}`} />
-                            <span className="text-sm font-medium text-foreground">{item.text}</span>
-                        </div>
-                    ))}
-                </motion.div>
+        <section className="w-full border-y border-border bg-background" aria-label="Why clients choose Prime Haven">
+            <div className="container mx-auto grid grid-cols-1 divide-y divide-border px-6 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+                {TRUST_POINTS.map((item) => (
+                    <div key={item.text} className="flex items-center gap-3 py-5 sm:px-5 lg:min-h-24">
+                        <item.icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                        <span className="text-xs font-semibold leading-relaxed text-foreground sm:text-sm">{item.text}</span>
+                    </div>
+                ))}
             </div>
-        </div>
+        </section>
     );
 };
 

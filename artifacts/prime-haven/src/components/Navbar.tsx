@@ -168,7 +168,7 @@ const Navbar = () => {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1480px] rounded-2xl border border-white/10 bg-ink/80 shadow-[0_16px_45px_rgba(0,0,0,0.65)] backdrop-blur-2xl transition-all duration-300 sm:top-5 sm:left-6 sm:right-6"
+      className="fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1320px] rounded-[20px] border border-white/20 bg-ink/95 shadow-[0_14px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-all duration-300 sm:top-5 sm:left-6 sm:right-6"
     >
       <div className="px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 lg:h-16">
@@ -180,7 +180,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Center Nav with Dropdowns */}
-          <div className="hidden lg:flex items-center gap-1.5">
+          <div className="hidden lg:flex items-center gap-0.5 rounded-full border border-white/10 bg-white/[0.04] p-1">
             {/* Services Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -254,7 +254,7 @@ const Navbar = () => {
                   type="button"
                   className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-on-ink/85 hover:text-on-ink rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-on-ink"
                 >
-                  <span>Opportunities &amp; Portals</span>
+                  <span>Talent</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform duration-200" />
                 </button>
               </DropdownMenuTrigger>
@@ -598,7 +598,7 @@ const Navbar = () => {
 
     {/* Native Mobile App Bottom Tab Bar for Public Site */}
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-ink/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_35px_rgba(0,0,0,0.7)] px-2 pt-1 pb-safe"
+      className="lg:hidden fixed bottom-3 left-3 right-3 z-50 rounded-2xl bg-ink/95 backdrop-blur-2xl border border-white/15 shadow-[0_10px_35px_rgba(0,0,0,0.35)] px-2 pt-1 pb-safe"
       aria-label="Mobile Bottom App Bar"
     >
       <div className="grid grid-cols-5 items-center h-14">
