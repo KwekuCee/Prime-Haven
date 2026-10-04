@@ -105,7 +105,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     ];
   }
 
-  const pageTitle = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
+  const pageTitle = location.pathname === '/dashboard/smm'
+    ? 'SMM Studio'
+    : navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 
   return (
     <div className="min-h-screen bg-transparent flex w-full relative z-0">
@@ -420,11 +422,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <Link
                   to="/dashboard"
                   className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
-                    location.pathname === '/dashboard' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                    (location.pathname === '/dashboard' || location.pathname === '/dashboard/smm') ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span className="text-[10px] tracking-tight">Workspace</span>
+                  <span className="text-[10px] tracking-tight">Command</span>
                 </Link>
 
                 <Link

@@ -26,35 +26,22 @@ serve(withCors(async (req) => {
       if (!ALLOWED_PROVIDERS.has(provider)) return json({ error: "Choose a supported Mobile Money provider." }, 400);
       if (!/^(\+233|0)\d{9}$/.test(phone)) return json({ error: "Enter a valid Ghana mobile number." }, 400);
       if (accountName.length < 2 || accountName.length > 100) return json({ error: "Enter the registered account name." }, 400);
-      const { count } = await admin.from("user_payout_methods").select("id", { count: "exact", head: true }).eq("user_id", auth.user.id);
-      const availableAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      const { data: method, error } = await admin.from("user_payout_methods").insert({
-        user_id: auth.user.id, provider, phone_number: phone, account_name: accountName,
-        is_default: (count || 0) === 0, withdrawal_available_at: availableAt,
-      }).select("id").single();
-      if (error || !method) throw error || new Error("Could not save payout method");
-      const metadata = { provider, phone_last4: phone.slice(-4) };
-      await Promise.all([
-        admin.from("talent_activity_logs").insert({ user_id: auth.user.id, action_type: "payout_method_added", entity_type: "payout_method", entity_id: method.id, summary: "Added a payout destination", metadata }),
-        admin.from("system_logs").insert({ admin_id: auth.user.id, action_type: "talent_payout_method_added", description: "Talent added a payout destination", new_value: { method_id: method.id, ...metadata } }),
-      ]);
-      return json({ success: true, id: method.id, available_at: availableAt });
+      const { data, error } = await admin.rpc("manage_talent_payout_method_service", {
+        p_user_id: auth.user.id, p_action: "create", p_method_id: null,
+        p_provider: provider, p_phone_number: phone, p_account_name: accountName,
+      });
+      if (error) throw error;
+      return json(data);
     }
     if (action === "delete") {
       const methodId = String(body.method_id || "");
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(methodId)) return json({ error: "Invalid payout method." }, 400);
-      const { data: method } = await admin.from("user_payout_methods").select("id, provider, phone_number").eq("id", methodId).eq("user_id", auth.user.id).maybeSingle();
-      if (!method) return json({ error: "Payout method not found." }, 404);
-      const { count: active } = await admin.from("withdrawals").select("id", { count: "exact", head: true }).eq("payout_method_id", methodId).in("status", ["pending", "processing"]);
-      if ((active || 0) > 0) return json({ error: "This payout method has an active withdrawal." }, 409);
-      const { error } = await admin.from("user_payout_methods").delete().eq("id", methodId).eq("user_id", auth.user.id);
-      if (error) throw error;
-      const metadata = { provider: method.provider, phone_last4: method.phone_number.slice(-4) };
-      await Promise.all([
-        admin.from("talent_activity_logs").insert({ user_id: auth.user.id, action_type: "payout_method_removed", entity_type: "payout_method", entity_id: methodId, summary: "Removed a payout destination", metadata }),
-        admin.from("system_logs").insert({ admin_id: auth.user.id, action_type: "talent_payout_method_removed", description: "Talent removed a payout destination", old_value: { method_id: methodId, ...metadata } }),
-      ]);
-      return json({ success: true });
+      const { data, error } = await admin.rpc("manage_talent_payout_method_service", {
+        p_user_id: auth.user.id, p_action: "delete", p_method_id: methodId,
+        p_provider: null, p_phone_number: null, p_account_name: null,
+      });
+      if (error) return json({ error: error.message }, error.message.includes("active withdrawal") ? 409 : 400);
+      return json(data);
     }
     return json({ error: "Unsupported action." }, 400);
   } catch (error) {

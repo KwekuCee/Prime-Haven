@@ -337,7 +337,7 @@ const Dashboard = () => {
         setSharePercent(share);
         const { data: earningRows } = await (supabase as any)
           .from('job_earnings')
-          .select('id, project_id, submission_id, job_price, share_percent, amount, status, created_at, client_projects:project_id(title)')
+          .select('id, project_id, submission_id, job_price, share_percent, amount, status, created_at')
           .eq('designer_id', user.id)
           .order('created_at', { ascending: false });
         const mappedEarnings: JobEarning[] = ((earningRows || []) as any[]).map((r) => ({
@@ -349,7 +349,7 @@ const Dashboard = () => {
           amount: r.amount,
           status: r.status,
           created_at: r.created_at,
-          project_title: r.client_projects?.title || null,
+          project_title: null,
         }));
         setEarnings(mappedEarnings);
         const availableEarned = mappedEarnings
