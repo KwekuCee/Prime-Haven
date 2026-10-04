@@ -66,12 +66,12 @@ const ApplicantFunnel = ({ applicants, assessments, track }: {
           const prev = i > 0 ? steps[i - 1].value : s.value;
           const stepPct = prev ? Math.round((s.value / prev) * 100) : 0;
           return (
-            <li key={s.label} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[8rem_1fr_auto]">
-              <span className="truncate text-muted-foreground">{s.label}</span>
-              <div className="h-2.5 overflow-hidden rounded-full bg-muted" role="presentation">
+            <li key={s.label} className="flex items-center gap-3 text-sm">
+              <span className="w-24 shrink-0 truncate text-muted-foreground sm:w-32">{s.label}</span>
+              <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="presentation">
                 <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
               </div>
-              <span className="w-20 text-right tabular-nums">
+              <span className="w-20 shrink-0 text-right tabular-nums">
                 <span className="font-semibold">{s.value}</span>
                 {i > 0 && <span className="ml-1 text-xs text-muted-foreground">{stepPct}%</span>}
               </span>
