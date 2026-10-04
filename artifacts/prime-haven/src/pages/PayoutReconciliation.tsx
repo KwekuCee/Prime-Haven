@@ -22,6 +22,7 @@ const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits
 const PayoutReconciliation = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unmatched, setUnmatched] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -29,6 +30,8 @@ const PayoutReconciliation = () => {
       (supabase as any).from('job_earnings').select('designer_id, amount, status'),
       supabase.from('withdrawals').select('id, user_id, amount, status, korapay_reference, created_at'),
     ]);
+    const { data: um } = await (supabase as any).from('unmatched_payments').select('id, reference, gateway, amount_ghs, client_email, created_at').eq('status', 'needs_matching').order('created_at', { ascending: false });
+    setUnmatched(um || []);
     const map = new Map<string, Row>();
     const get = (id: string) => {
       if (!map.has(id)) map.set(id, { userId: id, name: 'Unknown', earned: 0, pendingEarnings: 0, paidOut: 0, inFlight: 0, balance: 0, issues: [] });
@@ -96,6 +99,14 @@ const PayoutReconciliation = () => {
             </div>
           ))}
         </div>
+        {unmatched.length > 0 && (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 space-y-2">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-destructive" /> {unmatched.length} confirmed client payment(s) need matching to an account</p>
+            {unmatched.map((u) => (
+              <p key={u.id} className="text-xs text-muted-foreground">GH₵{money(Number(u.amount_ghs))} via {u.gateway} · {u.client_email || 'no email'} · ref {u.reference}</p>
+            ))}
+          </div>
+        )}
         <div className="rounded-2xl border border-border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
