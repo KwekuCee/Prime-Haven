@@ -21,6 +21,39 @@ interface BlogPost {
   read_time?: string;
 }
 
+const BlogSection = () => {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const { data } = await supabase
+          .from('blog_posts')
+          .select('id, title, slug, excerpt, cover_image_url, category, published_at')
+          .eq('is_published', true)
+          .order('published_at', { ascending: false })
+          .limit(6);
+
+        if (data && data.length > 0) {
+          const formatted = data.map((p) => ({
+            ...p,
+            author_name: 'Prime Haven Staff',
+            read_time: '4 min read',
+          }));
+          setPosts(formatted);
+        } else {
+          setPosts([]);
+        }
+      } catch (err) {
+        setPosts([]);
+      }
+    };
+    fetchPosts();
+  }, []);
 
   const categories = ['all', 'Engineering', 'Opportunities', 'News', 'Design'];
 
