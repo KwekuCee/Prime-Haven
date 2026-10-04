@@ -17,6 +17,7 @@ import VisitorChatbot from '@/components/VisitorChatbot';
 import PromoPopup from '@/components/PromoPopup';
 import AdUnit from '@/components/AdUnit';
 import EzoicAd from '@/components/EzoicAd';
+import CinematicReveal from '@/components/CinematicReveal';
 
 const Index = () => {
   return (
@@ -93,24 +94,47 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
-        <div className="relative z-10 bg-background">
-        <CommunityPulse />
-        <ValueBentoGrid />
-        <ProcessTimeline />
-        <ServicesSection />
-        <AdUnit slot="1675197526" />
-        <EzoicAd placeholderId={101} />
-        <PortfolioSection />
-        <StatsSection />
-        <AdUnit slot="1675197526" />
-        <EzoicAd placeholderId={102} />
-        <TestimonialsSection />
-        <AdUnit slot="1675197526" />
-        <EzoicAd placeholderId={103} />
-        <FAQSection />
-        <BlogSection />
-        <JoinSection />
-        <ContactSection />
+        <div className="relative bg-background">
+          <div className="h-[24svh] min-h-36 sm:h-[34svh]" aria-hidden="true" />
+          <CinematicReveal first>
+            <CommunityPulse />
+          </CinematicReveal>
+          <CinematicReveal direction="left">
+            <ValueBentoGrid />
+          </CinematicReveal>
+          <CinematicReveal direction="right">
+            <ProcessTimeline />
+          </CinematicReveal>
+          <CinematicReveal>
+            <ServicesSection />
+          </CinematicReveal>
+          <AdUnit slot="1675197526" />
+          <EzoicAd placeholderId={101} />
+          <CinematicReveal direction="left">
+            <PortfolioSection />
+          </CinematicReveal>
+          <CinematicReveal direction="right">
+            <StatsSection />
+          </CinematicReveal>
+          <AdUnit slot="1675197526" />
+          <EzoicAd placeholderId={102} />
+          <CinematicReveal>
+            <TestimonialsSection />
+          </CinematicReveal>
+          <AdUnit slot="1675197526" />
+          <EzoicAd placeholderId={103} />
+          <CinematicReveal direction="left">
+            <FAQSection />
+          </CinematicReveal>
+          <CinematicReveal direction="right">
+            <BlogSection />
+          </CinematicReveal>
+          <CinematicReveal>
+            <JoinSection />
+          </CinematicReveal>
+          <CinematicReveal>
+            <ContactSection />
+          </CinematicReveal>
         </div>
       </main>
       <Footer />

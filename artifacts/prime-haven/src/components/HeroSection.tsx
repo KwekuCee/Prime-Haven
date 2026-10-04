@@ -2,7 +2,10 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { CORE_SERVICES } from '@/lib/coreServices';
 import earthHorizon from '@/assets/earth-horizon.jpg';
+
+const HERO_SERVICES = CORE_SERVICES.slice(0, 5);
 
 const HeroSection = () => {
   const reduceMotion = useReducedMotion();
@@ -13,7 +16,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="sticky top-0 flex h-[100svh] min-h-[620px] flex-col overflow-hidden bg-background text-foreground" aria-label="Prime Haven introduction">
+    <section className="flex h-[100svh] min-h-[620px] flex-col overflow-hidden bg-background text-foreground" aria-label="Prime Haven introduction">
       <div className="mx-auto flex w-full max-w-5xl shrink-0 flex-col items-center px-5 pb-5 pt-24 text-center sm:pb-7 sm:pt-28 lg:pt-32">
         <motion.p {...reveal(0)} className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground sm:text-xs">
           Ghana's creative talent. Global ambition.
@@ -32,7 +35,7 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      <motion.div {...reveal(0.32)} className="relative mx-4 mb-5 min-h-0 flex-1 rounded-[28px] sm:mx-6 sm:mb-6 lg:mx-8">
+      <motion.div {...reveal(0.32)} className="relative mx-4 mb-20 min-h-0 flex-1 rounded-[28px] sm:mx-6 sm:mb-6 lg:mx-8">
         <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-hero-surface">
           <img
             src={earthHorizon}
@@ -52,10 +55,18 @@ const HeroSection = () => {
             <p className="mt-1 text-xs text-hero-muted sm:text-sm">Design · Development · Digital</p>
           </div>
         </div>
-        <div className="absolute bottom-0 left-1/2 z-10 flex max-w-[calc(100%-2rem)] -translate-x-1/2 translate-y-1/2 items-center gap-3 rounded-full bg-card px-4 py-3 text-[10px] font-bold text-card-foreground shadow-[var(--shadow-soft)] sm:gap-6 sm:px-7 sm:text-xs">
-          <span className="whitespace-nowrap">Graphic Design</span><span className="h-3 w-px bg-border" />
-          <span className="whitespace-nowrap">UI/UX Design</span><span className="hidden h-3 w-px bg-border sm:block" />
-          <span className="hidden whitespace-nowrap sm:block">Web Development</span><ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-primary" />
+        <div className="absolute bottom-0 left-1/2 z-10 flex w-[calc(100%-2rem)] max-w-max -translate-x-1/2 translate-y-1/2 items-center overflow-x-auto rounded-full bg-card px-4 py-3 text-[10px] font-bold text-card-foreground shadow-[var(--shadow-soft)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:w-auto sm:px-7 sm:text-xs">
+          {HERO_SERVICES.map((service, index) => (
+            <div key={service.slug} className="flex shrink-0 items-center">
+              {index > 0 && <span className="mx-3 h-3 w-px bg-border sm:mx-5" aria-hidden="true" />}
+              <Link to={`/services/${service.slug}`} className="whitespace-nowrap transition-colors hover:text-primary">
+                {service.title}
+              </Link>
+            </div>
+          ))}
+          <Link to="#services" aria-label="View all services" className="ml-3 shrink-0 text-primary transition-transform hover:translate-x-0.5 sm:ml-5">
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </motion.div>
     </section>
