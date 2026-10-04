@@ -127,6 +127,7 @@ const navSections: NavSection[] = [
       { label: 'Core Agency Team', icon: UserCheck, path: '/superadmin', tab: 'team' },
       { label: 'Client Database', icon: UserSquare, path: '/superadmin/clients' },
       { label: 'Talent Applicants', icon: ClipboardList, path: '/superadmin/applicants', badge: 'Vetting', badgeColor: 'bg-orange-100 text-orange-800 border-orange-200' },
+      { label: 'Talent Activity', icon: Activity, path: '/superadmin/activity', badge: 'Audit', badgeColor: 'bg-primary/10 text-primary border-primary/20' },
     ],
   },
   {

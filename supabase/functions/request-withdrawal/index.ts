@@ -11,7 +11,6 @@ const CEO_EMAIL = "primehaven26@gmail.com";
 const MIN_WITHDRAWAL = 100;
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -58,12 +57,15 @@ serve(withCors(async (req) => {
     // Payout method must belong to the caller
     const { data: method } = await admin
       .from("user_payout_methods")
-      .select("id, provider, phone_number, account_name")
+      .select("id, provider, phone_number, account_name, withdrawal_available_at")
       .eq("id", payoutMethodId)
       .eq("user_id", userId)
       .maybeSingle();
     if (!method) {
       return json({ error: "payout_method_not_found", message: "That payout method could not be found on your account." }, 404);
+    }
+    if (new Date(method.withdrawal_available_at).getTime() > Date.now()) {
+      return json({ error: "payout_method_hold", message: "This payout method is under a 24-hour security hold." }, 400);
     }
 
     // Earned salary
