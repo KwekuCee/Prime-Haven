@@ -98,7 +98,7 @@ const BlogSection = () => {
   if (posts.length === 0) return null;
 
   return (
-    <section id="blog" className="py-24 relative overflow-hidden bg-[#07090e] text-white border-y border-white/10">
+    <section id="blog" className="py-24 relative overflow-hidden bg-ink text-on-ink border-y border-white/10">
       {/* Background subtle radial ambient glows */}
       <div className="pointer-events-none absolute -top-40 left-1/4 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[130px]" />
       <div className="pointer-events-none absolute -bottom-40 right-1/4 h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[140px]" />
@@ -116,7 +116,7 @@ const BlogSection = () => {
             <Newspaper className="w-3.5 h-3.5" />
             Agency Dispatches &amp; Stories
           </div>
-          <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight text-white leading-[1.1]">
+          <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight text-on-ink leading-[1.1]">
             Our <span className="display-italic text-primary">Insights</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-zinc-400 leading-relaxed max-w-2xl">
@@ -132,8 +132,8 @@ const BlogSection = () => {
               onClick={() => setActiveCategory(cat)}
               className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition-all duration-200 ${
                 activeCategory === cat
-                  ? 'bg-primary text-white shadow-[0_0_20px_hsla(13,100%,58%,0.4)]'
-                  : 'bg-white/[0.05] text-zinc-400 hover:text-white hover:bg-white/[0.1]'
+                  ? 'bg-primary text-on-ink shadow-[0_0_20px_hsla(13,100%,58%,0.4)]'
+                  : 'bg-white/[0.05] text-zinc-400 hover:text-on-ink hover:bg-white/[0.1]'
               }`}
             >
               {cat === 'all' ? 'All Stories' : cat}
@@ -186,7 +186,7 @@ const BlogSection = () => {
                   </div>
 
                   <Link to={`/blog/${featuredPost.slug}`}>
-                    <h3 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-white group-hover:text-primary transition-colors leading-[1.2]">
+                    <h3 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-on-ink group-hover:text-primary transition-colors leading-[1.2]">
                       {featuredPost.title}
                     </h3>
                   </Link>
@@ -255,7 +255,7 @@ const BlogSection = () => {
                   </div>
 
                   <Link to={`/blog/${post.slug}`}>
-                    <h4 className="text-lg font-heading font-bold text-white group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                    <h4 className="text-lg font-heading font-bold text-on-ink group-hover:text-primary transition-colors line-clamp-2 leading-snug">
                       {post.title}
                     </h4>
                   </Link>
@@ -269,7 +269,7 @@ const BlogSection = () => {
                   <span className="text-[11px] text-zinc-500">{post.author_name || 'Staff'}</span>
                   <Link
                     to={`/blog/${post.slug}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 group-hover:text-primary transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-on-ink/90 group-hover:text-primary transition-colors"
                   >
                     Read <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </Link>
@@ -292,7 +292,7 @@ const BlogSection = () => {
               <Mail className="w-4 h-4" />
               Direct to your inbox
             </div>
-            <h3 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
+            <h3 className="text-2xl sm:text-3xl font-heading font-extrabold text-on-ink">
               Subscribe to Prime Haven Dispatches
             </h3>
             <p className="text-sm text-zinc-400 leading-relaxed">
@@ -308,12 +308,12 @@ const BlogSection = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full sm:min-w-[280px] bg-black/50 border-white/15 text-white placeholder:text-zinc-500 rounded-full h-11 px-5 focus-visible:ring-primary"
+              className="w-full sm:min-w-[280px] bg-black/50 border-white/15 text-on-ink placeholder:text-zinc-500 rounded-full h-11 px-5 focus-visible:ring-primary"
             />
             <Button
               type="submit"
               disabled={subscribing}
-              className="h-11 px-7 rounded-full bg-primary text-white font-semibold hover:bg-primary/90 transition-all shadow-[0_0_20px_hsla(13,100%,58%,0.3)] shrink-0"
+              className="h-11 px-7 rounded-full bg-primary text-on-ink font-semibold hover:bg-primary/90 transition-all shadow-[0_0_20px_hsla(13,100%,58%,0.3)] shrink-0"
             >
               {subscribing ? 'Subscribing...' : 'Subscribe'}
             </Button>
@@ -326,7 +326,7 @@ const BlogSection = () => {
             <Button
               variant="outline"
               size="lg"
-              className="rounded-full border-white/20 bg-white/[0.04] text-white hover:bg-white/[0.1] hover:border-white/40 font-semibold px-8"
+              className="rounded-full border-white/20 bg-white/[0.04] text-on-ink hover:bg-white/[0.1] hover:border-white/40 font-semibold px-8"
             >
               Explore All News &amp; Articles <ArrowRight className="w-4 h-4 ml-2 text-primary" />
             </Button>

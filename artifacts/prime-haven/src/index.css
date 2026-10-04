@@ -10,6 +10,9 @@
     --foreground: 24 10% 8%;
 
     --card: 0 0% 100%;
+    --ink: 222 40% 6%;
+    --ink-soft: 222 35% 8%;
+    --on-ink: 0 0% 100%;
     --card-foreground: 24 10% 8%;
 
     --popover: 0 0% 100%;
@@ -72,6 +75,9 @@
     --foreground: 33 40% 96%;
 
     --card: 24 10% 10%;
+    --ink: 222 40% 6%;
+    --ink-soft: 222 35% 8%;
+    --on-ink: 0 0% 100%;
     --card-foreground: 33 40% 96%;
 
     --popover: 24 10% 10%;
