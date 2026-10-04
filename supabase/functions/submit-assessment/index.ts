@@ -6,6 +6,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json, TOKEN_RE, getSetting, limited, emailShell, escapeHtml, safePublicOrigin } from "../_shared/applicants.ts";
 import { sendEmail, FROM_ADDRESS, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
+import { withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -40,7 +41,7 @@ async function sendResultEmail(applicant: any, result: {
   });
 }
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -152,4 +153,4 @@ serve(async (req: Request): Promise<Response> => {
     console.error("submit-assessment error:", err);
     return json({ success: false, error: "unexpected_error" }, 500);
   }
-});
+}));

@@ -1,3 +1,14 @@
+# App Improvement Phases (from whole-app review)
+- [x] Phase 1: Backend functions only accept requests from Prime Haven sites (shared origin check, deployed)
+- [ ] Phase 2: Protect all admin pages at one central point
+- [ ] Phase 3: Merge the three copy-pasted department admin dashboards into one
+- [ ] Phase 4: Move page data loading to the shared data-loading system (incremental)
+- [ ] Phase 5: Applicant funnel drop-off tracking (video, quiz, payment) + admin view
+- [ ] Phase 6: UI cleanup — theme colors, empty states, icon-button labels, consistent loading skeletons, remove dead dark-mode code
+- [ ] Phase 7: Architecture — type money/scoring logic, shared function boilerplate, load heavy extras only where needed
+- [ ] Phase 8: Features — request-changes flow, payout reconciliation, in-app price estimator, unified admin audit log
+- Known pre-existing bug: seed-admin function has a duplicate variable and won't deploy
+
 # Security, Performance, and Mobile Polish Pass
 
 ## Current request

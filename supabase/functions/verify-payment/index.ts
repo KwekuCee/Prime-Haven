@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { withCors } from "../_shared/cors.ts";
 
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY");
 const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
@@ -39,7 +40,7 @@ const allowedOrigin = (value: string | null) => {
   return fallback;
 };
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -242,4 +243,4 @@ serve(async (req: Request): Promise<Response> => {
     console.error("Error in verify-payment:", error);
     return json({ success: false, error: "server_error" }, 500);
   }
-});
+}));

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
+import { withCors } from "../_shared/cors.ts";
 
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -21,7 +22,7 @@ function encodeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -167,4 +168,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

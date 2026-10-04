@@ -4,6 +4,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json, limited } from "../_shared/applicants.ts";
+import { withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -26,7 +27,7 @@ const EXT_MIME: Record<string, string[]> = {
   svg: ["image/svg+xml"],
 };
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -74,4 +75,4 @@ serve(async (req: Request): Promise<Response> => {
     console.error("applicant-upload-url error:", err);
     return json({ success: false, error: "unexpected_error" }, 500);
   }
-});
+}));

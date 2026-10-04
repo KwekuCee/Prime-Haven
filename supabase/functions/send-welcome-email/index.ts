@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { sendEmail, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
+import { withCors } from "../_shared/cors.ts";
 
 
 const corsHeaders = {
@@ -190,7 +191,7 @@ function buildPlainText(name: string): string {
   ].join('\n');
 }
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -234,4 +235,4 @@ serve(async (req: Request): Promise<Response> => {
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
-});
+}));

@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { alertOwner, INFO_ADDRESS } from "../_shared/resend.ts";
+import { withCors } from "../_shared/cors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +21,7 @@ const Body = z.object({
   message: z.string().trim().max(500).nullable().optional(),
 });
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ success: false, message: "Method not allowed" }, 405);
   try {
@@ -55,4 +56,4 @@ Deno.serve(async (req) => {
     console.error("submit-consultation error:", e);
     return json({ success: false, message: "Something went wrong. Please try again." }, 500);
   }
-});
+}));

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendEmail as resendSend, FROM_ADDRESS } from "../_shared/resend.ts";
+import { withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -73,7 +74,7 @@ async function getDesignerDiscordChannels(supabase: any, designerId: string): Pr
   return Array.from(channels);
 }
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -226,4 +227,4 @@ serve(async (req: Request): Promise<Response> => {
     console.error("Error in notify-designer:", error);
     return new Response(JSON.stringify({ success: false, error: "server_error" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
   }
-});
+}));
