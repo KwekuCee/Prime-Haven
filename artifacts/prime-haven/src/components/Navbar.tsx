@@ -168,7 +168,7 @@ const Navbar = () => {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1320px] rounded-[20px] border border-white/20 bg-ink/95 shadow-[0_14px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-all duration-300 sm:top-5 sm:left-6 sm:right-6"
+      className="nav-glass fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1320px] rounded-[20px] border border-on-ink/15 backdrop-blur-2xl transition-all duration-300 sm:top-5 sm:left-6 sm:right-6"
     >
       <div className="px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 lg:h-16">

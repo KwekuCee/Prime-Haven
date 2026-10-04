@@ -89,6 +89,8 @@
     --hero-foreground: 0 0% 100%;
     --hero-muted: 32 30% 89%;
     --hero-shade: linear-gradient(180deg, hsl(var(--hero-surface) / 0.28) 0%, transparent 42%, hsl(var(--hero-surface) / 0.58) 100%);
+    --nav-glass: linear-gradient(135deg, hsl(var(--ink) / 0.88), hsl(var(--ink-soft) / 0.72));
+    --panel-scrim: linear-gradient(180deg, hsl(var(--ink) / 0.08) 0%, hsl(var(--ink) / 0.72) 58%, hsl(var(--ink) / 0.98) 100%);
 
     --radius: 1.25rem;
 
@@ -107,6 +109,7 @@
     --glow-strong: 0 30px 80px -24px hsla(13, 100%, 58%, 0.55);
     --shadow-soft: 0 1px 2px hsla(24, 10%, 8%, 0.04), 0 12px 32px -14px hsla(24, 10%, 8%, 0.12);
     --shadow-lift: 0 2px 4px hsla(24, 10%, 8%, 0.05), 0 28px 60px -22px hsla(24, 10%, 8%, 0.2);
+    --shadow-glass: inset 0 1px 0 hsl(var(--on-ink) / 0.12), 0 18px 50px -20px hsl(var(--ink) / 0.65);
     --grid-line: hsla(24, 12%, 8%, 0.055);
 
     --sidebar-background: 0 0% 100%;
@@ -258,6 +261,8 @@
   .border-hero-foreground\/60 { border-color: hsl(var(--hero-foreground) / 0.6); }
   .hover\:bg-hero-foreground\/10:hover { background-color: hsl(var(--hero-foreground) / 0.1); }
   .hero-image-shade { background: var(--hero-shade); }
+  .nav-glass { background: var(--nav-glass); box-shadow: var(--shadow-glass); }
+  .panel-scrim { background: var(--panel-scrim); }
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);
