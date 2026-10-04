@@ -35,7 +35,7 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      <motion.div {...reveal(0.32)} className="relative mx-4 mb-5 min-h-0 flex-1 rounded-[28px] sm:mx-6 sm:mb-6 lg:mx-8">
+      <motion.div {...reveal(0.32)} className="relative mx-4 mb-20 min-h-0 flex-1 rounded-[28px] sm:mx-6 sm:mb-6 lg:mx-8">
         <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-hero-surface">
           <img
             src={earthHorizon}
