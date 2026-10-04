@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DashboardLayout from '@/components/DashboardLayout';
 import ClientVerifyBanner from '@/components/client/ClientVerifyBanner';
+import PriceEstimator from '@/components/client/PriceEstimator';
 import ClientProjectReview from '@/components/client/ClientProjectReview';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -270,6 +271,8 @@ const ClientDashboard = () => {
                     <h1 className="text-2xl font-heading font-black">Your account</h1>
                     <p className="text-sm text-muted-foreground mt-1">Everything our team sees about your work with Prime Haven.</p>
                 </div>
+
+                <PriceEstimator />
 
                 {/* Client record */}
                 <div className="rounded-2xl border border-border/60 bg-card/40 p-5 sm:p-6">

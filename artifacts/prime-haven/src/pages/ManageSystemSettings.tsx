@@ -18,6 +18,7 @@ import { invalidateSystemSettings } from '@/lib/systemSettings';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import SeoIndexHealth from '@/components/admin/SeoIndexHealth';
+import CreateAdminCard from '@/components/admin/CreateAdminCard';
 
 type Json = any;
 
@@ -221,6 +222,8 @@ const ManageSystemSettings = () => {
             Reload
           </Button>
         </div>
+
+        <CreateAdminCard />
 
         {/* Points */}
         <Card>
