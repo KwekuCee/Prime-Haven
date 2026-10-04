@@ -25,7 +25,7 @@ const ContactSection = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="contact" className="py-24 relative bg-secondary/30">
+    <section id="contact" className="py-24 relative overflow-hidden bg-ink text-on-ink border-t border-white/10">
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <motion.div
@@ -36,10 +36,10 @@ const ContactSection = () => {
           className="text-center mb-16"
         >
           <span className="text-primary font-medium uppercase tracking-wider text-sm">{t('contact.tag')}</span>
-          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6 text-foreground">
+          <h2 className="text-4xl md:text-5xl font-heading font-bold mt-4 mb-6 text-on-ink">
             {t('contact.title1')} <span className="text-gradient">{t('contact.title2')}</span>
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+          <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
             {t('contact.description')}
           </p>
         </motion.div>
@@ -59,19 +59,19 @@ const ContactSection = () => {
             </Button>
           </Link>
           <BookConsultationDialog>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto group">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto group border-white/20 bg-white/5 text-on-ink hover:bg-white/10">
               <Calendar className="mr-2 w-5 h-5" />
               {t('contact.bookConsultation')}
             </Button>
           </BookConsultationDialog>
           <a href="https://wa.me/233550160237?text=Hi%20Prime%20Haven%2C%20I'd%20like%20to%20start%20a%20project" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="lg" className="w-full sm:w-auto group">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto group border-white/20 bg-white/5 text-on-ink hover:bg-white/10">
               <MessageCircle className="mr-2 w-5 h-5" />
               {t('contact.whatsapp')}
             </Button>
           </a>
           <a href="mailto:primehaven26@gmail.com">
-            <Button variant="outline" size="lg" className="w-full sm:w-auto group">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto group border-white/20 bg-white/5 text-on-ink hover:bg-white/10">
               <Mail className="mr-2 w-5 h-5" />
               {t('contact.email')}
             </Button>
@@ -91,7 +91,7 @@ const ContactSection = () => {
               key={social.label}
               href={social.href}
               whileHover={{ y: -4 }}
-              className="w-12 h-12 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+              className="w-12 h-12 rounded-full border border-white/15 bg-white/5 flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary/50 transition-colors"
               aria-label={social.label}
             >
               <social.icon className="w-5 h-5" />

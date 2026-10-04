@@ -81,7 +81,7 @@ const JoinSection = () => {
                 </div>
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-zinc-300">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                  <span>Stage-gated payments — funds released only as deliverables are approved</span>
+                  <span>Clear upfront payment with delivery released after your approval</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-zinc-300">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />

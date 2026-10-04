@@ -34,7 +34,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-border/40 bg-background/60">
+    <footer className="border-t border-white/10 bg-ink text-on-ink pb-20 lg:pb-0">
       <div className="container mx-auto px-6">
         {/* Top */}
         <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
@@ -47,11 +47,11 @@ const Footer = () => {
                 className="block h-[52px] w-auto max-w-full object-contain"
               />
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <p className="text-sm text-zinc-400 leading-relaxed max-w-xs">
               A Ghanaian design and tech studio. Clients brief us, our vetted designers and developers do the work, and we stay accountable for what ships.
             </p>
             <div className="space-y-2">
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2.5 text-sm text-zinc-400">
                 <MapPin className="w-4 h-4 text-primary shrink-0" />
                 Accra, Ghana
               </div>
@@ -66,7 +66,7 @@ const Footer = () => {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="w-9 h-9 rounded-xl border border-border/70 bg-card/30 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all"
+                  className="w-9 h-9 rounded-xl border border-white/15 bg-white/5 flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all"
                 >
                   <Icon className="w-4 h-4" />
                 </a>
@@ -81,21 +81,21 @@ const Footer = () => {
             { title: 'Legal & Access', items: links.legal },
           ].map((col) => (
             <div key={col.title} className="space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground/50">{col.title}</h4>
+              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">{col.title}</h4>
               <ul className="space-y-2.5">
                 {col.items.map((item) => (
                   <li key={item.label}>
                     {item.href.startsWith('/') && !item.href.startsWith('/#') ? (
                       <Link
                         to={item.href}
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium"
+                        className="text-sm text-zinc-400 hover:text-primary transition-colors font-medium"
                       >
                         {item.label}
                       </Link>
                     ) : (
                       <a
                         href={item.href}
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium"
+                        className="text-sm text-zinc-400 hover:text-primary transition-colors font-medium"
                       >
                         {item.label}
                       </a>
@@ -108,18 +108,18 @@ const Footer = () => {
         </div>
 
         {/* Bottom bar */}
-        <div className="py-5 border-t border-border/30 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground/60">
+        <div className="py-5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-zinc-500">
             © {currentYear} Prime Haven. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <Link to="/terms" className="text-xs text-muted-foreground/60 hover:text-primary transition-colors">
+            <Link to="/terms" className="text-xs text-zinc-500 hover:text-primary transition-colors">
               Terms
             </Link>
-            <Link to="/privacy" className="text-xs text-muted-foreground/60 hover:text-primary transition-colors">
+            <Link to="/privacy" className="text-xs text-zinc-500 hover:text-primary transition-colors">
               Privacy
             </Link>
-            <span className="text-xs text-muted-foreground/40">Made with ❤️ in Ghana</span>
+            <span className="text-xs text-zinc-500">Made with care in Ghana</span>
           </div>
         </div>
       </div>

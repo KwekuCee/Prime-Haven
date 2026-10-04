@@ -31,7 +31,7 @@ const freelancerFAQs = [
   },
   {
     q: "Is there a fee?",
-    a: "There's a one-time$10 membership. Everything about fees and revenue share is explained during onboarding before you commit."
+    a: "There's a one-time $15 joining fee after you pass screening. Everything about fees and the 70% professional share is explained before payment."
   },
   {
     q: "How does work reach me?",
@@ -116,7 +116,7 @@ const FAQSection = () => {
             <Accordion type="single" collapsible className="divide-y divide-border/60 border-y border-border/60">
               {activeFAQs.map((faq, i) => (
                 <AccordionItem key={`${activeTab}-${i}`} value={`item-${i}`} className="border-none">
-                  <AccordionTrigger className="text-left text-foreground hover:no-underline py-6 text-lg font-semibold data-[state=open]:text-primary">
+                  <AccordionTrigger className="relative pl-5 text-left font-heading text-foreground hover:no-underline py-6 text-lg font-semibold before:absolute before:bottom-5 before:left-0 before:top-5 before:w-px before:origin-top before:scale-y-0 before:bg-primary before:transition-transform data-[state=open]:before:scale-y-100">
                     {faq.q}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground leading-relaxed pb-7 text-base max-w-xl">

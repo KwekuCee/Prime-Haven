@@ -219,7 +219,7 @@ const DrillDownContent = ({ stat, stats, salary }: { stat: string; stats: StatsD
   if (stat === 'satisfaction') {
     return (
       <div className="space-y-4">
-        <p className="text-muted-foreground text-sm">Based on PH approval rate across all submissions</p>
+        <p className="text-muted-foreground text-sm">Based on client approval across completed submissions</p>
         <div className="flex items-center justify-center py-4">
           <div className="relative w-32 h-32">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -419,7 +419,7 @@ const StatsSection = () => {
                 )}
 
                 <div className={`relative z-10 h-full ${stat.highlight ? 'flex flex-col items-start justify-center gap-6' : 'flex items-center gap-5'}`}>
-                  <div className="w-14 h-14 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <div className="w-14 h-14 shrink-0 border-b-2 border-primary flex items-center justify-center">
                     <stat.icon className="w-7 h-7 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">

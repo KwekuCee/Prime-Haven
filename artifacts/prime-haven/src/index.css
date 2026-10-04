@@ -2,16 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prime Haven Design System — warm cream canvas, ember-orange accent, ink-black CTAs */
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-0.woff2') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-1.woff2') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-2.woff2') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-3.woff2') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sora';
+  src: url('/fonts/sora-4.woff2') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sora';
+  src: url('/fonts/sora-5.woff2') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sora';
+  src: url('/fonts/sora-6.woff2') format('truetype');
+  font-weight: 800;
+  font-display: swap;
+}
+
+/* Prime Haven Design System — editorial white canvas, signal orange, ink-black surfaces */
 
 @layer base {
   :root {
-    --background: 30 33% 97%;
-    --foreground: 24 10% 8%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 4%;
 
     --card: 0 0% 100%;
-    --ink: 222 40% 6%;
-    --ink-soft: 222 35% 8%;
+    --ink: 0 0% 4%;
+    --ink-soft: 0 0% 8%;
     --on-ink: 0 0% 100%;
     --card-foreground: 24 10% 8%;
 
@@ -21,11 +70,11 @@
     --primary: 13 100% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 32 30% 92%;
+    --secondary: 0 0% 95%;
     --secondary-foreground: 24 10% 12%;
 
-    --muted: 32 26% 93%;
-    --muted-foreground: 26 8% 42%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 38%;
 
     --accent: 13 100% 58%;
     --accent-foreground: 0 0% 100%;
@@ -33,8 +82,8 @@
     --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 32 22% 88%;
-    --input: 32 22% 90%;
+    --border: 0 0% 85%;
+    --input: 0 0% 88%;
     --ring: 13 100% 58%;
     --hero-surface: 24 12% 7%;
     --hero-foreground: 0 0% 100%;
@@ -44,7 +93,7 @@
     --radius: 1.25rem;
 
     /* Bartoon-inspired tokens */
-    --ink: 24 12% 7%;
+    --ink: 0 0% 4%;
     --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
     --gradient-spectrum: linear-gradient(90deg,
         hsl(205 90% 62%) 0%,
@@ -133,8 +182,8 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    font-weight: 500;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
     min-height: 100vh;
   }
 
@@ -170,7 +219,7 @@
   h4,
   h5,
   h6 {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Sora', system-ui, sans-serif;
     font-weight: 700;
     letter-spacing: -0.035em;
   }
@@ -184,6 +233,20 @@
 
   .text-muted-foreground {
     font-weight: 500;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 

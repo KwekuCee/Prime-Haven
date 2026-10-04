@@ -20,8 +20,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Space Grotesk", "Plus Jakarta Sans", "system-ui", "sans-serif"],
-        body: ["DM Sans", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        heading: ["Sora", "system-ui", "sans-serif"],
+        body: ["Manrope", "system-ui", "sans-serif"],
       },
 
       colors: {
