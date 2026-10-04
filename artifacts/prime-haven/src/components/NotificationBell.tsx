@@ -105,7 +105,7 @@ const NotificationBell = () => {
                     <CheckCheck className="w-3 h-3" /> All read
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setOpen(false)}>
+                <Button variant="ghost" size="icon" aria-label="Close notifications" className="h-6 w-6" onClick={() => setOpen(false)}>
                   <X className="w-3 h-3" />
                 </Button>
               </div>

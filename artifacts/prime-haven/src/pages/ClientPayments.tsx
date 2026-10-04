@@ -174,6 +174,7 @@ const ClientPayments = () => {
                                                   size="icon"
                                                   className="h-8 w-8 text-muted-foreground hover:text-primary"
                                                   title="Download Invoice PDF"
+                                                  aria-label="Download invoice PDF"
                                                   onClick={() => generateInvoicePDF({
                                                     id: payment.id,
                                                     clientEmail: user?.email || undefined,

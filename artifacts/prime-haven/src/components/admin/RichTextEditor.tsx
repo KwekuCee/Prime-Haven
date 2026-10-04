@@ -79,6 +79,7 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       className="h-8 w-8"
       onClick={onClick}
       title={title}
+      aria-label={title}
     >
       {children}
     </Button>
