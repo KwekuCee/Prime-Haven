@@ -26,7 +26,7 @@ const PayoutReconciliation = () => {
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: earnings }, { data: withdrawals }] = await Promise.all([
-      supabase.from('job_earnings').select('designer_id, amount, status'),
+      (supabase as any).from('job_earnings').select('designer_id, amount, status'),
       supabase.from('withdrawals').select('id, user_id, amount, status, korapay_reference, created_at'),
     ]);
     const map = new Map<string, Row>();
