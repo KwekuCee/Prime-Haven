@@ -11,7 +11,6 @@ const CEO_EMAIL = "primehaven26@gmail.com";
 const MIN_WITHDRAWAL = 100;
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -55,86 +54,24 @@ serve(withCors(async (req) => {
       return json({ error: "missing_payout_method", message: "Select a Mobile Money payout method first." }, 400);
     }
 
-    // Payout method must belong to the caller
-    const { data: method } = await admin
-      .from("user_payout_methods")
-      .select("id, provider, phone_number, account_name")
-      .eq("id", payoutMethodId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!method) {
-      return json({ error: "payout_method_not_found", message: "That payout method could not be found on your account." }, 404);
-    }
-
-    // Earned salary
     const { data: dd } = await admin
       .from("designer_details")
       .select("salary_estimated, professional_title")
       .eq("user_id", userId)
       .maybeSingle();
-    const earned = Number(dd?.salary_estimated || 0);
-
-    // Amounts already requested / paid out are locked
-    const { data: existing } = await admin
-      .from("withdrawals")
-      .select("amount, status")
-      .eq("user_id", userId);
-    const locked = (existing || [])
-      .filter((w: any) => !["failed", "rejected", "cancelled"].includes(String(w.status)))
-      .reduce((s: number, w: any) => s + Number(w.amount || 0), 0);
-
-    const available = Math.max(0, earned - locked);
-
-    // Rule 1: must have more than$10 of salary available
-    if (available < MIN_WITHDRAWAL) {
-      return json(
-        {
-          error: "below_minimum",
-          available,
-          message: `You have less than GH₵${MIN_WITHDRAWAL} salary available (current balance GH₵${available.toFixed(2)}). Keep earning points — withdrawals unlock at GH₵${MIN_WITHDRAWAL}.`,
-        },
-        400,
-      );
+    const amountInput = Number.isFinite(requestedAmount) && requestedAmount > 0 ? requestedAmount : null;
+    const { data: withdrawalResult, error: requestError } = await admin.rpc("request_talent_withdrawal_service", {
+      p_user_id: userId, p_payout_method_id: payoutMethodId, p_amount: amountInput,
+    });
+    if (requestError || !withdrawalResult) {
+      const message = requestError?.message || "Could not save your withdrawal request.";
+      return json({ error: "withdrawal_not_created", message }, message.includes("security hold") || message.includes("Minimum") || message.includes("already open") || message.includes("Insufficient") ? 400 : 500);
     }
-
-    const amount = Number.isFinite(requestedAmount) && requestedAmount > 0 ? requestedAmount : available;
-    if (amount < MIN_WITHDRAWAL) {
-      return json({ error: "below_minimum", available, message: `Minimum withdrawal is GH₵${MIN_WITHDRAWAL}.` }, 400);
-    }
-    if (amount > available) {
-      return json({ error: "insufficient_balance", available, message: `You can withdraw up to GH₵${available.toFixed(2)}.` }, 400);
-    }
-
-    // No duplicate open requests
-    const { data: openReq } = await admin
-      .from("withdrawals")
-      .select("id")
-      .eq("user_id", userId)
-      .in("status", ["pending", "processing"])
-      .limit(1);
-    if (openReq && openReq.length > 0) {
-      return json({ error: "request_pending", message: "You already have a withdrawal request awaiting approval." }, 400);
-    }
-
-    const reference = `ph_wd_${Date.now()}_${userId.slice(0, 8)}`;
-
-    const { data: wd, error: insertErr } = await admin
-      .from("withdrawals")
-      .insert({
-        user_id: userId,
-        payout_method_id: payoutMethodId,
-        amount,
-        currency: "GHS",
-        status: "pending",
-        korapay_reference: reference,
-      })
-      .select("id, amount, created_at")
-      .single();
-
-    if (insertErr || !wd) {
-      console.error("withdrawal insert failed:", insertErr);
-      return json({ error: "db_insert_failed", message: "Could not save your withdrawal request. Please try again." }, 500);
-    }
+    const result = withdrawalResult as { id: string; amount: number; created_at: string; reference: string; provider: string; phone_number: string; account_name: string };
+    const wd = { id: result.id, amount: result.amount, created_at: result.created_at };
+    const amount = Number(result.amount);
+    const reference = result.reference;
+    const method = { provider: result.provider, phone_number: result.phone_number, account_name: result.account_name };
 
     // Requester profile for the alert email
     const { data: profile } = await admin

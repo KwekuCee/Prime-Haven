@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User,
-  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp, ShoppingBag
+  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp, ShoppingBag, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const effectiveIsClient = isClient || location.pathname.startsWith('/client');
   const isAffiliateMode = location.pathname.startsWith('/affiliate');
 
-  let navItems = [];
+  let navItems: { label: string; icon: typeof LayoutDashboard; path: string }[] = [];
   if (isAffiliateMode) {
     navItems = [
       { label: 'Overview', icon: LayoutDashboard, path: '/affiliate/dashboard' },
@@ -93,18 +93,21 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     ];
   } else {
     navItems = [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'Command Center', icon: LayoutDashboard, path: '/dashboard' },
       { label: 'Marketplace', icon: ShoppingBag, path: '/marketplace' },
       { label: 'Submit Work', icon: Upload, path: '/submit-work' },
       { label: 'Partner Program', icon: TrendingUp, path: '/affiliate/dashboard' },
-      { label: 'Talk to the Designer', icon: MessageSquare, path: '/messages' },
+      { label: 'Messages', icon: MessageSquare, path: '/messages' },
       { label: 'Payments', icon: Wallet, path: '/payments' },
+      { label: 'Activity', icon: Activity, path: '/activity' },
       { label: 'Settings', icon: Settings, path: '/settings' },
       { label: 'Install App', icon: Download, path: '/install' },
     ];
   }
 
-  const pageTitle = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
+  const pageTitle = location.pathname === '/dashboard/smm'
+    ? 'SMM Studio'
+    : navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 
   return (
     <div className="min-h-screen bg-transparent flex w-full relative z-0">
@@ -142,15 +145,18 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 PH
               </Link>
             )}
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground transition-colors">
+            <Button variant="ghost" size="icon" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex w-7 h-7 rounded-md items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+              className="hidden lg:flex w-7 h-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
             >
               <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
           </div>
 
           {/* Navigation */}
@@ -244,7 +250,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               )}
             </Link>
 
-            <button
+            <Button
+              variant="ghost"
+              aria-label="Sign out"
               onClick={handleLogout}
               className={`
                 flex items-center gap-3 w-full rounded-xl text-muted-foreground 
@@ -255,7 +263,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             >
               <LogOut className="w-4 h-4 flex-shrink-0" />
               {!collapsed && <span className="text-xs font-medium">Logout</span>}
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -263,11 +271,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
-        <header className="h-14 border-b border-white/5 flex items-center justify-between px-4 lg:px-6 bg-background/40 backdrop-blur-3xl sticky top-0 z-30 shadow-lg">
+        <header className="h-14 border-b border-border flex items-center justify-between px-4 lg:px-6 bg-background/85 backdrop-blur-xl sticky top-0 z-30 shadow-soft">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-foreground hover:text-primary transition-colors">
+            <Button variant="ghost" size="icon" aria-label="Open navigation" onClick={() => setSidebarOpen(true)} className="lg:hidden text-foreground hover:text-primary">
               <Menu className="w-5 h-5" />
-            </button>
+            </Button>
             <h1 className="text-base font-heading font-bold">{pageTitle}</h1>
           </div>
           <div className="flex items-center gap-2">
@@ -414,11 +422,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <Link
                   to="/dashboard"
                   className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
-                    location.pathname === '/dashboard' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                    (location.pathname === '/dashboard' || location.pathname === '/dashboard/smm') ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span className="text-[10px] tracking-tight">Workspace</span>
+                  <span className="text-[10px] tracking-tight">Command</span>
                 </Link>
 
                 <Link

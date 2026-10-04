@@ -67,45 +67,9 @@ const ClaimedContracts = () => {
         if (!user) return;
         setUnclaiming(claimId);
         try {
-            if (contractId) {
-                let rpcSuccess = false;
-                try {
-                    const { error } = await (supabase as any).rpc('release_job_contract', { p_contract_id: contractId });
-                    if (!error) rpcSuccess = true;
-                } catch { }
-
-                if (!rpcSuccess) {
-                    await (supabase as any)
-                        .from('job_contract_claims')
-                        .update({ status: 'cancelled' })
-                        .eq('id', claimId)
-                        .eq('designer_id', user.id);
-
-                    const { data: contractData } = await (supabase as any)
-                        .from('job_contracts')
-                        .select('active_designer_ids, active_designers_count')
-                        .eq('id', contractId)
-                        .single();
-
-                    const currentIds: string[] = contractData?.active_designer_ids || [];
-                    const newIds = currentIds.filter((id: string) => id !== user.id);
-                    const newCount = Math.max(0, (contractData?.active_designers_count || 1) - 1);
-
-                    await (supabase as any)
-                        .from('job_contracts')
-                        .update({
-                            active_designer_ids: newIds,
-                            active_designers_count: newCount,
-                        })
-                        .eq('id', contractId);
-                }
-            } else {
-                await supabase
-                    .from('job_contract_claims')
-                    .update({ status: 'cancelled' })
-                    .eq('id', claimId)
-                    .eq('designer_id', user.id);
-            }
+            if (!contractId) throw new Error('The linked contract could not be found.');
+            const { error } = await (supabase as any).rpc('release_job_contract', { p_contract_id: contractId });
+            if (error) throw error;
 
             localStorage.removeItem(`started_project_${user.id}`);
             toast({ title: 'Job Released 🔄', description: 'The project has been released back to the marketplace pool.' });

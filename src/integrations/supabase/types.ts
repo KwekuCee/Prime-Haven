@@ -2332,6 +2332,39 @@ export type Database = {
         }
         Relationships: []
       }
+      talent_activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          summary: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           bio: string
@@ -2497,6 +2530,7 @@ export type Database = {
           provider: string
           updated_at: string
           user_id: string
+          withdrawal_available_at: string
         }
         Insert: {
           account_name: string
@@ -2507,6 +2541,7 @@ export type Database = {
           provider: string
           updated_at?: string
           user_id: string
+          withdrawal_available_at?: string
         }
         Update: {
           account_name?: string
@@ -2517,6 +2552,7 @@ export type Database = {
           provider?: string
           updated_at?: string
           user_id?: string
+          withdrawal_available_at?: string
         }
         Relationships: []
       }
@@ -2762,8 +2798,22 @@ export type Database = {
       }
       claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
+      claim_withdrawal_for_payout_service: {
+        Args: { p_reference: string; p_withdrawal_id: string }
+        Returns: Json
+      }
       current_user_email: { Args: never; Returns: string }
       ensure_client_role: { Args: never; Returns: boolean }
+      finalise_withdrawal_payout_service: {
+        Args: {
+          p_admin_id: string
+          p_gateway: string
+          p_reference: string
+          p_status: string
+          p_withdrawal_id: string
+        }
+        Returns: Json
+      }
       find_or_create_client: {
         Args: { p_email: string; p_name: string; p_whatsapp?: string }
         Returns: string
@@ -2871,6 +2921,17 @@ export type Database = {
           username: string
         }[]
       }
+      manage_talent_payout_method_service: {
+        Args: {
+          p_account_name?: string
+          p_action: string
+          p_method_id?: string
+          p_phone_number?: string
+          p_provider?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       mark_affiliate_payout_paid: {
         Args: { p_payout_id: string }
         Returns: undefined
@@ -2935,6 +2996,14 @@ export type Database = {
       }
       request_project_revision: {
         Args: { p_feedback: string; p_submission_id: string }
+        Returns: Json
+      }
+      request_talent_withdrawal_service: {
+        Args: {
+          p_amount: number
+          p_payout_method_id: string
+          p_user_id: string
+        }
         Returns: Json
       }
       start_job_contract_work: {

@@ -288,7 +288,7 @@ const Messages = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-3.5rem)] flex overflow-hidden">
+      <div className="h-[calc(100dvh-7rem)] lg:h-[calc(100vh-3.5rem)] flex overflow-hidden">
         {/* Sidebar */}
         <div className={`w-full md:w-56 border-r border-border/60 bg-card/20 flex flex-col md:flex-shrink-0 ${selectedDesigner ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-3 border-b border-border/40 flex items-center gap-2">

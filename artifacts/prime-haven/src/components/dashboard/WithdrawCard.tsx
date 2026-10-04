@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUsdRate } from '@/hooks/useUsdRate';
 
-type Method = { id: string; provider: 'mtn' | 'vodafone' | 'airteltigo'; phone_number: string; account_name: string; is_default: boolean };
+type Method = { id: string; provider: 'mtn' | 'vodafone' | 'airteltigo'; phone_number: string; account_name: string; is_default: boolean; withdrawal_available_at: string };
 type Withdrawal = { id: string; amount: number; currency: string; status: string; created_at: string; failure_reason: string | null; korapay_reference: string | null };
 
 const PROVIDER_LABEL: Record<string, string> = { mtn: 'MTN MoMo', vodafone: 'Vodafone Cash', airteltigo: 'AirtelTigo Money' };
@@ -46,7 +46,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
 
   const refresh = async () => {
     const [{ data: m }, { data: w }, { data: dd }] = await Promise.all([
-      supabase.from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      (supabase as any).from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('id, amount, currency, status, created_at, failure_reason, korapay_reference').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
       supabase.from('designer_details').select('salary_estimated').eq('user_id', userId).maybeSingle(),
     ]);
@@ -78,23 +78,19 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
       toast.error('Fill all fields');
       return;
     }
-    const { error } = await supabase.from('user_payout_methods').insert({
-      user_id: userId,
-      provider: newMethod.provider,
-      phone_number: newMethod.phone_number.trim(),
-      account_name: newMethod.account_name.trim(),
-      is_default: methods.length === 0,
-    });
-    if (error) { toast.error(error.message); return; }
-    toast.success('Payment method saved');
+    setSubmitting(true);
+    const { data, error } = await supabase.functions.invoke('manage-payout-method', { body: { action: 'create', ...newMethod } });
+    setSubmitting(false);
+    if (error || data?.error) { toast.error(data?.error || error?.message || 'Could not save payout method'); return; }
+    toast.success('Payout method saved. Withdrawals to it unlock after 24 hours.');
     setNewMethod({ provider: 'mtn', phone_number: '', account_name: '' });
     setMethodOpen(false);
     refresh();
   };
 
   const deleteMethod = async (id: string) => {
-    const { error } = await supabase.from('user_payout_methods').delete().eq('id', id);
-    if (error) { toast.error(error.message); return; }
+    const { data, error } = await supabase.functions.invoke('manage-payout-method', { body: { action: 'delete', method_id: id } });
+    if (error || data?.error) { toast.error(data?.error || error?.message || 'Could not remove payout method'); return; }
     refresh();
   };
 
@@ -104,7 +100,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
       return;
     }
     if (effectiveBalance < 100) {
-      toast.error(`You have less than$10 salary available (current balance GH₵${effectiveBalance.toFixed(2)}). Withdrawals unlock at$10.`);
+      toast.error(`You need at least GH₵100 available. Your balance is GH₵${effectiveBalance.toFixed(2)}.`);
       return;
     }
     if (methods.length === 0) {
@@ -118,7 +114,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
 
   const submitWithdrawal = async () => {
     const amt = Number(amount);
-    if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum is$10'); return; }
+    if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum withdrawal is GH₵100'); return; }
     if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
     if (!selectedMethod) { toast.error('Select a Mobile Money payment method'); return; }
     setSubmitting(true);
@@ -168,7 +164,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
               <p className="text-2xl font-bold">{money.usd(effectiveBalance)}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Paid out as {money.ghs(effectiveBalance)}</p>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Minimum$10 • Mobile Money via Korapay</p>
+               <p className="text-xs text-muted-foreground mt-1">Minimum GH₵100 • Mobile Money via Korapay</p>
           </div>
           <Button onClick={openWithdrawDialog}>
             Withdraw
@@ -189,7 +185,8 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
                 <div key={m.id} className="flex items-center justify-between text-sm border border-border/60 rounded-md px-3 py-2">
                   <div>
                     <span className="font-medium">{PROVIDER_LABEL[m.provider]}</span>
-                    <span className="text-muted-foreground"> • {m.phone_number} • {m.account_name}</span>
+                    <span className="text-muted-foreground"> • ••••{m.phone_number.slice(-4)} • {m.account_name}</span>
+                    {new Date(m.withdrawal_available_at) > new Date() && <p className="mt-0.5 text-[10px] text-primary">24-hour security hold</p>}
                   </div>
                   <Button size="icon" aria-label="Delete" variant="ghost" onClick={() => deleteMethod(m.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
@@ -318,7 +315,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMethodOpen(false)}>Cancel</Button>
-            <Button onClick={addMethod}>Save</Button>
+            <Button onClick={addMethod} disabled={submitting}>{submitting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

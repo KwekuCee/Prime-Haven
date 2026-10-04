@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.manage_talent_payout_method(text, uuid, text, text, text);

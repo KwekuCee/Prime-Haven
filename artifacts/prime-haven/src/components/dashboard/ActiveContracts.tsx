@@ -200,25 +200,8 @@ const ActiveContracts = () => {
         if (!user) return;
         setStarting(projectId);
         try {
-            let rpcSuccess = false;
-            try {
-                const { error } = await (supabase as any).rpc('start_job_contract_work', { p_contract_id: projectId });
-                if (!error) rpcSuccess = true;
-            } catch { }
-
-            if (!rpcSuccess) {
-                await (supabase as any)
-                    .from('job_contract_claims')
-                    .update({ status: 'in_progress' })
-                    .eq('contract_id', projectId)
-                    .eq('designer_id', user.id);
-
-                await (supabase as any)
-                    .from('project_assignments')
-                    .update({ status: 'in_progress' })
-                    .eq('project_id', projectId)
-                    .eq('designer_id', user.id);
-            }
+            const { error } = await (supabase as any).rpc('start_job_contract_work', { p_contract_id: projectId });
+            if (error) throw error;
 
             const contract = contracts.find(c => c.id === projectId);
             localStorage.setItem(`started_project_${user.id}`, JSON.stringify({

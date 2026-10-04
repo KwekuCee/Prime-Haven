@@ -7,8 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 /**
  * Guards areas that belong to registered professionals only (Marketplace,
  * Partner Program). Accounts that exist purely as clients are sent back to
- * their own portal. Signed-out visitors are left alone so public pages that
- * use this guard can still redirect to login themselves.
+ * their own portal. Signed-out visitors are sent to the professional login.
  */
 const ProfessionalRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -19,14 +18,14 @@ const ProfessionalRoute = ({ children }: { children: ReactNode }) => {
     if (authLoading) return;
 
     if (!user) {
-      setChecking(false);
+      navigate('/login', { replace: true });
       return;
     }
 
     let cancelled = false;
 
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id);
@@ -34,10 +33,10 @@ const ProfessionalRoute = ({ children }: { children: ReactNode }) => {
       if (cancelled) return;
 
       const roles = (data || []).map((r: any) => String(r.role));
-      const clientOnly = roles.length > 0 && roles.every(r => r === 'client');
+      const isProfessional = roles.some((role) => role === 'designer' || role === 'superadmin' || role === 'masteradmin');
 
-      if (clientOnly) {
-        navigate('/client/dashboard', { replace: true });
+      if (error || !isProfessional) {
+        navigate(roles.includes('client') ? '/client/dashboard' : '/login', { replace: true });
         return;
       }
 

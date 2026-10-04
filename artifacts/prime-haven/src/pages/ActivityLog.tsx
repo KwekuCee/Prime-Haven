@@ -17,6 +17,8 @@ interface LogRow {
   timestamp: string | null;
 }
 
+interface TalentLogRow { id: string; user_id: string; action_type: string; summary: string; created_at: string; }
+
 const PAGE_SIZE = 25;
 
 const CATEGORIES: Record<string, { label: string; match: (a: string) => boolean; tone: string }> = {
@@ -37,6 +39,7 @@ const ActivityLog = () => {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const [talentRows, setTalentRows] = useState<TalentLogRow[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,11 +53,16 @@ const ActivityLog = () => {
     if (category === 'work') q = q.or('action_type.ilike.%submission%,action_type.ilike.%correction%,action_type.ilike.%client_%,action_type.ilike.%work_%,action_type.ilike.%project%,action_type.ilike.%approval%,action_type.ilike.%contract%');
     if (category === 'access') q = q.or('action_type.ilike.%login%,action_type.ilike.%role%,action_type.ilike.%user_%,action_type.ilike.%admin_%,action_type.ilike.%password%');
     if (category === 'comms') q = q.or('action_type.ilike.%email%,action_type.ilike.%broadcast%');
-    const { data, count } = await q;
+    const [{ data, count }, { data: talentData }] = await Promise.all([
+      q,
+      (supabase as any).from('talent_activity_logs').select('id, user_id, action_type, summary, created_at').order('created_at', { ascending: false }).limit(25),
+    ]);
     const list = (data || []) as LogRow[];
     setRows(list);
     setTotal(count || 0);
-    const ids = [...new Set(list.map((r) => r.admin_id).filter(Boolean))] as string[];
+    const talentList = (talentData || []) as TalentLogRow[];
+    setTalentRows(talentList);
+    const ids = [...new Set([...list.map((r) => r.admin_id), ...talentList.map((r) => r.user_id)].filter(Boolean))] as string[];
     if (ids.length) {
       const { data: profs } = await supabase.from('profiles').select('id, full_name, email').in('id', ids);
       setNames(new Map((profs || []).map((p: any) => [p.id, p.full_name || p.email])));
@@ -109,6 +117,13 @@ const ActivityLog = () => {
               })}
             </TableBody>
           </Table>
+        </div>
+        <div className="rounded-2xl border border-border bg-card overflow-x-auto">
+          <div className="border-b border-border p-5"><h2 className="font-heading text-base font-bold">Talent activity</h2><p className="text-xs text-muted-foreground">Protected work, messaging, and payout events.</p></div>
+          <Table><TableHeader><TableRow><TableHead>When</TableHead><TableHead>Action</TableHead><TableHead>Talent</TableHead><TableHead>Details</TableHead></TableRow></TableHeader><TableBody>
+            {talentRows.length === 0 && !loading && <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No talent activity found.</TableCell></TableRow>}
+            {talentRows.map((r) => <TableRow key={r.id}><TableCell className="whitespace-nowrap text-xs text-muted-foreground">{format(new Date(r.created_at), 'MMM d, HH:mm')}</TableCell><TableCell><Badge variant="outline">{prettyAction(r.action_type)}</Badge></TableCell><TableCell className="text-sm">{names.get(r.user_id) || 'Talent'}</TableCell><TableCell className="min-w-[240px] text-sm text-muted-foreground">{r.summary}</TableCell></TableRow>)}
+          </TableBody></Table>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">Page {page + 1} of {pages}</p>

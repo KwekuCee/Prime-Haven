@@ -570,7 +570,7 @@ export default function SMMDashboard() {
 
     return (
         <DashboardLayout>
-            <div className="p-4 md:p-6 space-y-4 max-w-[1500px] mx-auto">
+            <div className="p-4 md:p-6 space-y-4 max-w-[1400px] mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
@@ -871,8 +871,8 @@ export default function SMMDashboard() {
                             )}
                             <Button size="sm" onClick={() => setPostModal(true)}><Plus className="w-3.5 h-3.5 mr-1" />Add Post</Button>
                         </div>
-                        <Card className="bg-card/40 border-border/50 overflow-hidden">
-                            <div className="overflow-x-auto">
+                        <Card className="rounded-2xl bg-card/40 border-border/60 backdrop-blur-sm overflow-hidden">
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-xs">
                                     <thead className="bg-card/60 border-b border-border/40 text-muted-foreground">
                                         <tr>
@@ -930,6 +930,34 @@ export default function SMMDashboard() {
                                         {filteredPosts.length === 0 && <tr><td colSpan={9} className="p-10 text-center text-muted-foreground">No posts.</td></tr>}
                                     </tbody>
                                 </table>
+                            </div>
+                            <div className="grid gap-2 p-3 md:hidden">
+                                {filteredPosts.map((post) => {
+                                    const campaign = dash.campaigns.find((item) => item.id === post.campaign_id);
+                                    const engagement = (post.likes || 0) + (post.comments || 0) + (post.shares || 0);
+                                    return (
+                                        <div key={post.id} className="rounded-xl border border-border/60 bg-background/80 p-3 space-y-3">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Checkbox checked={selectedPostIds.has(post.id)} onCheckedChange={() => toggleSelected(post.id)} aria-label="Select post" />
+                                                        <Badge variant="outline" className={`text-[9px] capitalize ${PLATFORM_COLORS[post.platform]}`}>{post.platform}</Badge>
+                                                        <Badge variant="outline" className={`text-[9px] capitalize ${STATUS_COLORS[post.status]}`}>{post.status}</Badge>
+                                                    </div>
+                                                    <p className="text-xs font-semibold truncate">{campaign?.campaign_name || 'Unassigned campaign'}</p>
+                                                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">{post.caption || 'No caption'}</p>
+                                                </div>
+                                                <Button size="icon" variant="ghost" aria-label="Delete post" className="h-8 w-8 shrink-0" onClick={async () => { if (confirm('Delete?')) await dash.deletePost(post.id); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                                <span>{post.scheduled_at ? format(new Date(post.scheduled_at), 'MMM d, HH:mm') : 'Not scheduled'}</span>
+                                                <span>{engagement} engagements</span>
+                                            </div>
+                                            {post.status !== 'posted' && <Button size="sm" variant="outline" className="h-8 w-full text-[10px]" onClick={async () => await dash.updatePost(post.id, { status: 'posted', posted_at: new Date().toISOString() })}>Mark Posted</Button>}
+                                        </div>
+                                    );
+                                })}
+                                {filteredPosts.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">No posts.</p>}
                             </div>
                         </Card>
                     </TabsContent>

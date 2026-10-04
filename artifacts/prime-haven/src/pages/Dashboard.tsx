@@ -33,6 +33,7 @@ import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT } from '@/lib/rev
 import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
+import TalentPageHeader from '@/components/dashboard/TalentPageHeader';
 
 interface ProfileData {
   full_name: string | null;
@@ -251,15 +252,8 @@ const Dashboard = () => {
         if (claimError) throw claimError;
       } else if (selectedJob.source === 'job_contracts') {
         // Mark job contract claim as in_progress
-        try {
-          await (supabase as any).rpc('start_job_contract_work', { p_contract_id: selectedJob.id });
-        } catch {
-          await (supabase as any)
-            .from('job_contract_claims')
-            .update({ status: 'in_progress' })
-            .eq('contract_id', selectedJob.id)
-            .eq('designer_id', user.id);
-        }
+        const { error: startError } = await (supabase as any).rpc('start_job_contract_work', { p_contract_id: selectedJob.id });
+        if (startError) throw startError;
 
         // For job_contracts, notify admin that designer is starting
         const { error: notifyError } = await supabase.functions.invoke('notify-designer', {
@@ -343,7 +337,7 @@ const Dashboard = () => {
         setSharePercent(share);
         const { data: earningRows } = await (supabase as any)
           .from('job_earnings')
-          .select('id, project_id, submission_id, job_price, share_percent, amount, status, created_at, client_projects:project_id(title)')
+          .select('id, project_id, submission_id, job_price, share_percent, amount, status, created_at')
           .eq('designer_id', user.id)
           .order('created_at', { ascending: false });
         const mappedEarnings: JobEarning[] = ((earningRows || []) as any[]).map((r) => ({
@@ -355,7 +349,7 @@ const Dashboard = () => {
           amount: r.amount,
           status: r.status,
           created_at: r.created_at,
-          project_title: r.client_projects?.title || null,
+          project_title: null,
         }));
         setEarnings(mappedEarnings);
         const availableEarned = mappedEarnings
@@ -500,21 +494,15 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
-        {/* Welcome Header */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Welcome back</p>
-              <h1 className="text-2xl sm:text-3xl font-heading font-bold">
-                {getFirstName()} <span className="text-gradient">✦</span>
-              </h1>
-              <div className="mt-2">
-                <RankBadge points={designer?.total_points || 0} size="sm" showProgress />
-              </div>
-            </div>
-            <div className="flex gap-2">
+          <TalentPageHeader
+            eyebrow="Talent command center"
+            title={`Welcome back, ${getFirstName()}`}
+            description="Your live workspace for projects, client decisions, earnings, and progress."
+            icon={Zap}
+            action={<div className="flex flex-wrap gap-2">
               <MagneticEffect intensity={0.1}>
-                <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                <Button size="sm" variant="outline" className="border-on-ink/25 bg-on-ink/10 text-on-ink hover:bg-on-ink/15 hover:text-on-ink" onClick={() => {
                   if (hasStartedProject) {
                     const stored = localStorage.getItem(`started_project_${user?.id}`);
                     const proj = stored ? JSON.parse(stored) : null;
@@ -527,12 +515,13 @@ const Dashboard = () => {
                 </Button>
               </MagneticEffect>
               <MagneticEffect intensity={0.1}>
-                <Button size="sm" className="text-xs bg-primary hover:bg-primary/90" onClick={() => navigate('/submit-work')}>
+                <Button size="sm" onClick={() => navigate('/submit-work')}>
                   <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit Work
                 </Button>
               </MagneticEffect>
-            </div>
-          </div>
+            </div>}
+          />
+          <div className="mt-3"><RankBadge points={designer?.total_points || 0} size="sm" showProgress /></div>
         </motion.div>
 
         {/* Active Project Indicator */}
@@ -807,12 +796,8 @@ const Dashboard = () => {
               </p>
               <div className="space-y-1.5 text-[10px] text-muted-foreground">
                 <div className="flex items-center justify-between">
-                  <span>PH Approval</span>
-                  <span className="font-bold text-primary">+15 pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Client Acceptance</span>
-                  <span className="font-bold text-primary">varies</span>
+                  <span>Client approval</span>
+                  <span className="font-bold text-primary">Points + earnings</span>
                 </div>
               </div>
             </div>
