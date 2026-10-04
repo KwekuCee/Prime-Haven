@@ -84,10 +84,15 @@ serve(withCors(async (req) => {
 
     // --- Manual (paid outside Korapay) ---
     if (mode === "manual") {
-      const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
+      const { data: claimData, error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
       if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
-      await finalise("approved", "Manual Transfer");
-      return json({ success: true, withdrawal_id: withdrawalId, reference, status: "approved", message: "Marked as approved and paid manually." });
+      const claimedReference = (claimData as { reference?: string } | null)?.reference || reference;
+      const { error: finaliseError } = await admin.rpc("finalise_withdrawal_payout_service", {
+        p_withdrawal_id: withdrawalId, p_admin_id: adminUserId, p_status: "approved",
+        p_gateway: "Manual Transfer", p_reference: claimedReference,
+      });
+      if (finaliseError) throw finaliseError;
+      return json({ success: true, withdrawal_id: withdrawalId, reference: claimedReference, status: "approved", message: "Marked as approved and paid manually." });
     }
 
     // --- Korapay disbursement ---
@@ -99,11 +104,12 @@ serve(withCors(async (req) => {
       return json({ error: "korapay_not_configured", message: "Korapay is not configured. Use 'Mark Paid Manually' instead." }, 400);
     }
 
-    const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
+    const { data: claimData, error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
     if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
+    const claimedReference = (claimData as { reference?: string } | null)?.reference || reference;
 
     const payload = {
-      reference,
+      reference: claimedReference,
       destination: {
         type: "mobile_money",
         amount,
@@ -158,7 +164,7 @@ serve(withCors(async (req) => {
     return json({
       success: true,
       withdrawal_id: withdrawalId,
-      reference,
+      reference: claimedReference,
       status: korapayStatus === "processing" ? "processing" : "success",
       message: `Korapay payout of GH₵${amount.toFixed(2)} sent to ${payoutMethod.phone_number}.`,
     });
