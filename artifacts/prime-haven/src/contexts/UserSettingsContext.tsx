@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getUsdToGhsRate } from '@/lib/currency';
@@ -48,7 +47,6 @@ const UserSettingsContext = createContext<UserSettingsContextType | undefined>(u
 
 export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const { setTheme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [hasRecord, setHasRecord] = useState(false);
@@ -93,7 +91,6 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
             push_notifications: data.push_notifications ?? true,
           };
           setSettings(loaded);
-          setTheme(loaded.theme);
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -103,14 +100,11 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
     };
 
     loadSettings();
-  }, [user, setTheme]);
+  }, [user]);
 
   const updateSetting = useCallback(<K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    if (key === 'theme') {
-      setTheme(value as string);
-    }
-  }, [setTheme]);
+  }, []);
 
   const saveSettings = useCallback(async () => {
     if (!user) return;
