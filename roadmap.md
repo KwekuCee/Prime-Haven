@@ -30,3 +30,12 @@
 - [x] Phase 6 (part): shared dark-surface colours for navbar, Join/Blog sections, Superadmin
 
 - [x] Repository review fixes: affiliate commission server-only, webhook links exact project + unique payment refs + unmatched payments saved, honest Salaries card, removed backup folder/Replit notes, new README
+
+# Talent Command Center Redesign
+- [~] Foundation: unified Prime Haven shell, navigation, page headers, and shared talent patterns
+- [ ] Command Center: focused priorities, work pipeline, earnings, progress, and recent activity
+- [ ] Workflows: marketplace, active contracts, submissions, messaging, profile, settings, affiliate and SMM
+- [~] Security: private talent audit history, protected payout destinations, remove unsafe browser-write fallbacks
+- [ ] Admin oversight: talent events within Activity Log
+- [ ] Performance and types: shared cache, scoped realtime, lazy heavy views, remove talent-path unsafe casts
+- [ ] Verification: typecheck, build, security linter, and authenticated desktop/mobile walkthroughs
