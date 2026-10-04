@@ -48,6 +48,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { invalidateSystemSettings } from '@/lib/systemSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
@@ -1032,6 +1033,7 @@ const SuperAdminDashboard = () => {
         supabase.from('system_settings').upsert({ key: 'monthly_revenue_by_category', value: categoryData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
         supabase.from('system_settings').upsert({ key: 'usd_to_ghs_rate', value: rateAmount, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
       ]);
+      invalidateSystemSettings();
 
       if (user) {
         await supabase.from('system_logs').insert({

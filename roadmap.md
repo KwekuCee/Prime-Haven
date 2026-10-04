@@ -2,7 +2,7 @@
 - [x] Phase 1: Backend functions only accept requests from Prime Haven sites (shared origin check, deployed)
 - [x] Phase 2: Protect all admin pages at one central point (AdminRoute wraps every /superadmin page)
 - [x] Phase 3: Merge the three department admin dashboards into one (DepartmentAdminDashboard + config)
-- [ ] Phase 4: Move page data loading to the shared data-loading system (incremental)
+- [~] Phase 4: Shared data cache in place (lib/queryClient + cached system settings on 4 dashboards); remaining pages to migrate incrementally
 - [ ] Phase 5: Applicant funnel drop-off tracking (video, quiz, payment) + admin view
 - [ ] Phase 6: UI cleanup — theme colors, empty states, icon-button labels, consistent loading skeletons, remove dead dark-mode code
 - [ ] Phase 7: Architecture — type money/scoring logic, shared function boilerplate, load heavy extras only where needed

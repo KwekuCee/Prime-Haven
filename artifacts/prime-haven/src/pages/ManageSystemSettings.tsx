@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { invalidateSystemSettings } from '@/lib/systemSettings';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import SeoIndexHealth from '@/components/admin/SeoIndexHealth';
@@ -144,6 +145,7 @@ const ManageSystemSettings = () => {
       return false;
     }
     toast({ title: 'Saved', description: `${key} updated.` });
+    invalidateSystemSettings();
     await fetchSettings();
     return true;
   };
