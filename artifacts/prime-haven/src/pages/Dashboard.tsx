@@ -20,6 +20,7 @@ import ProjectMarketplace from '@/components/dashboard/ProjectMarketplace';
 import ActiveContracts from '@/components/dashboard/ActiveContracts';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchSystemSettings } from '@/lib/systemSettings';
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import { useToast } from '@/hooks/use-toast';
 import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs } from '@/lib/currency';
@@ -323,7 +324,7 @@ const Dashboard = () => {
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }),
           supabase.from('leaderboard_designer_details').select('user_id, total_points, monthly_points, professional_title, talent_score').order('total_points', { ascending: false }),
           supabase.from('leaderboard_profiles').select('id, full_name'),
-          supabase.from('system_settings').select('key, value')
+          fetchSystemSettings()
         ]);
         if (profileResult.data) setProfile(profileResult.data);
         if (designerResult.data) {

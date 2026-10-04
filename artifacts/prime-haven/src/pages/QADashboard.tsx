@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchSystemSettings } from '@/lib/systemSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
@@ -62,7 +63,7 @@ const QADashboard = () => {
             ] = await Promise.all([
                 supabase.from('profiles').select('id, full_name, email'),
                 supabase.from('submissions').select('*').order('created_at', { ascending: false }),
-                supabase.from('system_settings').select('key, value'),
+                fetchSystemSettings(),
             ]);
 
             const profilesMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
