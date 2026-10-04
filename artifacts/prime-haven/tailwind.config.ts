@@ -25,6 +25,8 @@ export default {
       },
 
       colors: {
+        ink: { DEFAULT: "hsl(var(--ink))", soft: "hsl(var(--ink-soft))" },
+        "on-ink": "hsl(var(--on-ink))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

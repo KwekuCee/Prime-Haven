@@ -1732,16 +1732,16 @@ const SuperAdminDashboard = () => {
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Page Header — Executive Black Hero Card */}
-        <div className="rounded-2xl bg-slate-950 text-white p-5 sm:p-6 shadow-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-2xl bg-slate-950 text-on-ink p-5 sm:p-6 shadow-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-white">Executive Command</h1>
+              <h1 className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-on-ink">Executive Command</h1>
               <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">Live Ops</Badge>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">Real-time health, department output, talent payouts, and milestone review queue</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-white hover:bg-white/20 hover:text-white" onClick={() => {
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-on-ink hover:bg-white/20 hover:text-on-ink" onClick={() => {
               const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
               setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
               setIsRevenueModalOpen(true);
@@ -1749,7 +1749,7 @@ const SuperAdminDashboard = () => {
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
               Revenue Allocation
             </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-white hover:bg-white/20 hover:text-white" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-on-ink hover:bg-white/20 hover:text-on-ink" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
               {isRecalculatingSalaries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5 text-primary" />}
               <span className="hidden sm:inline">Recalculate Salaries</span>
             </Button>
@@ -1760,13 +1760,13 @@ const SuperAdminDashboard = () => {
                   <span className="hidden sm:inline">Reset Monthly Points</span>
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-slate-900 text-white border-slate-800">
+              <AlertDialogContent className="bg-slate-900 text-on-ink border-slate-800">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-amber-400">Reset All Points for New Month?</AlertDialogTitle>
                   <AlertDialogDescription className="text-slate-400">This will first generate an automated monthly report snapshot, then set all designer points and salaries to zero. This action cannot be reversed.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="border-slate-700 text-white hover:bg-slate-800">Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="border-slate-700 text-on-ink hover:bg-slate-800">Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleResetAllPoints} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">Reset Points</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -1788,7 +1788,7 @@ const SuperAdminDashboard = () => {
                 transition={{ duration: 0.3 }}
                 className="lg:col-span-5 h-full"
               >
-                <div className="h-full min-h-[220px] rounded-3xl bg-slate-950 text-white p-6 shadow-xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group">
+                <div className="h-full min-h-[220px] rounded-3xl bg-slate-950 text-on-ink p-6 shadow-xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group">
                   {/* Subtle Ambient Glow */}
                   <div className="absolute top-0 right-0 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
@@ -1807,7 +1807,7 @@ const SuperAdminDashboard = () => {
 
                     <div className="space-y-1">
                       <p className="text-xs text-slate-400 font-medium">Gross Platform Volume</p>
-                      <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono tabular-nums text-white">
+                      <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono tabular-nums text-on-ink">
                         GH₵{(stats.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
@@ -1822,7 +1822,7 @@ const SuperAdminDashboard = () => {
                       </div>
                       <div className="bg-white/[0.04] border border-white/5 rounded-2xl p-2.5">
                         <span className="text-[10px] uppercase text-slate-400 font-mono block">Platform Net</span>
-                        <span className="text-sm font-bold font-mono text-white">GH₵{revenueBreakdown.fees.toFixed(0)}</span>
+                        <span className="text-sm font-bold font-mono text-on-ink">GH₵{revenueBreakdown.fees.toFixed(0)}</span>
                       </div>
                     </div>
 
@@ -2048,25 +2048,25 @@ const SuperAdminDashboard = () => {
                 </div>
 
                 {/* Quick Actions — Standout Black Card */}
-                <div className="rounded-2xl bg-slate-950 text-white p-5 shadow-xl border border-slate-800 space-y-2.5">
-                  <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                <div className="rounded-2xl bg-slate-950 text-on-ink p-5 shadow-xl border border-slate-800 space-y-2.5">
+                  <h2 className="text-sm font-bold text-on-ink mb-2 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     Quick Operations
                   </h2>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => setSearchParams({ tab: 'submissions' })}>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'submissions' })}>
                     <FileCheck className="w-3.5 h-3.5 text-primary" /> Review Submissions Queue
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => {
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => {
                     const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
                     setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
                     setIsRevenueModalOpen(true);
                   }}>
                     <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Update Revenue Targets
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => setSearchParams({ tab: 'users' })}>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'users' })}>
                     <Users className="w-3.5 h-3.5 text-blue-400" /> Manage User Database
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-white hover:bg-white/[0.12] hover:text-white" onClick={() => setSearchParams({ tab: 'orders' })}>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'orders' })}>
                     <Crown className="w-3.5 h-3.5 text-amber-400" /> Review Client Orders
                   </Button>
                 </div>
@@ -2531,7 +2531,7 @@ const SuperAdminDashboard = () => {
           <Textarea placeholder="What needs fixing..." value={correctionNote} onChange={(e) => setCorrectionNote(e.target.value)} className="min-h-[80px]" />
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setCorrectionRequestSubmission(null)}>Cancel</Button>
-            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
+            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-on-ink" onClick={handleRequestCorrectionWithNote} disabled={!correctionNote.trim()}>
               <Edit className="w-3.5 h-3.5 mr-1.5" />Request
             </Button>
           </DialogFooter>

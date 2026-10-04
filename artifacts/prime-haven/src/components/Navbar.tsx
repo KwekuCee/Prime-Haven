@@ -168,7 +168,7 @@ const Navbar = () => {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1480px] rounded-2xl border border-white/10 bg-[#090d16]/80 shadow-[0_16px_45px_rgba(0,0,0,0.65)] backdrop-blur-2xl transition-all duration-300 sm:top-5 sm:left-6 sm:right-6"
+      className="fixed top-3 left-3 right-3 z-50 mx-auto max-w-[1480px] rounded-2xl border border-white/10 bg-ink/80 shadow-[0_16px_45px_rgba(0,0,0,0.65)] backdrop-blur-2xl transition-all duration-300 sm:top-5 sm:left-6 sm:right-6"
     >
       <div className="px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 lg:h-16">
@@ -186,7 +186,7 @@ const Navbar = () => {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white/85 hover:text-white rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-white"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-on-ink/85 hover:text-on-ink rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-on-ink"
                 >
                   <span>Services</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -195,11 +195,11 @@ const Navbar = () => {
               <DropdownMenuContent
                 align="start"
                 sideOffset={14}
-                className="z-50 w-[540px] rounded-2xl border border-white/10 bg-[#0b0f1a]/95 p-3.5 text-white shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                className="z-50 w-[540px] rounded-2xl border border-white/10 bg-ink-soft/95 p-3.5 text-on-ink shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
               >
                 <div className="px-2 py-1.5 mb-1.5 flex items-center justify-between border-b border-white/[0.08]">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Core Agency Disciplines</span>
-                  <Link to="/#services" className="text-xs text-white/60 hover:text-white transition-colors flex items-center gap-1">
+                  <Link to="/#services" className="text-xs text-on-ink/60 hover:text-on-ink transition-colors flex items-center gap-1">
                     All Services <ArrowUpRight className="w-3 h-3" />
                   </Link>
                 </div>
@@ -212,14 +212,14 @@ const Navbar = () => {
                         to={item.href}
                         className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-white/[0.08]"
                       >
-                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary group-hover:bg-primary group-hover:text-on-ink transition-colors">
                           <Icon className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-white group-hover:text-primary transition-colors flex items-center gap-1">
+                          <div className="text-xs font-semibold text-on-ink group-hover:text-primary transition-colors flex items-center gap-1">
                             {item.name}
                           </div>
-                          <p className="mt-0.5 text-[11px] leading-snug text-white/55 line-clamp-2">
+                          <p className="mt-0.5 text-[11px] leading-snug text-on-ink/55 line-clamp-2">
                             {item.desc}
                           </p>
                         </div>
@@ -228,7 +228,7 @@ const Navbar = () => {
                   })}
                 </div>
                 <div className="mt-2.5 pt-2 border-t border-white/[0.08] flex items-center justify-between px-2">
-                  <span className="text-xs text-white/60">Need a custom scope or enterprise solution?</span>
+                  <span className="text-xs text-on-ink/60">Need a custom scope or enterprise solution?</span>
                   <Link
                     to="/start-project"
                     className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
@@ -242,7 +242,7 @@ const Navbar = () => {
             {/* Direct Link: Portfolio */}
             <Link
               to="/portfolio"
-              className="px-3.5 py-2 text-sm font-semibold text-white/85 hover:text-white rounded-full hover:bg-white/[0.08] transition-all duration-200"
+              className="px-3.5 py-2 text-sm font-semibold text-on-ink/85 hover:text-on-ink rounded-full hover:bg-white/[0.08] transition-all duration-200"
             >
               {t('nav.portfolio', 'Portfolio')}
             </Link>
@@ -252,7 +252,7 @@ const Navbar = () => {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white/85 hover:text-white rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-white"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-on-ink/85 hover:text-on-ink rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-on-ink"
                 >
                   <span>Opportunities &amp; Portals</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform duration-200" />
@@ -261,11 +261,11 @@ const Navbar = () => {
               <DropdownMenuContent
                 align="center"
                 sideOffset={14}
-                className="z-50 w-[380px] rounded-2xl border border-white/10 bg-[#0b0f1a]/95 p-3 text-white shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                className="z-50 w-[380px] rounded-2xl border border-white/10 bg-ink-soft/95 p-3 text-on-ink shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
               >
                 <div className="px-2 py-1.5 mb-1.5 flex items-center justify-between border-b border-white/[0.08]">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Talent &amp; Opportunities</span>
-                  <span className="text-xs text-white/50">Vetted Network</span>
+                  <span className="text-xs text-on-ink/50">Vetted Network</span>
                 </div>
                 <div className="space-y-1">
                   {workItems.map((item) => {
@@ -276,14 +276,14 @@ const Navbar = () => {
                         to={item.href}
                         className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-white/[0.08]"
                       >
-                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] text-white/90 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] text-on-ink/90 group-hover:bg-primary group-hover:text-on-ink transition-colors">
                           <Icon className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-white group-hover:text-primary transition-colors flex items-center gap-1">
+                          <div className="text-xs font-semibold text-on-ink group-hover:text-primary transition-colors flex items-center gap-1">
                             {item.name}
                           </div>
-                          <p className="mt-0.5 text-[11px] leading-snug text-white/55 line-clamp-2">
+                          <p className="mt-0.5 text-[11px] leading-snug text-on-ink/55 line-clamp-2">
                             {item.desc}
                           </p>
                         </div>
@@ -299,7 +299,7 @@ const Navbar = () => {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white/85 hover:text-white rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-white"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-on-ink/85 hover:text-on-ink rounded-full hover:bg-white/[0.08] transition-all duration-200 outline-none data-[state=open]:bg-white/[0.1] data-[state=open]:text-on-ink"
                 >
                   <span>Company</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform duration-200" />
@@ -308,7 +308,7 @@ const Navbar = () => {
               <DropdownMenuContent
                 align="center"
                 sideOffset={14}
-                className="z-50 w-72 rounded-2xl border border-white/10 bg-[#0b0f1a]/95 p-2.5 text-white shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                className="z-50 w-72 rounded-2xl border border-white/10 bg-ink-soft/95 p-2.5 text-on-ink shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
               >
                 <div className="px-2 py-1 mb-1 border-b border-white/[0.08]">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary">About Prime Haven</span>
@@ -322,10 +322,10 @@ const Navbar = () => {
                         to={item.href}
                         className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-colors hover:bg-white/[0.08]"
                       >
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-white/80 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-on-ink/80 group-hover:bg-primary group-hover:text-on-ink transition-colors">
                           <Icon className="h-3.5 w-3.5" />
                         </div>
-                        <div className="text-xs font-semibold text-white/90 group-hover:text-primary transition-colors">
+                        <div className="text-xs font-semibold text-on-ink/90 group-hover:text-primary transition-colors">
                           {item.name}
                         </div>
                       </Link>
@@ -338,7 +338,7 @@ const Navbar = () => {
             {/* Direct Link: Insights / Blog */}
             <Link
               to="/blog"
-              className="px-3.5 py-2 text-sm font-semibold text-white/85 hover:text-white rounded-full hover:bg-white/[0.08] transition-all duration-200"
+              className="px-3.5 py-2 text-sm font-semibold text-on-ink/85 hover:text-on-ink rounded-full hover:bg-white/[0.08] transition-all duration-200"
             >
               Insights
             </Link>
@@ -360,7 +360,7 @@ const Navbar = () => {
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-zinc-800" />
                 <span>Client Dashboard</span>
-                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white">
+                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-ink">
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </span>
               </Link>
@@ -371,7 +371,7 @@ const Navbar = () => {
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-zinc-800" />
                 <span>Dashboard</span>
-                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white">
+                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-ink">
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </span>
               </Link>
@@ -381,7 +381,7 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 px-3.5 rounded-full text-white/80 font-semibold hover:text-white hover:bg-white/[0.08]"
+                    className="h-9 px-3.5 rounded-full text-on-ink/80 font-semibold hover:text-on-ink hover:bg-white/[0.08]"
                   >
                     {t('nav.login', 'Sign In')}
                   </Button>
@@ -392,7 +392,7 @@ const Navbar = () => {
                   className="group inline-flex items-center gap-2 h-10 pl-4 pr-1.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-zinc-100 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                 >
                   <span>Start a Project</span>
-                  <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white">
+                  <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-ink">
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </span>
                 </Link>
@@ -405,7 +405,7 @@ const Navbar = () => {
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={isOpen}
-            className="lg:hidden p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/[0.1] transition-colors z-10"
+            className="lg:hidden p-2 rounded-xl text-on-ink/90 hover:text-on-ink hover:bg-white/[0.1] transition-colors z-10"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -430,7 +430,7 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.28, ease: 'easeInOut' }}
-            className="lg:hidden overflow-hidden border-t border-white/10 bg-[#090d16]/95 backdrop-blur-2xl rounded-b-2xl"
+            className="lg:hidden overflow-hidden border-t border-white/10 bg-ink/95 backdrop-blur-2xl rounded-b-2xl"
           >
             <div className="container mx-auto px-5 py-5 flex flex-col gap-2 max-h-[80vh] overflow-y-auto">
               {/* Services Accordion */}
@@ -438,13 +438,13 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setMobileExpandedGroup(mobileExpandedGroup === 'services' ? null : 'services')}
-                  className="w-full flex items-center justify-between p-3.5 text-sm font-semibold text-white"
+                  className="w-full flex items-center justify-between p-3.5 text-sm font-semibold text-on-ink"
                 >
                   <span className="flex items-center gap-2">
                     <Code className="w-4 h-4 text-primary" />
                     Services
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${mobileExpandedGroup === 'services' ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-on-ink/60 transition-transform ${mobileExpandedGroup === 'services' ? 'rotate-180' : ''}`} />
                 </button>
                 {mobileExpandedGroup === 'services' && (
                   <div className="px-3 pb-3 pt-1 space-y-1 border-t border-white/[0.06]">
@@ -453,7 +453,7 @@ const Navbar = () => {
                         key={item.name}
                         to={item.href}
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-medium text-white/80 hover:text-white hover:bg-white/[0.08]"
+                        className="flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-medium text-on-ink/80 hover:text-on-ink hover:bg-white/[0.08]"
                       >
                         <span>{item.name}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
@@ -475,13 +475,13 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setMobileExpandedGroup(mobileExpandedGroup === 'work' ? null : 'work')}
-                  className="w-full flex items-center justify-between p-3.5 text-sm font-semibold text-white"
+                  className="w-full flex items-center justify-between p-3.5 text-sm font-semibold text-on-ink"
                 >
                   <span className="flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-primary" />
                     Opportunities &amp; Portals
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${mobileExpandedGroup === 'work' ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-on-ink/60 transition-transform ${mobileExpandedGroup === 'work' ? 'rotate-180' : ''}`} />
                 </button>
                 {mobileExpandedGroup === 'work' && (
                   <div className="px-3 pb-3 pt-1 space-y-1 border-t border-white/[0.06]">
@@ -490,7 +490,7 @@ const Navbar = () => {
                         key={item.name}
                         to={item.href}
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-medium text-white/80 hover:text-white hover:bg-white/[0.08]"
+                        className="flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-medium text-on-ink/80 hover:text-on-ink hover:bg-white/[0.08]"
                       >
                         <span>{item.name}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
@@ -505,13 +505,13 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setMobileExpandedGroup(mobileExpandedGroup === 'company' ? null : 'company')}
-                  className="w-full flex items-center justify-between p-3.5 text-sm font-semibold text-white"
+                  className="w-full flex items-center justify-between p-3.5 text-sm font-semibold text-on-ink"
                 >
                   <span className="flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-primary" />
                     Company &amp; Trust
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${mobileExpandedGroup === 'company' ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-on-ink/60 transition-transform ${mobileExpandedGroup === 'company' ? 'rotate-180' : ''}`} />
                 </button>
                 {mobileExpandedGroup === 'company' && (
                   <div className="px-3 pb-3 pt-1 space-y-1 border-t border-white/[0.06]">
@@ -520,7 +520,7 @@ const Navbar = () => {
                         key={item.name}
                         to={item.href}
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-medium text-white/80 hover:text-white hover:bg-white/[0.08]"
+                        className="flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-medium text-on-ink/80 hover:text-on-ink hover:bg-white/[0.08]"
                       >
                         <span>{item.name}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
@@ -534,21 +534,21 @@ const Navbar = () => {
               <Link
                 to="/portfolio"
                 onClick={() => setIsOpen(false)}
-                className="py-2.5 px-3.5 rounded-xl text-white/90 hover:text-white hover:bg-white/[0.08] font-semibold text-sm transition-colors"
+                className="py-2.5 px-3.5 rounded-xl text-on-ink/90 hover:text-on-ink hover:bg-white/[0.08] font-semibold text-sm transition-colors"
               >
                 Portfolio
               </Link>
               <Link
                 to="/blog"
                 onClick={() => setIsOpen(false)}
-                className="py-2.5 px-3.5 rounded-xl text-white/90 hover:text-white hover:bg-white/[0.08] font-semibold text-sm transition-colors"
+                className="py-2.5 px-3.5 rounded-xl text-on-ink/90 hover:text-on-ink hover:bg-white/[0.08] font-semibold text-sm transition-colors"
               >
                 Insights &amp; Articles
               </Link>
 
               {/* Language Switcher & Controls */}
               <div className="flex items-center justify-between py-3 px-3 rounded-xl border border-white/[0.08] bg-white/[0.03] mt-1">
-                <span className="text-xs text-white/60 font-medium">Select Language</span>
+                <span className="text-xs text-on-ink/60 font-medium">Select Language</span>
                 <LanguageSwitcher />
               </div>
 
@@ -556,14 +556,14 @@ const Navbar = () => {
               <div className="flex flex-col gap-2 pt-2 pb-1">
                 {isClientUser ? (
                   <Link to="/client/dashboard" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full rounded-full font-bold bg-primary text-white hover:bg-primary/90 gap-2">
+                    <Button className="w-full rounded-full font-bold bg-primary text-on-ink hover:bg-primary/90 gap-2">
                       <LayoutDashboard className="w-4 h-4" />
                       Client Dashboard
                     </Button>
                   </Link>
                 ) : user ? (
                   <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full rounded-full font-bold bg-primary text-white hover:bg-primary/90 gap-2">
+                    <Button className="w-full rounded-full font-bold bg-primary text-on-ink hover:bg-primary/90 gap-2">
                       <LayoutDashboard className="w-4 h-4" />
                       Dashboard
                     </Button>
@@ -577,7 +577,7 @@ const Navbar = () => {
                     </Link>
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <Link to="/login" onClick={() => setIsOpen(false)}>
-                        <Button variant="outline" className="w-full rounded-full border-white/20 text-white hover:bg-white/10">
+                        <Button variant="outline" className="w-full rounded-full border-white/20 text-on-ink hover:bg-white/10">
                           {t('nav.login', 'Sign In')}
                         </Button>
                       </Link>
@@ -598,14 +598,14 @@ const Navbar = () => {
 
     {/* Native Mobile App Bottom Tab Bar for Public Site */}
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#090d16]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_35px_rgba(0,0,0,0.7)] px-2 pt-1 pb-safe"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-ink/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_35px_rgba(0,0,0,0.7)] px-2 pt-1 pb-safe"
       aria-label="Mobile Bottom App Bar"
     >
       <div className="grid grid-cols-5 items-center h-14">
         <Link
           to="/"
           className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
-            location.pathname === '/' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'
+            location.pathname === '/' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-on-ink'
           }`}
         >
           <Compass className="w-4 h-4" />
@@ -614,7 +614,7 @@ const Navbar = () => {
 
         <a
           href="/#services"
-          className="flex flex-col items-center justify-center h-full gap-1 text-zinc-400 hover:text-white active:scale-95 transition-transform"
+          className="flex flex-col items-center justify-center h-full gap-1 text-zinc-400 hover:text-on-ink active:scale-95 transition-transform"
         >
           <Code className="w-4 h-4" />
           <span className="text-[10px] tracking-tight">Services</span>
@@ -624,8 +624,8 @@ const Navbar = () => {
           to="/start-project"
           className="flex flex-col items-center justify-center h-full gap-0.5 -mt-3.5 group"
         >
-          <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shadow-[0_0_20px_hsla(13,100%,58%,0.5)] group-active:scale-95 transition-transform">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="w-11 h-11 rounded-full bg-primary text-on-ink flex items-center justify-center shadow-[0_0_20px_hsla(13,100%,58%,0.5)] group-active:scale-95 transition-transform">
+            <Sparkles className="w-5 h-5 text-on-ink" />
           </div>
           <span className="text-[9px] font-bold text-primary tracking-tight">Build</span>
         </Link>
@@ -633,7 +633,7 @@ const Navbar = () => {
         <Link
           to="/portfolio"
           className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
-            location.pathname === '/portfolio' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'
+            location.pathname === '/portfolio' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-on-ink'
           }`}
         >
           <Layers className="w-4 h-4" />
@@ -643,7 +643,7 @@ const Navbar = () => {
         <Link
           to="/blog"
           className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
-            location.pathname === '/blog' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'
+            location.pathname === '/blog' ? 'text-primary font-bold' : 'text-zinc-400 hover:text-on-ink'
           }`}
         >
           <BookOpen className="w-4 h-4" />

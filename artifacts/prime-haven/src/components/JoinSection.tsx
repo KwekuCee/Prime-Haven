@@ -7,7 +7,7 @@ import earthHorizon from '@/assets/earth-horizon.jpg';
 
 const JoinSection = () => {
   return (
-    <section className="relative overflow-hidden bg-[#06080e] py-24 text-white border-y border-white/10" aria-label="Join Prime Haven">
+    <section className="relative overflow-hidden bg-ink py-24 text-on-ink border-y border-white/10" aria-label="Join Prime Haven">
       {/* Ambient background glows matching Hero horizon */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-primary/10 blur-[150px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-[450px] w-[450px] rounded-full bg-blue-600/10 blur-[140px]" />
@@ -25,7 +25,7 @@ const JoinSection = () => {
             <Sparkles className="w-3.5 h-3.5" />
             Where Great Work Happens
           </div>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight text-white leading-[1.08]">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight text-on-ink leading-[1.08]">
             Two paths. <span className="display-italic text-primary">One standard.</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-zinc-400 leading-relaxed max-w-2xl mx-auto">
@@ -41,7 +41,7 @@ const JoinSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#0a0d17] p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-white/20 transition-all duration-300"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-ink-soft p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-white/20 transition-all duration-300"
           >
             {/* Background Image Texture with Scrim */}
             <div className="pointer-events-none absolute inset-0 opacity-20 mix-blend-luminosity overflow-hidden">
@@ -64,7 +64,7 @@ const JoinSection = () => {
                 </span>
               </div>
 
-              <h3 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight leading-[1.15]">
+              <h3 className="text-3xl sm:text-4xl font-heading font-extrabold text-on-ink tracking-tight leading-[1.15]">
                 Got something to build? <br />
                 <span className="display-italic text-primary">Tell us what you need.</span>
               </h3>
@@ -99,7 +99,7 @@ const JoinSection = () => {
                 >
                   <Link to="/start-project" className="flex items-center justify-between gap-4">
                     <span>Start a Project</span>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white group-hover/btn:translate-x-0.5 transition-transform">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-ink group-hover/btn:translate-x-0.5 transition-transform">
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </Link>
@@ -107,7 +107,7 @@ const JoinSection = () => {
 
                 <Link
                   to="/services/web-development"
-                  className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors flex items-center gap-1 self-center sm:self-auto"
+                  className="text-xs font-semibold text-zinc-400 hover:text-on-ink transition-colors flex items-center gap-1 self-center sm:self-auto"
                 >
                   Explore disciplines <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
@@ -115,7 +115,7 @@ const JoinSection = () => {
 
               {/* Pill badge matching hero bottom bar */}
               <div className="mt-6 flex items-center gap-2.5 rounded-full bg-white/[0.04] border border-white/[0.08] px-4 py-2 text-[11px] font-semibold text-zinc-400">
-                <span className="text-white font-bold">Fast turnarounds</span>
+                <span className="text-on-ink font-bold">Fast turnarounds</span>
                 <span className="h-2.5 w-px bg-white/20" />
                 <span>Web Apps</span>
                 <span className="h-2.5 w-px bg-white/20" />
@@ -132,7 +132,7 @@ const JoinSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#090c15] p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-white/20 transition-all duration-300"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-ink p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-white/20 transition-all duration-300"
           >
             {/* Background Earth Texture with Scrim */}
             <div className="pointer-events-none absolute inset-0 opacity-20 mix-blend-luminosity overflow-hidden">
@@ -147,7 +147,7 @@ const JoinSection = () => {
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
-                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 bg-white/10 border border-white/15 px-3 py-1 rounded-full">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-on-ink/90 bg-white/10 border border-white/15 px-3 py-1 rounded-full">
                   Talent &amp; Creators
                 </span>
                 <span className="text-xs text-primary font-bold flex items-center gap-1">
@@ -155,7 +155,7 @@ const JoinSection = () => {
                 </span>
               </div>
 
-              <h3 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight leading-[1.15]">
+              <h3 className="text-3xl sm:text-4xl font-heading font-extrabold text-on-ink tracking-tight leading-[1.15]">
                 Looking for work? <br />
                 <span className="display-italic text-primary">Get paid for work you're proud of.</span>
               </h3>
@@ -186,7 +186,7 @@ const JoinSection = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <Button
                   asChild
-                  className="h-12 rounded-full bg-primary text-white pl-6 pr-2 text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_25px_hsla(13,100%,58%,0.4)] group/btn"
+                  className="h-12 rounded-full bg-primary text-on-ink pl-6 pr-2 text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_25px_hsla(13,100%,58%,0.4)] group/btn"
                 >
                   <Link to="/register" className="flex items-center justify-between gap-4">
                     <span>Join the Network — $15.00</span>
@@ -198,7 +198,7 @@ const JoinSection = () => {
 
                 <Link
                   to="/marketplace"
-                  className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors flex items-center gap-1 self-center sm:self-auto"
+                  className="text-xs font-semibold text-zinc-400 hover:text-on-ink transition-colors flex items-center gap-1 self-center sm:self-auto"
                 >
                   Browse marketplace <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
@@ -206,7 +206,7 @@ const JoinSection = () => {
 
               {/* Pill badge matching hero bottom bar */}
               <div className="mt-6 flex items-center gap-2.5 rounded-full bg-white/[0.04] border border-white/[0.08] px-4 py-2 text-[11px] font-semibold text-zinc-400">
-                <span className="text-white font-bold">One-time entry</span>
+                <span className="text-on-ink font-bold">One-time entry</span>
                 <span className="h-2.5 w-px bg-white/20" />
                 <span>Instant project board access</span>
                 <span className="h-2.5 w-px bg-white/20" />

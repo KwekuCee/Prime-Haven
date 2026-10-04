@@ -328,7 +328,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                                   flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-200
                                   ${
                                     active
-                                      ? 'bg-primary text-white shadow-md shadow-primary/25 scale-105'
+                                      ? 'bg-primary text-on-ink shadow-md shadow-primary/25 scale-105'
                                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                   }
                                 `}
@@ -336,7 +336,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                                 <Icon className="w-4 h-4" />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="right" sideOffset={10} className="bg-slate-900 text-white border-slate-800 text-xs">
+                            <TooltipContent side="right" sideOffset={10} className="bg-slate-900 text-on-ink border-slate-800 text-xs">
                               <p className="font-semibold">{item.label}</p>
                               <p className="text-[10px] text-slate-400">{section.title}</p>
                             </TooltipContent>
@@ -563,7 +563,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
 
             {/* Admin Avatar Pill */}
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-amber-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-amber-500 text-on-ink font-bold text-xs flex items-center justify-center shadow-xs">
                 SA
               </div>
             </div>
