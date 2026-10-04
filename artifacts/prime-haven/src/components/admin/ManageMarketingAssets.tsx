@@ -251,7 +251,7 @@ export default function ManageMarketingAssets() {
                       {new Date(asset.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(asset.id)}>
+                      <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(asset.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </TableCell>

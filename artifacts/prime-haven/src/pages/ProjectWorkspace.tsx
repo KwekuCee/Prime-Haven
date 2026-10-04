@@ -328,7 +328,7 @@ const ProjectWorkspace = () => {
                                         onChange={e => setNewMessage(e.target.value)}
                                         className="flex-1 glass bg-background/50"
                                     />
-                                    <Button type="submit" disabled={sending || !newMessage.trim()} size="icon" className="shrink-0 bg-primary">
+                                    <Button type="submit" disabled={sending || !newMessage.trim()} size="icon" aria-label="Send" className="shrink-0 bg-primary">
                                         <Send className="w-4 h-4" />
                                     </Button>
                                 </form>

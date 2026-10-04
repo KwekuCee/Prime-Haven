@@ -28,7 +28,7 @@ const LanguageSwitcher = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-foreground hover:text-primary">
+        <Button variant="ghost" size="icon" aria-label="Change language" className="text-foreground hover:text-primary">
           <Globe className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>

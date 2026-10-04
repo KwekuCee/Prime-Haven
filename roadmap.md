@@ -26,3 +26,4 @@
 - [ ] Mobile-first dashboard pass: professional, client, applicant, admin, marketplace, messaging, payments
 - [ ] Animation and polish: subtle Framer Motion transitions and shared wrappers
 - [ ] Verification: security scan/linter, build logs, browser checks across mobile and desktop flows
+- [x] Phase 6 (part): screen-reader labels on all icon-only buttons
