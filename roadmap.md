@@ -4,8 +4,8 @@
 - [x] Phase 3: Merge the three department admin dashboards into one (DepartmentAdminDashboard + config)
 - [~] Phase 4: Shared data cache in place (lib/queryClient + cached system settings on 4 dashboards); remaining pages to migrate incrementally
 - [x] Phase 5: Screening funnel chart on admin Applicants page (built from existing screening timestamps)
-- [ ] Phase 6: UI cleanup — theme colors, empty states, icon-button labels, consistent loading skeletons, remove dead dark-mode code
-- [ ] Phase 7: Architecture — type money/scoring logic, shared function boilerplate, load heavy extras only where needed
+- [x] Phase 6: UI cleanup — shared dark-surface colours, icon-button labels, dead theme-switching code removed (site is light-only); remaining "Loading…" texts are inside dropdowns, skeletons already cover dashboards
+- [x] Phase 7: Architecture — verified money logic is typed and centralised (lib/revenue, clientRevenue, platformRevenue), backend functions share _shared helpers (cors, resend, applicants, jobContract), jsPDF and charts load only on demand/lazy routes
 - [ ] Phase 8: Features — request-changes flow, payout reconciliation, in-app price estimator, unified admin audit log
 - Known pre-existing bug: seed-admin function has a duplicate variable and won't deploy
 
