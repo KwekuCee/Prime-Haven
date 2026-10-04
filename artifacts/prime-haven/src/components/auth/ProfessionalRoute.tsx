@@ -7,8 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 /**
  * Guards areas that belong to registered professionals only (Marketplace,
  * Partner Program). Accounts that exist purely as clients are sent back to
- * their own portal. Signed-out visitors are left alone so public pages that
- * use this guard can still redirect to login themselves.
+ * their own portal. Signed-out visitors are sent to the professional login.
  */
 const ProfessionalRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const ProfessionalRoute = ({ children }: { children: ReactNode }) => {
     if (authLoading) return;
 
     if (!user) {
-      setChecking(false);
+      navigate('/login', { replace: true });
       return;
     }
 

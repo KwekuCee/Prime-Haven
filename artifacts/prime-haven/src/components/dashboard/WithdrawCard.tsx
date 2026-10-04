@@ -46,7 +46,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
 
   const refresh = async () => {
     const [{ data: m }, { data: w }, { data: dd }] = await Promise.all([
-      supabase.from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      (supabase as any).from('user_payout_methods').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('id, amount, currency, status, created_at, failure_reason, korapay_reference').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
       supabase.from('designer_details').select('salary_estimated').eq('user_id', userId).maybeSingle(),
     ]);

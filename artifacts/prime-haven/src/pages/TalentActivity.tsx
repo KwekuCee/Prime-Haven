@@ -17,8 +17,8 @@ export default function TalentActivity() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!user) return;
-    supabase.from('talent_activity_logs').select('id, action_type, summary, entity_type, metadata, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100)
-      .then(({ data }) => { setRows((data || []) as ActivityRow[]); setLoading(false); });
+    (supabase as any).from('talent_activity_logs').select('id, action_type, summary, entity_type, metadata, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100)
+      .then(({ data }: { data: ActivityRow[] | null }) => { setRows(data || []); setLoading(false); });
   }, [user]);
   return (
     <DashboardLayout>

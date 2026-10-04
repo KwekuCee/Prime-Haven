@@ -55,13 +55,14 @@ const ActivityLog = () => {
     if (category === 'comms') q = q.or('action_type.ilike.%email%,action_type.ilike.%broadcast%');
     const [{ data, count }, { data: talentData }] = await Promise.all([
       q,
-      supabase.from('talent_activity_logs').select('id, user_id, action_type, summary, created_at').order('created_at', { ascending: false }).limit(25),
+      (supabase as any).from('talent_activity_logs').select('id, user_id, action_type, summary, created_at').order('created_at', { ascending: false }).limit(25),
     ]);
     const list = (data || []) as LogRow[];
     setRows(list);
     setTotal(count || 0);
-    setTalentRows((talentData || []) as TalentLogRow[]);
-    const ids = [...new Set(list.map((r) => r.admin_id).filter(Boolean))] as string[];
+    const talentList = (talentData || []) as TalentLogRow[];
+    setTalentRows(talentList);
+    const ids = [...new Set([...list.map((r) => r.admin_id), ...talentList.map((r) => r.user_id)].filter(Boolean))] as string[];
     if (ids.length) {
       const { data: profs } = await supabase.from('profiles').select('id, full_name, email').in('id', ids);
       setNames(new Map((profs || []).map((p: any) => [p.id, p.full_name || p.email])));
