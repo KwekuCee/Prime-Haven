@@ -131,7 +131,7 @@ serve(withCors(async (req) => {
 
     // --- Manual (paid outside Korapay) ---
     if (mode === "manual") {
-      const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId });
+      const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
       if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
       await finalise("approved", "Manual Transfer");
       return json({ success: true, withdrawal_id: withdrawalId, reference, status: "approved", message: "Marked as approved and paid manually." });
@@ -146,7 +146,7 @@ serve(withCors(async (req) => {
       return json({ error: "korapay_not_configured", message: "Korapay is not configured. Use 'Mark Paid Manually' instead." }, 400);
     }
 
-    const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId });
+    const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
     if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
 
     const payload = {
