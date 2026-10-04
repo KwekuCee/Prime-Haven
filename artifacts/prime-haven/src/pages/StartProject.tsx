@@ -357,6 +357,7 @@ const StartProject = () => {
             clientPassword: form.password,
             businessName: form.businessName,
             referenceFiles: uploadedRefUrls,
+            referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
           },
         });
 
@@ -444,6 +445,7 @@ const StartProject = () => {
           clientPassword: form.password,
           businessName: form.businessName,
           referenceFiles: uploadedRefUrls,
+          referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
         },
       });
 

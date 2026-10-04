@@ -314,19 +314,6 @@ const ClientStartProject = () => {
 
         toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
 
-        // Process Affiliate Commission for free orders (commission is 0, but good for tracking signups)
-        const refCode = localStorage.getItem('primehaven_ref_code');
-        if (refCode) {
-          await (supabase.rpc as any)('process_affiliate_commission', {
-            p_ref_code: refCode,
-            p_client_name: form.clientName,
-            p_service: selectedPricing.service_label,
-            p_commission: 0,
-            p_amount_paid: 0,
-            p_client_ref: freeReference
-          });
-          localStorage.removeItem('primehaven_ref_code');
-        }
 
         navigate('/client/dashboard');
 
@@ -388,6 +375,7 @@ const ClientStartProject = () => {
           clientPassword: "dashboard-client", // Dummy password since they are already authenticated
           businessName: form.businessName || "Client Business",
           referenceFiles: uploadedRefUrls,
+          referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
         },
       });
 
@@ -412,21 +400,6 @@ const ClientStartProject = () => {
 
       toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
 
-      // Process Affiliate Commission (15% of final price)
-      const refCode = localStorage.getItem('primehaven_ref_code');
-      if (refCode) {
-        const commission = finalPrice * 0.15;
-        await (supabase.rpc as any)('process_affiliate_commission', {
-          p_ref_code: refCode,
-          p_client_name: form.clientName,
-          p_service: selectedPricing!.service_label,
-          p_commission: commission,
-          p_amount_paid: finalPrice,
-          p_client_ref: reference
-        });
-        // Clear the code after successful use
-        localStorage.removeItem('primehaven_ref_code');
-      }
 
       navigate('/client/dashboard');
     } catch (err: any) {
