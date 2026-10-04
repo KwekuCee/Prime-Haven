@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, Tag, Mail, Sparkles, Clock, Compass, Newspaper } from 'lucide-react';
+import { ArrowRight, Calendar, Tag, Mail, Clock, Newspaper } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,57 +21,6 @@ interface BlogPost {
   read_time?: string;
 }
 
-const fallbackPosts: BlogPost[] = [
-  {
-    id: 'f1',
-    title: 'How Ghanaian Engineering Teams Are Delivering World-Class Web Platforms',
-    slug: 'ghanaian-engineering-teams-delivering-world-class-platforms',
-    excerpt:
-      'From custom high-throughput Next.js architectures to rigorous UI systems, explore how Ghanaian tech talent is closing the gap between global expectations and African delivery.',
-    cover_image_url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=1200&q=80',
-    category: 'Engineering',
-    published_at: '2026-09-24T10:00:00Z',
-    author_name: 'Prime Haven Tech Lead',
-    read_time: '5 min read',
-  },
-  {
-    id: 'f2',
-    title: 'Introducing Our 70% Revenue Share Model for Top Freelance Creators',
-    slug: 'introducing-revenue-share-model-freelance-creators',
-    excerpt:
-      'We redesigned our agency compensation so that every vetted designer and engineer earns upfront milestone payouts with guaranteed Mobile Money settlement.',
-    cover_image_url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
-    category: 'Opportunities',
-    published_at: '2026-09-18T14:30:00Z',
-    author_name: 'Operations Team',
-    read_time: '4 min read',
-  },
-  {
-    id: 'f3',
-    title: 'Why Milestone-Based Escrow Eliminates Freelance Risk for Foreign Founders',
-    slug: 'milestone-based-escrow-eliminates-freelance-risk',
-    excerpt:
-      'Remote hiring often creates friction around payments. Here is how our dual-verification review system guarantees high deliverables before funds unlock.',
-    cover_image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80',
-    category: 'News',
-    published_at: '2026-09-10T09:00:00Z',
-    author_name: 'Client Services',
-    read_time: '6 min read',
-  },
-  {
-    id: 'f4',
-    title: '2026 African Design Trends: Minimalist Typography & Hyper-Local Identity',
-    slug: '2026-african-design-trends-typography-identity',
-    excerpt:
-      'Discover how contemporary studios blend brutalist typography with warm cultural motifs to construct authentic brand identities that resonate across international markets.',
-    cover_image_url: 'https://images.unsplash.com/photo-1522542550221-31fd19575a2d?auto=format&fit=crop&w=800&q=80',
-    category: 'Design',
-    published_at: '2026-09-02T11:20:00Z',
-    author_name: 'Creative Director',
-    read_time: '4 min read',
-  },
-];
-
 const BlogSection = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -90,7 +39,6 @@ const BlogSection = () => {
           .limit(6);
 
         if (data && data.length > 0) {
-          // Merge with fallback fields if necessary
           const formatted = data.map((p) => ({
             ...p,
             author_name: 'Prime Haven Staff',
@@ -98,10 +46,10 @@ const BlogSection = () => {
           }));
           setPosts(formatted);
         } else {
-          setPosts(fallbackPosts);
+          setPosts([]);
         }
       } catch (err) {
-        setPosts(fallbackPosts);
+        setPosts([]);
       }
     };
     fetchPosts();
@@ -144,6 +92,10 @@ const BlogSection = () => {
       setSubscribing(false);
     }
   };
+
+  // Hide the whole section when there are no published posts — never show
+  // placeholder articles, since their links would lead to "Post not found".
+  if (posts.length === 0) return null;
 
   return (
     <section id="blog" className="py-24 relative overflow-hidden bg-[#07090e] text-white border-y border-white/10">
