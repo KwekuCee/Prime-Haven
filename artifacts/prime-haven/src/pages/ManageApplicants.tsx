@@ -312,7 +312,7 @@ const ManageApplicants = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
         <div>
           <h1 className="text-2xl font-bold">Talent applicants</h1>
           <p className="text-sm text-muted-foreground">Review applications, invite people into screening and see ranked assessment results.</p>
