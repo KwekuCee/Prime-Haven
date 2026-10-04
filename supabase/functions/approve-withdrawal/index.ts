@@ -40,8 +40,9 @@ serve(withCors(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", adminUserId)
-      .maybeSingle();
-    if (!roleData || !["superadmin", "masteradmin"].includes(String(roleData.role))) {
+      .in("role", ["superadmin", "masteradmin"])
+      .limit(1);
+    if (!roleData?.length) {
       return json({ error: "forbidden", message: "Only superadmins can approve withdrawals." }, 403);
     }
 
@@ -130,6 +131,8 @@ serve(withCors(async (req) => {
 
     // --- Manual (paid outside Korapay) ---
     if (mode === "manual") {
+      const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId });
+      if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
       await finalise("approved", "Manual Transfer");
       return json({ success: true, withdrawal_id: withdrawalId, reference, status: "approved", message: "Marked as approved and paid manually." });
     }
@@ -143,10 +146,8 @@ serve(withCors(async (req) => {
       return json({ error: "korapay_not_configured", message: "Korapay is not configured. Use 'Mark Paid Manually' instead." }, 400);
     }
 
-    await admin
-      .from("withdrawals")
-      .update({ status: "processing", korapay_reference: reference })
-      .eq("id", withdrawalId);
+    const { error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId });
+    if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
 
     const payload = {
       reference,
