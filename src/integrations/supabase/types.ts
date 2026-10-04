@@ -2798,6 +2798,10 @@ export type Database = {
       }
       claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
+      claim_withdrawal_for_payout_service: {
+        Args: { p_withdrawal_id: string }
+        Returns: Json
+      }
       current_user_email: { Args: never; Returns: string }
       ensure_client_role: { Args: never; Returns: boolean }
       find_or_create_client: {
@@ -2917,6 +2921,17 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_talent_payout_method_service: {
+        Args: {
+          p_account_name?: string
+          p_action: string
+          p_method_id?: string
+          p_phone_number?: string
+          p_provider?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       mark_affiliate_payout_paid: {
         Args: { p_payout_id: string }
         Returns: undefined
@@ -2981,6 +2996,14 @@ export type Database = {
       }
       request_project_revision: {
         Args: { p_feedback: string; p_submission_id: string }
+        Returns: Json
+      }
+      request_talent_withdrawal_service: {
+        Args: {
+          p_amount: number
+          p_payout_method_id: string
+          p_user_id: string
+        }
         Returns: Json
       }
       start_job_contract_work: {
