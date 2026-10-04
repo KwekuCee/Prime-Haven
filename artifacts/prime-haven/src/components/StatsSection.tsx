@@ -347,7 +347,7 @@ const StatsSection = () => {
   }, []);
 
   const statItems = [
-    { key: 'salaries', icon: Wallet, value: salary.displayUsd, suffix: '+', format: formatCompactUsd, label: 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
+    { key: 'salaries', icon: Wallet, value: salary.displayUsd, suffix: '+', format: formatCompactUsd, label: salary.totalUsd < salary.baselineUsd ? 'Salaries Paid (incl. payouts made before platform tracking)' : 'Salaries Paid', drillLabel: 'Salaries Paid to Talent', highlight: true, span: 'sm:col-span-2 md:col-span-2 md:row-span-2' },
     { key: 'members', icon: Users, value: stats.totalMembers, suffix: stats.totalMembers > 0 ? '+' : '', label: 'Prime Members', drillLabel: 'Team Breakdown', span: 'md:col-span-2' },
     { key: 'projects', icon: Briefcase, value: stats.projectsDelivered, suffix: stats.projectsDelivered > 0 ? '+' : '', label: 'Projects Delivered', drillLabel: 'Projects by Category', span: 'md:col-span-2' },
     { key: 'satisfaction', icon: Star, value: stats.satisfactionRate, suffix: stats.satisfactionRate > 0 ? '%' : '', label: 'Client Satisfaction', drillLabel: 'Satisfaction Details', span: 'md:col-span-2' },
@@ -379,7 +379,7 @@ const StatsSection = () => {
         >
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="eyebrow">Our Impact</span>
-            {isLive && (
+            {isLive && salary.totalUsd >= salary.baselineUsd && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 Live

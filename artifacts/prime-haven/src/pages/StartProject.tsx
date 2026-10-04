@@ -357,6 +357,7 @@ const StartProject = () => {
             clientPassword: form.password,
             businessName: form.businessName,
             referenceFiles: uploadedRefUrls,
+            referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
           },
         });
 
@@ -444,6 +445,7 @@ const StartProject = () => {
           clientPassword: form.password,
           businessName: form.businessName,
           referenceFiles: uploadedRefUrls,
+          referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
         },
       });
 
@@ -472,21 +474,8 @@ const StartProject = () => {
 
       toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
 
-      // Attribute affiliate commission (15%) if this visitor arrived through a referral link
-      try {
-        const refCode = localStorage.getItem('primehaven_ref_code');
-        if (refCode) {
-          await (supabase.rpc as any)('process_affiliate_commission', {
-            p_ref_code: refCode,
-            p_client_name: form.clientName,
-            p_service: selectedPricing!.service_label,
-            p_commission: finalPrice * 0.15,
-            p_amount_paid: finalPrice,
-            p_client_ref: reference
-          });
-          localStorage.removeItem('primehaven_ref_code');
-        }
-      } catch (e) { console.error('Affiliate attribution failed:', e); }
+      // Affiliate commission is calculated server-side from the verified payment
+      localStorage.removeItem('primehaven_ref_code');
 
       await completeAndRedirectToClientDashboard();
     } catch (err: any) {

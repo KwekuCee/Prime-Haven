@@ -1,20 +1,14 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Prime Haven
 
-# Run and deploy your AI Studio app
+Prime Haven (https://primehaven.tech) is a Ghana-based creative and technology agency and freelance marketplace.
 
-This contains everything you need to run your app locally.
+- Clients order and pay for services (Paystack / Korapay); paid projects go to a marketplace where one vetted professional claims each job.
+- Client approval completes a job; professionals earn a share of the job price and withdraw via mobile money.
+- Talent join through a screening funnel: application, intro video, assessment, $15 registration, email verification.
 
-View your app in AI Studio: https://ai.studio/apps/1ce3d6ca-4782-40fc-9847-8f427b8e8ff3
+## Layout
+- `artifacts/prime-haven/` — React + Vite + Tailwind web app
+- `supabase/functions/` — backend functions (payments, emails, screening, admin)
+- `supabase/migrations/` — database schema history
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Built and hosted with Lovable. Browser config uses only public keys; secrets live in backend function settings.

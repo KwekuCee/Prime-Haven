@@ -150,7 +150,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
       clientName, clientEmail, clientWhatsapp,
       serviceType, serviceLabel, tier, price,
       description, discordCategory, paymentReference, referenceFiles, gateway = 'korapay',
-      clientPassword, businessName, promoCode
+      clientPassword, businessName, promoCode, referralCode
     } = body as {
       clientName: string;
       clientEmail: string;
@@ -167,6 +167,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
       clientPassword?: string;
       businessName?: string;
       promoCode?: string;
+      referralCode?: string;
     };
 
     console.log("Received order request:", JSON.stringify({ clientName, clientEmail, serviceType, tier, price, paymentReference, gateway }));
@@ -297,6 +298,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
         description: description || null,
         payment_status: "completed",
         payment_reference: paymentReference,
+        referral_code: typeof referralCode === "string" && /^[A-Za-z0-9_-]{3,40}$/.test(referralCode) ? referralCode : null,
       })
       .select()
       .single();
@@ -456,6 +458,8 @@ serve(withCors(async (req: Request): Promise<Response> => {
       console.error("Failed to create client project (non-critical):", projectError);
       // Don't fail the whole request for this
     } else if (createdProject?.id) {
+      // Link the order to exactly this project so payment never lands on another one
+      await supabase.from("client_orders").update({ client_project_id: createdProject.id }).eq("id", order.id);
       // Mirror the paid project onto the Job Contracts board
       await ensureJobContract(supabase, {
         id: createdProject.id,
@@ -504,6 +508,19 @@ serve(withCors(async (req: Request): Promise<Response> => {
       console.error("Ledger record failed (non-critical):", ledgerError);
     }
 
+
+    // 2c. Affiliate commission — computed here from the gateway-verified amount, never from the browser
+    if (order?.referral_code && Number(amountInGhs) > 0) {
+      const { error: commissionError } = await supabase.rpc("process_affiliate_commission", {
+        p_ref_code: order.referral_code,
+        p_client_name: clientName,
+        p_service: serviceLabel || serviceType,
+        p_commission: Math.round(Number(amountInGhs) * 0.15 * 100) / 100,
+        p_amount_paid: Number(amountInGhs),
+        p_client_ref: paymentReference,
+      });
+      if (commissionError) console.error("Affiliate commission failed (non-critical):", commissionError);
+    }
 
     // 3. Add revenue to the respective service category
     console.log("Updating revenue...");

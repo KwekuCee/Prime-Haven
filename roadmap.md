@@ -28,3 +28,5 @@
 - [ ] Verification: security scan/linter, build logs, browser checks across mobile and desktop flows
 - [x] Phase 6 (part): screen-reader labels on all icon-only buttons
 - [x] Phase 6 (part): shared dark-surface colours for navbar, Join/Blog sections, Superadmin
+
+- [x] Repository review fixes: affiliate commission server-only, webhook links exact project + unique payment refs + unmatched payments saved, honest Salaries card, removed backup folder/Replit notes, new README

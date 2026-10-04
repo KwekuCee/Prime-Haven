@@ -471,6 +471,7 @@ export type Database = {
           claimed_at: string | null
           client_email: string
           client_name: string
+          client_project_id: string | null
           client_rating: number | null
           client_review: string | null
           client_whatsapp: string | null
@@ -485,6 +486,7 @@ export type Database = {
           price: number
           project_status: string | null
           reference_images: string[]
+          referral_code: string | null
           service_type: string
           tier: string
           updated_at: string
@@ -494,6 +496,7 @@ export type Database = {
           claimed_at?: string | null
           client_email: string
           client_name: string
+          client_project_id?: string | null
           client_rating?: number | null
           client_review?: string | null
           client_whatsapp?: string | null
@@ -508,6 +511,7 @@ export type Database = {
           price: number
           project_status?: string | null
           reference_images?: string[]
+          referral_code?: string | null
           service_type: string
           tier: string
           updated_at?: string
@@ -517,6 +521,7 @@ export type Database = {
           claimed_at?: string | null
           client_email?: string
           client_name?: string
+          client_project_id?: string | null
           client_rating?: number | null
           client_review?: string | null
           client_whatsapp?: string | null
@@ -531,11 +536,20 @@ export type Database = {
           price?: number
           project_status?: string | null
           reference_images?: string[]
+          referral_code?: string | null
           service_type?: string
           tier?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_orders_client_project_id_fkey"
+            columns: ["client_project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_projects: {
         Row: {
@@ -2396,6 +2410,45 @@ export type Database = {
           review_text?: string
           service_used?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      unmatched_payments: {
+        Row: {
+          amount: number
+          amount_ghs: number
+          client_email: string | null
+          created_at: string
+          currency: string
+          gateway: string
+          id: string
+          order_id: string | null
+          reference: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          amount_ghs: number
+          client_email?: string | null
+          created_at?: string
+          currency: string
+          gateway: string
+          id?: string
+          order_id?: string | null
+          reference: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          amount_ghs?: number
+          client_email?: string | null
+          created_at?: string
+          currency?: string
+          gateway?: string
+          id?: string
+          order_id?: string | null
+          reference?: string
+          status?: string
         }
         Relationships: []
       }
