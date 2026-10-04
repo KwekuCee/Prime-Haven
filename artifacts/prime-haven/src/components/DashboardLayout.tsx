@@ -214,7 +214,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             {isAdmin && collapsed && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon" aria-label="Manage access"
                 className="w-full mb-2 text-primary hover:bg-primary/10"
                 onClick={() => navigate('/superadmin')}
                 title="Superadmin"
@@ -276,7 +276,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               className="relative group"
               title="Talk to the Designer"
             >
-              <Button variant="ghost" size="icon" className="w-8 h-8">
+              <Button variant="ghost" size="icon" aria-label="Open messages" className="w-8 h-8">
                 <MessageSquare className="w-4 h-4" />
               </Button>
               {unreadMessages > 0 && (
@@ -290,7 +290,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </Link>
             <NotificationBell />
             <Link to={effectiveIsClient ? "/client/profile" : "/edit-profile"}>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
+              <Button variant="ghost" size="icon" aria-label="Open profile" className="w-8 h-8">
                 <User className="w-4 h-4" />
               </Button>
             </Link>

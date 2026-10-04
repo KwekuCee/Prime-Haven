@@ -316,7 +316,7 @@ const Messages = () => {
           {selectedDesigner ? (
             <>
               <div className="h-12 border-b border-border/40 flex items-center gap-3 px-4 bg-card/20 flex-shrink-0">
-                <Button variant="ghost" size="icon" className="md:hidden h-7 w-7" onClick={() => setSelectedDesigner(null)}>
+                <Button variant="ghost" size="icon" aria-label="Go back" className="md:hidden h-7 w-7" onClick={() => setSelectedDesigner(null)}>
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -389,7 +389,7 @@ const Messages = () => {
                 <div className="flex gap-2 items-center bg-muted/20 rounded-xl px-3 py-1.5 border border-border/40">
                   <Input ref={inputRef} placeholder={`Message ${selectedDesigner.full_name}`} value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()} className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-0 text-xs h-8" disabled={sending} />
-                  <Button size="icon" variant="ghost" onClick={handleSendMessage} disabled={!newMessage.trim() || sending} className="h-7 w-7 flex-shrink-0">
+                  <Button size="icon" aria-label="Send" variant="ghost" onClick={handleSendMessage} disabled={!newMessage.trim() || sending} className="h-7 w-7 flex-shrink-0">
                     {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   </Button>
                 </div>

@@ -386,13 +386,13 @@ const ManagePortfolio = () => {
                       Added {new Date(item.created_at).toLocaleDateString()}
                     </span>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
+                      <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEditDialog(item)}>
                         <Pencil className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => window.open(item.image_url, '_blank')}>
                         <ExternalLink className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteItem(item.id)}>
+                      <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive hover:text-destructive" onClick={() => handleDeleteItem(item.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

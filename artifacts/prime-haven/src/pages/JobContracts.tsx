@@ -578,7 +578,7 @@ const JobContracts = () => {
                           <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="icon" aria-label="View details"
                               title="View Related Submissions"
                               onClick={() => window.open(`/superadmin/submissions?contract=${encodeURIComponent(c.title)}`, '_blank')}
                             >
@@ -586,13 +586,13 @@ const JobContracts = () => {
                             </Button>
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="icon" aria-label="Send"
                               title="Push to Marketplace"
                               onClick={() => openPushDialog(c)}
                             >
                               <Send className="w-4 h-4 text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+                            <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => handleDelete(c.id)}>
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>

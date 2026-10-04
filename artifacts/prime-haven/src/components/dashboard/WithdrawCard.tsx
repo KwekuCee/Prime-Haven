@@ -191,7 +191,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
                     <span className="font-medium">{PROVIDER_LABEL[m.provider]}</span>
                     <span className="text-muted-foreground"> • {m.phone_number} • {m.account_name}</span>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => deleteMethod(m.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" aria-label="Delete" variant="ghost" onClick={() => deleteMethod(m.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               ))}
             </div>

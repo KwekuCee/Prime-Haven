@@ -241,7 +241,7 @@ const ManageSystemSettings = () => {
                     value={numbers[field.key] ?? ''}
                     onChange={(e) => setNumbers((p) => ({ ...p, [field.key]: e.target.value }))}
                   />
-                  <Button size="icon" onClick={() => saveNumber(field.key)} disabled={saving === field.key}>
+                  <Button size="icon" aria-label="Send" onClick={() => saveNumber(field.key)} disabled={saving === field.key}>
                     {saving === field.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -273,7 +273,7 @@ const ManageSystemSettings = () => {
                     value={numbers[field.key] ?? ''}
                     onChange={(e) => setNumbers((p) => ({ ...p, [field.key]: e.target.value }))}
                   />
-                  <Button size="icon" onClick={() => saveNumber(field.key)} disabled={saving === field.key}>
+                  <Button size="icon" aria-label="Send" onClick={() => saveNumber(field.key)} disabled={saving === field.key}>
                     {saving === field.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -329,7 +329,7 @@ const ManageSystemSettings = () => {
                   onChange={(e) => setBotToken(e.target.value)}
                   placeholder="Paste the Discord bot token"
                 />
-                <Button variant="outline" size="icon" onClick={() => setShowToken((s) => !s)} type="button">
+                <Button variant="outline" size="icon" aria-label="Hide" onClick={() => setShowToken((s) => !s)} type="button">
                   {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
                 <Button

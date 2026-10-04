@@ -235,7 +235,7 @@ const VisitorChatbot = () => {
                 />
                 <Button
                   type="submit"
-                  size="icon"
+                  size="icon" aria-label="Send"
                   disabled={!input.trim() || isLoading}
                   className="rounded-xl bg-primary text-primary-foreground h-10 w-10 flex-shrink-0"
                 >

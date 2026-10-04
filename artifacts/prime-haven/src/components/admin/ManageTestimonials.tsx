@@ -145,7 +145,7 @@ const ManageTestimonials = () => {
           <Button variant="outline" onClick={copyReviewLink} className="gap-2">
             <Copy className="w-4 h-4" /> Copy Review Link
           </Button>
-          <Button variant="outline" size="icon" onClick={() => window.open(reviewLink, '_blank')}>
+          <Button variant="outline" size="icon" aria-label="Open in new tab" onClick={() => window.open(reviewLink, '_blank')}>
             <ExternalLink className="w-4 h-4" />
           </Button>
           <Button onClick={openAdd} className="gap-2">
@@ -183,7 +183,7 @@ const ManageTestimonials = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2">"{t.review_text}"</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => toggleVisibility(t)} title={t.is_visible ? 'Hide' : 'Show'}>
+                    <Button variant="ghost" size="icon" aria-label="Show" onClick={() => toggleVisibility(t)} title={t.is_visible ? 'Hide' : 'Show'}>
                       {t.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
@@ -191,7 +191,7 @@ const ManageTestimonials = () => {
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive hover:text-destructive">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </AlertDialogTrigger>

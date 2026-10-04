@@ -148,7 +148,7 @@ const AdsterraStats = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={fetchStats} disabled={loading}>
+              <Button variant="outline" size="icon" aria-label="Refresh" onClick={fetchStats} disabled={loading}>
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>

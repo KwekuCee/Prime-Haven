@@ -166,7 +166,7 @@ const TestimonialsSection = () => {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="icon"
+                size="icon" aria-label="Previous"
                 onClick={() => go(-1)}
                 className="h-10 w-10 rounded-full border-border hover:border-primary hover:text-primary transition-colors"
               >
@@ -174,7 +174,7 @@ const TestimonialsSection = () => {
               </Button>
               <Button
                 variant="outline"
-                size="icon"
+                size="icon" aria-label="Next"
                 onClick={() => go(1)}
                 className="h-10 w-10 rounded-full border-border hover:border-primary hover:text-primary transition-colors"
               >

@@ -183,7 +183,7 @@ const PromoCodeManager = () => {
                                         ) : 'No Expiry'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => deleteCode(pc.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                        <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => deleteCode(pc.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </TableCell>

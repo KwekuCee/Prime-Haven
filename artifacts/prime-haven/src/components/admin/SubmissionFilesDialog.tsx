@@ -253,7 +253,7 @@ export const SubmissionFilesDialog = ({ open, onOpenChange, submission }: Submis
                 <>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="icon" aria-label="Previous"
                     className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background"
                     onClick={handlePrevious}
                   >
@@ -261,7 +261,7 @@ export const SubmissionFilesDialog = ({ open, onOpenChange, submission }: Submis
                   </Button>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="icon" aria-label="Next"
                     className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background"
                     onClick={handleNext}
                   >

@@ -243,18 +243,18 @@ const ManageBlog = () => {
                       {format(new Date(post.created_at), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => togglePublish(post)} title={post.is_published ? 'Unpublish' : 'Publish'}>
+                      <Button variant="ghost" size="icon" aria-label="Hide" onClick={() => togglePublish(post)} title={post.is_published ? 'Unpublish' : 'Publish'}>
                         {post.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditor(post)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => sendNewsletter(post)} disabled={sending} title="Send to subscribers">
+                      <Button variant="ghost" size="icon" aria-label="Send" onClick={() => sendNewsletter(post)} disabled={sending} title="Send to subscribers">
                         <Send className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive">
+                          <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>
