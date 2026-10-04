@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { withCors } from "../_shared/cors.ts";
 
 const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -37,7 +38,7 @@ const isLimited = async (supabase: any, action: string, identifier: string) => {
   }
 };
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ success: false, error: "method_not_allowed" }, 405);
 
@@ -203,4 +204,4 @@ serve(async (req: Request): Promise<Response> => {
     console.error("verify-tip error:", err);
     return json({ success: false, error: "server_error" }, 500);
   }
-});
+}));

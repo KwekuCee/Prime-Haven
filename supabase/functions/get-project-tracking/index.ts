@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { withCors } from "../_shared/cors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +26,7 @@ const limited = async (supabase: any, identifier: string) => {
   }
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
 
@@ -87,4 +88,4 @@ Deno.serve(async (req) => {
     console.error("get-project-tracking error:", err);
     return json({ error: "Internal server error" }, 500);
   }
-});
+}));

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendEmail as resendSend, FROM_ADDRESS, APPLICATIONS_ADDRESS } from "../_shared/resend.ts";
+import { withCors } from "../_shared/cors.ts";
 
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
 const DISCORD_CHANNEL_ID = Deno.env.get("DISCORD_CHANNEL_ID");
@@ -23,7 +24,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   await resendSend({ from: APPLICATIONS_ADDRESS, to, subject, html });
 }
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -213,4 +214,4 @@ serve(async (req: Request): Promise<Response> => {
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
-});
+}));

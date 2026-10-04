@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -128,7 +129,7 @@ async function deploymentSignature() {
   }
 }
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -234,4 +235,4 @@ serve(async (req) => {
     console.error("seo-index-check failed:", message);
     return json({ error: "check_failed", message }, 500);
   }
-});
+}));

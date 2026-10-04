@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -19,7 +20,7 @@ const json = (body: unknown, status = 200) =>
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-serve(async (req: Request): Promise<Response> => {
+serve(withCors(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -138,4 +139,4 @@ serve(async (req: Request): Promise<Response> => {
     console.error("capture-client-lead error:", err);
     return json({ success: false, error: "unexpected_error", message: "Unexpected error while saving your details." }, 500);
   }
-});
+}));

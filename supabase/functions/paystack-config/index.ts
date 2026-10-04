@@ -1,3 +1,4 @@
+import { withCors } from "../_shared/cors.ts";
 // Returns the publishable Paystack key so the browser can open inline checkout.
 // Only the public key is exposed here; the secret key never leaves the server.
 const corsHeaders = {
@@ -5,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -16,4 +17,4 @@ Deno.serve(async (req) => {
     JSON.stringify({ publicKey, configured: publicKey.length > 0 }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
   );
-});
+}));
