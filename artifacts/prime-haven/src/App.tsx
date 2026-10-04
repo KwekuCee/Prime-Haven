@@ -81,6 +81,7 @@ const AffiliateDashboard = lazyWithReload(() => import("./pages/AffiliateDashboa
 const Marketplace = lazyWithReload(() => import("./pages/Marketplace"));
 const SMMDashboard = lazyWithReload(() => import("./pages/SMMDashboard"));
 const ProjectChatPage = lazyWithReload(() => import("./pages/ProjectChatPage"));
+const TalentActivity = lazyWithReload(() => import("./pages/TalentActivity"));
 
 // Lazy load admin pages for better initial bundle size
 const SuperAdminDashboard = lazyWithReload(() => import("./pages/SuperAdminDashboard"));
@@ -137,14 +138,15 @@ const App = () => {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<ProfessionalRoute><Dashboard /></ProfessionalRoute>} />
                   <Route path="/auth/confirm" element={<AuthConfirm />} />
                   <Route path="/ref/:code" element={<ReferralHandler />} />
                   <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/payments" element={<Payments />} />
-                  <Route path="/submit-work" element={<SubmitWork />} />
-                  <Route path="/edit-profile" element={<EditProfile />} />
+                  <Route path="/settings" element={<ProfessionalRoute><Settings /></ProfessionalRoute>} />
+                  <Route path="/payments" element={<ProfessionalRoute><Payments /></ProfessionalRoute>} />
+                  <Route path="/submit-work" element={<ProfessionalRoute><SubmitWork /></ProfessionalRoute>} />
+                  <Route path="/edit-profile" element={<ProfessionalRoute><EditProfile /></ProfessionalRoute>} />
+                  <Route path="/activity" element={<ProfessionalRoute><TalentActivity /></ProfessionalRoute>} />
                   <Route path="/services/:serviceId" element={<ServiceDetail />} />
                   <Route path="/hiring/:trackSlug" element={<HiringTrack />} />
                   <Route path="/superadmin-login" element={<SuperAdminLogin />} />
@@ -156,8 +158,8 @@ const App = () => {
                   <Route path="/superadmin/qa-reviewer" element={<AdminRoute><QADashboard /></AdminRoute>} />
                   <Route path="/superadmin/portfolio" element={<AdminRoute><ManagePortfolio /></AdminRoute>} />
                   <Route path="/superadmin/contracts" element={<AdminRoute><JobContracts /></AdminRoute>} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/install" element={<Install />} />
+                  <Route path="/messages" element={<ProfessionalRoute><Messages /></ProfessionalRoute>} />
+                  <Route path="/install" element={<ProfessionalRoute><Install /></ProfessionalRoute>} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/track/:token" element={<TrackProject />} />
@@ -175,7 +177,7 @@ const App = () => {
                   <Route path="/superadmin/promo" element={<AdminRoute><ManagePromoPopup /></AdminRoute>} />
                   <Route path="/superadmin/settings" element={<AdminRoute><ManageSystemSettings /></AdminRoute>} />
                   <Route path="/superadmin/forward-work" element={<AdminRoute><ForwardWork /></AdminRoute>} />
-                  <Route path="/workspace/:orderId" element={<ProjectWorkspace />} />
+                  <Route path="/workspace/:orderId" element={<ProfessionalRoute><ProjectWorkspace /></ProfessionalRoute>} />
                   <Route path="/client/login" element={<ClientLogin />} />
                   <Route path="/client/dashboard" element={<ClientRoute><ClientDashboard /></ClientRoute>} />
                   <Route path="/client/projects" element={<ClientRoute><ClientProjectsReview /></ClientRoute>} />
@@ -188,7 +190,7 @@ const App = () => {
 
                   <Route path="/affiliate/dashboard" element={<ProfessionalRoute><AffiliateDashboard /></ProfessionalRoute>} />
                   <Route path="/marketplace" element={<ProfessionalRoute><Marketplace /></ProfessionalRoute>} />
-                  <Route path="/dashboard/smm" element={<SMMDashboard />} />
+                  <Route path="/dashboard/smm" element={<ProfessionalRoute><SMMDashboard /></ProfessionalRoute>} />
                   <Route path="/designer/:id" element={<DesignerProfile />} />
                   <Route path="/project-chat/:projectId" element={<ProjectChatPage />} />
                   <Route path="/terms" element={<Terms />} />

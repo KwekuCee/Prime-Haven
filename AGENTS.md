@@ -5,3 +5,5 @@
 - Every `/superadmin/*` route is wrapped in `AdminRoute` (uses `useAdminGuard`) in App.tsx; new admin pages must be wrapped too. Why: one central place enforces admin access in the UI.
 - The UI/UX, Web and Graphic department admin pages are thin config wrappers around `components/admin/DepartmentAdminDashboard.tsx`. Why: one review screen to fix instead of three drifting copies.
 - Shared reads go through the app-wide cache in `lib/queryClient.ts`; system settings are read via `fetchSystemSettings()` and writes call `invalidateSystemSettings()`. Why: avoids repeated identical requests and keeps screens consistent.
+- Talent workflow state changes use database functions or authenticated Edge Functions, never browser-side fallback writes. Why: prevents partial updates and privilege escalation.
+- Talent and admin audit views read from `talent_activity_logs`; entries are written only by trusted database triggers or server code. Why: keeps the activity record private and tamper-resistant.
