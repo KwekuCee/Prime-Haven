@@ -44,9 +44,10 @@ serve(withCors(async (req: Request): Promise<Response> => {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .single();
+      .eq("role", "masteradmin")
+      .maybeSingle();
 
-    if (!callerRole || callerRole.role !== "masteradmin") {
+    if (!callerRole) {
       return new Response(
         JSON.stringify({ success: false, error: "access_denied" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -97,17 +98,9 @@ serve(withCors(async (req: Request): Promise<Response> => {
       console.log("Admin user already exists, checking role...");
       
       // Ensure they have superadmin role
-      const { data: roleData } = await supabase
+      await supabase
         .from("user_roles")
-        .select("role")
-        .eq("user_id", existingAdmin.id)
-        .single();
-
-      if (roleData?.role !== "masteradmin") {
-        await supabase
-          .from("user_roles")
-          .upsert({ user_id: existingAdmin.id, role: "masteradmin" }, { onConflict: "user_id" });
-      }
+        .upsert({ user_id: existingAdmin.id, role: "masteradmin" }, { onConflict: "user_id,role", ignoreDuplicates: true });
 
       return new Response(
         JSON.stringify({ 
@@ -120,17 +113,17 @@ serve(withCors(async (req: Request): Promise<Response> => {
     }
 
     // Create new admin user
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: createError } = await supabase.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
       email_confirm: true,
       user_metadata: { full_name: adminName }
     });
 
-    if (authError) {
-      console.error("Error creating admin user:", authError);
+    if (createError) {
+      console.error("Error creating admin user:", createError);
       return new Response(
-        JSON.stringify({ success: false, error: authError.message }),
+        JSON.stringify({ success: false, error: createError.message }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -143,8 +136,8 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     const { error: roleError } = await supabase
       .from("user_roles")
-      .update({ role: "masteradmin" })
-      .eq("user_id", authData.user.id);
+      .upsert({ user_id: authData.user.id, role: "masteradmin" }, { onConflict: "user_id,role", ignoreDuplicates: true });
+    await supabase.from("user_roles").delete().eq("user_id", authData.user.id).eq("role", "designer");
 
     if (roleError) {
       console.error("Error updating role:", roleError);
@@ -152,6 +145,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     // Log the creation
     await supabase.from("system_logs").insert({
+      admin_id: user.id,
       action_type: "admin_created",
       description: `Master admin account created: ${adminEmail}`,
       timestamp: new Date().toISOString(),
