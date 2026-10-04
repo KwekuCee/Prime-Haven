@@ -1,1 +1,0 @@
-ALTER TABLE public.submissions ADD COLUMN rejection_reason text;
