@@ -4,49 +4,49 @@
 
 @font-face {
   font-family: 'Manrope';
-  src: url('/fonts/manrope-0.woff2') format('truetype');
+  src: url('/fonts/manrope-0.ttf') format('truetype');
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Manrope';
-  src: url('/fonts/manrope-1.woff2') format('truetype');
+  src: url('/fonts/manrope-1.ttf') format('truetype');
   font-weight: 500;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Manrope';
-  src: url('/fonts/manrope-2.woff2') format('truetype');
+  src: url('/fonts/manrope-2.ttf') format('truetype');
   font-weight: 600;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Manrope';
-  src: url('/fonts/manrope-3.woff2') format('truetype');
+  src: url('/fonts/manrope-3.ttf') format('truetype');
   font-weight: 700;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Sora';
-  src: url('/fonts/sora-4.woff2') format('truetype');
+  src: url('/fonts/sora-4.ttf') format('truetype');
   font-weight: 600;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Sora';
-  src: url('/fonts/sora-5.woff2') format('truetype');
+  src: url('/fonts/sora-5.ttf') format('truetype');
   font-weight: 700;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Sora';
-  src: url('/fonts/sora-6.woff2') format('truetype');
+  src: url('/fonts/sora-6.ttf') format('truetype');
   font-weight: 800;
   font-display: swap;
 }
