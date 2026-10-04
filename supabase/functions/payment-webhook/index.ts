@@ -131,7 +131,7 @@ serve(async (req) => {
     // Match the charge to an order, then to the client account behind it
     const { data: order } = await admin
       .from("client_orders")
-      .select("id, client_email, payment_status, service_type, tier")
+      .select("id, client_email, payment_status, service_type, tier, client_project_id")
       .eq("payment_reference", verified.reference)
       .maybeSingle();
 
@@ -152,13 +152,12 @@ serve(async (req) => {
 
       // Publish the project to the marketplace now that funds have landed
       if (clientUserId) {
-        const { data: project } = await admin
-          .from("client_projects")
-          .select("id, paid_at, title, description, category, client_name, budget, deadline, reference_images, required_professions")
-          .eq("created_by", clientUserId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const cols = "id, paid_at, title, description, category, client_name, budget, deadline, reference_images, required_professions";
+        // Use the project linked to this exact order; older orders fall back to the latest project
+        const { data: project } = order.client_project_id
+          ? await admin.from("client_projects").select(cols).eq("id", order.client_project_id).maybeSingle()
+          : await admin.from("client_projects").select(cols).eq("created_by", clientUserId)
+              .order("created_at", { ascending: false }).limit(1).maybeSingle();
         if (project) {
           projectId = project.id;
           if (!project.paid_at) {
@@ -187,7 +186,20 @@ serve(async (req) => {
       // No client account to attribute the funds to yet — log it and let the
       // checkout flow record the ledger row once the account exists.
       console.warn("payment-webhook: no client account for reference", verified.reference);
-      return json({ success: true, message: "Charge verified but no client account matched yet." });
+      const { error: unmatchedError } = await admin.from("unmatched_payments").upsert({
+        reference: verified.reference,
+        gateway: verified.gateway,
+        amount: verified.amount,
+        currency: verified.currency,
+        amount_ghs: amountGhs,
+        order_id: order?.id ?? null,
+        client_email: order?.client_email ?? null,
+      }, { onConflict: "reference", ignoreDuplicates: true });
+      if (unmatchedError) {
+        console.error("payment-webhook unmatched insert failed:", unmatchedError);
+        return json({ error: "ledger_insert_failed" }, 500); // non-2xx so the gateway retries
+      }
+      return json({ success: true, message: "Charge verified and saved for matching." });
     }
 
     const { data: inserted, error: insertError } = await admin
@@ -214,6 +226,9 @@ serve(async (req) => {
       .select("id")
       .maybeSingle();
 
+    if (insertError && (insertError as any).code === "23505") {
+      return json({ success: true, message: "Already recorded." });
+    }
     if (insertError) {
       console.error("payment-webhook ledger insert failed:", insertError);
       return json({ error: "ledger_insert_failed", message: insertError.message }, 500);
