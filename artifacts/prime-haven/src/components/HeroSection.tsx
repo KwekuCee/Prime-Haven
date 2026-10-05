@@ -35,7 +35,7 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      <motion.div {...reveal(0.32)} className="relative mx-4 mb-20 h-[190px] shrink-0 rounded-[28px] sm:mx-6 sm:mb-8 sm:h-[230px] md:h-[255px] lg:mx-8 lg:h-[280px]">
+      <motion.div {...reveal(0.32)} className="relative mx-4 mb-10 h-[190px] shrink-0 rounded-[28px] sm:mx-6 sm:mb-8 sm:h-[230px] md:h-[255px] lg:mx-8 lg:h-[280px]">
         <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-hero-surface dark:border dark:border-white/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_30px_70px_-18px_rgba(0,0,0,0.92)]">
           <div className="pointer-events-none absolute -left-[45%] top-0 aspect-[1920/1088] w-[190%] -translate-y-[26%] sm:-left-[28%] sm:w-[156%] sm:-translate-y-[28%] lg:-left-[22%] lg:w-[144%] lg:-translate-y-[30%] xl:-translate-y-[32%]">
             <motion.img

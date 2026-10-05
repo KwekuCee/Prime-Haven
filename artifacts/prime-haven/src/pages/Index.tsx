@@ -95,7 +95,7 @@ const Index = () => {
       <main>
         <HeroSection />
         <div className="relative bg-background">
-          <div className="h-[24svh] min-h-36 sm:h-[34svh]" aria-hidden="true" />
+          <div className="h-6 sm:h-10 lg:h-12" aria-hidden="true" />
           <CinematicReveal first>
             <CommunityPulse />
           </CinematicReveal>
