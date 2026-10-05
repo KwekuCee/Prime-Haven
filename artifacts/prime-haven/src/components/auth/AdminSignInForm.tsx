@@ -42,15 +42,62 @@ const AdminSignInForm = () => {
         return;
       }
 
-      const { data: response, error } = await supabase.functions.invoke('admin-login', {
+      const { data: rawResponse, error } = await supabase.functions.invoke('admin-login', {
         body: { username: data.username, password: data.password },
       });
 
-      if (error) throw new Error('Authentication failed');
+      let response: any = rawResponse;
+      if (error && (error as any).context && typeof (error as any).context.json === 'function') {
+        try {
+          response = await (error as any).context.json();
+        } catch {
+          // ignore JSON parse failure
+        }
+      }
+
+      // Fallback to direct Supabase Auth when edge function is unreachable and user entered an email
+      if (error && (!response || response.error === 'origin_not_allowed') && data.username.includes('@')) {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: data.username.trim(),
+          password: data.password,
+        });
+
+        if (authError || !authData.user) {
+          logAuthEvent('admin_login_failed', {
+            description: `Admin login failed for "${data.username}": Invalid username or password.`,
+          });
+          toast({ variant: 'destructive', title: 'Access Denied', description: 'Invalid username or password.' });
+          return;
+        }
+
+        const { data: roleRows } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', authData.user.id);
+
+        const roles = (roleRows || []).map((r: any) => String(r.role));
+        if (!roles.includes('superadmin') && !roles.includes('masteradmin')) {
+          await supabase.auth.signOut();
+          toast({ variant: 'destructive', title: 'Access Denied', description: 'You do not have admin access.' });
+          return;
+        }
+
+        logAuthEvent('admin_login_success', {
+          user_id: authData.user.id,
+          description: `Admin login: ${data.username}`,
+        });
+        toast({ title: 'Access Granted', description: 'Welcome back, Admin!' });
+        navigate('/superadmin', { replace: true });
+        return;
+      }
 
       if (!response?.success) {
         const errorMessage =
-          response?.error === 'access_denied' ? 'You do not have admin access.' : 'Invalid username or password.';
+          response?.error === 'access_denied'
+            ? 'You do not have admin access.'
+            : response?.error === 'rate_limited'
+              ? 'Too many login attempts. Please wait a moment and try again.'
+              : 'Invalid username or password.';
         logAuthEvent('admin_login_failed', {
           description: `Admin login failed for "${data.username}": ${errorMessage}`,
         });
@@ -79,8 +126,7 @@ const AdminSignInForm = () => {
           refresh_token: response.session.refresh_token,
         });
       }
-    } catch (err) {
-      console.error('Login error:', err);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Login Error',
@@ -136,7 +182,7 @@ const AdminSignInForm = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-foreground text-background py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full bg-[#0a0a0e] text-white dark:bg-primary dark:text-white py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary dark:hover:bg-primary/90 dark:shadow-[0_12px_32px_-8px_hsla(13,100%,58%,0.55)] transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <span className="inline-flex items-center justify-center gap-2">

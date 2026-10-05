@@ -40,6 +40,15 @@ export const SpotlightCard = ({
                 className
             )}
         >
+            {/* Dark-mode specular top-edge highlight & diagonal glass sheen */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none hidden dark:block absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent z-10"
+            />
+            <div
+                aria-hidden="true"
+                className="pointer-events-none hidden dark:block absolute inset-0 rounded-[inherit] bg-[linear-gradient(135deg,rgba(255,255,255,0.065)_0%,transparent_42%,rgba(255,255,255,0.015)_100%)] z-0"
+            />
             <div
                 className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0"
                 style={{

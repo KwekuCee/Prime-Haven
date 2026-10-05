@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import BrandLogo from '@/components/BrandLogo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -346,6 +347,9 @@ const Navbar = () => {
 
           {/* Desktop Right Actions */}
           <div className="hidden lg:flex items-center gap-2.5 z-10">
+            {/* Dark / Light Mode Toggle */}
+            <ThemeToggle variant="navbar" showLabel />
+
             {/* Language Pill */}
             <div className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-1 flex items-center">
               <LanguageSwitcher />
@@ -400,25 +404,28 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            aria-expanded={isOpen}
-            className="lg:hidden p-2 rounded-xl text-on-ink/90 hover:text-on-ink hover:bg-white/[0.1] transition-colors z-10"
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={isOpen ? 'close' : 'open'}
-                initial={{ opacity: 0, rotate: -90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: 90 }}
-                transition={{ duration: 0.15 }}
-              >
-                {isOpen ? <X size={22} /> : <Menu size={22} />}
-              </motion.div>
-            </AnimatePresence>
-          </button>
+          {/* Mobile Right Controls: Theme Toggle + Menu Button */}
+          <div className="flex lg:hidden items-center gap-2 z-10">
+            <ThemeToggle variant="navbar" />
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isOpen}
+              className="p-2 rounded-xl text-on-ink/90 hover:text-on-ink hover:bg-white/[0.1] transition-colors"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={isOpen ? 'close' : 'open'}
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {isOpen ? <X size={22} /> : <Menu size={22} />}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -546,8 +553,11 @@ const Navbar = () => {
                 Insights &amp; Articles
               </Link>
 
-              {/* Language Switcher & Controls */}
-              <div className="flex items-center justify-between py-3 px-3 rounded-xl border border-white/[0.08] bg-white/[0.03] mt-1">
+              {/* Theme & Language Controls */}
+              <div className="mt-1">
+                <ThemeToggle variant="row" />
+              </div>
+              <div className="flex items-center justify-between py-3 px-3 rounded-xl border border-white/[0.08] bg-white/[0.03]">
                 <span className="text-xs text-on-ink/60 font-medium">Select Language</span>
                 <LanguageSwitcher />
               </div>

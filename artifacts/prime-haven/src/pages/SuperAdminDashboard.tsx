@@ -1856,7 +1856,7 @@ const SuperAdminDashboard = () => {
                           {stats.totalUsers.toLocaleString()}
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-100 text-primary flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-500/15 border border-orange-100 dark:border-orange-500/25 text-primary flex items-center justify-center shrink-0">
                         <Users className="w-5 h-5" />
                       </div>
                     </div>
@@ -1893,12 +1893,12 @@ const SuperAdminDashboard = () => {
                           {users.reduce((sum, u) => sum + (u.designer_details?.total_points || 0), 0).toLocaleString()}
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-500/15 border border-purple-100 dark:border-purple-500/25 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                         <Award className="w-5 h-5" />
                       </div>
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                      <span className="font-mono text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">
+                      <span className="font-mono text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-500/15 px-2 py-0.5 rounded-full">
                         +{users.reduce((sum, u) => sum + (u.designer_details?.monthly_points || 0), 0).toLocaleString()} this cycle
                       </span>
                       <div className="w-14 h-6 opacity-70 group-hover:opacity-100 transition-opacity">
@@ -1922,17 +1922,17 @@ const SuperAdminDashboard = () => {
                         <div className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums text-slate-900 mt-1 flex items-baseline gap-2">
                           <span>{stats.pendingSubmissions}</span>
                           {stats.pendingSubmissions > 0 ? (
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-2 py-0.5 rounded-full">
                               In Queue
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 rounded-full">
                               Clear
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-500/15 border border-blue-100 dark:border-blue-500/25 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                         <FileCheck className="w-5 h-5" />
                       </div>
                     </div>
@@ -1962,12 +1962,12 @@ const SuperAdminDashboard = () => {
                         <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold block">Approval Latency</span>
                         <div className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono tabular-nums text-slate-900 mt-1 flex items-baseline gap-2">
                           <span>{stats.avgApprovalTime > 0 ? `${stats.avgApprovalTime}h` : '18h'}</span>
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 rounded-full">
                             SLA Met
                           </span>
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-500/15 border border-amber-100 dark:border-amber-500/25 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                         <Activity className="w-5 h-5" />
                       </div>
                     </div>
@@ -2031,7 +2031,7 @@ const SuperAdminDashboard = () => {
                       .slice(0, 5)
                       .map((u, i) => (
                         <div key={u.id} className="p-3 flex items-center gap-3 hover:bg-slate-50/80 transition-colors">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-zinc-300'}`}>
                             {i + 1}
                           </div>
                           <div className="min-w-0 flex-1">

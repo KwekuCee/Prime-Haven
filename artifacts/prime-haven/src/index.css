@@ -123,26 +123,26 @@
   }
 
   .dark {
-    --background: 24 12% 6%;
-    --foreground: 33 40% 96%;
+    --background: 240 12% 3.5%;
+    --foreground: 0 0% 98%;
 
-    --card: 24 10% 10%;
-    --ink: 222 40% 6%;
-    --ink-soft: 222 35% 8%;
+    --card: 240 10% 6.5%;
+    --ink: 240 12% 5%;
+    --ink-soft: 240 10% 8.5%;
     --on-ink: 0 0% 100%;
-    --card-foreground: 33 40% 96%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 24 10% 10%;
-    --popover-foreground: 33 40% 96%;
+    --popover: 240 12% 6.5%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 13 100% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 24 8% 15%;
-    --secondary-foreground: 33 40% 96%;
+    --secondary: 240 8% 11.5%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 24 8% 16%;
-    --muted-foreground: 30 12% 66%;
+    --muted: 240 8% 11.5%;
+    --muted-foreground: 240 6% 68%;
 
     --accent: 13 100% 58%;
     --accent-foreground: 0 0% 100%;
@@ -150,30 +150,32 @@
     --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 24 8% 18%;
-    --input: 24 8% 15%;
+    --border: 240 8% 16%;
+    --input: 240 8% 12%;
     --ring: 13 100% 58%;
-    --hero-surface: 24 12% 7%;
+    --hero-surface: 240 12% 5%;
     --hero-foreground: 0 0% 100%;
     --hero-muted: 32 30% 89%;
     --hero-shade: linear-gradient(180deg, hsl(var(--hero-surface) / 0.28) 0%, transparent 42%, hsl(var(--hero-surface) / 0.58) 100%);
+    --nav-glass: linear-gradient(135deg, rgba(16, 16, 22, 0.84), rgba(8, 8, 12, 0.72));
+    --panel-scrim: linear-gradient(180deg, rgba(8, 8, 12, 0.12) 0%, rgba(8, 8, 12, 0.76) 58%, rgba(6, 6, 9, 0.98) 100%);
 
-    --ink: 0 0% 100%;
     --gradient-primary: linear-gradient(100deg, hsl(13 100% 58%) 0%, hsl(28 100% 62%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(24 12% 6%) 0%, hsl(24 12% 9%) 100%);
-    --glow-primary: 0 18px 40px -18px hsla(13, 100%, 58%, 0.5);
-    --glow-strong: 0 30px 80px -24px hsla(13, 100%, 58%, 0.6);
-    --shadow-soft: 0 12px 32px -14px hsla(0, 0%, 0%, 0.6);
-    --shadow-lift: 0 28px 60px -22px hsla(0, 0%, 0%, 0.7);
-    --grid-line: hsla(33, 40%, 96%, 0.05);
+    --gradient-dark: linear-gradient(180deg, hsl(240 12% 3.5%) 0%, hsl(240 12% 6.5%) 100%);
+    --glow-primary: 0 18px 44px -16px hsla(13, 100%, 58%, 0.55);
+    --glow-strong: 0 30px 84px -20px hsla(13, 100%, 58%, 0.68);
+    --shadow-soft: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 18px 42px -14px rgba(0, 0, 0, 0.82);
+    --shadow-lift: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 28px 68px -18px rgba(0, 0, 0, 0.92), 0 0 38px -12px hsla(13, 100%, 58%, 0.25);
+    --shadow-glass: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 22px 55px -16px rgba(0, 0, 0, 0.88);
+    --grid-line: rgba(255, 255, 255, 0.04);
 
-    --sidebar-background: 24 12% 5%;
-    --sidebar-foreground: 33 40% 96%;
+    --sidebar-background: 240 12% 4%;
+    --sidebar-foreground: 0 0% 96%;
     --sidebar-primary: 13 100% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 24 8% 13%;
-    --sidebar-accent-foreground: 33 40% 96%;
-    --sidebar-border: 24 8% 18%;
+    --sidebar-accent: 240 8% 11%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 8% 15%;
     --sidebar-ring: 13 100% 58%;
   }
 }
@@ -203,6 +205,19 @@
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 42%, black 62%, black 100%);
     pointer-events: none;
     z-index: -2;
+  }
+
+  /* Subtle ambient obsidian light field in dark mode so glassmorphism refracts depth */
+  .dark body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(65% 45% at 18% 8%, hsla(13, 100%, 58%, 0.09) 0%, transparent 65%),
+      radial-gradient(55% 40% at 85% 22%, hsla(220, 90%, 60%, 0.06) 0%, transparent 65%),
+      radial-gradient(60% 50% at 50% 92%, hsla(13, 100%, 58%, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
   }
 
 
@@ -280,7 +295,7 @@
     box-shadow: var(--glow-strong);
   }
 
-  /* Soft paper cards (legacy glass-* names kept so existing markup restyles automatically) */
+  /* Soft paper cards in light mode; obsidian shiny black glass in dark mode */
   .glass {
     @apply bg-card border border-border/70;
     box-shadow: var(--shadow-soft);
@@ -317,11 +332,150 @@
     box-shadow: var(--shadow-lift);
   }
 
+  /* Dark mode shiny black-glass overrides for all card & surface primitives */
+  .dark .glass,
+  .dark .glass-card,
+  .dark .glass-panel,
+  .dark .paper-card,
+  .dark .lift-card,
+  .dark .prime-card,
+  .dark .rounded-xl[class*="bg-card"],
+  .dark .rounded-2xl[class*="bg-card"],
+  .dark .rounded-3xl[class*="bg-card"],
+  .dark div.bg-white:not(.text-black) {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.018) 38%, rgba(255, 255, 255, 0) 65%),
+      linear-gradient(180deg, rgba(20, 20, 28, 0.78) 0%, rgba(10, 10, 15, 0.9) 100%) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 20px 50px -15px rgba(0, 0, 0, 0.85);
+  }
+
+  .dark .glass-hover:hover,
+  .dark .lift-card:hover,
+  .dark .prime-card:hover,
+  .dark .rounded-2xl[class*="bg-card"]:hover,
+  .dark .rounded-3xl[class*="bg-card"]:hover,
+  .dark div.bg-white:not(.text-black):hover {
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 28px 65px -16px rgba(0, 0, 0, 0.92),
+      0 0 36px -12px hsla(13, 100%, 58%, 0.22);
+  }
+
+  /* Featured dark cards (e.g. Executive Command, Treasury, TalentPageHeader) get luminous obsidian-chrome sheen in dark mode */
+  .dark .bg-slate-950,
+  .dark .bg-ink,
+  .dark .login-brand-panel {
+    background:
+      linear-gradient(135deg, rgba(255, 87, 34, 0.08) 0%, rgba(255, 255, 255, 0.05) 35%, transparent 70%),
+      linear-gradient(180deg, rgba(16, 16, 24, 0.92) 0%, rgba(7, 7, 11, 0.97) 100%) !important;
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+      0 24px 60px -16px rgba(0, 0, 0, 0.92);
+  }
+
+  /* Obsidian black-glass sidebars & headers for SuperAdmin, Talent & Client Dashboards */
+  .dark .superadmin-sidebar,
+  .dark .dashboard-sidebar {
+    background:
+      linear-gradient(180deg, rgba(16, 16, 24, 0.94) 0%, rgba(8, 8, 12, 0.98) 100%) !important;
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow:
+      inset -1px 0 0 0 rgba(255, 255, 255, 0.08),
+      8px 0 38px -8px rgba(0, 0, 0, 0.85) !important;
+  }
+
+  .dark .superadmin-header {
+    background:
+      linear-gradient(180deg, rgba(14, 14, 20, 0.9) 0%, rgba(9, 9, 13, 0.86) 100%) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .dark .bg-\[\#f8fafc\] {
+    background-color: transparent !important;
+  }
+
+  /* Seamless dark-mode adaptation for slate utility classes in SuperAdmin & Client views */
+  .dark .text-slate-900,
+  .dark .text-slate-800 {
+    color: hsl(0 0% 97%) !important;
+  }
+
+  .dark .text-slate-700,
+  .dark .text-slate-600 {
+    color: hsl(240 6% 78%) !important;
+  }
+
+  .dark .text-slate-500 {
+    color: hsl(240 5% 64%) !important;
+  }
+
+  .dark .border-slate-200,
+  .dark .border-slate-200\/90,
+  .dark .border-slate-200\/80,
+  .dark .border-slate-200\/70,
+  .dark .border-slate-100 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .dark .bg-slate-50,
+  .dark .bg-slate-50\/50,
+  .dark .bg-slate-50\/60,
+  .dark .bg-slate-50\/70,
+  .dark .bg-slate-50\/80,
+  .dark .bg-slate-100,
+  .dark .bg-slate-100\/80 {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .dark .hover\:bg-slate-50\/80:hover,
+  .dark .hover\:bg-slate-100:hover {
+    background-color: rgba(255, 255, 255, 0.07) !important;
+  }
+
+  .dark .nav-glass {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.015) 45%, transparent 100%),
+      linear-gradient(135deg, rgba(16, 16, 22, 0.82), rgba(8, 8, 12, 0.72));
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+      0 22px 55px -16px rgba(0, 0, 0, 0.9);
+  }
+
   /* Ink pill — the primary Bartoon CTA */
   .btn-ink {
     @apply inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-bold transition-all duration-300;
     background: hsl(var(--ink));
     color: hsl(var(--background));
+  }
+
+  .dark .btn-ink {
+    background: linear-gradient(135deg, #ffffff 0%, #e4e4e7 100%);
+    color: #09090b;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 1),
+      0 14px 34px -10px hsla(13, 100%, 58%, 0.35),
+      0 6px 20px -6px rgba(0, 0, 0, 0.75);
   }
 
   .btn-ink:hover {
@@ -350,6 +504,15 @@
 
   .eyebrow {
     @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .dark .eyebrow {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-color: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), 0 8px 24px -8px rgba(0, 0, 0, 0.65);
+    color: rgba(255, 255, 255, 0.82);
   }
 
   .display-italic {

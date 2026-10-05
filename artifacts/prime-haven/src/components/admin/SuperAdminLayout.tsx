@@ -58,6 +58,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import NotificationCenter from '@/components/admin/NotificationCenter';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface SuperAdminLayoutProps {
   children: React.ReactNode;
@@ -232,7 +233,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
   }, [searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex w-full relative z-0 selection:bg-primary/20">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-background text-slate-900 dark:text-foreground flex w-full relative z-0 selection:bg-primary/20 transition-colors duration-300">
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div
@@ -241,12 +242,12 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
         />
       )}
 
-      {/* Light Theme Sidebar */}
+      {/* Sidebar */}
       <aside
         className={`
-          fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 h-screen
+          superadmin-sidebar fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 h-screen
           ${collapsed ? 'w-[74px]' : 'w-[280px]'}
-          bg-white/95 backdrop-blur-xl border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.03)]
+          bg-white/95 dark:bg-[#08080c]/95 backdrop-blur-2xl border-r border-slate-200 dark:border-white/10 shadow-[4px_0_24px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_36px_rgba(0,0,0,0.75)]
           transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           flex flex-col
@@ -254,14 +255,14 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       >
         {/* Brand Header */}
         <div
-          className={`h-16 flex items-center border-b border-slate-200 shrink-0 ${
+          className={`h-16 flex items-center border-b border-slate-200 dark:border-white/10 shrink-0 ${
             collapsed ? 'justify-center px-2' : 'px-4 justify-between'
           }`}
         >
           {!collapsed ? (
             <div className="flex items-center justify-between w-full">
               <Link to="/superadmin" className="flex items-center gap-2">
-                <BrandLogo height={36} variant="light" />
+                <BrandLogo height={36} variant="auto" />
               </Link>
               <div className="flex items-center gap-1.5">
                 <Badge className="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 tracking-wider uppercase">
@@ -269,7 +270,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                 </Badge>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                  className="lg:hidden p-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -284,20 +285,20 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
 
         {/* Quick Search Tool Filter */}
         {!collapsed && (
-          <div className="p-3 border-b border-slate-100 bg-slate-50/60">
+          <div className="p-3 border-b border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02]">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Jump to tool or tab..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 pl-8 pr-7 text-xs rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs"
+                className="w-full h-8 pl-8 pr-7 text-xs rounded-lg bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/15 text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all shadow-2xs"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -317,7 +318,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                 if (collapsed) {
                   return (
                     <div key={section.id} className="space-y-1 py-1">
-                      <div className="h-px bg-slate-200 mx-1 mb-2" />
+                      <div className="h-px bg-slate-200 dark:bg-white/10 mx-1 mb-2" />
                       {section.items.map((item) => {
                         const active = isActive(item);
                         const Icon = item.icon;
@@ -331,7 +332,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                                   ${
                                     active
                                       ? 'bg-primary text-on-ink shadow-md shadow-primary/25 scale-105'
-                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                      : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'
                                   }
                                 `}
                               >
@@ -350,15 +351,15 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                 }
 
                 return (
-                  <div key={section.id} className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-1.5 shadow-2xs">
+                  <div key={section.id} className="superadmin-sidebar-section rounded-xl border border-slate-200/70 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.04] p-1.5 shadow-2xs dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                     {/* Section Header */}
                     <button
                       type="button"
                       onClick={() => toggleSection(section.id)}
-                      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors group"
+                      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors group"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${hasActiveChild ? 'text-primary' : 'text-slate-500 group-hover:text-slate-900'}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${hasActiveChild ? 'text-primary' : 'text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                           {section.title}
                         </span>
                         {hasActiveChild && (
@@ -366,7 +367,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                         )}
                       </div>
                       <ChevronDown
-                        className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                        className={`w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 transition-transform duration-200 ${
                           isSectionCollapsed ? '-rotate-90' : 'rotate-0'
                         }`}
                       />
@@ -386,19 +387,19 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                                 flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 text-left
                                 ${
                                   active
-                                    ? 'bg-primary/10 text-primary border border-primary/20 font-semibold shadow-2xs'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+                                    ? 'bg-primary/10 dark:bg-primary/15 text-primary border border-primary/20 dark:border-primary/30 font-semibold shadow-2xs'
+                                    : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/[0.07]'
                                 }
                               `}
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
-                                <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-primary' : 'text-slate-500 group-hover:text-slate-900'}`} />
+                                <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-primary' : 'text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
                                 <span className="truncate">{item.label}</span>
                               </div>
                               {item.badge && (
                                 <span
                                   className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${
-                                    item.badgeColor || 'bg-slate-100 text-slate-700 border-slate-200'
+                                    item.badgeColor || 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-white/15'
                                   }`}
                                 >
                                   {item.badge}
@@ -417,14 +418,14 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
         </TooltipProvider>
 
         {/* Sidebar Footer */}
-        <div className={`border-t border-slate-200 shrink-0 ${collapsed ? 'p-2 space-y-1.5' : 'p-3 space-y-2'}`}>
+        <div className={`border-t border-slate-200 dark:border-white/10 shrink-0 ${collapsed ? 'p-2 space-y-1.5' : 'p-3 space-y-2'}`}>
           {/* Quick Portal Jumpers (Desktop dropdown) */}
           {!collapsed ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 border border-slate-200/80 text-slate-700 hover:text-slate-900 hover:bg-slate-200/70 transition-colors shadow-2xs"
+                  className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/15 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/[0.1] transition-colors shadow-2xs"
                 >
                   <span className="flex items-center gap-2">
                     <Compass className="w-3.5 h-3.5 text-primary" />
@@ -433,20 +434,20 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                   <ExternalLink className="w-3 h-3 text-slate-400" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8} className="w-56 bg-white text-slate-900 border-slate-200 rounded-xl p-1.5 shadow-xl">
+              <DropdownMenuContent align="end" sideOffset={8} className="w-56 bg-white dark:bg-[#111118] text-slate-900 dark:text-zinc-100 border-slate-200 dark:border-white/15 rounded-xl p-1.5 shadow-xl">
                 <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-primary px-2 py-1">
                   Active Environments
                 </DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => navigate('/client/dashboard')} className="text-xs hover:bg-slate-100 rounded-lg cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate('/client/dashboard')} className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer">
                   <UserSquare className="w-3.5 h-3.5 mr-2 text-primary" />
                   Client Portal View
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/dashboard')} className="text-xs hover:bg-slate-100 rounded-lg cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate('/dashboard')} className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer">
                   <Users className="w-3.5 h-3.5 mr-2 text-primary" />
                   Talent Workspace View
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-100" />
-                <DropdownMenuItem onClick={() => navigate('/')} className="text-xs hover:bg-slate-100 rounded-lg cursor-pointer">
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10" />
+                <DropdownMenuItem onClick={() => navigate('/')} className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer">
                   <Globe className="w-3.5 h-3.5 mr-2 text-emerald-600" />
                   Public Landing Website
                 </DropdownMenuItem>
@@ -457,7 +458,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               <TooltipTrigger asChild>
                 <button
                   onClick={() => navigate('/')}
-                  className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                  className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   <Compass className="w-4 h-4 text-primary" />
                 </button>
@@ -469,7 +470,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
           {/* Collapse Toggle */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className={`w-full hidden lg:flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors h-8 text-xs ${
+            className={`w-full hidden lg:flex items-center justify-center rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors h-8 text-xs ${
               collapsed ? '' : 'gap-2 px-3'
             }`}
           >
@@ -487,7 +488,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
           {!collapsed ? (
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Terminate Session</span>
@@ -497,7 +498,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               <TooltipTrigger asChild>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-rose-600 hover:bg-rose-50"
+                  className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -509,14 +510,14 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
       </aside>
 
       {/* Main Content Area with Desktop Top Bar */}
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-[#f8fafc]">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-[#f8fafc] dark:bg-transparent">
         {/* Top Header Bar for Desktop & Mobile */}
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-2xs">
+        <header className="superadmin-header sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-[#09090d]/90 backdrop-blur-2xl shadow-2xs dark:shadow-[inset_0_-1px_0_rgba(255,255,255,0.06),0_12px_32px_-12px_rgba(0,0,0,0.75)]">
           {/* Left: Mobile Menu + Breadcrumbs */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
@@ -524,27 +525,30 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
 
             {/* Breadcrumb Trail */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="hidden sm:inline text-slate-400 font-semibold uppercase tracking-wider">
+              <span className="hidden sm:inline text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">
                 Superadmin
               </span>
-              <span className="hidden sm:inline text-slate-300">/</span>
-              <span className="text-slate-500 font-medium hidden md:inline">
+              <span className="hidden sm:inline text-slate-300 dark:text-zinc-700">/</span>
+              <span className="text-slate-500 dark:text-zinc-400 font-medium hidden md:inline">
                 {currentBreadcrumb.section}
               </span>
-              <span className="text-slate-300 hidden md:inline">/</span>
-              <span className="text-slate-900 font-bold font-heading">
+              <span className="text-slate-300 dark:text-zinc-700 hidden md:inline">/</span>
+              <span className="text-slate-900 dark:text-white font-bold font-heading">
                 {currentBreadcrumb.page}
               </span>
             </div>
           </div>
 
-          {/* Right: Status, Refresh, Notifications, User Badge */}
-          <div className="flex items-center gap-3">
+          {/* Right: Status, Theme Toggle, Refresh, Notifications, User Badge */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Platform Status Badge */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-700">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/15 text-[11px] font-semibold text-slate-700 dark:text-zinc-200">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Accra Production Node</span>
             </div>
+
+            {/* Dark / Light Mode Toggle */}
+            <ThemeToggle showLabel />
 
             {/* Refresh Action */}
             {onRefresh && (
@@ -553,7 +557,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
                 size="sm"
                 onClick={onRefresh}
                 disabled={loading}
-                className="h-9 px-3 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 gap-1.5 text-xs font-semibold"
+                className="h-9 px-3 rounded-full text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 gap-1.5 text-xs font-semibold"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
                 <span className="hidden md:inline">Refresh Data</span>
@@ -564,7 +568,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
             <NotificationCenter />
 
             {/* Admin Avatar Pill */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-white/10">
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-amber-500 text-on-ink font-bold text-xs flex items-center justify-center shadow-xs">
                 SA
               </div>
@@ -589,7 +593,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
 
         {/* Native Mobile App Bottom Tab Bar */}
         <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-2xl border-t border-slate-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] px-2 pt-1 pb-safe"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#09090d]/95 backdrop-blur-2xl border-t border-slate-200/90 dark:border-white/10 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] px-2 pt-1 pb-safe"
           aria-label="Mobile Superadmin Navigation"
         >
           <div className="grid grid-cols-5 items-center h-14">
@@ -598,7 +602,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
                 currentPath === '/superadmin' && (!currentTab || currentTab === 'overview')
                   ? 'text-primary font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -610,7 +614,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
                 currentPath === '/superadmin/projects'
                   ? 'text-primary font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <FolderKanban className="w-4 h-4" />
@@ -622,7 +626,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
                 currentPath === '/superadmin/finance'
                   ? 'text-primary font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <DollarSign className="w-4 h-4" />
@@ -634,7 +638,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
               className={`flex flex-col items-center justify-center h-full gap-1 active:scale-95 transition-transform ${
                 currentPath === '/superadmin/qa-reviewer'
                   ? 'text-primary font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <FileCheck className="w-4 h-4" />
@@ -644,7 +648,7 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="flex flex-col items-center justify-center h-full gap-1 text-slate-500 hover:text-slate-900 active:scale-95 transition-transform"
+              className="flex flex-col items-center justify-center h-full gap-1 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-transform"
             >
               <Compass className="w-4 h-4 text-primary" />
               <span className="text-[10px] tracking-tight">All Tools</span>

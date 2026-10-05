@@ -23,8 +23,12 @@ export default function ThirdPartyLoader() {
   const loadAll = useCallback(() => {
     if (loaded) return;
 
-    // Only load ad-related scripts when ads are enabled
-    if (adsEnabled) {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isProductionDomain =
+      hostname === 'primehaven.tech' || hostname.endsWith('.primehaven.tech');
+
+    // Only load domain-locked ad/CMP scripts on the production domain when ads are enabled
+    if (adsEnabled && isProductionDomain) {
       // Adsterra (load asynchronously)
       insertScript({ src: 'https://pl28947943.profitablecpmratenetwork.com/ec/f3/2c/ecf32c359875e5dc9c20bd2c30ec567f.js', async: true });
 
@@ -39,6 +43,12 @@ export default function ThirdPartyLoader() {
   }, [adsEnabled, insertScript, isMobile, loaded]);
 
   useEffect(() => {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isProductionDomain =
+      hostname === 'primehaven.tech' || hostname.endsWith('.primehaven.tech');
+
+    if (!isProductionDomain) return;
+
     // Load critical payment script immediately (Korapay only)
     insertScript({ src: 'https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js', async: false });
 

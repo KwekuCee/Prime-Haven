@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -76,28 +76,40 @@ export type Database = {
       affiliate_referrals: {
         Row: {
           affiliate_id: string
+          amount_paid: number | null
+          available_at: string | null
           client_name: string
+          client_ref: string | null
           commission: number
           created_at: string
           id: string
+          paid_at: string | null
           service_booked: string
           status: string | null
         }
         Insert: {
           affiliate_id: string
+          amount_paid?: number | null
+          available_at?: string | null
           client_name: string
+          client_ref?: string | null
           commission?: number
           created_at?: string
           id?: string
+          paid_at?: string | null
           service_booked: string
           status?: string | null
         }
         Update: {
           affiliate_id?: string
+          amount_paid?: number | null
+          available_at?: string | null
           client_name?: string
+          client_ref?: string | null
           commission?: number
           created_at?: string
           id?: string
+          paid_at?: string | null
           service_booked?: string
           status?: string | null
         }
@@ -110,6 +122,228 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      applicant_assessments: {
+        Row: {
+          answers: Json
+          applicant_id: string
+          correct_count: number | null
+          created_at: string
+          id: string
+          passed: boolean | null
+          practical_review_status: string
+          practical_task_id: string | null
+          practical_text: string | null
+          practical_url: string | null
+          question_ids: string[]
+          score: number | null
+          started_at: string
+          submitted_at: string | null
+          total_questions: number | null
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          applicant_id: string
+          correct_count?: number | null
+          created_at?: string
+          id?: string
+          passed?: boolean | null
+          practical_review_status?: string
+          practical_task_id?: string | null
+          practical_text?: string | null
+          practical_url?: string | null
+          question_ids?: string[]
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          applicant_id?: string
+          correct_count?: number | null
+          created_at?: string
+          id?: string
+          passed?: boolean | null
+          practical_review_status?: string
+          practical_task_id?: string | null
+          practical_text?: string | null
+          practical_url?: string | null
+          question_ids?: string[]
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          track?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applicant_assessments_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "applicants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applicant_assessments_practical_task_id_fkey"
+            columns: ["practical_task_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applicants: {
+        Row: {
+          access_token: string
+          admin_notes: string | null
+          created_at: string
+          cv_url: string | null
+          email: string
+          full_name: string
+          id: string
+          integrity_flags: number
+          integrity_status: string | null
+          invited_at: string | null
+          paid_at: string | null
+          passed: boolean | null
+          payment_reference: string | null
+          phone: string | null
+          portfolio_link: string | null
+          portfolio_url: string | null
+          score: number | null
+          status: string
+          track: string
+          updated_at: string
+          user_id: string | null
+          video_watched_at: string | null
+        }
+        Insert: {
+          access_token?: string
+          admin_notes?: string | null
+          created_at?: string
+          cv_url?: string | null
+          email: string
+          full_name: string
+          id?: string
+          integrity_flags?: number
+          integrity_status?: string | null
+          invited_at?: string | null
+          paid_at?: string | null
+          passed?: boolean | null
+          payment_reference?: string | null
+          phone?: string | null
+          portfolio_link?: string | null
+          portfolio_url?: string | null
+          score?: number | null
+          status?: string
+          track: string
+          updated_at?: string
+          user_id?: string | null
+          video_watched_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          admin_notes?: string | null
+          created_at?: string
+          cv_url?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          integrity_flags?: number
+          integrity_status?: string | null
+          invited_at?: string | null
+          paid_at?: string | null
+          passed?: boolean | null
+          payment_reference?: string | null
+          phone?: string | null
+          portfolio_link?: string | null
+          portfolio_url?: string | null
+          score?: number | null
+          status?: string
+          track?: string
+          updated_at?: string
+          user_id?: string | null
+          video_watched_at?: string | null
+        }
+        Relationships: []
+      }
+      assessment_questions: {
+        Row: {
+          correct_option: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          options: Json
+          points: number
+          prompt: string
+          question_type: string
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          correct_option?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          options?: Json
+          points?: number
+          prompt: string
+          question_type?: string
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          correct_option?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          options?: Json
+          points?: number
+          prompt?: string
+          question_type?: string
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assessment_tasks: {
+        Row: {
+          brief: string
+          created_at: string
+          id: string
+          is_active: boolean
+          submission_type: string
+          title: string
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          brief: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          submission_type?: string
+          title: string
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          brief?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          submission_type?: string
+          title?: string
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       badges: {
         Row: {
@@ -237,6 +471,7 @@ export type Database = {
           claimed_at: string | null
           client_email: string
           client_name: string
+          client_project_id: string | null
           client_rating: number | null
           client_review: string | null
           client_whatsapp: string | null
@@ -250,6 +485,8 @@ export type Database = {
           payment_status: string
           price: number
           project_status: string | null
+          reference_images: string[]
+          referral_code: string | null
           service_type: string
           tier: string
           updated_at: string
@@ -259,6 +496,7 @@ export type Database = {
           claimed_at?: string | null
           client_email: string
           client_name: string
+          client_project_id?: string | null
           client_rating?: number | null
           client_review?: string | null
           client_whatsapp?: string | null
@@ -272,6 +510,8 @@ export type Database = {
           payment_status?: string
           price: number
           project_status?: string | null
+          reference_images?: string[]
+          referral_code?: string | null
           service_type: string
           tier: string
           updated_at?: string
@@ -281,6 +521,7 @@ export type Database = {
           claimed_at?: string | null
           client_email?: string
           client_name?: string
+          client_project_id?: string | null
           client_rating?: number | null
           client_review?: string | null
           client_whatsapp?: string | null
@@ -294,17 +535,29 @@ export type Database = {
           payment_status?: string
           price?: number
           project_status?: string | null
+          reference_images?: string[]
+          referral_code?: string | null
           service_type?: string
           tier?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_orders_client_project_id_fkey"
+            columns: ["client_project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_projects: {
         Row: {
           accepted_designer_id: string | null
           budget: string | null
           category: string
+          claimed_at: string | null
+          claimed_by: string | null
           client_email: string | null
           client_id: string | null
           client_name: string
@@ -315,7 +568,12 @@ export type Database = {
           description: string | null
           id: string
           max_assignees: number | null
+          needs_review: boolean
+          paid_at: string | null
+          price_ghs: number | null
+          price_usd: number | null
           progress_percentage: number
+          reference_images: string[]
           required_professions: string[] | null
           status: string
           tip_total: number
@@ -327,6 +585,8 @@ export type Database = {
           accepted_designer_id?: string | null
           budget?: string | null
           category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name: string
@@ -337,7 +597,12 @@ export type Database = {
           description?: string | null
           id?: string
           max_assignees?: number | null
+          needs_review?: boolean
+          paid_at?: string | null
+          price_ghs?: number | null
+          price_usd?: number | null
           progress_percentage?: number
+          reference_images?: string[]
           required_professions?: string[] | null
           status?: string
           tip_total?: number
@@ -349,6 +614,8 @@ export type Database = {
           accepted_designer_id?: string | null
           budget?: string | null
           category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string
@@ -359,7 +626,12 @@ export type Database = {
           description?: string | null
           id?: string
           max_assignees?: number | null
+          needs_review?: boolean
+          paid_at?: string | null
+          price_ghs?: number | null
+          price_usd?: number | null
           progress_percentage?: number
+          reference_images?: string[]
           required_professions?: string[] | null
           status?: string
           tip_total?: number
@@ -590,6 +862,60 @@ export type Database = {
         }
         Relationships: []
       }
+      hire_requests: {
+        Row: {
+          admin_notes: string | null
+          brief: string
+          budget: string | null
+          created_at: string
+          deadline: string | null
+          email: string
+          full_name: string
+          id: string
+          reference_images: string[]
+          service_label: string | null
+          service_slug: string
+          status: string
+          tier: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          brief: string
+          budget?: string | null
+          created_at?: string
+          deadline?: string | null
+          email: string
+          full_name: string
+          id?: string
+          reference_images?: string[]
+          service_label?: string | null
+          service_slug: string
+          status?: string
+          tier?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          brief?: string
+          budget?: string | null
+          created_at?: string
+          deadline?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          reference_images?: string[]
+          service_label?: string | null
+          service_slug?: string
+          status?: string
+          tier?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       job_contract_claims: {
         Row: {
           claimed_at: string
@@ -629,6 +955,7 @@ export type Database = {
           budget: string | null
           category: string
           client_name: string | null
+          client_project_id: string | null
           created_at: string
           deadline: string | null
           description: string
@@ -650,6 +977,7 @@ export type Database = {
           budget?: string | null
           category: string
           client_name?: string | null
+          client_project_id?: string | null
           created_at?: string
           deadline?: string | null
           description: string
@@ -671,6 +999,7 @@ export type Database = {
           budget?: string | null
           category?: string
           client_name?: string | null
+          client_project_id?: string | null
           created_at?: string
           deadline?: string | null
           description?: string
@@ -684,6 +1013,56 @@ export type Database = {
           status?: string
           target_professions?: string[] | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_contracts_client_project_id_fkey"
+            columns: ["client_project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          designer_id: string
+          id: string
+          job_price: number
+          project_id: string | null
+          share_percent: number
+          status: string
+          submission_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          designer_id: string
+          id?: string
+          job_price?: number
+          project_id?: string | null
+          share_percent?: number
+          status?: string
+          submission_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          designer_id?: string
+          id?: string
+          job_price?: number
+          project_id?: string | null
+          share_percent?: number
+          status?: string
+          submission_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -826,6 +1205,7 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          archived_at: string | null
           created_at: string
           id: string
           payment_details: Json | null
@@ -840,6 +1220,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          archived_at?: string | null
           created_at?: string
           id?: string
           payment_details?: Json | null
@@ -854,6 +1235,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          archived_at?: string | null
           created_at?: string
           id?: string
           payment_details?: Json | null
@@ -1195,6 +1577,75 @@ export type Database = {
           },
         ]
       }
+      project_tip_intents: {
+        Row: {
+          amount: number
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          currency: string
+          designer_id: string
+          expires_at: string
+          gateway: string
+          id: string
+          message: string | null
+          project_id: string
+          reference: string
+          status: string
+          updated_at: string
+          verified_tip_id: string | null
+        }
+        Insert: {
+          amount: number
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          currency?: string
+          designer_id: string
+          expires_at?: string
+          gateway?: string
+          id?: string
+          message?: string | null
+          project_id: string
+          reference: string
+          status?: string
+          updated_at?: string
+          verified_tip_id?: string | null
+        }
+        Update: {
+          amount?: number
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          currency?: string
+          designer_id?: string
+          expires_at?: string
+          gateway?: string
+          id?: string
+          message?: string | null
+          project_id?: string
+          reference?: string
+          status?: string
+          updated_at?: string
+          verified_tip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tip_intents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "client_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tip_intents_verified_tip_id_fkey"
+            columns: ["verified_tip_id"]
+            isOneToOne: false
+            referencedRelation: "project_tips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tips: {
         Row: {
           amount: number
@@ -1347,6 +1798,69 @@ export type Database = {
           is_active?: boolean
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_hits: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
+      seo_index_reports: {
+        Row: {
+          created_at: string
+          deployment_signature: string | null
+          id: string
+          indexed_count: number
+          issue_count: number
+          pages: Json
+          site_url: string
+          sitemap_url: string | null
+          total_urls: number
+          trigger: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          deployment_signature?: string | null
+          id?: string
+          indexed_count?: number
+          issue_count?: number
+          pages?: Json
+          site_url: string
+          sitemap_url?: string | null
+          total_urls?: number
+          trigger?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          deployment_signature?: string | null
+          id?: string
+          indexed_count?: number
+          issue_count?: number
+          pages?: Json
+          site_url?: string
+          sitemap_url?: string | null
+          total_urls?: number
+          trigger?: string
+          triggered_by?: string | null
         }
         Relationships: []
       }
@@ -1818,6 +2332,39 @@ export type Database = {
         }
         Relationships: []
       }
+      talent_activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          summary: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           bio: string
@@ -1899,6 +2446,45 @@ export type Database = {
         }
         Relationships: []
       }
+      unmatched_payments: {
+        Row: {
+          amount: number
+          amount_ghs: number
+          client_email: string | null
+          created_at: string
+          currency: string
+          gateway: string
+          id: string
+          order_id: string | null
+          reference: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          amount_ghs: number
+          client_email?: string | null
+          created_at?: string
+          currency: string
+          gateway: string
+          id?: string
+          order_id?: string | null
+          reference: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          amount_ghs?: number
+          client_email?: string | null
+          created_at?: string
+          currency?: string
+          gateway?: string
+          id?: string
+          order_id?: string | null
+          reference?: string
+          status?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string
@@ -1944,6 +2530,7 @@ export type Database = {
           provider: string
           updated_at: string
           user_id: string
+          withdrawal_available_at: string
         }
         Insert: {
           account_name: string
@@ -1954,6 +2541,7 @@ export type Database = {
           provider: string
           updated_at?: string
           user_id: string
+          withdrawal_available_at?: string
         }
         Update: {
           account_name?: string
@@ -1964,6 +2552,7 @@ export type Database = {
           provider?: string
           updated_at?: string
           user_id?: string
+          withdrawal_available_at?: string
         }
         Relationships: []
       }
@@ -2154,28 +2743,6 @@ export type Database = {
           total_points: number | null
           user_id: string | null
         }
-        Insert: {
-          experience_level?: string | null
-          monthly_points?: number | null
-          professional_title?: string | null
-          professions?: string[] | null
-          profile_photo_url?: string | null
-          skills?: string[] | null
-          talent_score?: number | null
-          total_points?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          experience_level?: string | null
-          monthly_points?: number | null
-          professional_title?: string | null
-          professions?: string[] | null
-          profile_photo_url?: string | null
-          skills?: string[] | null
-          talent_score?: number | null
-          total_points?: number | null
-          user_id?: string | null
-        }
         Relationships: []
       }
       leaderboard_profiles: {
@@ -2184,36 +2751,122 @@ export type Database = {
           id: string | null
           username: string | null
         }
-        Insert: {
-          full_name?: string | null
-          id?: string | null
-          username?: string | null
-        }
-        Update: {
-          full_name?: string | null
-          id?: string | null
-          username?: string | null
-        }
         Relationships: []
       }
     }
     Functions: {
+      admin_archive_ledger: { Args: { p_restore?: boolean }; Returns: number }
+      admin_client_accept_submission: {
+        Args: {
+          p_dept_label?: string
+          p_points: number
+          p_submission_id: string
+        }
+        Returns: Json
+      }
+      admin_ph_approve_submission: {
+        Args: {
+          p_dept_label?: string
+          p_points: number
+          p_submission_id: string
+        }
+        Returns: Json
+      }
+      admin_remove_withdrawal_request: {
+        Args: { p_reason?: string; p_withdrawal_id: string }
+        Returns: Json
+      }
+      admin_revoke_submission: {
+        Args: { p_dept_label?: string; p_submission_id: string }
+        Returns: Json
+      }
       allocate_client_acceptance_points: {
         Args: { p_designer_id: string; p_points: number }
         Returns: undefined
       }
-      claim_job_contract: {
-        Args: { p_contract_id: string }
-        Returns: undefined
+      approve_project_submission: {
+        Args: { p_submission_id: string }
+        Returns: Json
       }
-      release_job_contract_claim: {
-        Args: { p_contract_id: string }
-        Returns: undefined
+      check_rate_limit: {
+        Args: { p_action: string; p_identifier: string }
+        Returns: Json
       }
+      check_withdrawal_already_paid: {
+        Args: { p_withdrawal_id: string }
+        Returns: Json
+      }
+      claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
+      claim_withdrawal_for_payout_service: {
+        Args: { p_reference: string; p_withdrawal_id: string }
+        Returns: Json
+      }
+      current_user_email: { Args: never; Returns: string }
+      ensure_client_role: { Args: never; Returns: boolean }
+      finalise_withdrawal_payout_service: {
+        Args: {
+          p_admin_id: string
+          p_gateway: string
+          p_reference: string
+          p_status: string
+          p_withdrawal_id: string
+        }
+        Returns: Json
+      }
+      find_or_create_client: {
+        Args: { p_email: string; p_name: string; p_whatsapp?: string }
+        Returns: string
+      }
       generate_monthly_report_now: {
         Args: { p_month?: number; p_year?: number }
         Returns: undefined
+      }
+      get_designer_public_portfolio: {
+        Args: { p_designer_id: string }
+        Returns: {
+          created_at: string
+          design_link: string
+          files_urls: string[]
+          id: string
+          points_awarded: number
+          project_name: string
+          service_type: string
+        }[]
+      }
+      get_designer_public_profile: {
+        Args: { p_designer_id: string }
+        Returns: {
+          bio: string
+          experience_level: string
+          full_name: string
+          join_date: string
+          professional_title: string
+          professions: string[]
+          profile_photo_url: string
+          skills: string[]
+          specialty: string
+          talent_score: number
+          total_points: number
+          user_id: string
+          username: string
+        }[]
+      }
+      get_open_job_contracts: {
+        Args: never
+        Returns: {
+          active_designers_count: number
+          budget: string
+          category: string
+          created_at: string
+          deadline: string
+          description: string
+          id: string
+          requirements: string
+          status: string
+          target_professions: string[]
+          title: string
+        }[]
       }
       get_pending_client_projects: {
         Args: never
@@ -2225,6 +2878,7 @@ export type Database = {
           description: string
           id: string
           max_assignees: number
+          price_ghs: number
           required_professions: string[]
           status: string
           title: string
@@ -2241,6 +2895,47 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_affiliate_click: {
+        Args: { p_code: string }
+        Returns: undefined
+      }
+      leaderboard_designer_details_fn: {
+        Args: never
+        Returns: {
+          experience_level: string
+          monthly_points: number
+          professional_title: string
+          professions: string[]
+          profile_photo_url: string
+          skills: string[]
+          talent_score: number
+          total_points: number
+          user_id: string
+        }[]
+      }
+      leaderboard_profiles_fn: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+          username: string
+        }[]
+      }
+      manage_talent_payout_method_service: {
+        Args: {
+          p_account_name?: string
+          p_action: string
+          p_method_id?: string
+          p_phone_number?: string
+          p_provider?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      mark_affiliate_payout_paid: {
+        Args: { p_payout_id: string }
+        Returns: undefined
+      }
       notify_discord_order: {
         Args: {
           p_amount: number
@@ -2255,18 +2950,81 @@ export type Database = {
         }
         Returns: undefined
       }
-      process_affiliate_commission: {
-        Args: {
-          p_client_name: string
-          p_commission: number
-          p_ref_code: string
-          p_service: string
-        }
+      process_affiliate_commission:
+        | {
+            Args: {
+              p_client_name: string
+              p_commission: number
+              p_ref_code: string
+              p_service: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_amount_paid?: number
+              p_client_name: string
+              p_client_ref?: string
+              p_commission: number
+              p_ref_code: string
+              p_service: string
+            }
+            Returns: undefined
+          }
+      public_total_salaries_paid: {
+        Args: never
+        Returns: {
+          baseline_usd: number
+          last_paid_at: string
+          payout_count: number
+          total_ghs: number
+        }[]
+      }
+      release_expired_project_claims: { Args: never; Returns: number }
+      release_job_contract: { Args: { p_contract_id: string }; Returns: Json }
+      release_job_contract_claim: {
+        Args: { p_contract_id: string }
         Returns: undefined
+      }
+      release_project_claim: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
+      release_referrals_for_withdrawal: {
+        Args: { p_affiliate_id: string }
+        Returns: number
+      }
+      request_project_revision: {
+        Args: { p_feedback: string; p_submission_id: string }
+        Returns: Json
+      }
+      request_talent_withdrawal_service: {
+        Args: {
+          p_amount: number
+          p_payout_method_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      start_job_contract_work: {
+        Args: { p_contract_id: string }
+        Returns: Json
+      }
+      start_project_work: { Args: { p_project_id: string }; Returns: undefined }
+      submit_job_contract_work: {
+        Args: { p_contract_id: string }
+        Returns: Json
+      }
+      validate_promo_code: {
+        Args: { p_code: string }
+        Returns: {
+          code: string
+          discount_percent: number
+        }[]
       }
     }
     Enums: {
-      app_role: "designer" | "superadmin" | "masteradmin"
+      app_role: "designer" | "superadmin" | "masteradmin" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2282,12 +3040,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2311,11 +3069,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2336,11 +3094,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2361,11 +3119,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2378,11 +3136,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2394,7 +3152,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["designer", "superadmin", "masteradmin"],
+      app_role: ["designer", "superadmin", "masteradmin", "client"],
     },
   },
 } as const

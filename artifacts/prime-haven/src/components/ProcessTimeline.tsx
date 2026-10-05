@@ -109,7 +109,7 @@ const ProcessTimeline = () => {
                                                 transition={{ duration: 0.6, ease: "easeOut" }}
                                                 className="w-full"
                                             >
-                                                <div className={`p-6 md:p-8 rounded-3xl border bg-card transition-all duration-300 hover:-translate-y-1 ${step.border} shadow-lg hover:shadow-2xl`}>
+                                                <div className={`prime-card p-6 md:p-8 rounded-3xl border bg-card transition-all duration-300 hover:-translate-y-1 ${step.border} shadow-lg hover:shadow-2xl`}>
                                                     <div className="flex items-center gap-4 mb-4">
                                                         <span className={`text-4xl font-black opacity-20 ${step.color}`}>0{index + 1}</span>
                                                         <h3 className="text-xl md:text-2xl font-bold">{step.title}</h3>

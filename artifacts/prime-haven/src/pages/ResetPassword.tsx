@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import Seo from '@/components/Seo';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Lock, CheckCircle, Eye, EyeOff, ShieldCheck } from 'lucide-react';
@@ -94,10 +95,13 @@ const ResetPassword = () => {
       </div>
 
       <div className="w-full max-w-[440px] relative z-10">
-        <Link to="/login" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Login
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link to="/login" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Login
+          </Link>
+          <ThemeToggle showLabel />
+        </div>
 
         <div className="paper-card p-8 rounded-[2rem]">
           <div className="text-center mb-8">
@@ -118,7 +122,7 @@ const ResetPassword = () => {
               </>
             ) : resetComplete ? (
               <>
-                <div className="w-14 h-14 rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-7 h-7 text-primary" />
                 </div>
                 <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-2">Password Updated!</h1>
@@ -129,7 +133,7 @@ const ResetPassword = () => {
               </>
             ) : (
               <>
-                <div className="w-14 h-14 rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                   <ShieldCheck className="w-7 h-7 text-primary" />
                 </div>
                 <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-2">Reset Password</h1>
@@ -180,7 +184,7 @@ const ResetPassword = () => {
                 {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
               </div>
 
-              <Button type="submit" className="w-full h-12 rounded-full font-bold text-sm bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all" disabled={isSubmitting}>
+              <Button type="submit" className="w-full h-12 rounded-full font-bold text-sm bg-[#0a0a0e] text-white dark:bg-primary dark:text-white hover:bg-primary/90 hover:-translate-y-0.5 transition-all" disabled={isSubmitting}>
                 {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : 'Reset Password'}
               </Button>
             </form>

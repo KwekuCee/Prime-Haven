@@ -165,7 +165,7 @@ const ProjectEstimator = () => {
                                                 className={`
                           p-4 rounded-2xl border text-left transition-all duration-300
                           ${isSelected
-                                                        ? 'bg-primary/12 border-primary text-primary'
+                                                        ? 'bg-primary/15 border-primary text-primary'
                                                         : 'bg-background border-border/70 hover:border-primary/50 text-muted-foreground hover:text-foreground'
                                                     }
                         `}
@@ -239,7 +239,7 @@ const ProjectEstimator = () => {
                                     </div>
                                 </div>
 
-                                <Button asChild className="w-full h-12 rounded-full text-sm font-bold bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all group">
+                                <Button asChild className="w-full h-12 rounded-full text-sm font-bold bg-[#0a0a0e] text-white dark:bg-primary dark:text-white hover:bg-primary/90 dark:shadow-[0_12px_32px_-8px_hsla(13,100%,58%,0.5)] hover:-translate-y-0.5 transition-all group">
                                     <Link to={`/start-project?services=${selectedServices.join(',')}&timeline=${timeline}`}>
                                         Finalize Project Scope <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                     </Link>

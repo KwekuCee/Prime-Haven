@@ -27,7 +27,29 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set('apikey', supabaseKey);
-    return fetch(input, { ...init, headers });
+
+    let targetInput: RequestInfo | URL = input;
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const isProdDomain = hostname === 'primehaven.tech' || hostname.endsWith('.primehaven.tech');
+      const functionsPrefix = `${SUPABASE_URL}/functions/v1/`;
+      const rawUrl =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (!isProdDomain && rawUrl.startsWith(functionsPrefix)) {
+        const proxiedPath = `/functions/v1/${rawUrl.slice(functionsPrefix.length)}`;
+        targetInput =
+          typeof Request !== 'undefined' && input instanceof Request
+            ? new Request(proxiedPath, input)
+            : proxiedPath;
+      }
+    }
+
+    return fetch(targetInput, { ...init, headers });
   };
 }
 

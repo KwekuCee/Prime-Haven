@@ -77,7 +77,7 @@ const ServicesSection = () => {
                     variants={itemVariants}
                     whileHover={{ x: 8 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                    className={`group rounded-2xl border border-border/60 bg-card/30 transition-colors hover:border-primary/40 ${index === 0 ? 'bg-primary/[0.04] border-primary/25' : ''}`}
+                    className={`prime-card group rounded-2xl border border-border/60 bg-card/30 transition-all duration-300 hover:border-primary/40 ${index === 0 ? 'bg-primary/[0.04] border-primary/25' : ''}`}
                   >
                     <div className={`flex items-start gap-5 p-5 sm:p-6 ${index === 0 ? 'sm:p-8' : ''}`}>
                       <motion.div

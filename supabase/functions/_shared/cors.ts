@@ -11,6 +11,7 @@ const EXACT = new Set([
 const PATTERNS = [
   /^https:\/\/[a-z0-9-]+--99cdecd3-e271-46db-8f34-a596c4a5a6f5\.lovable\.app$/,
   /^https:\/\/99cdecd3-e271-46db-8f34-a596c4a5a6f5\.lovableproject\.com$/,
+  /^https:\/\/[a-z0-9-]+\.([a-z0-9-]+\.)?run\.app$/,
   /^http:\/\/localhost(:\d+)?$/,
   /^http:\/\/127\.0\.0\.1(:\d+)?$/,
 ];

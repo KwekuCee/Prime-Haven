@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Briefcase, Eye, EyeOff, Loader2, LogIn, Shield } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -190,7 +191,7 @@ const Login = () => {
   // tab order always follows the on-screen left-to-right order after the slide.
   const brandPanel = (
     <div
-      className="login-brand-panel relative flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-b-[2rem] lg:rounded-[2rem] bg-foreground px-6 py-10 sm:px-10 sm:py-12 lg:p-16 flex-col justify-between gap-8 lg:gap-0 overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
+      className="login-brand-panel relative flex lg:absolute lg:inset-y-4 lg:left-4 lg:w-5/12 rounded-b-[2rem] lg:rounded-[2rem] bg-[#0a0a0e] dark:bg-[#0c0c14]/90 dark:backdrop-blur-2xl border border-transparent dark:border-white/15 shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_28px_68px_-16px_rgba(0,0,0,0.92),0_0_48px_-12px_hsla(13,100%,58%,0.22)] px-6 py-10 sm:px-10 sm:py-12 lg:p-16 flex-col justify-between gap-8 lg:gap-0 overflow-hidden motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.76,0,0.24,1)]"
       aria-hidden={false}
     >
 
@@ -206,20 +207,24 @@ const Login = () => {
           </svg>
         </div>
 
-        <div className="relative z-10">
+        {/* Ambient glow in dark mode */}
+        <div className="hidden dark:block absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-[90px] pointer-events-none" />
+        <div className="hidden dark:block absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-primary/10 blur-[90px] pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-between">
           <Link to="/" className="inline-block">
             <BrandLogo variant="dark" height={60} />
           </Link>
         </div>
 
         <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-background font-heading tracking-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-medium leading-[1.1] text-white font-heading tracking-tight">
             {panelCopy.heading}
           </h1>
         </div>
 
       <div className="relative z-10">
-        <p className="text-background/60 text-sm max-w-xs">{panelCopy.sub}</p>
+        <p className="text-white/65 text-sm max-w-xs">{panelCopy.sub}</p>
       </div>
     </div>
   );
@@ -232,21 +237,24 @@ const Login = () => {
         key={mode}
         ref={formPanelRef}
         tabIndex={-1}
-        className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none"
+        className="w-full max-w-md motion-safe:animate-fade-in focus:outline-none paper-card p-6 sm:p-8 rounded-[2rem]"
       >
           {/* On small screens the brand panel above already carries the logo. */}
 
 
-          <header className="mb-10">
-            <div className="flex items-center gap-2 mb-2">
-              {mode === 'admin' ? (
-                <Shield className="w-5 h-5 text-primary" />
-              ) : mode === 'client' ? (
-                <Briefcase className="w-5 h-5 text-primary" />
-              ) : (
-                <LogIn className="w-5 h-5 text-primary" />
-              )}
-              <h2 className="text-3xl sm:text-4xl font-semibold font-heading tracking-tight">{formHeading.title}</h2>
+          <header className="mb-8">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                {mode === 'admin' ? (
+                  <Shield className="w-5 h-5 text-primary" />
+                ) : mode === 'client' ? (
+                  <Briefcase className="w-5 h-5 text-primary" />
+                ) : (
+                  <LogIn className="w-5 h-5 text-primary" />
+                )}
+                <h2 className="text-2xl sm:text-3xl font-semibold font-heading tracking-tight">{formHeading.title}</h2>
+              </div>
+              <ThemeToggle showLabel />
             </div>
             <p className="text-muted-foreground">{formHeading.sub}</p>
           </header>
@@ -311,7 +319,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-foreground text-background py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-[#0a0a0e] text-white dark:bg-primary dark:text-white py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary dark:hover:bg-primary/90 dark:shadow-[0_12px_32px_-8px_hsla(13,100%,58%,0.55)] transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <span className="inline-flex items-center justify-center gap-2">

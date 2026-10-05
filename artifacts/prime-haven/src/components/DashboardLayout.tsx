@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import NotificationBell from '@/components/NotificationBell';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -126,9 +127,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 
+        dashboard-sidebar fixed lg:static inset-y-0 left-0 z-50 
         ${collapsed ? 'w-[72px]' : 'w-64'} 
-        bg-sidebar-background border-r border-sidebar-border
+        bg-sidebar dark:bg-[#08080c]/95 backdrop-blur-2xl border-r border-sidebar-border dark:border-white/10 dark:shadow-[4px_0_32px_rgba(0,0,0,0.75)]
         transform transition-all duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
@@ -271,7 +272,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 lg:px-6 bg-background/85 backdrop-blur-xl sticky top-0 z-30 shadow-soft">
+        <header className="h-14 border-b border-border dark:border-white/10 flex items-center justify-between px-4 lg:px-6 bg-background/85 dark:bg-[#09090d]/80 backdrop-blur-xl sticky top-0 z-30 shadow-soft dark:shadow-[inset_0_-1px_0_rgba(255,255,255,0.06),0_12px_32px_-12px_rgba(0,0,0,0.75)]">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" aria-label="Open navigation" onClick={() => setSidebarOpen(true)} className="lg:hidden text-foreground hover:text-primary">
               <Menu className="w-5 h-5" />
@@ -279,6 +280,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <h1 className="text-base font-heading font-bold">{pageTitle}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle showLabel />
             <Link
               to="/messages"
               className="relative group"

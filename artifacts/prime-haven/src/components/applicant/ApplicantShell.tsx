@@ -4,6 +4,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import Seo from '@/components/Seo';
 import { CORE_SERVICES } from '@/lib/coreServices';
 import { trackHasPractical } from '@/lib/talentTracks';
@@ -93,9 +94,12 @@ const ApplicantShell = ({ children, stage, fullName, email, track, score, passMa
         {/* Side rail */}
         <aside className="border-b border-border/60 bg-card/50 lg:min-h-screen lg:w-72 lg:shrink-0 lg:border-b-0 lg:border-r">
           <div className="flex flex-col gap-6 p-5 lg:sticky lg:top-0 lg:p-6">
-            <Link to="/" className="w-fit">
-              <BrandLogo height={40} />
-            </Link>
+            <div className="flex items-center justify-between gap-2">
+              <Link to="/" className="w-fit">
+                <BrandLogo height={40} />
+              </Link>
+              <ThemeToggle />
+            </div>
 
             {fullName && (
               <div className="space-y-1">

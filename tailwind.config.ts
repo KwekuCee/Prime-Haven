@@ -20,11 +20,13 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Space Grotesk", "Plus Jakarta Sans", "system-ui", "sans-serif"],
-        body: ["DM Sans", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        heading: ["Sora", "system-ui", "sans-serif"],
+        body: ["Manrope", "system-ui", "sans-serif"],
       },
 
       colors: {
+        ink: { DEFAULT: "hsl(var(--ink))", soft: "hsl(var(--ink-soft))" },
+        "on-ink": "hsl(var(--on-ink))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

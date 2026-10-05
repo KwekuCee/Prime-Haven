@@ -125,7 +125,7 @@ const ClientSignInForm = () => {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-foreground text-background py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full bg-[#0a0a0e] text-white dark:bg-primary dark:text-white py-4 px-6 mt-4 rounded-full font-bold tracking-wide hover:bg-primary dark:hover:bg-primary/90 dark:shadow-[0_12px_32px_-8px_hsla(13,100%,58%,0.55)] transition-all duration-300 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {isSubmitting ? (
           <span className="inline-flex items-center justify-center gap-2">

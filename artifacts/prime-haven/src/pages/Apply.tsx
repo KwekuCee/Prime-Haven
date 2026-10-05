@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { TALENT_TRACKS, uploadApplicantFile, type TalentTrack } from '@/lib/applicants';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import Seo from '@/components/Seo';
 
 const inputClass = 'h-12 bg-background border-border/70 focus:border-primary/50 rounded-xl';
@@ -150,9 +151,12 @@ const Apply = () => {
       />
 
       <div className="max-w-2xl mx-auto">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to home
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back to home
+          </Link>
+          <ThemeToggle showLabel />
+        </div>
 
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">

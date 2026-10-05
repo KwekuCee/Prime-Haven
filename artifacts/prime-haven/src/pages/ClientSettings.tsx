@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import {
     Shield, Bell, Lock, Globe, Mail,
@@ -15,6 +16,7 @@ import { SpotlightCard } from '@/components/ui/SpotlightCard';
 const ClientSettings = () => {
     const { user } = useAuth();
     const { toast } = useToast();
+    const { resolvedTheme, setTheme } = useTheme();
     const [loading, setLoading] = useState(false);
 
     const [settings, setSettings] = useState({
@@ -24,10 +26,20 @@ const ClientSettings = () => {
         approvalNotifications: true,
         defaultCurrencyGHS: true,
         twoFactor: false,
-        darkMode: true
+        darkMode: resolvedTheme === 'dark'
     });
 
     const handleToggle = (key: keyof typeof settings) => {
+        if (key === 'darkMode') {
+            const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+            setTheme(nextTheme);
+            setSettings(prev => ({ ...prev, darkMode: nextTheme === 'dark' }));
+            toast({
+                title: "Theme Updated",
+                description: `Switched to ${nextTheme === 'dark' ? 'Dark Glass' : 'Light'} mode.`,
+            });
+            return;
+        }
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));
         toast({
             title: "Setting Updated",
@@ -137,7 +149,7 @@ const ClientSettings = () => {
                                         icon={Palette}
                                         title="Immersive Dark Mode"
                                         desc="Optimize the dashboard for low-light environments."
-                                        active={settings.darkMode}
+                                        active={resolvedTheme === 'dark'}
                                         onToggle={() => handleToggle('darkMode')}
                                     />
                                 </div>

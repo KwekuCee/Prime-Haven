@@ -32,6 +32,8 @@ import { JOIN_FEE_USD, getUsdToGhsRate, usdToGhs, formatUsd, formatGhs, type Exc
 import { openPaystackCheckout } from '@/lib/paystack';
 import registerMark from '@/assets/prime-haven-mark.png.asset.json';
 import Seo from '@/components/Seo';
+import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 declare global {
@@ -332,16 +334,19 @@ const Register = () => {
       </div>
 
       <div className="w-full max-w-[520px] relative z-10">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 text-sm">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
+          <ThemeToggle showLabel />
+        </div>
 
         <div className="paper-card p-6 sm:p-8 rounded-[2rem]">
           {/* Header */}
           <div className="text-center mb-6">
             <Link to="/" className="inline-block mb-4">
-              <img src={registerMark.url} alt="Prime Haven" className="block h-auto w-auto mx-auto" style={{ height: '72px' }} />
+              <BrandLogo height={64} className="mx-auto" />
             </Link>
             <h1 className="text-3xl font-heading font-extrabold tracking-tight mb-1">
               Join <span className="text-primary">Prime Haven</span>
@@ -466,7 +471,7 @@ const Register = () => {
                     {personalForm.formState.errors.professionalTitle && <p className="text-xs text-destructive">{personalForm.formState.errors.professionalTitle.message}</p>}
                   </div>
 
-                  <Button type="submit" className="w-full h-12 rounded-full font-bold text-sm bg-foreground text-background hover:bg-foreground/90 hover:-translate-y-0.5 transition-all">Continue</Button>
+                  <Button type="submit" className="w-full h-12 rounded-full font-bold text-sm bg-[#0a0a0e] text-white dark:bg-primary dark:text-white hover:bg-primary/90 hover:-translate-y-0.5 transition-all">Continue</Button>
                 </form>
               </div>
             )}
@@ -570,7 +575,7 @@ const Register = () => {
             {currentStep === 4 && (
               <div className="space-y-5">
                 <div className="rounded-xl border border-border/40 bg-background/40 p-6 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                     <CreditCard className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-lg font-heading font-bold mb-1">Registration Fee</h3>

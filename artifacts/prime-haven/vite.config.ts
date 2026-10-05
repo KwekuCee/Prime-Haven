@@ -5,6 +5,7 @@ import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
 
 const projectDir = __dirname;
+const workspaceRoot = path.resolve(projectDir, "../..");
 const port = 3000;
 const basePath = process.env.BASE_PATH || "/";
 
@@ -25,8 +26,29 @@ export default defineConfig({
     alias: {
       "@": path.join(projectDir, "src"),
       "@assets": path.join(projectDir, "public"),
+      react: path.join(workspaceRoot, "node_modules/react"),
+      "react-dom": path.join(workspaceRoot, "node_modules/react-dom"),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: ["react", "react-dom", "react-router-dom"],
+  },
+  optimizeDeps: {
+    entries: ["index.html", "src/**/*.{ts,tsx}"],
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-router-dom",
+      "framer-motion",
+      "@tanstack/react-query",
+      "next-themes",
+      "lucide-react",
+      "react-i18next",
+      "i18next",
+      "i18next-browser-languagedetector",
+      "@supabase/supabase-js",
+    ],
   },
   root: projectDir,
   build: {
@@ -40,10 +62,28 @@ export default defineConfig({
     strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
+    proxy: {
+      "/functions/v1": {
+        target: "https://kbxijzsrywcwnyvtbruh.supabase.co",
+        changeOrigin: true,
+        headers: {
+          Origin: "https://primehaven.tech",
+        },
+      },
+    },
   },
   preview: {
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    proxy: {
+      "/functions/v1": {
+        target: "https://kbxijzsrywcwnyvtbruh.supabase.co",
+        changeOrigin: true,
+        headers: {
+          Origin: "https://primehaven.tech",
+        },
+      },
+    },
   },
 });

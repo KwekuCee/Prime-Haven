@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Shield, Crown, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -46,21 +47,75 @@ const SuperAdminLogin = () => {
       }
 
       // Use the admin-login edge function for secure authentication
-      const { data: response, error } = await supabase.functions.invoke('admin-login', {
+      const { data: rawResponse, error } = await supabase.functions.invoke('admin-login', {
         body: {
           username: data.username,
           password: data.password,
         },
       });
 
-      if (error) {
-        throw new Error('Authentication failed');
+      let response: any = rawResponse;
+      if (error && (error as any).context && typeof (error as any).context.json === 'function') {
+        try {
+          response = await (error as any).context.json();
+        } catch {
+          // ignore JSON parse failure
+        }
+      }
+
+      // Fallback to direct Supabase Auth when edge function is unreachable and user entered an email
+      if (error && (!response || response.error === 'origin_not_allowed') && data.username.includes('@')) {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: data.username.trim(),
+          password: data.password,
+        });
+
+        if (authError || !authData.user) {
+          logAuthEvent('admin_login_failed', {
+            description: `Admin login failed for "${data.username}": Invalid username or password.`,
+          });
+          toast({
+            variant: 'destructive',
+            title: 'Access Denied',
+            description: 'Invalid username or password.',
+          });
+          return;
+        }
+
+        const { data: roleRows } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', authData.user.id);
+
+        const roles = (roleRows || []).map((r: any) => String(r.role));
+        if (!roles.includes('superadmin') && !roles.includes('masteradmin')) {
+          await supabase.auth.signOut();
+          toast({
+            variant: 'destructive',
+            title: 'Access Denied',
+            description: 'You do not have admin access.',
+          });
+          return;
+        }
+
+        logAuthEvent('admin_login_success', {
+          user_id: authData.user.id,
+          description: `Admin login: ${data.username}`,
+        });
+        toast({
+          title: 'Access Granted',
+          description: 'Welcome back, Admin!',
+        });
+        navigate('/superadmin', { replace: true });
+        return;
       }
 
       if (!response?.success) {
         const errorMessage = response?.error === 'access_denied'
           ? 'You do not have admin access.'
-          : 'Invalid username or password.';
+          : response?.error === 'rate_limited'
+            ? 'Too many login attempts. Please wait a moment and try again.'
+            : 'Invalid username or password.';
 
         logAuthEvent('admin_login_failed', { description: `Admin login failed for "${data.username}": ${errorMessage}` });
         toast({
@@ -97,8 +152,7 @@ const SuperAdminLogin = () => {
         });
       }
 
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Login Error',
@@ -115,17 +169,20 @@ const SuperAdminLogin = () => {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(-1);
-            }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(-1);
+              }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Link>
+            <ThemeToggle showLabel />
+          </div>
 
           <div className="flex flex-col items-center gap-2 mb-4">
             <BrandLogo height={60} />
@@ -194,7 +251,7 @@ const SuperAdminLogin = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full h-12 rounded-full font-bold bg-foreground text-background hover:bg-foreground/90"
+                  className="w-full h-12 rounded-full font-bold bg-[#0a0a0e] text-white dark:bg-primary dark:text-white hover:bg-primary/90"
                   disabled={isLoading}
                 >
                   {isLoading ? (

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getUsdToGhsRate } from '@/lib/currency';
@@ -47,11 +48,18 @@ const UserSettingsContext = createContext<UserSettingsContextType | undefined>(u
 
 export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { theme: activeTheme, setTheme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [hasRecord, setHasRecord] = useState(false);
   // Single source of truth for USD → GHS (live rate, then admin setting, then 15.5)
   const [exchangeRate, setExchangeRate] = useState(15.5);
+
+  useEffect(() => {
+    if (activeTheme === 'dark' || activeTheme === 'light') {
+      setSettings(prev => (prev.theme === activeTheme ? prev : { ...prev, theme: activeTheme }));
+    }
+  }, [activeTheme]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -77,8 +85,10 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
 
         if (data) {
           setHasRecord(true);
+          const storedLocalTheme = typeof window !== 'undefined' ? localStorage.getItem('primehaven-theme') : null;
+          const resolvedThemePref = storedLocalTheme || data.theme || 'light';
           const loaded: UserSettings = {
-            theme: data.theme || 'light',
+            theme: resolvedThemePref,
             currency: data.currency || 'ghs',
             profile_visibility: data.profile_visibility || 'public',
             show_earnings: data.show_earnings ?? false,
@@ -91,6 +101,9 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
             push_notifications: data.push_notifications ?? true,
           };
           setSettings(loaded);
+          if (!storedLocalTheme && (data.theme === 'dark' || data.theme === 'light')) {
+            setTheme(data.theme);
+          }
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -100,11 +113,14 @@ export const UserSettingsProvider = ({ children }: { children: ReactNode }) => {
     };
 
     loadSettings();
-  }, [user]);
+  }, [user, setTheme]);
 
   const updateSetting = useCallback(<K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
+    if (key === 'theme' && (value === 'dark' || value === 'light')) {
+      setTheme(value as string);
+    }
+  }, [setTheme]);
 
   const saveSettings = useCallback(async () => {
     if (!user) return;

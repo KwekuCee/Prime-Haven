@@ -42,7 +42,7 @@ export const AdminNavigation = () => {
             className={`font-semibold text-xs whitespace-nowrap shrink-0 rounded-full h-8 px-3.5 transition-all ${
               isActive
                 ? 'bg-primary text-white shadow-xs'
-                : 'border-slate-200 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-2xs'
+                : 'border-slate-200 dark:border-white/15 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 shadow-2xs'
             }`}
           >
             <Icon className="w-3.5 h-3.5 mr-1.5 text-primary" />
