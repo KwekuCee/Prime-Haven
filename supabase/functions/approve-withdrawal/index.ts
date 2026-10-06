@@ -84,9 +84,13 @@ serve(withCors(async (req) => {
 
     // --- Manual (paid outside Korapay) ---
     if (mode === "manual") {
-      const { data: claimData, error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
-      if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
-      const claimedReference = (claimData as { reference?: string } | null)?.reference || reference;
+      // A withdrawal stuck in 'processing' is already reserved; let the admin settle it manually.
+      let claimedReference = reference;
+      if (withdrawal.status !== "processing") {
+        const { data: claimData, error: claimError } = await admin.rpc("claim_withdrawal_for_payout_service", { p_withdrawal_id: withdrawalId, p_reference: reference });
+        if (claimError) return json({ error: "already_processing", message: claimError.message }, 409);
+        claimedReference = (claimData as { reference?: string } | null)?.reference || reference;
+      }
       const { error: finaliseError } = await admin.rpc("finalise_withdrawal_payout_service", {
         p_withdrawal_id: withdrawalId, p_admin_id: adminUserId, p_status: "approved",
         p_gateway: "Manual Transfer", p_reference: claimedReference,
