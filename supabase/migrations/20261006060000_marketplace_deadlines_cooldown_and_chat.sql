@@ -46,6 +46,15 @@ CREATE TABLE IF NOT EXISTS public.project_chat_messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- Ensure all columns exist even if project_chat_messages table already existed
+ALTER TABLE IF EXISTS public.project_chat_messages
+  ADD COLUMN IF NOT EXISTS sender_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS sender_role TEXT DEFAULT 'client',
+  ADD COLUMN IF NOT EXISTS sender_name TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS is_flagged BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS flag_reason TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT FALSE;
+
 CREATE INDEX IF NOT EXISTS idx_chat_project_id ON public.project_chat_messages (project_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created_at ON public.project_chat_messages (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_is_flagged ON public.project_chat_messages (is_flagged);
@@ -77,22 +86,22 @@ CREATE POLICY "Users can view project chat messages"
     sender_id = auth.uid()
     OR EXISTS (
       SELECT 1 FROM public.client_projects cp
-      WHERE cp.id::text = project_chat_messages.project_id
+      WHERE cp.id::text = project_chat_messages.project_id::text
         AND (cp.client_email = (SELECT email FROM auth.users WHERE id = auth.uid())
-             OR cp.claimed_by = auth.uid()
-             OR cp.accepted_designer_id = auth.uid())
+             OR cp.claimed_by::text = auth.uid()::text
+             OR cp.accepted_designer_id::text = auth.uid()::text)
     )
     OR EXISTS (
       SELECT 1 FROM public.client_orders co
-      WHERE co.id::text = project_chat_messages.project_id
+      WHERE co.id::text = project_chat_messages.project_id::text
         AND (co.client_email = (SELECT email FROM auth.users WHERE id = auth.uid())
-             OR co.assigned_designer_id = auth.uid())
+             OR co.assigned_designer_id::text = auth.uid()::text)
     )
     OR EXISTS (
       SELECT 1 FROM public.job_contracts jc
       JOIN public.job_contract_claims jcc ON jcc.contract_id = jc.id
-      WHERE jc.id::text = project_chat_messages.project_id
-        AND jcc.designer_id = auth.uid()
+      WHERE jc.id::text = project_chat_messages.project_id::text
+        AND jcc.designer_id::text = auth.uid()::text
     )
   );
 
@@ -210,8 +219,8 @@ BEGIN
   -- Update client_project with claimant, claim timestamp, and deadline timestamp
   UPDATE public.client_projects
   SET
-    claimed_by = v_user,
-    accepted_designer_id = v_user,
+    claimed_by = v_user::text,
+    accepted_designer_id = v_user::text,
     claimed_at = now(),
     deadline_at = now() + (v_hours * INTERVAL '1 hour'),
     status = 'in_progress',
@@ -296,7 +305,7 @@ DECLARE
   v_expired_count INTEGER := 0;
   v_proj RECORD;
   v_contract RECORD;
-  v_claimant uuid;
+  v_claimant text;
 BEGIN
   -- 1. Check expired client_projects
   FOR v_proj IN
@@ -309,23 +318,23 @@ BEGIN
       -- Exclude if work was submitted
       AND NOT EXISTS (
         SELECT 1 FROM public.submissions s
-        WHERE s.client_project_id = cp.id
+        WHERE s.client_project_id::text = cp.id::text
           AND s.status IN ('pending', 'approved', 'correction_requested')
       )
   LOOP
-    v_claimant := v_proj.claimed_by;
+    v_claimant := v_proj.claimed_by::text;
 
     -- Apply 48-hour cooldown to defaulting talent
     UPDATE public.designer_details
     SET
       cooldown_until = now() + INTERVAL '48 hours',
       cooldown_reason = 'Project deadline expired without submission. 48-hour cooldown applied.'
-    WHERE user_id = v_claimant;
+    WHERE user_id::text = v_claimant;
 
     -- Unassign project assignment
     UPDATE public.project_assignments
     SET status = 'expired_unclaimed'
-    WHERE project_id = v_proj.id AND designer_id = v_claimant;
+    WHERE project_id::text = v_proj.id::text AND designer_id::text = v_claimant;
 
     -- Release project back to open marketplace
     UPDATE public.client_projects
@@ -351,9 +360,9 @@ BEGIN
 
   -- 2. Check expired job_contracts
   FOR v_contract IN
-    SELECT jc.*, jcc.designer_id as claimant_id
+    SELECT jc.*, jcc.designer_id::text as claimant_id
     FROM public.job_contracts jc
-    JOIN public.job_contract_claims jcc ON jcc.contract_id = jc.id
+    JOIN public.job_contract_claims jcc ON jcc.contract_id::text = jc.id::text
     WHERE jcc.status IN ('claimed', 'active', 'in_progress')
       AND jc.deadline_at IS NOT NULL
       AND jc.deadline_at < now()
@@ -365,12 +374,12 @@ BEGIN
     SET
       cooldown_until = now() + INTERVAL '48 hours',
       cooldown_reason = 'Job contract deadline expired without submission. 48-hour cooldown applied.'
-    WHERE user_id = v_claimant;
+    WHERE user_id::text = v_claimant;
 
     -- Expire claim
     UPDATE public.job_contract_claims
     SET status = 'expired_unclaimed'
-    WHERE contract_id = v_contract.id AND designer_id = v_claimant;
+    WHERE contract_id::text = v_contract.id::text AND designer_id::text = v_claimant;
 
     -- Release contract back to open pool
     UPDATE public.job_contracts
