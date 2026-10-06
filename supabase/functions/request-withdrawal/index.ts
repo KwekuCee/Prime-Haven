@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendEmail, FROM_ADDRESS } from "../_shared/resend.ts";
 import { withCors } from "../_shared/cors.ts";
-import { disburseWithdrawal, korapayConfigured } from "../_shared/korapayPayout.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -89,17 +88,6 @@ serve(withCors(async (req) => {
       new_value: { withdrawal_id: wd.id, amount, reference, payout_method: method.provider },
     });
 
-    // Send the money straight to the saved Mobile Money number through Korapay.
-    let payout: { ok: boolean; status: string; message: string } = { ok: false, status: "pending", message: "Korapay is not configured" };
-    if (korapayConfigured()) {
-      try {
-        payout = await disburseWithdrawal(admin, wd.id, null);
-      } catch (e) {
-        console.error("auto payout error:", e);
-        payout = { ok: false, status: "processing", message: (e as Error).message };
-      }
-    }
-
     // Alert the CEO
     let emailSent = false;
     if (Deno.env.get("RESEND_API_KEY")) {
@@ -114,7 +102,7 @@ serve(withCors(async (req) => {
                 <span style="color:#888;font-size:12px"> &nbsp;• &nbsp;Withdrawal Request</span>
               </td></tr>
               <tr><td style="padding:26px;color:#eaeaea;font-size:14px;line-height:1.6">
-                <p style="margin:0 0 14px">${payout.ok ? "A talent withdrawal was paid automatically through Korapay." : "A talent withdrawal could not be paid automatically and needs your attention (" + esc(payout.message) + ")."}</p>
+                <p style="margin:0 0 14px">A talent has requested a withdrawal and is awaiting your approval.</p>
                 <table width="100%" cellpadding="8" cellspacing="0" style="background:#0d0d0d;border-radius:10px;font-size:13px;color:#ddd">
                   <tr><td style="color:#888">Talent</td><td align="right"><strong>${esc(profile?.full_name || "Unknown")}</strong></td></tr>
                   <tr><td style="color:#888">Email</td><td align="right">${esc(profile?.email || "—")}</td></tr>
@@ -135,7 +123,7 @@ serve(withCors(async (req) => {
         await sendEmail({
           from: FROM_ADDRESS,
           to: CEO_EMAIL,
-          subject: `${payout.ok ? "Withdrawal paid" : "Withdrawal needs attention"}: GH₵${amount.toFixed(2)} — ${profile?.full_name || "Talent"}`,
+          subject: `Withdrawal request: GH₵${amount.toFixed(2)} — ${profile?.full_name || "Talent"}`,
           html,
         });
         emailSent = true;
@@ -150,11 +138,7 @@ serve(withCors(async (req) => {
       amount,
       reference,
       email_sent: emailSent,
-      paid: payout.ok,
-      status: payout.status,
-      message: payout.ok
-        ? `GH₵${amount.toFixed(2)} has been sent to your ${method.provider.toUpperCase()} number ${method.phone_number}.`
-        : `Withdrawal of GH₵${amount.toFixed(2)} received. It couldn't be sent automatically, so the team will pay it shortly.`,
+      message: `Withdrawal request for GH₵${amount.toFixed(2)} submitted. The CEO has been notified for approval.`,
     });
   } catch (e) {
     console.error("request-withdrawal error:", e);

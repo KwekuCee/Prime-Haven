@@ -83,11 +83,13 @@ const Privacy = () => {
                   portfolio links, profile photo, and payment details (e.g., mobile money number or bank account).
                 </li>
                 <li>
-                  <strong>Project Data:</strong> Project briefs, submitted work, messages, files, and
-                  communications within the platform.
+                  <strong>Project & Communication Data:</strong> Project briefs, submitted deliverables, on-platform chat messages, project discussions, turnaround countdown logs, and moderation flags. Platform communications are processed and scanned automatically for security, policy compliance, and anti-circumvention enforcement.
                 </li>
                 <li>
-                  <strong>Payment Data:</strong> Transaction records, payment status, and salary history.
+                  <strong>Performance & Cooldown Records:</strong> Project deadline timestamps, delivery milestone receipts, and temporary inactivity cooldown statuses applied under platform reliability rules.
+                </li>
+                <li>
+                  <strong>Payment Data:</strong> Transaction records, escrow payment status, and revenue distributions.
                   We do not store raw card numbers — payments are processed by trusted third-party providers.
                 </li>
                 <li>
@@ -105,6 +107,8 @@ const Privacy = () => {
                 <li>Process payments and manage designer earnings.</li>
                 <li>Communicate important updates, project notifications, and service announcements.</li>
                 <li>Improve platform performance, detect fraud, and ensure security.</li>
+                <li>Monitor and moderate project messaging to enforce platform safety, prevent fraudulent circumvention, and safeguard escrow funds.</li>
+                <li>Track project deadlines, automated milestone warning notifications, and administer cooldown reliability rules.</li>
                 <li>Comply with legal obligations under Ghanaian law.</li>
                 <li>Send marketing communications where you have opted in (you may opt out at any time).</li>
               </ul>

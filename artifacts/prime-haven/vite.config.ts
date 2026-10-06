@@ -26,8 +26,6 @@ export default defineConfig({
     alias: {
       "@": path.join(projectDir, "src"),
       "@assets": path.join(projectDir, "public"),
-      react: path.join(workspaceRoot, "node_modules/react"),
-      "react-dom": path.join(workspaceRoot, "node_modules/react-dom"),
     },
     dedupe: ["react", "react-dom", "react-router-dom"],
   },

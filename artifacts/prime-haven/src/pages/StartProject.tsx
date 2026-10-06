@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard, ImagePlus, X } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard, ImagePlus, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,8 +19,8 @@ import { openPaystackCheckout } from '@/lib/paystack';
 import Seo from '@/components/Seo';
 import { checkRateLimit } from '@/lib/rateLimit';
 import BookConsultationDialog from '@/components/BookConsultationDialog';
-const isDevService = (t: string) => /web|app|mobile/i.test(t);
-const DEV_NOTE = 'Web and app development prices vary with your requirements, so we start with a free consultation to scope your project and give you an accurate quote.';
+const isDevService = (t: string) => /web|app|mobile|video|motion|editing/i.test(t);
+const DEV_NOTE = 'Web development, mobile app development, and video editing prices vary with project requirements and footage scope. We start with a free consultation call to scope your project and give you an accurate quote.';
 
 declare global {
   interface Window {
@@ -79,6 +80,7 @@ const StartProject = () => {
     businessName: '',
     password: '',
     description: '',
+    deadlineHours: 48,
   });
 
   const [promoCode, setPromoCode] = useState('');
@@ -357,6 +359,7 @@ const StartProject = () => {
             clientPassword: form.password,
             businessName: form.businessName,
             referenceFiles: uploadedRefUrls,
+            deadlineHours: form.deadlineHours,
             referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
           },
         });
@@ -445,6 +448,7 @@ const StartProject = () => {
           clientPassword: form.password,
           businessName: form.businessName,
           referenceFiles: uploadedRefUrls,
+          deadlineHours: form.deadlineHours,
           referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
         },
       });
@@ -537,7 +541,7 @@ const StartProject = () => {
                 <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <BookConsultationDialog open={consultOpen} onOpenChange={setConsultOpen} defaultService={selectedService.toLowerCase().includes('web') ? 'web-development' : 'mobile-app'} note={DEV_NOTE} />
+                <BookConsultationDialog open={consultOpen} onOpenChange={setConsultOpen} defaultService={selectedService.toLowerCase().includes('video') || selectedService.toLowerCase().includes('motion') ? 'video-editing' : selectedService.toLowerCase().includes('web') ? 'web-development' : 'mobile-app'} note={DEV_NOTE} />
                 {serviceTypes.map(type => (
                   <Card
                     key={type}
@@ -653,6 +657,33 @@ const StartProject = () => {
                     <div className="space-y-2">
                       <Label htmlFor="description">Project Description *</Label>
                       <Textarea id="description" value={form.description} onChange={e => handleChange('description', e.target.value)} placeholder="Tell us about your project, goals, timeline, and any specific requirements..." className="min-h-[120px]" required />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="deadlineHours" className="flex items-center gap-1.5 font-medium">
+                        <Clock className="w-4 h-4 text-primary" /> Turnaround Deadline *
+                      </Label>
+                      <Select
+                        value={String(form.deadlineHours || 48)}
+                        onValueChange={(val) => setForm(prev => ({ ...prev, deadlineHours: Number(val) }))}
+                      >
+                        <SelectTrigger id="deadlineHours" className="bg-background">
+                          <SelectValue placeholder="Select deadline" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="24">24 Hours (Express 1-day delivery)</SelectItem>
+                          <SelectItem value="48">48 Hours (Standard 2-day delivery)</SelectItem>
+                          <SelectItem value="72">72 Hours (3-day delivery)</SelectItem>
+                          <SelectItem value="120">5 Days (120 Hours)</SelectItem>
+                          <SelectItem value="168">7 Days (1 Week / 168 Hours)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-2.5 text-xs text-muted-foreground">
+                        <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <p>
+                          <strong>Live Countdown Protection:</strong> A strict {form.deadlineHours || 48}-hour timer activates immediately when a verified talent claims your job. The designer is sent automated reminder warnings at 50%, 70%, and 90% of the countdown.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="space-y-2">

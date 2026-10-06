@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Calendar, DollarSign, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Briefcase, Calendar, DollarSign, Clock, CheckCircle2, AlertCircle, Loader2, Lock, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,8 @@ import { format, addDays, isAfter } from 'date-fns';
 import { getRevenueSharePercent, DEFAULT_REVENUE_SHARE_PERCENT, shareOf } from '@/lib/revenue';
 import { useToast } from '@/hooks/use-toast';
 import { useUsdRate } from '@/hooks/useUsdRate';
+import { TalentCooldownBanner } from '@/components/dashboard/TalentCooldownBanner';
+import { checkCooldownStatus } from '@/lib/deadlineTimer';
 
 interface OpenOrder {
     id: string;
@@ -24,9 +26,12 @@ interface OpenOrder {
     description: string;
     created_at: string;
     deadline?: string;
+    deadline_hours?: number;
     required_professions?: string[];
     max_assignees?: number;
     current_claims?: number;
+    is_claimed?: boolean;
+    claimed_by_user?: boolean;
     price_ghs?: number;
     your_share?: number;
 }
@@ -87,6 +92,8 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
     const [claiming, setClaiming] = useState<string | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<OpenOrder | null>(null);
     const [sharePercent, setSharePercent] = useState(DEFAULT_REVENUE_SHARE_PERCENT);
+    const [cooldownUntil, setCooldownUntil] = useState<string | null>(null);
+    const [cooldownReason, setCooldownReason] = useState<string | null>(null);
 
     useEffect(() => {
         loadOpenOrders();
@@ -94,22 +101,29 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
     // Instant refresh on claim / start / submit / unclaim (Lovable Cloud Realtime websockets)
     useRealtimeSync(
-        ['job_contracts', 'job_contract_claims', 'project_assignments', 'client_projects'],
+        ['job_contracts', 'job_contract_claims', 'project_assignments', 'client_projects', 'designer_details'],
         () => { void loadOpenOrders(); },
         'marketplace',
     );
-
 
     const loadOpenOrders = async () => {
         if (!user) return;
         setLoading(true);
         try {
-            // Get designer profession from professional_title (professions column doesn't exist in DB)
-            const { data: designer } = await supabase
-                .from('designer_details')
-                .select('professional_title, professions')
+            // Get designer details including cooldown status and professional_title
+            const { data: designer } = await (supabase
+                .from('designer_details') as any)
+                .select('professional_title, professions, cooldown_until, cooldown_reason')
                 .eq('user_id', user.id)
                 .maybeSingle();
+
+            if (designer?.cooldown_until) {
+                setCooldownUntil(designer.cooldown_until);
+                setCooldownReason(designer.cooldown_reason || 'Previous project deadline expired before submission.');
+            } else {
+                setCooldownUntil(null);
+                setCooldownReason(null);
+            }
 
             const share = await getRevenueSharePercent();
             setSharePercent(share);
@@ -126,13 +140,14 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             if (projectsError) throw projectsError;
 
-            // Fetch assignments for those projects so we can compute hasClaimed
+            // Fetch assignments for those projects so we can compute claims and who claimed
             const projectIds: string[] = (projectsRaw || []).map((p: any) => p.id);
             const { data: assignmentsData } = projectIds.length
                 ? await supabase
                     .from('project_assignments')
-                    .select('project_id, designer_id')
+                    .select('project_id, designer_id, status')
                     .in('project_id', projectIds)
+                    .in('status', ['claimed', 'active', 'in_progress'])
                 : { data: [] as any[] };
             const assignmentsByProject: Record<string, any[]> = {};
             (assignmentsData || []).forEach((a: any) => {
@@ -147,8 +162,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
             const { data: orders, error: ordersError } = await (supabase
                 .from('client_orders') as any)
                 .select('*')
-                .eq('payment_status', 'paid')
-                .eq('project_status', 'unassigned');
+                .eq('payment_status', 'paid');
 
             if (ordersError) throw ordersError;
 
@@ -158,97 +172,102 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             if (contractsError) throw contractsError;
 
-
-            // Contracts this user has any claim on (active OR already submitted) must not be re-claimable
+            // Contracts this user has active claims on
             const { data: myClaims } = await (supabase as any)
                 .from('job_contract_claims')
                 .select('contract_id, status')
-                .eq('designer_id', user.id);
+                .eq('designer_id', user.id)
+                .in('status', ['claimed', 'active', 'in_progress']);
             const myClaimedContractIds = new Set<string>((myClaims || []).map((c: any) => c.contract_id));
 
-            // 4. Unify and Filter results
+            // 4. Unify and map results - KEEP CLAIMED JOBS VISIBLE AS INSTRUCTED!
             const now = new Date();
 
             const projectMarket: OpenOrder[] = (projects || [])
                 .filter((p: any) => {
-                    // If required_professions is set, check match; otherwise show to everyone
                     const reqProfs: string[] = p.required_professions || [];
                     const profMatch = reqProfs.length === 0 || reqProfs.some((rp: string) => userProfessions.includes(rp));
-                    // Check if user already claimed this
-                    const hasClaimed = p.project_assignments?.some((a: any) => a.designer_id === user.id);
-                    // Check if deadline passed
-                    const deadlinePassed = p.deadline && isAfter(now, new Date(p.deadline));
-                    return profMatch && !hasClaimed && !deadlinePassed;
+                    return profMatch;
                 })
-                .map((p: any) => ({
-                    id: p.id,
-                    source: 'client_projects' as const,
-                    service_type: p.category,
-                    title: p.title || `Project: ${CATEGORY_LABELS[p.category] || p.category || 'Untitled'}`,
-                    description: p.description,
-                    created_at: p.created_at,
-                    deadline: p.deadline,
-                    budget: p.budget,
-                    required_professions: p.required_professions,
-                    max_assignees: p.max_assignees,
-                    current_claims: p.project_assignments?.length || 0,
-                    price_ghs: Number(p.price_ghs || 0),
-                    your_share: shareOf(Number(p.price_ghs || 0), share)
-                }))
-                .filter((p: any) => (p.current_claims || 0) < (p.max_assignees || 1));
+                .map((p: any) => {
+                    const isClaimed = (p.project_assignments?.length || 0) >= 1 || p.status === 'in_progress' || !!p.accepted_designer_id;
+                    const claimedByUser = p.project_assignments?.some((a: any) => a.designer_id === user.id) || p.accepted_designer_id === user.id;
+                    return {
+                        id: p.id,
+                        source: 'client_projects' as const,
+                        service_type: p.category,
+                        title: p.title || `Project: ${CATEGORY_LABELS[p.category] || p.category || 'Untitled'}`,
+                        description: p.description,
+                        created_at: p.created_at,
+                        deadline: p.deadline,
+                        deadline_hours: p.deadline_hours || 48,
+                        budget: p.budget,
+                        required_professions: p.required_professions,
+                        max_assignees: 1, // Enforced: strictly 1 person per job
+                        current_claims: p.project_assignments?.length || 0,
+                        is_claimed: isClaimed,
+                        claimed_by_user: claimedByUser,
+                        price_ghs: Number(p.price_ghs || 0),
+                        your_share: shareOf(Number(p.price_ghs || 0), share)
+                    };
+                });
 
             const orderMarket: OpenOrder[] = (orders || [])
                 .filter((o: any) => {
                     const required = PROFESSION_MAPPING[o.service_type] || ['Graphic Designer'];
-                    const hasMatchingProfession = required.some(p => userProfessions.includes(p));
-                    const deadlinePassed = o.deadline_at && isAfter(now, new Date(o.deadline_at));
-                    return hasMatchingProfession && !deadlinePassed;
+                    return required.some(p => userProfessions.includes(p));
                 })
-                .map((o: any) => ({
-                    id: o.id,
-                    source: 'client_orders' as const,
-                    service_type: o.service_type,
-                    title: `${CATEGORY_LABELS[o.service_type] || o.service_type} — ${o.tier || 'Standard'}`,
-                    tier: o.tier || 'Standard',
-                    price: o.price,
-                    description: o.description,
-                    created_at: o.created_at,
-                    deadline: o.deadline_at
-                }));
+                .map((o: any) => {
+                    const isClaimed = !!o.assigned_designer_id || o.project_status === 'in_progress';
+                    const claimedByUser = o.assigned_designer_id === user.id;
+                    return {
+                        id: o.id,
+                        source: 'client_orders' as const,
+                        service_type: o.service_type,
+                        title: `${CATEGORY_LABELS[o.service_type] || o.service_type} — ${o.tier || 'Standard'}`,
+                        tier: o.tier || 'Standard',
+                        price: o.price,
+                        description: o.description,
+                        created_at: o.created_at,
+                        deadline: o.deadline_at,
+                        deadline_hours: 48,
+                        is_claimed: isClaimed,
+                        claimed_by_user: claimedByUser,
+                    };
+                });
 
             const jobMarket: OpenOrder[] = (contracts || [])
                 .filter((c: any) => {
-                    if (myClaimedContractIds.has(c.id)) return false;
                     const targetProfs: string[] = c.target_professions || [];
-                    let hasMatchingProfession = false;
-                    let isPushed = targetProfs.length > 0;
-
-                    if (isPushed) {
-                        hasMatchingProfession = targetProfs.some(p => userProfessions.includes(p));
-                    } else {
-                        // Legacy fallback
-                        const required = PROFESSION_MAPPING[c.category] || ['Graphic Designer'];
-                        hasMatchingProfession = required.some(p => userProfessions.includes(p));
+                    if (targetProfs.length > 0) {
+                        return targetProfs.some(p => userProfessions.includes(p));
                     }
-
-                    // If explicitly pushed by admin, ignore deadline
-                    const deadlinePassed = !isPushed && c.deadline && isAfter(now, new Date(c.deadline));
-                    return hasMatchingProfession && !deadlinePassed;
+                    const required = PROFESSION_MAPPING[c.category] || ['Graphic Designer'];
+                    return required.some(p => userProfessions.includes(p));
                 })
-                .map((c: any) => ({
-                    id: c.id,
-                    source: 'job_contracts' as const,
-                    service_type: c.category,
-                    title: c.title || `Contract: ${CATEGORY_LABELS[c.category] || c.category || 'Untitled'}`,
-                    budget: c.budget,
-                    description: c.description,
-                    created_at: c.created_at,
-                    deadline: c.deadline
-                }));
+                .map((c: any) => {
+                    const isClaimed = (c.active_designers_count || 0) >= 1 || c.status === 'in_progress';
+                    const claimedByUser = myClaimedContractIds.has(c.id);
+                    return {
+                        id: c.id,
+                        source: 'job_contracts' as const,
+                        service_type: c.category,
+                        title: c.title || `Contract: ${CATEGORY_LABELS[c.category] || c.category || 'Untitled'}`,
+                        budget: c.budget,
+                        description: c.description,
+                        created_at: c.created_at,
+                        deadline: c.deadline,
+                        deadline_hours: c.deadline_hours || 48,
+                        is_claimed: isClaimed,
+                        claimed_by_user: claimedByUser,
+                    };
+                });
 
-            const combinedRaw = [...projectMarket, ...orderMarket, ...jobMarket].sort((a, b) =>
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
+            const combinedRaw = [...projectMarket, ...orderMarket, ...jobMarket].sort((a, b) => {
+                // Available jobs first, then by date
+                if (a.is_claimed !== b.is_claimed) return a.is_claimed ? 1 : -1;
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
 
             // Deduplicate by title to prevent showing the same job from two sources
             const uniqueTitles = new Set();
@@ -270,6 +289,27 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
     const handleClaim = async (order: OpenOrder) => {
         if (!user) return;
+
+        // Check if talent is in cooldown
+        const cooldown = checkCooldownStatus(cooldownUntil);
+        if (cooldown.isInCooldown) {
+            toast({
+                title: 'Account in 48-Hour Cooldown ⏳',
+                description: `You cannot claim jobs for the next ${cooldown.formattedCooldown} due to an unfulfilled project deadline.`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (order.is_claimed) {
+            toast({
+                title: 'Job Already Claimed 🔒',
+                description: 'This project is already claimed by a professional. Only available jobs can be claimed.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
         setClaiming(order.id);
         try {
             if (order.source === 'client_projects') {
@@ -356,6 +396,8 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
     return (
         <div className="space-y-4">
+            <TalentCooldownBanner cooldownUntil={cooldownUntil} cooldownReason={cooldownReason} />
+
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -363,82 +405,117 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     </div>
                     <div>
                         <h2 className="text-lg font-heading font-bold uppercase tracking-tight">Project Pool</h2>
-                        <p className="text-xs text-muted-foreground font-medium">{orders.length} paid job{orders.length !== 1 ? 's' : ''} available</p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                            {orders.filter(o => !o.is_claimed).length} available to claim · {orders.filter(o => o.is_claimed).length} in progress
+                        </p>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {orders.map((order) => (
-                    <motion.div key={order.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                        <Card className="group relative overflow-hidden glass border-border/50 hover:border-primary/40 transition-all">
-                            <div className="absolute top-0 right-0 p-3">
-                                <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
-                                    PAID
-                                </Badge>
-                            </div>
+                {orders.map((order) => {
+                    const isCooldown = checkCooldownStatus(cooldownUntil).isInCooldown;
+                    return (
+                        <motion.div key={order.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                            <Card className={`group relative overflow-hidden glass border-border/50 transition-all ${order.is_claimed ? 'opacity-85 border-amber-500/20' : 'hover:border-primary/40'}`}>
+                                <div className="absolute top-0 right-0 p-3">
+                                    {order.is_claimed ? (
+                                        <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30 gap-1 text-[10px] font-bold">
+                                            <Lock className="w-3 h-3" />
+                                            {order.claimed_by_user ? 'CLAIMED BY YOU' : 'CLAIMED'}
+                                        </Badge>
+                                    ) : (
+                                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20 text-[10px] font-bold">
+                                            AVAILABLE
+                                        </Badge>
+                                    )}
+                                </div>
 
-                            <CardHeader className="pb-3">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
-                                            {order.source === 'client_projects' ? 'CLIENT POOL' : `${order.tier} PACKAGE`}
-                                        </p>
-                                        {order.required_professions && (
-                                            <div className="flex gap-1 overflow-hidden">
-                                                {order.required_professions.map(p => (
-                                                    <span key={p} className="text-[8px] bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap opacity-70">
-                                                        {p.charAt(0)}
-                                                    </span>
-                                                ))}
+                                <CardHeader className="pb-3">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
+                                                {order.source === 'client_projects' ? 'CLIENT POOL' : `${order.tier} PACKAGE`}
+                                            </p>
+                                            {order.required_professions && (
+                                                <div className="flex gap-1 overflow-hidden">
+                                                    {order.required_professions.map(p => (
+                                                        <span key={p} className="text-[8px] bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap opacity-70">
+                                                            {p.charAt(0)}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <CardTitle className="text-sm font-heading line-clamp-1">
+                                            {order.title}
+                                        </CardTitle>
+                                    </div>
+                                </CardHeader>
+
+                                <CardContent className="space-y-4">
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                        {order.description || "No specific details provided. Contact client in workspace after claiming."}
+                                    </p>
+
+                                    <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase">You earn ({sharePercent}%)</span>
+                                                <span className="text-xs font-bold text-primary flex items-center gap-1">
+                                                    <DollarSign className="w-3 h-3" />
+                                                    {order.source === 'client_projects'
+                                                        ? (order.your_share ? money.usd(order.your_share) : (order.budget ? String(order.budget) : '—'))
+                                                        : order.source === 'job_contracts'
+                                                            ? (order.budget ? String(order.budget) : '—')
+                                                            : (order.price ? money.usd(shareOf(order.price, sharePercent)) : '—')}
+                                                </span>
                                             </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase">Turnaround</span>
+                                                <span className="text-[10px] font-medium flex items-center gap-1">
+                                                    <Clock className="w-3 h-3 text-primary" />
+                                                    {order.deadline_hours ? `${order.deadline_hours}h deadline` : (order.deadline ? format(new Date(order.deadline), 'MMM d, yyyy') : '48h deadline')}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {order.is_claimed ? (
+                                            order.claimed_by_user ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    className="h-8 text-xs font-bold px-3 gap-1.5 opacity-90 cursor-default"
+                                                    disabled
+                                                >
+                                                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" /> Your Active Job
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 text-xs font-bold px-3 gap-1.5 bg-muted/40 text-muted-foreground border-border/40 cursor-not-allowed opacity-80"
+                                                    disabled
+                                                >
+                                                    <Lock className="w-3 h-3" /> Claimed
+                                                </Button>
+                                            )
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 text-xs font-bold px-4"
+                                                onClick={() => setSelectedOrder(order)}
+                                                disabled={isCooldown}
+                                            >
+                                                {isCooldown ? 'Cooldown Active' : 'Details & Claim'}
+                                            </Button>
                                         )}
                                     </div>
-                                    <CardTitle className="text-sm font-heading line-clamp-1">
-                                        {order.title}
-                                    </CardTitle>
-                                </div>
-                            </CardHeader>
-
-                            <CardContent className="space-y-4">
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                    {order.description || "No specific details provided. Contact client in workspace after claiming."}
-                                </p>
-
-                                <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] text-muted-foreground uppercase">You earn ({sharePercent}%)</span>
-                                            <span className="text-xs font-bold text-primary flex items-center gap-1">
-                                                <DollarSign className="w-3 h-3" />
-                                                {order.source === 'client_projects'
-                                                    ? (order.your_share ? money.usd(order.your_share) : (order.budget ? String(order.budget) : '—'))
-                                                    : order.source === 'job_contracts'
-                                                        ? (order.budget ? String(order.budget) : '—')
-                                                        : (order.price ? money.usd(shareOf(order.price, sharePercent)) : '—')}
-                                            </span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] text-muted-foreground uppercase">Deadline</span>
-                                            <span className="text-[10px] font-medium flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
-                                                {order.deadline ? format(new Date(order.deadline), 'MMM d, yyyy') : 'Open'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <Button
-                                        size="sm"
-                                        className="h-8 text-xs font-bold px-4"
-                                        onClick={() => setSelectedOrder(order)}
-                                    >
-                                        Details
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    );
+                })}
             </div>
 
             <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
@@ -452,6 +529,13 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
                     {selectedOrder && (
                         <div className="space-y-4 py-4">
+                            {selectedOrder.is_claimed && (
+                                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-500 font-medium">
+                                    <Lock className="w-4 h-4 shrink-0" />
+                                    <span>This project is already claimed by a professional.</span>
+                                </div>
+                            )}
+
                             <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
                                 <div>
                                     <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Project Name</h4>
@@ -469,8 +553,8 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                                 </div>
                                 <div className="flex items-center gap-4 text-xs font-medium">
                                     <div className="flex items-center gap-1.5">
-                                        <Calendar className="w-3.5 h-3.5 text-primary" />
-                                        <span>Deadline: {selectedOrder.deadline ? format(new Date(selectedOrder.deadline), 'MMM d, yyyy') : 'No strict deadline defined'}</span>
+                                        <Clock className="w-3.5 h-3.5 text-primary" />
+                                        <span>Turnaround: {selectedOrder.deadline_hours ? `${selectedOrder.deadline_hours} Hours from claim` : (selectedOrder.deadline ? format(new Date(selectedOrder.deadline), 'MMM d, yyyy') : '48 Hours')}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
@@ -481,9 +565,8 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
                             <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-500">
                                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                First come, first served — one professional per job. Once you claim it, the job is
-                                yours to deliver, and your points and {sharePercent}% share are released when the
-                                client approves your work.
+                                Strictly one professional per job. Countdown starts immediately upon claiming.
+                                Automated email warnings are sent at 50%, 70%, and 90% of the deadline. Failing to submit by deadline incurs a 48-hour activity cooldown.
                             </div>
                         </div>
                     )}
@@ -491,12 +574,12 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setSelectedOrder(null)}>Cancel</Button>
                         <Button
-                            disabled={claiming === selectedOrder?.id}
+                            disabled={claiming === selectedOrder?.id || selectedOrder?.is_claimed || checkCooldownStatus(cooldownUntil).isInCooldown}
                             onClick={() => selectedOrder && handleClaim(selectedOrder)}
                             className="gap-2"
                         >
                             {claiming === selectedOrder?.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                            {claiming === selectedOrder?.id ? 'Claiming...' : 'Claim Project'}
+                            {claiming === selectedOrder?.id ? 'Claiming...' : selectedOrder?.is_claimed ? 'Already Claimed' : checkCooldownStatus(cooldownUntil).isInCooldown ? 'In 48h Cooldown' : 'Claim Project'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

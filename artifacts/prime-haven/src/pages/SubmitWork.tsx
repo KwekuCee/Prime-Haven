@@ -18,6 +18,8 @@ import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 import { SERVICE_TYPES } from '@/lib/serviceTypes';
 import DropZoneUpload from '@/components/ui/DropZoneUpload';
+import { TalentCooldownBanner } from '@/components/dashboard/TalentCooldownBanner';
+import { checkCooldownStatus } from '@/lib/deadlineTimer';
 
 const serviceTypes = SERVICE_TYPES;
 
@@ -80,6 +82,8 @@ const SubmitWork = () => {
     projectName: '', serviceType: 'logo', clientReference: '',
     selectedJobId: '', description: '', deadline: '', designLink: '',
   });
+  const [cooldownUntil, setCooldownUntil] = useState<string | null>(null);
+  const [cooldownReason, setCooldownReason] = useState<string | null>(null);
 
   // Check if user has a started project
   useEffect(() => {
@@ -102,6 +106,21 @@ const SubmitWork = () => {
     const loadJobs = async () => {
       if (!user) return;
       try {
+        // Check designer cooldown status
+        const { data: designer } = await (supabase
+          .from('designer_details') as any)
+          .select('cooldown_until, cooldown_reason')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (designer?.cooldown_until) {
+          setCooldownUntil(designer.cooldown_until);
+          setCooldownReason(designer.cooldown_reason || 'Previous project deadline expired.');
+        } else {
+          setCooldownUntil(null);
+          setCooldownReason(null);
+        }
+
         // 1. Started client_projects — only assignments the designer has clicked "Start Work" on
         const { data: cpAssignments } = await supabase
           .from('project_assignments')
@@ -213,6 +232,17 @@ const SubmitWork = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { navigate('/login'); return; }
+
+    const cooldown = checkCooldownStatus(cooldownUntil);
+    if (cooldown.isInCooldown) {
+      toast({
+        title: 'Account in 48-Hour Cooldown ⏳',
+        description: `Work submissions are locked for the next ${cooldown.formattedCooldown} due to an expired deadline.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!formData.projectName.trim()) { toast({ title: "Project name required", variant: "destructive" }); return; }
     const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
     const hasLink = isLinkOnlyService && formData.designLink.trim();
@@ -268,10 +298,13 @@ const SubmitWork = () => {
   const getSelectedService = () => serviceTypes.find(s => s.id === formData.serviceType);
   const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
   const uploadingFiles = uploadedFiles.filter(f => f.uploading);
+  const isCooldown = checkCooldownStatus(cooldownUntil).isInCooldown;
 
   return (
     <DashboardLayout>
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+        <TalentCooldownBanner cooldownUntil={cooldownUntil} cooldownReason={cooldownReason} />
+
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
@@ -368,8 +401,14 @@ const SubmitWork = () => {
 
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
                 <Button type="submit" className="w-full text-xs" size="sm"
-                  disabled={loading || uploadingFiles.length > 0 || (!isLinkOnlyService && successfulUploads.length === 0) || (isLinkOnlyService && successfulUploads.length === 0 && !formData.designLink.trim())}>
-                  {loading ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Submitting...</> : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Submit Work</>}
+                  disabled={isCooldown || loading || uploadingFiles.length > 0 || (!isLinkOnlyService && successfulUploads.length === 0) || (isLinkOnlyService && successfulUploads.length === 0 && !formData.designLink.trim())}>
+                  {isCooldown ? (
+                    'Account in 48-Hour Cooldown (Submissions Paused)'
+                  ) : loading ? (
+                    <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Submitting...</>
+                  ) : (
+                    <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Submit Work</>
+                  )}
                 </Button>
               </motion.div>
             </form>

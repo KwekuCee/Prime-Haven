@@ -781,6 +781,9 @@ export type Database = {
           talent_score_breakdown: Json | null
           talent_score_updated_at: string | null
           total_points: number | null
+          cooldown_until: string | null
+          cooldown_reason: string | null
+          deadline_warnings_count: number
           updated_at: string
           user_id: string
         }
@@ -807,6 +810,9 @@ export type Database = {
           talent_score_breakdown?: Json | null
           talent_score_updated_at?: string | null
           total_points?: number | null
+          cooldown_until?: string | null
+          cooldown_reason?: string | null
+          deadline_warnings_count?: number
           updated_at?: string
           user_id: string
         }
@@ -833,6 +839,9 @@ export type Database = {
           talent_score_breakdown?: Json | null
           talent_score_updated_at?: string | null
           total_points?: number | null
+          cooldown_until?: string | null
+          cooldown_reason?: string | null
+          deadline_warnings_count?: number
           updated_at?: string
           user_id?: string
         }
@@ -1381,6 +1390,9 @@ export type Database = {
           sender_id: string | null
           sender_name: string | null
           sender_role: string
+          is_flagged: boolean
+          flag_reason: string | null
+          read: boolean
         }
         Insert: {
           content: string
@@ -1390,6 +1402,9 @@ export type Database = {
           sender_id?: string | null
           sender_name?: string | null
           sender_role: string
+          is_flagged?: boolean
+          flag_reason?: string | null
+          read?: boolean
         }
         Update: {
           content?: string
@@ -1399,6 +1414,9 @@ export type Database = {
           sender_id?: string | null
           sender_name?: string | null
           sender_role?: string
+          is_flagged?: boolean
+          flag_reason?: string | null
+          read?: boolean
         }
         Relationships: []
       }

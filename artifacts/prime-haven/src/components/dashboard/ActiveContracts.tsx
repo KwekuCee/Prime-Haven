@@ -3,19 +3,20 @@ import { motion } from 'framer-motion';
 import { Clock, ExternalLink, AlertCircle, CheckCircle2, FileText, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format, formatDistanceToNow, isAfter } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { ProjectDeadlineCountdown } from '@/components/dashboard/ProjectDeadlineCountdown';
 
 interface ActiveContract {
     id: string;
     title: string;
     service_type: string;
     tier: string;
+    claimed_at?: string;
     deadline_at: string;
     project_status: string;
     price: number;
@@ -62,6 +63,8 @@ const ActiveContracts = () => {
                     id,
                     project_id,
                     status,
+                    claimed_at,
+                    created_at,
                     client_projects (
                         id,
                         title,
@@ -82,6 +85,8 @@ const ActiveContracts = () => {
                     id,
                     contract_id,
                     status,
+                    claimed_at,
+                    created_at,
                     job_contracts (
                         id,
                         title,
@@ -99,7 +104,7 @@ const ActiveContracts = () => {
 
             const { data: orders, error: orderError } = await (supabase
                 .from('client_orders') as any)
-                .select('id, service_type, tier, deadline_at, project_status, price')
+                .select('id, service_type, tier, deadline_at, claimed_at, created_at, project_status, price')
                 .eq('assigned_designer_id', user.id)
                 .neq('project_status', 'completed');
 
@@ -113,7 +118,8 @@ const ActiveContracts = () => {
                         title: a.client_projects.title,
                         service_type: a.client_projects.category,
                         tier: 'Standard',
-                        deadline_at: a.client_projects.deadline || new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        claimed_at: a.claimed_at || a.created_at,
+                        deadline_at: a.client_projects.deadline || new Date(new Date().getTime() + 48 * 60 * 60 * 1000).toISOString(),
                         project_status: a.client_projects.status,
                         price: 0,
                         source: 'client_projects' as const,
@@ -127,7 +133,8 @@ const ActiveContracts = () => {
                         title: c.job_contracts.title,
                         service_type: c.job_contracts.category,
                         tier: 'Standard',
-                        deadline_at: c.job_contracts.deadline || new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        claimed_at: c.claimed_at || c.created_at,
+                        deadline_at: c.job_contracts.deadline || new Date(new Date().getTime() + 48 * 60 * 60 * 1000).toISOString(),
                         project_status: c.job_contracts.status,
                         price: 0,
                         source: 'job_contracts' as const,
@@ -139,7 +146,8 @@ const ActiveContracts = () => {
                     title: o.service_type ? `Legacy Order: ${o.service_type}` : 'Legacy Order',
                     service_type: o.service_type,
                     tier: o.tier,
-                    deadline_at: o.deadline_at,
+                    claimed_at: o.claimed_at || o.created_at,
+                    deadline_at: o.deadline_at || new Date(new Date().getTime() + 48 * 60 * 60 * 1000).toISOString(),
                     project_status: o.project_status,
                     price: o.price,
                     source: 'client_orders' as const,
@@ -219,14 +227,18 @@ const ActiveContracts = () => {
         }
     };
 
-    const getDeadlineStatus = (deadline: string) => {
-        const d = new Date(deadline);
-        const isOverdue = isAfter(now, d);
-        return {
-            isOverdue,
-            text: isOverdue ? `Expired` : `Due in ${formatDistanceToNow(d)}`,
-            color: isOverdue ? 'text-destructive' : 'text-primary'
-        };
+    const handleContractExpired = async (contract: ActiveContract) => {
+        try {
+            await (supabase as any).rpc('check_and_expire_deadlines');
+            toast({
+                title: 'Deadline Expired ⏳',
+                description: `The deadline for "${contract.title}" has passed without submission. The job was released back to the marketplace and a 48-hour cooldown has been activated.`,
+                variant: 'destructive',
+            });
+            loadContracts();
+        } catch (e) {
+            console.warn('Deadline expiry check:', e);
+        }
     };
 
     if (loading) return null;
@@ -246,7 +258,6 @@ const ActiveContracts = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {contracts.map((contract) => {
-                    const deadline = getDeadlineStatus(contract.deadline_at);
                     return (
                         <Card key={contract.id} className="glass border-border/50 hover:border-primary/30 transition-all group">
                             <CardContent className="p-5 space-y-4">
@@ -261,13 +272,15 @@ const ActiveContracts = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <div className="flex justify-between text-[11px] mb-1">
-                                        <span className="text-muted-foreground">Deadline Progress</span>
-                                        <span className={`font-medium ${deadline.color}`}>{deadline.text}</span>
-                                    </div>
-                                    <Progress value={deadline.isOverdue ? 100 : 45} className={`h-1.5 ${deadline.isOverdue ? '[&>div]:bg-destructive' : ''}`} />
-                                </div>
+                                <ProjectDeadlineCountdown
+                                    contractId={contract.id}
+                                    projectTitle={contract.title || contract.service_type}
+                                    claimedAt={contract.claimed_at}
+                                    deadlineAt={contract.deadline_at}
+                                    designerId={user?.id}
+                                    designerEmail={user?.email}
+                                    onExpired={() => handleContractExpired(contract)}
+                                />
 
                                 <div className="flex items-center gap-4 pt-2 border-t border-border/30">
                                     <div className="flex-1">

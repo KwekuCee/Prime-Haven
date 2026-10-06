@@ -101,6 +101,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Client Projects', icon: FolderKanban, path: '/superadmin/projects' },
       { label: 'Contracts & Agreements', icon: Briefcase, path: '/superadmin/contracts' },
+      { label: 'Live Conversations', icon: MessageSquare, path: '/superadmin/conversations', badge: 'Live', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
       { label: 'Client Orders', icon: ShoppingCart, path: '/superadmin', tab: 'orders' },
       { label: 'Talent Payouts', icon: Banknote, path: '/superadmin', tab: 'payments' },
       { label: 'Direct Hire Inquiries', icon: Gavel, path: '/superadmin/hire-requests' },

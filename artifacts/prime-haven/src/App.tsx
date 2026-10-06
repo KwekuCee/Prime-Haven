@@ -101,6 +101,7 @@ const ActivityLog = lazyWithReload(() => import("./pages/ActivityLog"));
 const PayoutReconciliation = lazyWithReload(() => import("./pages/PayoutReconciliation"));
 const ForwardWork = lazyWithReload(() => import("./pages/ForwardWork"));
 const ManagePromoPopup = lazyWithReload(() => import("./pages/ManagePromoPopup"));
+const SuperAdminConversations = lazyWithReload(() => import("./pages/SuperAdminConversations"));
 const Terms = lazyWithReload(() => import("./pages/Terms"));
 const Privacy = lazyWithReload(() => import("./pages/Privacy"));
 const OurStory = lazyWithReload(() => import("./pages/OurStory"));
@@ -158,6 +159,7 @@ const App = () => {
                   <Route path="/superadmin/qa-reviewer" element={<AdminRoute><QADashboard /></AdminRoute>} />
                   <Route path="/superadmin/portfolio" element={<AdminRoute><ManagePortfolio /></AdminRoute>} />
                   <Route path="/superadmin/contracts" element={<AdminRoute><JobContracts /></AdminRoute>} />
+                  <Route path="/superadmin/conversations" element={<AdminRoute><SuperAdminConversations /></AdminRoute>} />
                   <Route path="/messages" element={<ProfessionalRoute><Messages /></ProfessionalRoute>} />
                   <Route path="/install" element={<ProfessionalRoute><Install /></ProfessionalRoute>} />
                   <Route path="/blog" element={<Blog />} />

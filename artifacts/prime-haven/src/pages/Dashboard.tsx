@@ -34,6 +34,8 @@ import GoalTracker from '@/components/dashboard/GoalTracker';
 import DesignerPortfolio from '@/components/dashboard/DesignerPortfolio';
 import RankBadge from '@/components/dashboard/RankBadge';
 import TalentPageHeader from '@/components/dashboard/TalentPageHeader';
+import { TalentCooldownBanner } from '@/components/dashboard/TalentCooldownBanner';
+import { checkCooldownStatus } from '@/lib/deadlineTimer';
 
 interface ProfileData {
   full_name: string | null;
@@ -50,6 +52,8 @@ interface DesignerData {
   talent_score_breakdown: any | null;
   talent_score_updated_at: string | null;
   professions?: string[] | null;
+  cooldown_until?: string | null;
+  cooldown_reason?: string | null;
 }
 
 interface Submission {
@@ -314,7 +318,7 @@ const Dashboard = () => {
         setLoading(true);
         const [profileResult, designerResult, submissionsResult, designersResult, profilesResult, settingsResult] = await Promise.all([
           supabase.from('profiles').select('full_name, email_verified, registration_fee_paid').eq('id', user.id).maybeSingle(),
-          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, professions, talent_score, talent_score_breakdown, talent_score_updated_at').eq('user_id', user.id).maybeSingle(),
+          supabase.from('designer_details').select('total_points, monthly_points, salary_estimated, professional_title, professions, talent_score, talent_score_breakdown, talent_score_updated_at, cooldown_until, cooldown_reason').eq('user_id', user.id).maybeSingle(),
           supabase.from('submissions').select('*').eq('designer_id', user.id).order('created_at', { ascending: false }),
           supabase.from('leaderboard_designer_details').select('user_id, total_points, monthly_points, professional_title, talent_score').order('total_points', { ascending: false }),
           supabase.from('leaderboard_profiles').select('id, full_name'),
@@ -491,9 +495,13 @@ const Dashboard = () => {
     );
   }
 
+  const isCooldown = checkCooldownStatus(designer?.cooldown_until).isInCooldown;
+
   return (
     <DashboardLayout>
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
+        <TalentCooldownBanner cooldownUntil={designer?.cooldown_until} cooldownReason={designer?.cooldown_reason} />
+
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <TalentPageHeader
             eyebrow="Talent command center"
@@ -502,7 +510,11 @@ const Dashboard = () => {
             icon={Zap}
             action={<div className="flex flex-wrap gap-2">
               <MagneticEffect intensity={0.1}>
-                <Button size="sm" variant="outline" className="border-on-ink/25 bg-on-ink/10 text-on-ink hover:bg-on-ink/15 hover:text-on-ink" onClick={() => {
+                <Button size="sm" variant="outline" disabled={isCooldown} className="border-on-ink/25 bg-on-ink/10 text-on-ink hover:bg-on-ink/15 hover:text-on-ink" onClick={() => {
+                  if (isCooldown) {
+                    toast({ title: 'Account in 48h Cooldown', description: 'Your account is under cooldown due to an expired deadline. Work actions are paused.', variant: 'destructive' });
+                    return;
+                  }
                   if (hasStartedProject) {
                     const stored = localStorage.getItem(`started_project_${user?.id}`);
                     const proj = stored ? JSON.parse(stored) : null;
@@ -511,11 +523,17 @@ const Dashboard = () => {
                   }
                   setStartWorkingOpen(true);
                 }}>
-                  <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Start Work
+                  <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> {isCooldown ? 'Cooldown Active' : 'Start Work'}
                 </Button>
               </MagneticEffect>
               <MagneticEffect intensity={0.1}>
-                <Button size="sm" onClick={() => navigate('/submit-work')}>
+                <Button size="sm" disabled={isCooldown} onClick={() => {
+                  if (isCooldown) {
+                    toast({ title: 'Account in 48h Cooldown', description: 'Work submissions are paused during your 48-hour cooldown.', variant: 'destructive' });
+                    return;
+                  }
+                  navigate('/submit-work');
+                }}>
                   <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit Work
                 </Button>
               </MagneticEffect>

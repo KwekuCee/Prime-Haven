@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Star, Banknote, ImagePlus, X } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Star, Banknote, ImagePlus, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -15,8 +16,8 @@ import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import BookConsultationDialog from '@/components/BookConsultationDialog';
-const isDevService = (t: string) => /web|app|mobile/i.test(t);
-const DEV_NOTE = 'Web and app development prices vary with your requirements, so we start with a free consultation to scope your project and give you an accurate quote.';
+const isDevService = (t: string) => /web|app|mobile|video|motion|editing/i.test(t);
+const DEV_NOTE = 'Web development, mobile app development, and video editing prices vary with project scope, footage length, and animation requirements. We start with a free consultation call to scope your project and give you an accurate quote.';
 
 declare global {
   interface Window {
@@ -76,6 +77,7 @@ const ClientStartProject = () => {
     clientWhatsapp: '',
     businessName: '',
     description: '',
+    deadlineHours: 48,
   });
 
   const [promoCode, setPromoCode] = useState('');
@@ -267,6 +269,8 @@ const ClientStartProject = () => {
             payment_status: 'completed',
             payment_reference: freeReference,
             reference_images: uploadedRefUrls,
+            deadline_hours: form.deadlineHours,
+            deadline_at: new Date(Date.now() + form.deadlineHours * 3600 * 1000).toISOString(),
           } as any);
 
         if (orderError) throw new Error(orderError.message);
@@ -290,6 +294,8 @@ const ClientStartProject = () => {
             budget: '$0 (Promo)',
             required_professions: dist.professions,
             max_assignees: dist.max,
+            deadline_hours: form.deadlineHours,
+            deadline: new Date(Date.now() + form.deadlineHours * 3600 * 1000).toISOString(),
             reference_images: uploadedRefUrls,
           } as any);
         } catch (e) {
@@ -375,6 +381,7 @@ const ClientStartProject = () => {
           clientPassword: "dashboard-client", // Dummy password since they are already authenticated
           businessName: form.businessName || "Client Business",
           referenceFiles: uploadedRefUrls,
+          deadlineHours: form.deadlineHours,
           referralCode: localStorage.getItem('primehaven_ref_code') || undefined,
         },
       });
@@ -452,7 +459,7 @@ const ClientStartProject = () => {
                 <p className="text-muted-foreground">Select the service that fits your new project.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <BookConsultationDialog open={consultOpen} onOpenChange={setConsultOpen} defaultService={selectedService.toLowerCase().includes('web') ? 'web-development' : 'mobile-app'} note={DEV_NOTE} />
+                <BookConsultationDialog open={consultOpen} onOpenChange={setConsultOpen} defaultService={selectedService.toLowerCase().includes('video') || selectedService.toLowerCase().includes('motion') ? 'video-editing' : selectedService.toLowerCase().includes('web') ? 'web-development' : 'mobile-app'} note={DEV_NOTE} />
                 {serviceTypes.map(type => (
                   <Card
                     key={type}
@@ -549,6 +556,33 @@ const ClientStartProject = () => {
                         className="min-h-[120px] bg-background"
                         required
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="deadlineHours" className="flex items-center gap-1.5 font-medium">
+                        <Clock className="w-4 h-4 text-primary" /> Turnaround Deadline *
+                      </Label>
+                      <Select
+                        value={String(form.deadlineHours || 48)}
+                        onValueChange={(val) => setForm(prev => ({ ...prev, deadlineHours: Number(val) }))}
+                      >
+                        <SelectTrigger id="deadlineHours" className="bg-background">
+                          <SelectValue placeholder="Select deadline" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="24">24 Hours (Express 1-day delivery)</SelectItem>
+                          <SelectItem value="48">48 Hours (Standard 2-day delivery)</SelectItem>
+                          <SelectItem value="72">72 Hours (3-day delivery)</SelectItem>
+                          <SelectItem value="120">5 Days (120 Hours)</SelectItem>
+                          <SelectItem value="168">7 Days (1 Week / 168 Hours)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-2.5 text-xs text-muted-foreground">
+                        <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <p>
+                          <strong>Live Countdown Protection:</strong> A strict {form.deadlineHours || 48}-hour timer activates immediately when a verified talent claims your job. The designer is sent automated reminder warnings at 50%, 70%, and 90% of the countdown.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="space-y-2">

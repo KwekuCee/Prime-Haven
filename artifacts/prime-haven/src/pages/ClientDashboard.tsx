@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
     ShoppingCart, Search, Download, Wallet, Clock, CheckCircle, CreditCard,
-    Pencil, Loader2, Building2, Phone, Mail, Star, UserCheck,
+    Pencil, Loader2, Building2, Phone, Mail, Star, UserCheck, MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ClientVerifyBanner from '@/components/client/ClientVerifyBanner';
 import PriceEstimator from '@/components/client/PriceEstimator';
 import ClientProjectReview from '@/components/client/ClientProjectReview';
+import ProjectChatPanel from '@/components/ProjectChatPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -83,6 +84,7 @@ const ClientDashboard = () => {
     const [statusFilter, setStatusFilter] = useState('all');
 
     const [editOpen, setEditOpen] = useState(false);
+    const [activeChat, setActiveChat] = useState<{ id: string; title: string; designerName: string } | null>(null);
     const [form, setForm] = useState({ name: '', whatsapp: '', company: '', notes: '' });
     const [saving, setSaving] = useState(false);
 
@@ -370,6 +372,7 @@ const ClientDashboard = () => {
                                             <TableHead className="text-xs font-semibold">Professional</TableHead>
                                             <TableHead className="text-xs font-semibold">Reference</TableHead>
                                             <TableHead className="text-xs font-semibold">Date</TableHead>
+                                            <TableHead className="text-xs font-semibold text-right">Chat</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -394,6 +397,24 @@ const ClientDashboard = () => {
                                                 </TableCell>
                                                 <TableCell className="text-[11px] text-muted-foreground">{order.payment_reference || '—'}</TableCell>
                                                 <TableCell className="text-xs text-muted-foreground">{format(new Date(order.created_at), 'MMM d, yy')}</TableCell>
+                                                <TableCell className="text-right">
+                                                    {designerFor(order) ? (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-7 text-xs gap-1.5 rounded-full text-primary border-primary/30 hover:bg-primary/10"
+                                                            onClick={() => setActiveChat({
+                                                                id: order.id,
+                                                                title: order.service_type?.replace(/-/g, ' ') || 'Project',
+                                                                designerName: designerFor(order) || 'Designer'
+                                                            })}
+                                                        >
+                                                            <MessageSquare className="w-3 h-3" /> Chat
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-[10px] text-muted-foreground italic">Awaiting Talent</span>
+                                                    )}
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -415,16 +436,32 @@ const ClientDashboard = () => {
                                             <Badge variant="outline" className={`text-[10px] ${statusTone(order.project_status)}`}>{(order.project_status || 'unassigned').replace(/_/g, ' ')}</Badge>
                                             <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(order.created_at), 'MMM d')}</span>
                                         </div>
-                                        <p className="text-[11px] text-muted-foreground">
-                                            {designerFor(order) ? (
-                                                <>
-                                                    Professional:{' '}
-                                                    {designerIdFor(order)
-                                                        ? <Link to={`/designer/${designerIdFor(order)}`} className="text-primary font-medium hover:underline">{designerFor(order)}</Link>
-                                                        : designerFor(order)}
-                                                </>
-                                            ) : 'Not claimed yet'}
-                                        </p>
+                                        <div className="flex items-center justify-between pt-1">
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {designerFor(order) ? (
+                                                    <>
+                                                        Professional:{' '}
+                                                        {designerIdFor(order)
+                                                            ? <Link to={`/designer/${designerIdFor(order)}`} className="text-primary font-medium hover:underline">{designerFor(order)}</Link>
+                                                            : designerFor(order)}
+                                                    </>
+                                                ) : 'Not claimed yet'}
+                                            </p>
+                                            {designerFor(order) && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-7 text-xs gap-1 rounded-full text-primary border-primary/30"
+                                                    onClick={() => setActiveChat({
+                                                        id: order.id,
+                                                        title: order.service_type?.replace(/-/g, ' ') || 'Project',
+                                                        designerName: designerFor(order) || 'Designer'
+                                                    })}
+                                                >
+                                                    <MessageSquare className="w-3 h-3" /> Chat
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -479,6 +516,36 @@ const ClientDashboard = () => {
                             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save details'}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Direct Project Chat with Designer Dialog */}
+            <Dialog open={!!activeChat} onOpenChange={(open) => !open && setActiveChat(null)}>
+                <DialogContent className="sm:max-w-[680px] max-h-[92vh] p-5 glass">
+                    <DialogHeader className="pb-3 border-b border-border/40">
+                        <div className="flex items-center justify-between">
+                            <DialogTitle className="text-base font-heading font-bold flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-primary" />
+                                <span>Chat with {activeChat?.designerName || 'Designer'}</span>
+                            </DialogTitle>
+                            <Badge variant="outline" className="text-[10px] uppercase text-primary border-primary/30">
+                                {activeChat?.title}
+                            </Badge>
+                        </div>
+                        <DialogDescription className="text-xs text-muted-foreground">
+                            Official project discussion. All conversations are monitored and must stay on Prime Haven.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {activeChat && (
+                        <div className="h-[480px] pt-2">
+                            <ProjectChatPanel
+                                projectId={activeChat.id}
+                                role="client"
+                                senderName={record?.name || user?.user_metadata?.full_name || 'Client'}
+                            />
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </DashboardLayout>

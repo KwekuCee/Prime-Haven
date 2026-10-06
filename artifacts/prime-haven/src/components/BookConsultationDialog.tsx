@@ -47,6 +47,7 @@ const services = [
   { value: 'ui-ux-design', label: 'UI/UX Design' },
   { value: 'branding', label: 'Branding & Identity' },
   { value: 'mobile-app', label: 'Mobile App Development' },
+  { value: 'video-editing', label: 'Video Editing & Motion Design' },
   { value: 'consulting', label: 'General Consulting' },
   { value: 'other', label: 'Other' },
 ];
