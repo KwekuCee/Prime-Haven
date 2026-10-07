@@ -76,7 +76,7 @@ const JoinSection = () => {
                 {TALENT_BENEFITS.map((benefit) => <li key={benefit} className="flex gap-2 text-xs leading-relaxed text-on-ink/70"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{benefit}</li>)}
               </ul>
               <div className="mt-10 flex flex-wrap items-center gap-5 border-t border-on-ink/15 pt-6">
-                <Button asChild className="h-12 rounded-full px-6"><Link to="/register">Join for $15 <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+                <Button asChild className="h-12 rounded-full px-6"><Link to="/apply">Apply to Join <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
                 <Link to="/marketplace" className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-ink/65 transition-colors hover:text-on-ink">View marketplace <ArrowUpRight className="h-4 w-4" /></Link>
               </div>
             </div>

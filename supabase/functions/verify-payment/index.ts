@@ -176,11 +176,22 @@ serve(withCors(async (req: Request): Promise<Response> => {
       .eq("id", userId)
       .single();
 
-    // Update profile to mark registration fee as paid
+    // Update profile to mark registration fee as paid and ensure account is active
     await supabase
       .from("profiles")
-      .update({ registration_fee_paid: true })
+      .update({ registration_fee_paid: true, is_active: true })
       .eq("id", userId);
+
+    const userTitle = (user?.user_metadata?.professional_title || user?.user_metadata?.track || "").trim();
+    if (userTitle) {
+      await supabase
+        .from("designer_details")
+        .upsert({
+          user_id: userId,
+          professional_title: userTitle,
+          professions: [userTitle],
+        }, { onConflict: "user_id" });
+    }
 
     console.log("Payment verified and recorded for user:", userId);
 

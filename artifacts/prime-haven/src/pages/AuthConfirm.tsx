@@ -136,8 +136,8 @@ const AuthConfirm = () => {
                 <Button onClick={() => navigate('/login')} variant="outline">
                   Go to Login
                 </Button>
-                <Button onClick={() => navigate('/register')} variant="primary">
-                  Register Again
+                <Button onClick={() => navigate('/apply')} variant="primary">
+                  Apply Again
                 </Button>
               </div>
             </motion.div>

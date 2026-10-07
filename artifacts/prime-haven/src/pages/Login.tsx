@@ -339,12 +339,12 @@ const Login = () => {
 
           <div className="mt-16 pt-8 border-t border-border flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">New to Prime Haven?</span>
+              <span className="text-sm text-muted-foreground">New talent joining?</span>
               <Link
-                to="/register"
+                to="/apply"
                 className="text-sm font-bold border-b-2 border-primary pb-0.5 hover:text-primary transition-colors"
               >
-                Register
+                Apply here
               </Link>
             </div>
 

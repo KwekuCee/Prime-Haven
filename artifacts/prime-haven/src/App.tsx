@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { UserSettingsProvider } from "./contexts/UserSettingsContext";
 import Index from "./pages/Index";
@@ -37,7 +37,6 @@ const ReferralHandler = () => {
 const ThirdPartyLoader = lazyWithReload(() => import('./components/ThirdPartyLoader'));
 
 // Lazy-loaded pages for non-dashboard routes
-const Register = lazyWithReload(() => import("./pages/Register"));
 const Login = lazyWithReload(() => import("./pages/Login"));
 const ForgotPassword = lazyWithReload(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazyWithReload(() => import("./pages/ResetPassword"));
@@ -134,7 +133,7 @@ const App = () => {
                 <ThirdPartyLoader />
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/register" element={<Register />} />
+                  <Route path="/register" element={<Navigate to="/apply" replace />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />

@@ -591,9 +591,9 @@ const Navbar = () => {
                           {t('nav.login', 'Sign In')}
                         </Button>
                       </Link>
-                      <Link to="/register" onClick={() => setIsOpen(false)}>
+                      <Link to="/apply" onClick={() => setIsOpen(false)}>
                         <Button variant="outline" className="w-full rounded-full border-primary/40 text-primary hover:bg-primary/10">
-                          Join Network
+                          Apply as Talent
                         </Button>
                       </Link>
                     </div>

@@ -79,11 +79,12 @@ const Terms = () => {
               </p>
             </Section>
 
-            <Section title="3. Account Registration">
+            <Section title="3. Talent Application & Account Onboarding">
               <p>
-                To access designer features, you must register an account using a valid email address and accurate
-                personal information. You are solely responsible for maintaining the confidentiality of your login
-                credentials and all activity under your account.
+                To access professional talent features and the marketplace, you must submit an application via /apply,
+                successfully complete the required track screening or assessment, and complete account onboarding.
+                You are solely responsible for maintaining the confidentiality of your login credentials and all
+                activity under your account.
               </p>
               <p>
                 Accounts must belong to individuals aged 18 or older. Prime Haven reserves the right to suspend

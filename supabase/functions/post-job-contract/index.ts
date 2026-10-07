@@ -40,16 +40,46 @@ const DISCORD_CHANNELS: Record<string, string> = Object.fromEntries(
 
 // Map service types to categories for email lookup
 const CATEGORY_SKILLS: Record<string, string[]> = {
-  "graphic-design": ["logo", "branding", "print", "flyer", "Logo Design", "Brand Identity", "Print Design", "Flyer Design", "Graphic Design"],
-  "app-design": ["uiux", "UI/UX Design", "UI/UX", "App Design", "Mobile Design"],
-  "ui-ux-design": ["uiux", "UI/UX Design", "UI/UX", "App Design", "Mobile Design"],
-  "web-dev": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
-  "web-development": ["web", "Web Design", "Web Development", "Frontend", "Full Stack"],
-  "mobile-app-development": ["mobile", "app", "Mobile App Development", "React Native", "Flutter", "iOS", "Android"],
-  "video-editing": ["video", "Video Editing", "Editor", "Premiere", "DaVinci"],
-  "motion-graphics": ["motion", "Motion Graphics", "After Effects", "Animation"],
-  "social-media-management": ["smm", "Social Media Management", "Social Media", "Community Manager"],
-  "it-solutions": ["it", "General IT Solutions", "IT Support", "Networking", "Sysadmin"],
+  "graphic-design": [
+    "logo", "branding", "print", "flyer", "graphic", "illustrator", "photoshop", "indesign",
+    "Logo Design", "Brand Identity", "Print Design", "Flyer Design", "Graphic Design", "Graphic Designer"
+  ],
+  "app-design": [
+    "ui", "ux", "uiux", "ui/ux", "ui-ux", "app", "mobile", "figma", "wireframe", "prototype",
+    "UI/UX Design", "UI/UX", "UI/UX Designer", "App Design", "Mobile Design", "Product Design"
+  ],
+  "ui-ux-design": [
+    "ui", "ux", "uiux", "ui/ux", "ui-ux", "app", "mobile", "figma", "wireframe", "prototype",
+    "UI/UX Design", "UI/UX", "UI/UX Designer", "App Design", "Mobile Design", "Product Design"
+  ],
+  "web-dev": [
+    "web", "website", "frontend", "backend", "full stack", "fullstack", "react", "html", "css", "javascript", "typescript", "wordpress", "nextjs",
+    "Web Design", "Web Development", "Web Developer"
+  ],
+  "web-development": [
+    "web", "website", "frontend", "backend", "full stack", "fullstack", "react", "html", "css", "javascript", "typescript", "wordpress", "nextjs",
+    "Web Design", "Web Development", "Web Developer"
+  ],
+  "mobile-app-development": [
+    "mobile", "app", "ios", "android", "flutter", "react native", "swift", "kotlin",
+    "Mobile App Development", "Mobile App Developer", "App Developer"
+  ],
+  "video-editing": [
+    "video", "editor", "premiere", "davinci", "cut", "reels", "youtube", "footage", "grading",
+    "Video Editing", "Video Editor"
+  ],
+  "motion-graphics": [
+    "motion", "animation", "animator", "after effects", "lottie", "kinetic", "2d animation", "3d animation",
+    "Motion Graphics", "Motion Graphics Designer"
+  ],
+  "social-media-management": [
+    "social", "smm", "social media", "community", "content creator", "instagram", "marketing",
+    "Social Media Management", "Social Media Manager"
+  ],
+  "it-solutions": [
+    "it", "it solutions", "support", "networking", "sysadmin", "cloud", "server", "infrastructure",
+    "General IT Solutions", "IT Specialist"
+  ],
 };
 
 function getCategoryLabel(id: string): string {
@@ -185,8 +215,43 @@ serve(withCors(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Original create flow
-    const { title, description, category, deadline, budget, requirements, clientName, clientEmail, clientWhatsapp, specialInstructions, contractId, referenceFiles } = body;
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const isResend = body.action === "resend_notifications";
+
+    // Handle resend_notifications action for an existing contract
+    if (isResend) {
+      const { contractId } = body;
+      if (!contractId) {
+        return new Response(JSON.stringify({ success: false, error: "Missing contractId" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      const { data: contract, error: cErr } = await supabase
+        .from("job_contracts")
+        .select("*")
+        .eq("id", contractId)
+        .maybeSingle();
+
+      if (cErr || !contract) {
+        return new Response(JSON.stringify({ success: false, error: "Contract not found" }), {
+          status: 404, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      body.title = contract.title;
+      body.description = contract.description;
+      body.category = contract.category;
+      body.deadline = contract.deadline;
+      body.budget = contract.budget;
+      body.requirements = contract.requirements;
+      body.clientName = contract.client_name;
+      body.specialInstructions = contract.special_instructions;
+      body.referenceFiles = contract.reference_files;
+      body.targetProfessions = contract.target_professions;
+    }
+
+    // Original create or resend flow
+    const { title, description, category, deadline, budget, requirements, clientName, clientEmail, clientWhatsapp, specialInstructions, contractId, referenceFiles, targetProfessions } = body;
 
     if (!title || !description || !category) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), {
@@ -194,13 +259,11 @@ serve(withCors(async (req: Request): Promise<Response> => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
-    // 1. Post to Discord
+    // 1. Post to Discord (only on new contract creation)
     const channelId = DISCORD_CHANNELS[category];
     let discordMessageId: string | null = null;
 
-    if (channelId && DISCORD_BOT_TOKEN) {
+    if (!isResend && channelId && DISCORD_BOT_TOKEN) {
       const safeTitle = (title || "").slice(0, 256);
       const safeDesc = (description || "").slice(0, 2048);
 
@@ -234,7 +297,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
     }
 
     // 2. Update contract with discord_message_id if provided
-    if (contractId && discordMessageId) {
+    if (!isResend && contractId && discordMessageId) {
       await supabase
         .from("job_contracts")
         .update({ discord_message_id: discordMessageId, discord_channel_id: channelId })
@@ -260,27 +323,86 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     // 4. Send emails to relevant designers
     const skills = CATEGORY_SKILLS[category] || [];
+    const catLower = (category || "").toLowerCase();
 
+    // Query active designers or any profiles where is_active is true or null
     const { data: allDesigners } = await supabase
       .from("profiles")
       .select("id, email, full_name, is_active")
-      .eq("is_active", true);
+      .neq("is_active", false);
 
     const { data: allDetails } = await supabase
       .from("designer_details")
-      .select("user_id, skills, professional_title");
+      .select("user_id, skills, professional_title, professions");
+
+    const { data: allApplicants } = await supabase
+      .from("applicants")
+      .select("user_id, email, track");
+
+    const applicantTrackByUserId = new Map<string, string>();
+    const applicantTrackByEmail = new Map<string, string>();
+    for (const a of allApplicants || []) {
+      if (a.user_id && a.track) applicantTrackByUserId.set(a.user_id, a.track);
+      if (a.email && a.track) applicantTrackByEmail.set(a.email.toLowerCase(), a.track);
+    }
 
     const detailsMap = new Map((allDetails || []).map((d: any) => [d.user_id, d]));
 
     const targetDesigners = (allDesigners || []).filter((d: any) => {
       const detail = detailsMap.get(d.id);
-      if (!detail) return false;
-      const designerSkills = (detail.skills || []).map((s: string) => s.toLowerCase());
-      const designerTitle = (detail.professional_title || "").toLowerCase();
-      return skills.some(skill =>
-        designerSkills.some((ds: string) => ds.includes(skill.toLowerCase())) ||
-        designerTitle.includes(skill.toLowerCase())
-      );
+      const designerSkills = (detail?.skills || []).map((s: string) => s.toLowerCase());
+      const designerTitle = (detail?.professional_title || "").toLowerCase();
+      const designerProfessions = (detail?.professions || []).map((p: string) => p.toLowerCase());
+      const applicantTrack = (applicantTrackByUserId.get(d.id) || applicantTrackByEmail.get(d.email?.toLowerCase()) || "").toLowerCase();
+
+      const allTokens = [
+        designerTitle,
+        applicantTrack,
+        ...designerSkills,
+        ...designerProfessions,
+      ].filter(Boolean);
+
+      // Explicit target professions specified on the contract
+      const contractTargetProfs = (targetProfessions || []).map((tp: string) => tp.toLowerCase());
+      if (contractTargetProfs.length > 0) {
+        const matchesTarget = contractTargetProfs.some((tp: string) =>
+          allTokens.some((tok: string) => tok.includes(tp) || tp.includes(tok))
+        );
+        if (matchesTarget) return true;
+      }
+
+      // Check category skills
+      if (skills.some(skill => allTokens.some((tok: string) => tok.includes(skill.toLowerCase()) || skill.toLowerCase().includes(tok)))) {
+        return true;
+      }
+
+      // Category-specific fallback matching
+      if (catLower.includes('ui') || catLower.includes('ux') || catLower.includes('app-design')) {
+        if (allTokens.some(tok => tok.includes('ui') || tok.includes('ux') || tok.includes('figma') || tok.includes('product design'))) return true;
+      }
+      if (catLower.includes('web')) {
+        if (allTokens.some(tok => tok.includes('web') || tok.includes('dev') || tok.includes('frontend') || tok.includes('fullstack'))) return true;
+      }
+      if (catLower.includes('mobile')) {
+        if (allTokens.some(tok => tok.includes('mobile') || tok.includes('ios') || tok.includes('android') || tok.includes('flutter'))) return true;
+      }
+      if (catLower.includes('video')) {
+        if (allTokens.some(tok => tok.includes('video') || tok.includes('edit') || tok.includes('premiere') || tok.includes('davinci'))) return true;
+      }
+      if (catLower.includes('motion')) {
+        if (allTokens.some(tok => tok.includes('motion') || tok.includes('animat') || tok.includes('after effects'))) return true;
+      }
+      if (catLower.includes('graphic')) {
+        if (allTokens.some(tok => tok.includes('graphic') || tok.includes('logo') || tok.includes('brand') || tok.includes('print'))) return true;
+      }
+      if (catLower.includes('social') || catLower.includes('smm')) {
+        if (allTokens.some(tok => tok.includes('social') || tok.includes('smm') || tok.includes('community'))) return true;
+      }
+      if (catLower.includes('it')) {
+        if (allTokens.some(tok => tok.includes('it') || tok.includes('network') || tok.includes('support') || tok.includes('sysadmin'))) return true;
+      }
+
+      return false;
     });
 
     console.log(`Found ${targetDesigners.length} designers for category ${category}`);

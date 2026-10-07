@@ -40,8 +40,14 @@ const CATEGORY_LABELS: Record<string, string> = {
     'logo-design': 'Logo Design',
     'brand-identity': 'Brand Identity',
     'app-design': 'UI/UX Design',
+    'ui-ux-design': 'UI/UX Design',
     'web-design': 'Web Design',
     'web-development': 'Web Development',
+    'mobile-app-development': 'Mobile App Development',
+    'motion-graphics': 'Motion Graphics',
+    'video-editing': 'Video Editing',
+    'social-media-management': 'Social Media Management',
+    'it-solutions': 'General IT Solutions',
     'print-design': 'Print Design',
     'flyer-design': 'Flyer / Poster Design',
     'social-media': 'Social Media Design',
@@ -58,21 +64,38 @@ const PROFESSION_MAPPING: Record<string, string[]> = {
     'brand-identity': ['Graphic Designer'],
     'print-design': ['Graphic Designer'],
     'flyer-design': ['Graphic Designer'],
-    'social-media': ['Graphic Designer'],
+    'social-media': ['Graphic Designer', 'Social Media Manager'],
     'graphic-design': ['Graphic Designer'],
     'Graphic Design': ['Graphic Designer'],
     'app-design': ['UI/UX Designer'],
+    'ui-ux-design': ['UI/UX Designer'],
+    'UI/UX Design': ['UI/UX Designer'],
     'App/UI/UX Design': ['UI/UX Designer'],
     'web-design': ['Web Developer'],
     'web-development': ['Web Developer'],
     'Web Development': ['Web Developer'],
     'web-dev': ['Web Developer'],
+    'mobile-app-development': ['Mobile App Developer'],
+    'Mobile App Development': ['Mobile App Developer'],
+    'motion-graphics': ['Motion Graphics Designer'],
+    'Motion Graphics': ['Motion Graphics Designer'],
+    'video-editing': ['Video Editor'],
+    'Video Editing': ['Video Editor'],
+    'social-media-management': ['Social Media Manager'],
+    'Social Media Management': ['Social Media Manager'],
+    'it-solutions': ['IT Specialist'],
+    'General IT Solutions': ['IT Specialist'],
 };
 
 // Derives a canonical profession label from designer_details.professional_title
 const deriveProfession = (title: string | null | undefined): string => {
     const t = (title || '').toLowerCase();
-    if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+    if (t.includes('mobile') || t.includes('android') || t.includes('ios') || t.includes('flutter') || t.includes('react native')) return 'Mobile App Developer';
+    if (t.includes('motion') || t.includes('animation') || t.includes('after effects')) return 'Motion Graphics Designer';
+    if (t.includes('video') || t.includes('editor') || t.includes('premiere') || t.includes('davinci')) return 'Video Editor';
+    if (t.includes('social') || t.includes('smm') || t.includes('community')) return 'Social Media Manager';
+    if (t.includes('it') || t.includes('sysadmin') || t.includes('network') || t.includes('cloud') || t.includes('infrastructure')) return 'IT Specialist';
+    if (t.includes('ui') || t.includes('ux') || t.includes('figma') || t.includes('product design')) return 'UI/UX Designer';
     if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
     return 'Graphic Designer';
 };

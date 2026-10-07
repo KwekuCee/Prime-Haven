@@ -62,6 +62,22 @@ serve(withCors(async (req: Request): Promise<Response> => {
       })
       .eq("id", applicant.id);
 
+    // Ensure designer_details and profiles reflect the onboarded talent track
+    if (payment.user_id && applicant.track) {
+      await supabase
+        .from("designer_details")
+        .upsert({
+          user_id: payment.user_id,
+          professional_title: applicant.track,
+          professions: [applicant.track],
+        }, { onConflict: "user_id" });
+
+      await supabase
+        .from("profiles")
+        .update({ is_active: true, registration_fee_paid: true })
+        .eq("id", payment.user_id);
+    }
+
     return json({ success: true });
   } catch (err) {
     console.error("applicant-paid error:", err);

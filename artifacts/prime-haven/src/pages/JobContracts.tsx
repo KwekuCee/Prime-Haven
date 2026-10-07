@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Plus, Send, Calendar, DollarSign, Users, FileText,
   ArrowLeft, Trash2, Clock, CheckCircle, XCircle, Upload, Image as ImageIcon,
-  Loader2, RefreshCw, UserPlus, FileSearch
+  Loader2, RefreshCw, UserPlus, FileSearch, Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,8 +23,13 @@ import { format } from 'date-fns';
 
 const JOB_CATEGORIES = [
   { id: 'graphic-design', label: 'Graphic Design' },
-  { id: 'app-design', label: 'UI/UX Design' },
-  { id: 'web-dev', label: 'Web Development' },
+  { id: 'ui-ux-design', label: 'UI/UX Design' },
+  { id: 'web-development', label: 'Web Development' },
+  { id: 'mobile-app-development', label: 'Mobile App Development' },
+  { id: 'motion-graphics', label: 'Motion Graphics' },
+  { id: 'video-editing', label: 'Video Editing' },
+  { id: 'social-media-management', label: 'Social Media Management' },
+  { id: 'it-solutions', label: 'General IT Solutions' },
 ];
 
 interface JobContract {
@@ -405,7 +410,40 @@ const JobContracts = () => {
     setIsPushDialogOpen(true);
   };
 
-  const getCategoryLabel = (id: string) => JOB_CATEGORIES.find(c => c.id === id)?.label || id;
+  const [resendingAlert, setResendingAlert] = useState<string | null>(null);
+
+  const handleResendAlerts = async (contract: JobContract) => {
+    setResendingAlert(contract.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('post-job-contract', {
+        body: {
+          action: 'resend_notifications',
+          contractId: contract.id,
+        },
+      });
+      if (error) throw error;
+      const sentCount = (data as any)?.emailsSent ?? 0;
+      toast({
+        title: 'Job Alerts Dispatched! ✉️',
+        description: `Notification emails sent to ${sentCount} matching professional(s).`,
+      });
+    } catch (err: any) {
+      console.error('Resend alert error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to dispatch alerts',
+        description: err.message || 'Could not send alert emails.',
+      });
+    } finally {
+      setResendingAlert(null);
+    }
+  };
+
+  const getCategoryLabel = (id: string) => {
+    if (id === 'app-design') return 'UI/UX Design';
+    if (id === 'web-dev') return 'Web Development';
+    return JOB_CATEGORIES.find(c => c.id === id)?.label || id;
+  };
 
   if (authLoading || loading) {
     return (
@@ -591,6 +629,19 @@ const JobContracts = () => {
                               onClick={() => openPushDialog(c)}
                             >
                               <Send className="w-4 h-4 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon" aria-label="Alert Designers"
+                              title="Re-send Email Alerts to Designers"
+                              disabled={resendingAlert === c.id}
+                              onClick={() => handleResendAlerts(c)}
+                            >
+                              {resendingAlert === c.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                              ) : (
+                                <Mail className="w-4 h-4 text-emerald-500 hover:text-emerald-400" />
+                              )}
                             </Button>
                             <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => handleDelete(c.id)}>
                               <Trash2 className="w-4 h-4 text-destructive" />
@@ -850,6 +901,11 @@ const JobContracts = () => {
                   { id: 'Graphic Designer', label: 'Graphic Designers' },
                   { id: 'UI/UX Designer', label: 'UI/UX Designers' },
                   { id: 'Web Developer', label: 'Web Developers' },
+                  { id: 'Mobile App Developer', label: 'Mobile App Developers' },
+                  { id: 'Motion Graphics Designer', label: 'Motion Graphics Designers' },
+                  { id: 'Video Editor', label: 'Video Editors' },
+                  { id: 'Social Media Manager', label: 'Social Media Managers' },
+                  { id: 'IT Specialist', label: 'IT Specialists' },
                 ].map((prof) => (
                   <div key={prof.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-white/5 transition-colors cursor-pointer"
                     onClick={() => {

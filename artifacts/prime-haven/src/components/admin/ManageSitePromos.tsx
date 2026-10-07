@@ -317,7 +317,7 @@ const ManageSitePromos = () => {
                             <Label htmlFor="link_url">Link URL (Optional)</Label>
                             <Input
                                 id="link_url"
-                                placeholder="/register or https://..."
+                                placeholder="/apply or https://..."
                                 value={formData.link_url}
                                 onChange={e => setFormData({ ...formData, link_url: e.target.value })}
                             />

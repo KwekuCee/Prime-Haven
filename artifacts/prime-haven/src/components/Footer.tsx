@@ -21,7 +21,7 @@ const Footer = () => {
     ],
     platform: [
       { label: 'Start a Project', href: '/start-project' },
-      { label: 'Join as Freelancer', href: '/register' },
+      { label: 'Apply as Talent', href: '/apply' },
       { label: 'Portfolio', href: '/#portfolio' },
       { label: 'Reviews', href: '/#testimonials' },
     ],

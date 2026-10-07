@@ -31,7 +31,7 @@ const HeroSection = () => {
           <Button asChild className="h-11 rounded-full bg-foreground pl-5 pr-2 text-sm font-semibold text-background hover:bg-foreground/90">
             <Link to="/start-project">Start a Project <span className="ml-3 flex h-7 w-7 items-center justify-center rounded-full bg-background text-foreground"><ArrowRight className="h-4 w-4" /></span></Link>
           </Button>
-          <Link to="/register" className="text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline">Join as Talent</Link>
+          <Link to="/apply" className="text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline">Apply as Talent</Link>
         </motion.div>
       </div>
 
