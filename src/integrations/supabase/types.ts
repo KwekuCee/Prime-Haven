@@ -2843,7 +2843,10 @@ export type Database = {
         Args: { p_withdrawal_id: string }
         Returns: Json
       }
-      claim_job_contract: { Args: { p_contract_id: string }; Returns: Json }
+      claim_job_contract: {
+        Args: { p_contract_id: string }
+        Returns: undefined
+      }
       claim_project: { Args: { p_project_id: string }; Returns: undefined }
       claim_withdrawal_for_payout_service: {
         Args: { p_reference: string; p_withdrawal_id: string }
