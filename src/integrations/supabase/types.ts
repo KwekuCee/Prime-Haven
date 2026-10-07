@@ -477,6 +477,7 @@ export type Database = {
           client_whatsapp: string | null
           created_at: string
           deadline_at: string | null
+          deadline_hours: number | null
           description: string | null
           discord_message_id: string | null
           discord_posted: boolean | null
@@ -502,6 +503,7 @@ export type Database = {
           client_whatsapp?: string | null
           created_at?: string
           deadline_at?: string | null
+          deadline_hours?: number | null
           description?: string | null
           discord_message_id?: string | null
           discord_posted?: boolean | null
@@ -527,6 +529,7 @@ export type Database = {
           client_whatsapp?: string | null
           created_at?: string
           deadline_at?: string | null
+          deadline_hours?: number | null
           description?: string | null
           discord_message_id?: string | null
           discord_posted?: boolean | null
@@ -555,6 +558,7 @@ export type Database = {
         Row: {
           accepted_designer_id: string | null
           budget: string | null
+          cancellation_reason: string | null
           category: string
           claimed_at: string | null
           claimed_by: string | null
@@ -565,6 +569,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           deadline: string | null
+          deadline_at: string | null
+          deadline_hours: number | null
           description: string | null
           id: string
           max_assignees: number | null
@@ -584,6 +590,7 @@ export type Database = {
         Insert: {
           accepted_designer_id?: string | null
           budget?: string | null
+          cancellation_reason?: string | null
           category?: string
           claimed_at?: string | null
           claimed_by?: string | null
@@ -594,6 +601,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deadline?: string | null
+          deadline_at?: string | null
+          deadline_hours?: number | null
           description?: string | null
           id?: string
           max_assignees?: number | null
@@ -613,6 +622,7 @@ export type Database = {
         Update: {
           accepted_designer_id?: string | null
           budget?: string | null
+          cancellation_reason?: string | null
           category?: string
           claimed_at?: string | null
           claimed_by?: string | null
@@ -623,6 +633,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deadline?: string | null
+          deadline_at?: string | null
+          deadline_hours?: number | null
           description?: string | null
           id?: string
           max_assignees?: number | null
@@ -760,7 +772,10 @@ export type Database = {
       designer_details: {
         Row: {
           available_hours: number | null
+          cooldown_reason: string | null
+          cooldown_until: string | null
           created_at: string
+          deadline_warnings_count: number | null
           experience_level: string | null
           extra_profession_paid: boolean
           id: string
@@ -786,7 +801,10 @@ export type Database = {
         }
         Insert: {
           available_hours?: number | null
+          cooldown_reason?: string | null
+          cooldown_until?: string | null
           created_at?: string
+          deadline_warnings_count?: number | null
           experience_level?: string | null
           extra_profession_paid?: boolean
           id?: string
@@ -812,7 +830,10 @@ export type Database = {
         }
         Update: {
           available_hours?: number | null
+          cooldown_reason?: string | null
+          cooldown_until?: string | null
           created_at?: string
+          deadline_warnings_count?: number | null
           experience_level?: string | null
           extra_profession_paid?: boolean
           id?: string
@@ -953,11 +974,15 @@ export type Database = {
           active_designer_ids: string[]
           active_designers_count: number
           budget: string | null
+          cancellation_reason: string | null
           category: string
+          claimed_at: string | null
           client_name: string | null
           client_project_id: string | null
           created_at: string
           deadline: string | null
+          deadline_at: string | null
+          deadline_hours: number | null
           description: string
           discord_channel_id: string | null
           discord_message_id: string | null
@@ -975,11 +1000,15 @@ export type Database = {
           active_designer_ids?: string[]
           active_designers_count?: number
           budget?: string | null
+          cancellation_reason?: string | null
           category: string
+          claimed_at?: string | null
           client_name?: string | null
           client_project_id?: string | null
           created_at?: string
           deadline?: string | null
+          deadline_at?: string | null
+          deadline_hours?: number | null
           description: string
           discord_channel_id?: string | null
           discord_message_id?: string | null
@@ -997,11 +1026,15 @@ export type Database = {
           active_designer_ids?: string[]
           active_designers_count?: number
           budget?: string | null
+          cancellation_reason?: string | null
           category?: string
+          claimed_at?: string | null
           client_name?: string | null
           client_project_id?: string | null
           created_at?: string
           deadline?: string | null
+          deadline_at?: string | null
+          deadline_hours?: number | null
           description?: string
           discord_channel_id?: string | null
           discord_message_id?: string | null
@@ -1376,8 +1409,11 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          flag_reason: string | null
           id: string
+          is_flagged: boolean | null
           project_id: string
+          read: boolean | null
           sender_id: string | null
           sender_name: string | null
           sender_role: string
@@ -1385,8 +1421,11 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          flag_reason?: string | null
           id?: string
+          is_flagged?: boolean | null
           project_id: string
+          read?: boolean | null
           sender_id?: string | null
           sender_name?: string | null
           sender_role: string
@@ -1394,8 +1433,11 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          flag_reason?: string | null
           id?: string
+          is_flagged?: boolean | null
           project_id?: string
+          read?: boolean | null
           sender_id?: string | null
           sender_name?: string | null
           sender_role?: string
@@ -2756,6 +2798,10 @@ export type Database = {
     }
     Functions: {
       admin_archive_ledger: { Args: { p_restore?: boolean }; Returns: number }
+      admin_cancel_project_for_circumvention: {
+        Args: { p_project_id: string; p_reason: string }
+        Returns: Json
+      }
       admin_client_accept_submission: {
         Args: {
           p_dept_label?: string
@@ -2788,6 +2834,7 @@ export type Database = {
         Args: { p_submission_id: string }
         Returns: Json
       }
+      check_and_expire_deadlines: { Args: never; Returns: Json }
       check_rate_limit: {
         Args: { p_action: string; p_identifier: string }
         Returns: Json

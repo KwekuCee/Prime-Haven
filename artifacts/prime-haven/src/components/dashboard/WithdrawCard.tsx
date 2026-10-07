@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [methodOpen, setMethodOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const withdrawLock = useRef(false);
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [newMethod, setNewMethod] = useState<{ provider: Method['provider']; phone_number: string; account_name: string }>({ provider: 'mtn', phone_number: '', account_name: '' });
@@ -117,6 +118,9 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
     if (!Number.isFinite(amt) || amt < 100) { toast.error('Minimum withdrawal is GH₵100'); return; }
     if (amt > effectiveBalance) { toast.error('Amount exceeds available balance'); return; }
     if (!selectedMethod) { toast.error('Select a Mobile Money payment method'); return; }
+    if (withdrawLock.current) return;
+    if (withdrawals.some((w) => ['pending', 'processing'].includes(w.status))) { toast.error('You already have a withdrawal in progress.'); return; }
+    withdrawLock.current = true;
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('request-withdrawal', {
@@ -126,7 +130,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
       if (error || payload?.error) {
         toast.error(payload?.message || error?.message || 'Withdrawal request failed');
       } else {
-        toast.success(payload?.message || 'Withdrawal requested. The CEO has been notified for approval.');
+        toast.success(payload?.message || 'Withdrawal sent to your Mobile Money.');
         setWithdrawOpen(false);
         setAmount('');
         refresh();
@@ -134,6 +138,7 @@ export default function WithdrawCard({ userId, availableBalance }: Props) {
     } catch (e: any) {
       toast.error(e?.message || 'Withdrawal request failed');
     } finally {
+      withdrawLock.current = false;
       setSubmitting(false);
     }
   };

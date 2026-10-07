@@ -41,6 +41,7 @@ const FinanceDashboard = () => {
     const [removeTarget, setRemoveTarget] = useState<any>(null);
     const [removeCheck, setRemoveCheck] = useState<any>(null);
     const [removing, setRemoving] = useState(false);
+    const [stuckOpen, setStuckOpen] = useState(false);
 
     // Modals & Inputs
     const [filter, setFilter] = useState('all');
@@ -305,8 +306,10 @@ const FinanceDashboard = () => {
         }
     };
 
+    const stuckWithdrawals = pendingWithdrawals.filter((w: any) => w.status === 'failed' || (w.status === 'processing' && Date.now() - new Date(w.created_at).getTime() > 10 * 60 * 1000) || (w.status === 'pending' && Date.now() - new Date(w.created_at).getTime() > 10 * 60 * 1000));
+
     const approveWithdrawal = async (withdrawalId: string, mode: 'korapay' | 'manual' = 'korapay') => {
-        if (!user) return;
+        if (!user || approvingWithdrawal) return;
         setApprovingWithdrawal(withdrawalId);
         try {
             const { data, error } = await supabase.functions.invoke('approve-withdrawal', {
@@ -622,7 +625,9 @@ const FinanceDashboard = () => {
                 <div className="rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden mb-8">
                     <div className="p-4 sm:p-5 border-b border-border/50 bg-card/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div><h2 className="text-base font-bold flex items-center gap-2"><Wallet className="w-4 h-4 text-emerald-500" /> Pending Withdrawal Requests</h2></div>
-                        <div className="text-xs text-muted-foreground">Live requests waiting superadmin approval.</div>
+                        <Button size="sm" variant={stuckWithdrawals.length ? 'destructive' : 'outline'} onClick={() => setStuckOpen(true)}>
+                            Stuck payouts ({stuckWithdrawals.length})
+                        </Button>
                     </div>
                     <div className="p-0 overflow-x-auto">
                         <Table>
@@ -652,13 +657,13 @@ const FinanceDashboard = () => {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex flex-wrap gap-2 justify-end">
-                                                <Button size="sm" variant="outline" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'korapay')}>
+                                                <Button size="sm" variant="outline" disabled={!!approvingWithdrawal} onClick={() => approveWithdrawal(w.id, 'korapay')}>
                                                     {approvingWithdrawal === w.id ? 'Processing...' : 'Approve via Korapay'}
                                                 </Button>
-                                                <Button size="sm" variant="ghost" className="text-emerald-600" disabled={approvingWithdrawal === w.id} onClick={() => approveWithdrawal(w.id, 'manual')}>
+                                                <Button size="sm" variant="ghost" className="text-emerald-600" disabled={!!approvingWithdrawal} onClick={() => approveWithdrawal(w.id, 'manual')}>
                                                     <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid Manually
                                                 </Button>
-                                                <Button size="sm" variant="ghost" className="text-destructive" disabled={approvingWithdrawal === w.id} onClick={() => openRemoveRequest(w)}>
+                                                <Button size="sm" variant="ghost" className="text-destructive" disabled={!!approvingWithdrawal} onClick={() => openRemoveRequest(w)}>
                                                     Remove request
                                                 </Button>
 
@@ -790,6 +795,33 @@ const FinanceDashboard = () => {
                         </div>
                     </div>
                     <DialogFooter><Button onClick={handleCreateDebt} className="bg-amber-600 hover:bg-amber-700">Record Escrow</Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Stuck payouts */}
+            <Dialog open={stuckOpen} onOpenChange={setStuckOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Stuck payouts</DialogTitle>
+                        <DialogDescription>Withdrawals Korapay couldn't finish. Paying manually first checks Korapay so nobody is paid twice.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                        {stuckWithdrawals.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No stuck payouts right now.</p>}
+                        {stuckWithdrawals.map((w: any) => (
+                            <div key={w.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/60 p-3">
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold">{w.client_name} · GH₵ {Number(w.amount).toFixed(2)}</p>
+                                    <p className="text-xs text-muted-foreground">{w.payout_method ? `${w.payout_method.provider.toUpperCase()} • ${w.payout_method.phone_number}` : 'No payout method'} · {format(new Date(w.created_at), 'MMM d, HH:mm')} · <span className="uppercase">{w.status}</span></p>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                    <Button size="sm" variant="outline" disabled={!!approvingWithdrawal} onClick={() => approveWithdrawal(w.id, 'korapay')}>Retry Korapay</Button>
+                                    <Button size="sm" disabled={!!approvingWithdrawal} onClick={() => approveWithdrawal(w.id, 'manual')}>
+                                        {approvingWithdrawal === w.id ? 'Working...' : 'Pay manually'}
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </DialogContent>
             </Dialog>
 
