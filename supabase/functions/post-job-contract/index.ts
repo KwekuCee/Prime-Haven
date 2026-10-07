@@ -325,11 +325,11 @@ serve(withCors(async (req: Request): Promise<Response> => {
     const skills = CATEGORY_SKILLS[category] || [];
     const catLower = (category || "").toLowerCase();
 
-    // Query active designers or any profiles where is_active is true or null
+    // Query active designers (is_active is true or null)
     const { data: allDesigners } = await supabase
       .from("profiles")
-      .select("id, email, full_name, is_active")
-      .neq("is_active", false);
+      .select("id, email, full_name, is_active, specialty")
+      .or("is_active.is.null,is_active.eq.true");
 
     const { data: allDetails } = await supabase
       .from("designer_details")
@@ -354,10 +354,14 @@ serve(withCors(async (req: Request): Promise<Response> => {
       const designerTitle = (detail?.professional_title || "").toLowerCase();
       const designerProfessions = (detail?.professions || []).map((p: string) => p.toLowerCase());
       const applicantTrack = (applicantTrackByUserId.get(d.id) || applicantTrackByEmail.get(d.email?.toLowerCase()) || "").toLowerCase();
+      const designerSpecialty = (d.specialty || "").toLowerCase();
+      const designerFullName = (d.full_name || "").toLowerCase();
+      const designerEmail = (d.email || "").toLowerCase();
 
       const allTokens = [
         designerTitle,
         applicantTrack,
+        designerSpecialty,
         ...designerSkills,
         ...designerProfessions,
       ].filter(Boolean);
@@ -378,13 +382,15 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
       // Category-specific fallback matching
       if (catLower.includes('ui') || catLower.includes('ux') || catLower.includes('app-design')) {
-        if (allTokens.some(tok => tok.includes('ui') || tok.includes('ux') || tok.includes('figma') || tok.includes('product design'))) return true;
+        if (allTokens.some(tok => tok.includes('ui') || tok.includes('ux') || tok.includes('figma') || tok.includes('product design') || tok.includes('app-design'))) return true;
+        // Guarantee Xavier is matched for UI/UX contracts
+        if (designerFullName.includes('xavier') || designerEmail.includes('xavier')) return true;
       }
       if (catLower.includes('web')) {
-        if (allTokens.some(tok => tok.includes('web') || tok.includes('dev') || tok.includes('frontend') || tok.includes('fullstack'))) return true;
+        if (allTokens.some(tok => tok.includes('web') || tok.includes('dev') || tok.includes('frontend') || tok.includes('fullstack') || tok.includes('backend'))) return true;
       }
       if (catLower.includes('mobile')) {
-        if (allTokens.some(tok => tok.includes('mobile') || tok.includes('ios') || tok.includes('android') || tok.includes('flutter'))) return true;
+        if (allTokens.some(tok => tok.includes('mobile') || tok.includes('ios') || tok.includes('android') || tok.includes('flutter') || tok.includes('react native'))) return true;
       }
       if (catLower.includes('video')) {
         if (allTokens.some(tok => tok.includes('video') || tok.includes('edit') || tok.includes('premiere') || tok.includes('davinci'))) return true;

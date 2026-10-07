@@ -10,18 +10,28 @@ import { format } from 'date-fns';
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
-  if (t.includes('ui') || t.includes('ux') || t.includes('app')) return 'UI/UX Designer';
+  if (t.includes('ui') || t.includes('ux') || t.includes('app-design') || t.includes('product design')) return 'UI/UX Designer';
+  if (t.includes('mobile') || t.includes('ios') || t.includes('android') || t.includes('flutter')) return 'Mobile App Developer';
   if (t.includes('web') || t.includes('dev') || t.includes('frontend') || t.includes('fullstack') || t.includes('full-stack') || t.includes('backend')) return 'Web Developer';
+  if (t.includes('motion') || t.includes('animat')) return 'Motion Graphics Designer';
+  if (t.includes('video') || t.includes('edit')) return 'Video Editor';
+  if (t.includes('social') || t.includes('smm')) return 'Social Media Manager';
+  if (t.includes('it') || t.includes('support') || t.includes('network')) return 'IT Specialist';
   return 'Graphic Designer';
 };
 
-const professionToJobCategory = (profession: string): string => {
-  switch (profession) {
-    case 'UI/UX Designer': return 'app-design';
-    case 'Web Developer': return 'web-dev';
-    default: return 'graphic-design';
-  }
+const professionToJobCategories = (profession: string): string[] => {
+  const p = profession.toLowerCase();
+  if (p.includes('ui') || p.includes('ux') || p.includes('app-design')) return ['ui-ux-design', 'app-design'];
+  if (p.includes('mobile')) return ['mobile-app-development'];
+  if (p.includes('web')) return ['web-development', 'web-dev'];
+  if (p.includes('motion')) return ['motion-graphics'];
+  if (p.includes('video')) return ['video-editing'];
+  if (p.includes('social') || p.includes('smm')) return ['social-media-management'];
+  if (p.includes('it')) return ['it-solutions'];
+  return ['graphic-design'];
 };
+
 interface JobContract {
   id: string;
   title: string;
@@ -38,7 +48,14 @@ interface JobContract {
 const CATEGORY_LABELS: Record<string, string> = {
   'graphic-design': 'Graphic Design',
   'app-design': 'UI/UX Design',
+  'ui-ux-design': 'UI/UX Design',
   'web-dev': 'Web Development',
+  'web-development': 'Web Development',
+  'mobile-app-development': 'Mobile App Development',
+  'motion-graphics': 'Motion Graphics',
+  'video-editing': 'Video Editing',
+  'social-media-management': 'Social Media Management',
+  'it-solutions': 'General IT Solutions',
 };
 
 const AvailableJobs = () => {
@@ -64,7 +81,7 @@ const AvailableJobs = () => {
             : [normalizeCategory(designerData?.professional_title || null)];
 
         const jobCategories = Array.from(
-          new Set(userProfessions.map((p) => professionToJobCategory(p)))
+          new Set(userProfessions.flatMap((p) => professionToJobCategories(p)))
         );
 
         const { data, error } = await supabase
@@ -81,11 +98,19 @@ const AvailableJobs = () => {
 
             const targetProfs: string[] = job.target_professions || [];
             if (targetProfs.length > 0) {
-              return targetProfs.some(p => userProfessions.includes(p));
+              const matched = targetProfs.some((tp: string) => {
+                const tpLower = tp.toLowerCase();
+                return userProfessions.some((up: string) => {
+                  const upLower = up.toLowerCase();
+                  return upLower === tpLower || upLower.includes(tpLower) || tpLower.includes(upLower);
+                });
+              });
+              if (matched) return true;
             }
 
-            // Legacy fallback using existing categories logic
-            return jobCategories.includes(job.category);
+            // Category match fallback
+            const jobCat = (job.category || '').toLowerCase();
+            return jobCategories.some((c) => c.toLowerCase() === jobCat);
           });
           setJobs(filtered as JobContract[]);
         }

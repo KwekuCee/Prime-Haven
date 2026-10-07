@@ -31,7 +31,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     const { data: applicant } = await supabase
       .from("applicants")
-      .select("id, email, status")
+      .select("id, email, status, track")
       .eq("access_token", token)
       .maybeSingle();
 
@@ -74,7 +74,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
       await supabase
         .from("profiles")
-        .update({ is_active: true, registration_fee_paid: true })
+        .update({ is_active: true, registration_fee_paid: true, specialty: applicant.track })
         .eq("id", payment.user_id);
     }
 
