@@ -6,8 +6,6 @@ export default {
   content: [
     path.join(__dirname, "index.html"),
     path.join(__dirname, "src/**/*.{ts,tsx,js,jsx}"),
-    "./artifacts/prime-haven/index.html",
-    "./artifacts/prime-haven/src/**/*.{ts,tsx,js,jsx}",
   ],
   prefix: "",
   theme: {

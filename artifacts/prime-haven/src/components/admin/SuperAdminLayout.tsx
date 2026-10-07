@@ -101,7 +101,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Client Projects', icon: FolderKanban, path: '/superadmin/projects' },
       { label: 'Contracts & Agreements', icon: Briefcase, path: '/superadmin/contracts' },
-      { label: 'Live Conversations', icon: MessageSquare, path: '/superadmin/conversations', badge: 'Live', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+      { label: 'Platform Messages', icon: MessageSquare, path: '/superadmin/conversations', badge: 'Live', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
       { label: 'Client Orders', icon: ShoppingCart, path: '/superadmin', tab: 'orders' },
       { label: 'Talent Payouts', icon: Banknote, path: '/superadmin', tab: 'payments' },
       { label: 'Direct Hire Inquiries', icon: Gavel, path: '/superadmin/hire-requests' },
@@ -420,53 +420,72 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
 
         {/* Sidebar Footer */}
         <div className={`border-t border-slate-200 dark:border-white/10 shrink-0 ${collapsed ? 'p-2 space-y-1.5' : 'p-3 space-y-2'}`}>
-          {/* Quick Portal Jumpers (Desktop dropdown) */}
-          {!collapsed ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          {/* Platform Switcher (Pulls up cleanly above the trigger) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              {!collapsed ? (
                 <button
                   type="button"
-                  className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/15 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/[0.1] transition-colors shadow-2xs"
+                  className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/15 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/[0.1] transition-colors shadow-2xs group"
                 >
                   <span className="flex items-center gap-2">
                     <Compass className="w-3.5 h-3.5 text-primary" />
-                    Quick Portal Jump
+                    <span>Switch Platform</span>
                   </span>
-                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-zinc-200 transition-transform group-data-[state=open]:rotate-180" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8} className="w-56 bg-white dark:bg-[#111118] text-slate-900 dark:text-zinc-100 border-slate-200 dark:border-white/15 rounded-xl p-1.5 shadow-xl">
-                <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-primary px-2 py-1">
-                  Active Environments
-                </DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => navigate('/client/dashboard')} className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer">
-                  <UserSquare className="w-3.5 h-3.5 mr-2 text-primary" />
-                  Client Portal View
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/dashboard')} className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer">
-                  <Users className="w-3.5 h-3.5 mr-2 text-primary" />
-                  Talent Workspace View
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10" />
-                <DropdownMenuItem onClick={() => navigate('/')} className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer">
-                  <Globe className="w-3.5 h-3.5 mr-2 text-emerald-600" />
-                  Public Landing Website
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
+              ) : (
                 <button
-                  onClick={() => navigate('/')}
+                  type="button"
                   className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
+                  title="Switch Platform"
                 >
                   <Compass className="w-4 h-4 text-primary" />
                 </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Switch Portal View</TooltipContent>
-            </Tooltip>
-          )}
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side={collapsed ? "right" : "top"}
+              align={collapsed ? "end" : "start"}
+              sideOffset={10}
+              className="w-56 bg-white dark:bg-[#111118] text-slate-900 dark:text-zinc-100 border border-slate-200 dark:border-white/15 rounded-xl p-1.5 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95"
+            >
+              <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-primary px-2 py-1">
+                Select Platform View
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => navigate('/client/dashboard')}
+                className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer py-2 px-2 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <UserSquare className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-medium">Client Portal</span>
+                </div>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate('/dashboard')}
+                className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer py-2 px-2 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-medium">Talent Workspace</span>
+                </div>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10 my-1" />
+              <DropdownMenuItem
+                onClick={() => navigate('/')}
+                className="text-xs hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg cursor-pointer py-2 px-2 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="font-medium">Public Website</span>
+                </div>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Collapse Toggle */}
           <button

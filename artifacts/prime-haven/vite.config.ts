@@ -50,21 +50,11 @@ export default defineConfig({
   },
   root: projectDir,
   build: {
-    outDir: path.join(projectDir, "dist"),
+    outDir: path.resolve(workspaceRoot, "dist"),
     emptyOutDir: true,
     reportCompressedSize: false,
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 3000,
     target: "es2022",
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-query": ["@tanstack/react-query", "@supabase/supabase-js"],
-          "vendor-pdf": ["jspdf", "html2canvas"],
-          "vendor-charts": ["recharts"],
-        },
-      },
-    },
   },
   server: {
     port,

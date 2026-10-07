@@ -13,7 +13,6 @@ import ProcessTimeline from '@/components/ProcessTimeline';
 import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
-import VisitorChatbot from '@/components/VisitorChatbot';
 import PromoPopup from '@/components/PromoPopup';
 import AdUnit from '@/components/AdUnit';
 import EzoicAd from '@/components/EzoicAd';
@@ -138,7 +137,6 @@ const Index = () => {
         </div>
       </main>
       <Footer />
-      <VisitorChatbot />
       <PromoPopup />
     </div>
   );

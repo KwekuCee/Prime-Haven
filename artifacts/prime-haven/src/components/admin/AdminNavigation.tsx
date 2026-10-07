@@ -9,7 +9,8 @@ import {
   Briefcase,
   FolderKanban,
   DollarSign,
-  Ticket
+  Ticket,
+  MessageSquare,
 } from 'lucide-react';
 
 export const AdminNavigation = () => {
@@ -23,6 +24,7 @@ export const AdminNavigation = () => {
     { path: '/superadmin/web', label: 'Web Dev', icon: Globe },
     { path: '/superadmin/projects', label: 'Projects', icon: FolderKanban },
     { path: '/superadmin/contracts', label: 'Contracts', icon: Briefcase },
+    { path: '/superadmin/conversations', label: 'Messages', icon: MessageSquare },
     { path: '/superadmin/portfolio', label: 'Portfolio', icon: Image },
     { path: '/superadmin/pricing', label: 'Pricing', icon: DollarSign },
     { path: '/superadmin/promo', label: 'Promo', icon: Ticket },
