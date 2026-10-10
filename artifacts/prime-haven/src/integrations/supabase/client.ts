@@ -31,7 +31,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     let targetInput: RequestInfo | URL = input;
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
-      const isProdDomain = hostname === 'primehaven.tech' || hostname.endsWith('.primehaven.tech');
+      const isLocalDev = hostname === 'localhost' || hostname === '127.0.0.1';
       const functionsPrefix = `${SUPABASE_URL}/functions/v1/`;
       const rawUrl =
         typeof input === 'string'
@@ -40,7 +40,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
             ? input.toString()
             : input.url;
 
-      if (!isProdDomain && rawUrl.startsWith(functionsPrefix)) {
+      if (isLocalDev && rawUrl.startsWith(functionsPrefix)) {
         const proxiedPath = `/functions/v1/${rawUrl.slice(functionsPrefix.length)}`;
         targetInput =
           typeof Request !== 'undefined' && input instanceof Request

@@ -63,7 +63,6 @@ const ActiveContracts = () => {
                     id,
                     project_id,
                     status,
-                    claimed_at,
                     created_at,
                     client_projects (
                         id,
@@ -86,7 +85,6 @@ const ActiveContracts = () => {
                     contract_id,
                     status,
                     claimed_at,
-                    created_at,
                     job_contracts (
                         id,
                         title,
