@@ -8,6 +8,13 @@
       "when": 1791463029379,
       "tag": "0000_fix_claim_job_contract_column",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791599347634,
+      "tag": "0001_restrict_project_chat_inserts_to_participants",
+      "breakpoints": true
     }
   ]
 }
