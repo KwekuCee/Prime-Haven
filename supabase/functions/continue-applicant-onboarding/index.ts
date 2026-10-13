@@ -25,9 +25,12 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
   try {
     const body = await req.json().catch(() => ({}));
+    const fullName = String(body.fullName || "").trim().replace(/\s+/g, " ").slice(0, 200);
     const email = String(body.email || "").trim().toLowerCase();
-    if (!EMAIL_RE.test(email) || email.length > 255) {
-      return json({ success: false, error: "invalid_email", message: "Enter a valid email address." }, 400);
+    const phone = String(body.phone || "").trim().slice(0, 40);
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (fullName.length < 2 || !EMAIL_RE.test(email) || email.length > 255 || phoneDigits.length < 7) {
+      return json({ success: false, error: "invalid_details", message: "Enter your full name, a valid email, and a valid contact number." }, 400);
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
@@ -42,7 +45,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     const { data: applicant, error } = await supabase
       .from("applicants")
-      .select("full_name, email, status, access_token")
+      .select("full_name, email, phone, status, access_token")
       .eq("email", email)
       .maybeSingle();
     if (error) {
@@ -50,7 +53,15 @@ serve(withCors(async (req: Request): Promise<Response> => {
       return json({ success: false, error: "lookup_failed", message: "We could not send your link. Please try again." }, 500);
     }
 
-    if (!applicant || !["invited", "in_review", "passed", "paid", "active"].includes(applicant.status)) {
+    const nameMatches = applicant?.full_name.trim().replace(/\s+/g, " ").toLowerCase() === fullName.toLowerCase();
+    const savedPhoneDigits = String(applicant?.phone || "").replace(/\D/g, "");
+    const phoneMatches = !savedPhoneDigits || savedPhoneDigits === phoneDigits;
+    if (
+      !applicant ||
+      !nameMatches ||
+      !phoneMatches ||
+      !["invited", "in_review", "passed", "paid", "active"].includes(applicant.status)
+    ) {
       return json(GENERIC_RESPONSE);
     }
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { checkRateLimit } from '@/lib/rateLimit';
@@ -37,6 +38,8 @@ const Apply = () => {
   const [promoChecking, setPromoChecking] = useState(false);
   const [promoDiscount, setPromoDiscount] = useState<number | null>(null);
   const [continuing, setContinuing] = useState(false);
+  const [continueSent, setContinueSent] = useState(false);
+  const [applicationMode, setApplicationMode] = useState<'new' | 'continue'>('new');
   const [done, setDone] = useState(false);
 
   const set = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
@@ -68,23 +71,49 @@ const Apply = () => {
     }
   };
 
-  const continueOnboarding = async () => {
+  const continueOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const fullName = form.fullName.trim();
     const email = form.email.trim().toLowerCase();
+    const phone = form.phone.trim();
+    if (fullName.length < 2) {
+      toast({ variant: 'destructive', title: 'Full name required', description: 'Enter the full name used on your application.' });
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast({ variant: 'destructive', title: 'Email required', description: 'Enter the email address you used to apply.' });
+      return;
+    }
+    if (phone.replace(/\D/g, '').length < 7) {
+      toast({ variant: 'destructive', title: 'Contact required', description: 'Enter the phone or WhatsApp number used on your application.' });
       return;
     }
 
     setContinuing(true);
     try {
-      const { error } = await supabase.functions.invoke('continue-applicant-onboarding', { body: { email } });
-      if (error) throw error;
-      toast({
-        title: 'Check your email',
-        description: 'If an application can continue with this address, we sent a secure onboarding link.',
+      const { data, error } = await supabase.functions.invoke('continue-applicant-onboarding', {
+        body: { fullName, email, phone },
       });
-    } catch {
-      toast({ variant: 'destructive', title: 'Could not send your link', description: 'Please wait a moment and try again.' });
+      if (error || !(data as { success?: boolean } | null)?.success) {
+        let message = (data as { message?: string } | null)?.message || 'Please wait a moment and try again.';
+        const context = (error as { context?: { json?: () => Promise<{ message?: string }> } } | null)?.context;
+        if (context?.json) {
+          try {
+            message = (await context.json()).message || message;
+          } catch {
+            // Keep the fallback message when the response is not JSON.
+          }
+        }
+        toast({ variant: 'destructive', title: 'Could not continue onboarding', description: message });
+        return;
+      }
+      setContinueSent(true);
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not continue onboarding',
+        description: err instanceof Error ? err.message : 'Please wait a moment and try again.',
+      });
     } finally {
       setContinuing(false);
     }
@@ -224,17 +253,28 @@ const Apply = () => {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-border/60 bg-card p-6 md:p-8 shadow-sm">
-          <div className="flex items-start gap-3 rounded-2xl bg-muted/50 p-4 mb-7">
-            <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">
-              How it works: apply here → we review → you get a private link → watch a short intro video → take a
-              randomised assessment (most tracks also include one small practical task) → pass and complete a one-time
-              $15 registration to activate your professional account.
-            </p>
-          </div>
+        <Tabs
+          value={applicationMode}
+          onValueChange={(value) => setApplicationMode(value === 'continue' ? 'continue' : 'new')}
+          className="space-y-3"
+        >
+          <TabsList className="grid h-12 w-full grid-cols-2 rounded-xl bg-muted/70 p-1">
+            <TabsTrigger value="new" className="h-10 rounded-lg">New Applicant</TabsTrigger>
+            <TabsTrigger value="continue" className="h-10 rounded-lg">Continue Application</TabsTrigger>
+          </TabsList>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <TabsContent value="new" className="mt-0">
+            <div className="rounded-3xl border border-border/60 bg-card p-6 md:p-8 shadow-sm">
+              <div className="flex items-start gap-3 rounded-2xl bg-muted/50 p-4 mb-7">
+                <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  How it works: apply here → we review → you get a private link → watch a short intro video → take a
+                  randomised assessment (most tracks also include one small practical task) → pass and complete a one-time
+                  $15 registration to activate your professional account.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label className={labelClass} htmlFor="apply-name">Full name</Label>
               <Input id="apply-name" className={inputClass} value={form.fullName} onChange={(e) => set('fullName', e.target.value)} placeholder="Ama Mensah" />
@@ -244,9 +284,6 @@ const Apply = () => {
               <div className="space-y-2">
                 <Label className={labelClass} htmlFor="apply-email">Email</Label>
                 <Input id="apply-email" type="email" className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
-                <Button type="button" variant="link" className="h-auto px-0 text-xs" onClick={continueOnboarding} disabled={continuing}>
-                  {continuing ? 'Sending secure link…' : 'Already applied? Continue onboarding'}
-                </Button>
               </div>
               <div className="space-y-2">
                 <Label className={labelClass} htmlFor="apply-phone">Phone / WhatsApp</Label>
@@ -320,8 +357,51 @@ const Apply = () => {
               By applying you agree to our <Link to="/terms" className="underline">terms</Link> and{' '}
               <Link to="/privacy" className="underline">privacy policy</Link>.
             </p>
-          </form>
-        </div>
+              </form>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="continue" className="mt-0">
+            <div className="rounded-3xl border border-border/60 bg-card p-6 md:p-8 shadow-sm">
+              {continueSent ? (
+                <div className="py-5 text-center">
+                  <CheckCircle2 className="mx-auto mb-5 h-12 w-12 text-primary" />
+                  <h2 className="mb-2 text-xl font-bold">Check your email</h2>
+                  <p className="mb-6 text-sm text-muted-foreground">
+                    If those details match an application that can continue, we sent a private onboarding link to {form.email.trim()}.
+                  </p>
+                  <Button type="button" variant="outline" className="rounded-xl" onClick={() => setContinueSent(false)}>
+                    Back to continue application
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={continueOnboarding} className="space-y-5">
+                  <div>
+                    <h2 className="text-xl font-bold">Continue your application</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Enter the same details you used to apply. We’ll email you a private link to pick up where you left off.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClass} htmlFor="continue-name">Full name</Label>
+                    <Input id="continue-name" autoComplete="name" className={inputClass} value={form.fullName} onChange={(e) => set('fullName', e.target.value)} placeholder="Ama Mensah" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClass} htmlFor="continue-email">Email</Label>
+                    <Input id="continue-email" type="email" autoComplete="email" className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClass} htmlFor="continue-phone">Contact number</Label>
+                    <Input id="continue-phone" type="tel" autoComplete="tel" className={inputClass} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+233 ..." required />
+                  </div>
+                  <Button type="submit" disabled={continuing} className="h-12 w-full rounded-xl text-base">
+                    {continuing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending secure link…</> : 'Continue onboarding'}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
