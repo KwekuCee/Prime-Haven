@@ -24,9 +24,9 @@ const ClientSignup = () => {
     e.preventDefault();
     const email = form.email.trim().toLowerCase();
     const name = form.name.trim();
-    if (!name || name.length > 200) return toast({ variant: 'destructive', title: 'Enter your name' });
-    if (!EMAIL_RE.test(email)) return toast({ variant: 'destructive', title: 'Enter a valid email' });
-    if (form.password.length < 8) return toast({ variant: 'destructive', title: 'Password must be at least 8 characters' });
+    if (!name || name.length > 200) { toast({ variant: 'destructive', title: 'Enter your name' }); return; }
+    if (!EMAIL_RE.test(email)) { toast({ variant: 'destructive', title: 'Enter a valid email' }); return; }
+    if (form.password.length < 8) { toast({ variant: 'destructive', title: 'Password must be at least 8 characters' }); return; }
 
     setSubmitting(true);
     try {
