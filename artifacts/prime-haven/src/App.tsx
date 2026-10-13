@@ -69,6 +69,7 @@ const ProjectWorkspace = lazyWithReload(() => import("./pages/ProjectWorkspace")
 const DesignerProfile = lazyWithReload(() => import("./pages/DesignerProfile"));
 const ClientDashboard = lazyWithReload(() => import("./pages/ClientDashboard"));
 const ClientLogin = lazyWithReload(() => import("./pages/ClientLogin"));
+const ClientSignup = lazyWithReload(() => import("./pages/ClientSignup"));
 
 const ClientProjectsReview = lazyWithReload(() => import("./pages/ClientProjectsReview"));
 const ClientProfile = lazyWithReload(() => import("./pages/ClientProfile"));
@@ -180,6 +181,7 @@ const App = () => {
                   <Route path="/superadmin/forward-work" element={<AdminRoute><ForwardWork /></AdminRoute>} />
                   <Route path="/workspace/:orderId" element={<ProfessionalRoute><ProjectWorkspace /></ProfessionalRoute>} />
                   <Route path="/client/login" element={<ClientLogin />} />
+                  <Route path="/client/signup" element={<ClientSignup />} />
                   <Route path="/client/dashboard" element={<ClientRoute><ClientDashboard /></ClientRoute>} />
                   <Route path="/client/projects" element={<ClientRoute><ClientProjectsReview /></ClientRoute>} />
                   <Route path="/client/profile" element={<ClientRoute><ClientProfile /></ClientRoute>} />

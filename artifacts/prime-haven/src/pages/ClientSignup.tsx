@@ -30,7 +30,7 @@ const ClientSignup = () => {
 
     setSubmitting(true);
     try {
-      const limit = await checkRateLimit('auth_signup', email);
+      const limit = await checkRateLimit('registration', email);
       if (!limit.allowed) {
         toast({ variant: 'destructive', title: 'Too many attempts', description: limit.message });
         return;

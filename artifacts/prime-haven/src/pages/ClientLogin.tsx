@@ -176,8 +176,8 @@ const ClientLogin = () => {
 
           <div className="mt-6 space-y-3 text-center">
             <p className="text-sm text-muted-foreground">
-              Haven't started a project yet?{' '}
-              <Link to="/start-project" className="text-primary hover:text-primary/80 font-semibold">Start a project</Link>
+              New to Prime Haven?{' '}
+              <Link to="/client/signup" className="text-primary hover:text-primary/80 font-semibold">Create a free account</Link>
             </p>
             <p className="text-xs text-muted-foreground">
               Prime Haven professional?{' '}
