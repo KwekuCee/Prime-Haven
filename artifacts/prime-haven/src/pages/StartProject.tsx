@@ -539,6 +539,13 @@ const StartProject = () => {
                 <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">01 / Scope</p>
                 <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-balance">What do you need?</h1>
                 <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
+                {!user && (
+                  <p className="text-sm text-muted-foreground">
+                    Not ready to pay yet?{' '}
+                    <Link to="/client/signup" className="font-semibold text-primary hover:underline">Create a free client account</Link>{' '}
+                    and pay for a service from your dashboard anytime. Already have one? <Link to="/client/login" className="font-semibold text-primary hover:underline">Sign in</Link>.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <BookConsultationDialog open={consultOpen} onOpenChange={setConsultOpen} defaultService={selectedService.toLowerCase().includes('video') || selectedService.toLowerCase().includes('motion') ? 'video-editing' : selectedService.toLowerCase().includes('web') ? 'web-development' : 'mobile-app'} note={DEV_NOTE} />
