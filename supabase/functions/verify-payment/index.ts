@@ -95,6 +95,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
     let verifiedCurrency: string;
     let paymentChannel: string;
     let paidAt: string;
+    let gatewayMetadata: Record<string, unknown> = {};
 
     if (gateway === 'paystack') {
       if (!PAYSTACK_SECRET_KEY) {
@@ -105,6 +106,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
         { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
       );
       const paystackData = await paystackResponse.json();
+      gatewayMetadata = paystackData?.data?.metadata || {};
 
       if (!paystackData?.status || paystackData?.data?.status !== "success") {
         console.error("Paystack verification failed:", paystackData);
@@ -125,6 +127,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
       );
 
       const korapayData = await korapayResponse.json();
+      gatewayMetadata = korapayData?.data?.metadata || {};
 
       if (!korapayData.status || korapayData.data?.status !== "success") {
         console.error("Korapay verification failed:", korapayData);
@@ -136,6 +139,48 @@ serve(withCors(async (req: Request): Promise<Response> => {
       paidAt = korapayData.data.paid_at || new Date().toISOString();
     }
 
+
+    const baseAmountUsd = Number(gatewayMetadata.base_amount_usd);
+    const declaredDiscount = Number(gatewayMetadata.discount_percent);
+    const exchangeRate = Number(gatewayMetadata.usd_to_ghs_rate);
+    const promoCode = String(gatewayMetadata.promo_code || "").trim().toUpperCase();
+    if (
+      gatewayMetadata.purpose !== "registration_fee" ||
+      baseAmountUsd !== 15 ||
+      !Number.isInteger(declaredDiscount) ||
+      declaredDiscount < 0 ||
+      declaredDiscount > 99 ||
+      !Number.isFinite(exchangeRate) ||
+      exchangeRate < 1 ||
+      exchangeRate > 100 ||
+      verifiedCurrency !== "GHS"
+    ) {
+      return json({ success: false, error: "invalid_registration_payment" }, 400);
+    }
+
+    let actualDiscount = 0;
+    if (promoCode) {
+      const { data: promo, error: promoError } = await supabase
+        .from("promo_codes")
+        .select("discount_percent, is_active, expiry_date")
+        .eq("code", promoCode)
+        .maybeSingle();
+      const expired = promo?.expiry_date ? new Date(promo.expiry_date).getTime() <= Date.now() : false;
+      if (promoError || !promo || !promo.is_active || expired) {
+        return json({ success: false, error: "invalid_promo_code" }, 400);
+      }
+      actualDiscount = Number(promo.discount_percent);
+    }
+
+    const discountedAmountUsd = Math.round(baseAmountUsd * (1 - actualDiscount / 100) * 100) / 100;
+    const expectedAmountGhs = Math.ceil(discountedAmountUsd * exchangeRate * 100) / 100;
+    if (
+      actualDiscount !== declaredDiscount ||
+      Number(gatewayMetadata.amount_usd) !== discountedAmountUsd ||
+      Math.abs(verifiedAmount - expectedAmountGhs) > 0.01
+    ) {
+      return json({ success: false, error: "registration_amount_mismatch" }, 400);
+    }
 
     // Convert USD to GHS for storage if needed
     const amountInGhs = verifiedCurrency === 'USD' ? verifiedAmount * 15.5 : verifiedAmount;
@@ -155,6 +200,8 @@ serve(withCors(async (req: Request): Promise<Response> => {
           currency: verifiedCurrency,
           original_amount: verifiedAmount,
           paid_at: paidAt,
+          promo_code: promoCode || null,
+          discount_percent: actualDiscount,
         },
       });
 

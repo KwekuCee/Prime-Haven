@@ -29,13 +29,66 @@ const Apply = () => {
     phone: '',
     track: initialTrack as TalentTrack | '',
     portfolioLink: '',
+    promoCode: '',
   });
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [promoDiscount, setPromoDiscount] = useState<number | null>(null);
+  const [continuing, setContinuing] = useState(false);
   const [done, setDone] = useState(false);
 
   const set = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const applyPromoCode = async () => {
+    const code = form.promoCode.trim().toUpperCase();
+    if (!code) {
+      setPromoDiscount(null);
+      return;
+    }
+    setPromoChecking(true);
+    try {
+      const { data, error } = await supabase.rpc('validate_promo_code', { p_code: code });
+      if (error) throw error;
+      const promo = Array.isArray(data) ? data[0] : data;
+      if (!promo || !Number.isInteger(promo.discount_percent) || promo.discount_percent < 0 || promo.discount_percent > 100) {
+        setPromoDiscount(null);
+        toast({ variant: 'destructive', title: 'Invalid promo code', description: 'This code is invalid or has an unsupported discount.' });
+        return;
+      }
+      set('promoCode', code);
+      setPromoDiscount(promo.discount_percent);
+      toast({ title: 'Promo code applied', description: `${promo.discount_percent}% off your registration fee if you pass screening.` });
+    } catch {
+      setPromoDiscount(null);
+      toast({ variant: 'destructive', title: 'Could not validate code', description: 'Please try again in a moment.' });
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
+  const continueOnboarding = async () => {
+    const email = form.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ variant: 'destructive', title: 'Email required', description: 'Enter the email address you used to apply.' });
+      return;
+    }
+
+    setContinuing(true);
+    try {
+      const { error } = await supabase.functions.invoke('continue-applicant-onboarding', { body: { email } });
+      if (error) throw error;
+      toast({
+        title: 'Check your email',
+        description: 'If an application can continue with this address, we sent a secure onboarding link.',
+      });
+    } catch {
+      toast({ variant: 'destructive', title: 'Could not send your link', description: 'Please wait a moment and try again.' });
+    } finally {
+      setContinuing(false);
+    }
+  };
 
   const pickFile = (which: 'cv' | 'portfolio') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -92,6 +145,7 @@ const Apply = () => {
           cvUrl,
           portfolioUrl,
           portfolioLink: form.portfolioLink.trim() || null,
+          promoCode: form.promoCode.trim().toUpperCase() || null,
         },
       });
 
@@ -190,6 +244,9 @@ const Apply = () => {
               <div className="space-y-2">
                 <Label className={labelClass} htmlFor="apply-email">Email</Label>
                 <Input id="apply-email" type="email" className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
+                <Button type="button" variant="link" className="h-auto px-0 text-xs" onClick={continueOnboarding} disabled={continuing}>
+                  {continuing ? 'Sending secure link…' : 'Already applied? Continue onboarding'}
+                </Button>
               </div>
               <div className="space-y-2">
                 <Label className={labelClass} htmlFor="apply-phone">Phone / WhatsApp</Label>
@@ -233,6 +290,27 @@ const Apply = () => {
               <Label className={labelClass} htmlFor="apply-link">Portfolio link</Label>
               <Input id="apply-link" className={inputClass} value={form.portfolioLink} onChange={(e) => set('portfolioLink', e.target.value)} placeholder="https://behance.net/... or a Figma / GitHub link" />
               <p className="text-xs text-muted-foreground">Attach a file, share a link, or both.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className={labelClass} htmlFor="apply-promo">Promo code (optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="apply-promo"
+                  className={inputClass}
+                  value={form.promoCode}
+                  onChange={(e) => {
+                    set('promoCode', e.target.value.toUpperCase());
+                    setPromoDiscount(null);
+                  }}
+                  placeholder="Enter your code"
+                  autoCapitalize="characters"
+                />
+                <Button type="button" variant="outline" className="h-12 rounded-xl shrink-0" onClick={applyPromoCode} disabled={promoChecking || !form.promoCode.trim()}>
+                  {promoChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                </Button>
+              </div>
+              {promoDiscount !== null && <p className="text-xs text-primary">{promoDiscount}% off your registration fee if you pass screening.</p>}
             </div>
 
             <Button type="submit" disabled={submitting} className="w-full h-12 rounded-xl text-base">

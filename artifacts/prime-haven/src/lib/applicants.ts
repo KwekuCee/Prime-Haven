@@ -70,6 +70,7 @@ export interface PortalState {
     score: number | null;
     passed: boolean | null;
     videoWatched: boolean;
+    promoCode: string | null;
   };
   assessment: {
     id: string;

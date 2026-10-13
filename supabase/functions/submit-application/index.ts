@@ -21,6 +21,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
     const cvUrl = body.cvUrl ? String(body.cvUrl).slice(0, 500) : null;
     const portfolioUrl = body.portfolioUrl ? String(body.portfolioUrl).slice(0, 500) : null;
     const portfolioLink = body.portfolioLink ? String(body.portfolioLink).trim().slice(0, 500) : null;
+    const promoCode = body.promoCode ? String(body.promoCode).trim().toUpperCase().slice(0, 100) : null;
 
     if (fullName.length < 2) return json({ success: false, error: "invalid_name", message: "Please enter your full name." }, 400);
     if (!EMAIL_RE.test(email) || email.length > 255) return json({ success: false, error: "invalid_email", message: "A valid email is required." }, 400);
@@ -36,6 +37,26 @@ serve(withCors(async (req: Request): Promise<Response> => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    if (promoCode) {
+      const { data: promo, error: promoError } = await supabase
+        .from("promo_codes")
+        .select("code, discount_percent, is_active, expiry_date")
+        .eq("code", promoCode)
+        .maybeSingle();
+      const expired = promo?.expiry_date ? new Date(promo.expiry_date).getTime() <= Date.now() : false;
+      if (
+        promoError ||
+        !promo ||
+        !promo.is_active ||
+        expired ||
+        !Number.isInteger(Number(promo.discount_percent)) ||
+        Number(promo.discount_percent) < 0 ||
+        Number(promo.discount_percent) > 100
+      ) {
+        return json({ success: false, error: "invalid_promo_code", message: "This promo code is invalid, inactive, or has expired." }, 400);
+      }
+    }
 
     if (await limited(supabase, "talent_application", email)) {
       return json({ success: false, error: "rate_limited", message: "Too many attempts. Please try again later." }, 429);
@@ -68,6 +89,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
         cv_url: cvUrl,
         portfolio_url: portfolioUrl,
         portfolio_link: portfolioLink,
+        promo_code: promoCode,
         status: "submitted",
       })
       .select("id")

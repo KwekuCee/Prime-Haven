@@ -8,6 +8,9 @@ verify_jwt = false
 [functions.submit-application]
 verify_jwt = false
 
+[functions.continue-applicant-onboarding]
+verify_jwt = false
+
 [functions.applicant-upload-url]
 verify_jwt = false
 

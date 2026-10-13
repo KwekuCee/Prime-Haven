@@ -216,6 +216,7 @@ export type Database = {
           phone: string | null
           portfolio_link: string | null
           portfolio_url: string | null
+          promo_code: string | null
           score: number | null
           status: string
           track: string
@@ -240,6 +241,7 @@ export type Database = {
           phone?: string | null
           portfolio_link?: string | null
           portfolio_url?: string | null
+          promo_code?: string | null
           score?: number | null
           status?: string
           track: string
@@ -264,6 +266,7 @@ export type Database = {
           phone?: string | null
           portfolio_link?: string | null
           portfolio_url?: string | null
+          promo_code?: string | null
           score?: number | null
           status?: string
           track?: string

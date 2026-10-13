@@ -42,7 +42,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
 
     const { data: applicant } = await supabase
       .from("applicants")
-      .select("id, full_name, email, track, status, score, passed, video_watched_at, user_id")
+      .select("id, full_name, email, track, status, score, passed, video_watched_at, user_id, promo_code")
       .eq("access_token", token)
       .maybeSingle();
 
@@ -104,6 +104,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
         score: applicant.score,
         passed: applicant.passed,
         videoWatched: !!applicant.video_watched_at,
+        promoCode: applicant.promo_code,
       },
       assessment: assessment || null,
       videoUrl,

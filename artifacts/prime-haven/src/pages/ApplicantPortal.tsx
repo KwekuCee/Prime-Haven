@@ -57,6 +57,11 @@ const ApplicantPortal = () => {
   const [gateway, setGateway] = useState<'korapay' | 'paystack'>('korapay');
   const [fx, setFx] = useState<ExchangeRate | null>(null);
   const [paying, setPaying] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoAppliedCode, setPromoAppliedCode] = useState('');
+  const [promoChecking, setPromoChecking] = useState(false);
+  const promoAutoApplied = useRef(false);
 
   const stageFor = (status: string, videoWatched: boolean): Stage => {
     if (status === 'failed') return 'failed';
@@ -65,6 +70,39 @@ const ApplicantPortal = () => {
     if (status === 'active') return 'active';
     return videoWatched ? 'assessment' : 'video';
   };
+
+  const applyPromoCode = useCallback(async (value: string, notify = true) => {
+    const code = value.trim().toUpperCase();
+    if (!code) {
+      setPromoDiscount(0);
+      setPromoAppliedCode('');
+      return;
+    }
+
+    setPromoCode(code);
+    setPromoChecking(true);
+    try {
+      const { data, error } = await supabase.rpc('validate_promo_code', { p_code: code });
+      if (error) throw error;
+      const promo = Array.isArray(data) ? data[0] : data;
+      if (!promo || !Number.isInteger(promo.discount_percent) || promo.discount_percent < 0 || promo.discount_percent > 100) {
+        setPromoDiscount(0);
+        setPromoAppliedCode('');
+        if (notify) toast({ variant: 'destructive', title: 'Invalid promo code', description: 'This code is invalid or has an unsupported discount.' });
+        return;
+      }
+      setPromoCode(code);
+      setPromoDiscount(promo.discount_percent);
+      setPromoAppliedCode(code);
+      if (notify) toast({ title: 'Promo code applied', description: `${promo.discount_percent}% off your registration fee.` });
+    } catch {
+      setPromoDiscount(0);
+      setPromoAppliedCode('');
+      if (notify) toast({ variant: 'destructive', title: 'Could not validate code', description: 'Please try again in a moment.' });
+    } finally {
+      setPromoChecking(false);
+    }
+  }, [toast]);
 
   const load = useCallback(async (action: 'state' | 'video_watched' = 'state') => {
     const res = await fetchPortalState(token, action);
@@ -80,6 +118,13 @@ const ApplicantPortal = () => {
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const savedCode = state?.applicant.promoCode;
+    if (stage !== 'payment' || !savedCode || promoAutoApplied.current) return;
+    promoAutoApplied.current = true;
+    void applyPromoCode(savedCode);
+  }, [stage, state?.applicant.promoCode, applyPromoCode]);
 
   useEffect(() => {
     if (stage !== 'payment') return;
@@ -178,7 +223,7 @@ const ApplicantPortal = () => {
   };
 
   // ── payment stage ────────────────────────────────────────────────────────
-  const finalize = async (reference: string) => {
+  const finalize = async (reference: string, freePromoCode?: string) => {
     if (!state) return;
     try {
       const { error: signUpError } = await supabase.auth.signUp({
@@ -199,17 +244,22 @@ const ApplicantPortal = () => {
         email: state.applicant.email,
         password,
       });
+      if (signInError) throw signInError;
 
-      if (!signInError) {
+      if (!freePromoCode) {
         const { error: verifyError } = await supabase.functions.invoke('verify-payment', {
           body: { reference, gateway },
         });
-        if (verifyError) {
-          toast({ variant: 'destructive', title: 'Payment recorded, follow-up failed', description: 'Please contact support so we can finish setting up your account.' });
-        }
-        await supabase.functions.invoke('applicant-paid', { body: { token, reference } });
-        await supabase.auth.signOut();
+        if (verifyError) throw new Error('Payment could not be verified yet. Please contact support before trying again.');
       }
+
+      const { data: paidData, error: paidError } = await supabase.functions.invoke('applicant-paid', {
+        body: { token, reference, promoCode: freePromoCode || null },
+      });
+      if (paidError || !(paidData as { success?: boolean } | null)?.success) {
+        throw new Error('We could not finish setting up your account. Please contact support.');
+      }
+      await supabase.auth.signOut();
 
       toast({ title: 'Registration complete 🎉', description: 'Check your email to verify your account.' });
       await load();
@@ -231,13 +281,23 @@ const ApplicantPortal = () => {
       toast({ variant: 'destructive', title: 'Passwords do not match', description: 'Please re-enter your password.' });
       return;
     }
-    if (gateway === 'korapay' && !(window as any).Korapay) {
+    if (promoCode.trim() && promoAppliedCode !== promoCode.trim().toUpperCase()) {
+      toast({ variant: 'destructive', title: 'Apply your promo code', description: 'Validate the code before continuing.' });
+      return;
+    }
+    const feeUsd = JOIN_FEE_USD * (1 - promoDiscount / 100);
+    if (feeUsd > 0 && gateway === 'korapay' && !(window as any).Korapay) {
       toast({ title: 'Payment system loading', description: 'Give it a moment and try again.' });
       return;
     }
 
     setPaying(true);
     const reference = `PH-APP-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
+    if (feeUsd === 0) {
+      await finalize(reference, promoAppliedCode);
+      return;
+    }
 
     let rate: ExchangeRate;
     try {
@@ -248,12 +308,15 @@ const ApplicantPortal = () => {
       toast({ variant: 'destructive', title: 'Exchange rate unavailable', description: 'Please try again in a moment.' });
       return;
     }
-    const amountGhs = usdToGhs(JOIN_FEE_USD, rate.rate);
+    const amountGhs = usdToGhs(feeUsd, rate.rate);
     const metadata = {
-      amount_usd: JOIN_FEE_USD,
+      amount_usd: feeUsd,
+      base_amount_usd: JOIN_FEE_USD,
+      discount_percent: promoDiscount,
+      promo_code: promoAppliedCode,
+      purpose: 'registration_fee',
       usd_to_ghs_rate: rate.rate,
       rate_source: rate.source,
-      purpose: 'registration_fee',
       full_name: state.applicant.fullName,
     };
 
@@ -534,7 +597,8 @@ const ApplicantPortal = () => {
   }
 
   if (stage === 'payment') {
-    const amountGhs = fx ? usdToGhs(JOIN_FEE_USD, fx.rate) : null;
+    const feeUsd = JOIN_FEE_USD * (1 - promoDiscount / 100);
+    const amountGhs = fx && feeUsd > 0 ? usdToGhs(feeUsd, fx.rate) : null;
     return (
       <ApplicantShell {...shellProps}>
         <PortalCard>
@@ -547,13 +611,39 @@ const ApplicantPortal = () => {
           <div className="rounded-2xl bg-muted/50 p-5 mb-6">
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm text-muted-foreground">Registration fee</span>
-              <span className="text-xl font-bold">{formatUsd(JOIN_FEE_USD)}</span>
+              <span className="text-xl font-bold">{formatUsd(feeUsd)}</span>
             </div>
+            {promoAppliedCode && (
+              <p className="mb-2 text-xs text-primary">
+                {promoAppliedCode} applied — {promoDiscount}% off {formatUsd(JOIN_FEE_USD)}.
+              </p>
+            )}
             {amountGhs !== null && (
               <p className="text-xs text-muted-foreground">
                 Charged as {formatGhs(amountGhs)} at today's rate (1 USD = {fx?.rate.toFixed(2)} GHS).
               </p>
             )}
+          </div>
+
+          <div className="space-y-2 mb-6">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground" htmlFor="app-promo">Promo code</Label>
+            <div className="flex gap-2">
+              <Input
+                id="app-promo"
+                className={inputClass}
+                value={promoCode}
+                onChange={(e) => {
+                  setPromoCode(e.target.value.toUpperCase());
+                  setPromoDiscount(0);
+                  setPromoAppliedCode('');
+                }}
+                placeholder="Enter your code"
+                autoCapitalize="characters"
+              />
+              <Button type="button" variant="outline" className="h-12 rounded-xl shrink-0" onClick={() => applyPromoCode(promoCode)} disabled={promoChecking || !promoCode.trim()}>
+                {promoChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-4 mb-6">
@@ -573,27 +663,29 @@ const ApplicantPortal = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {(['korapay', 'paystack'] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setGateway(p)}
-                className={`rounded-xl border p-4 text-left transition-colors ${gateway === p ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-primary/40'}`}
-              >
-                <span className="block text-sm font-semibold capitalize">{p}</span>
-                <span className="mt-1 block text-[11px] text-muted-foreground">
-                  {p === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Cards, mobile money & bank — ready to use'}
-                </span>
-              </button>
-            ))}
-          </div>
+          {feeUsd > 0 && (
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {(['korapay', 'paystack'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setGateway(p)}
+                  className={`rounded-xl border p-4 text-left transition-colors ${gateway === p ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-primary/40'}`}
+                >
+                  <span className="block text-sm font-semibold capitalize">{p}</span>
+                  <span className="mt-1 block text-[11px] text-muted-foreground">
+                    {p === 'korapay' ? 'Mobile money, cards & bank transfer' : 'Cards, mobile money & bank — ready to use'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <Button onClick={handlePay} disabled={paying} className="w-full h-12 rounded-xl">
-            {paying ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>) : (<><CreditCard className="w-4 h-4 mr-2" /> Pay {formatUsd(JOIN_FEE_USD)} & activate</>)}
+            {paying ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>) : feeUsd === 0 ? 'Complete free registration' : (<><CreditCard className="w-4 h-4 mr-2" /> Pay {formatUsd(feeUsd)} & activate</>)}
           </Button>
           <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-4">
-            <ShieldCheck className="w-3.5 h-3.5" /> Payments are verified with the gateway before your account is activated.
+            <ShieldCheck className="w-3.5 h-3.5" /> {feeUsd === 0 ? 'Your promo code is verified before your account is activated.' : 'Payments are verified with the gateway before your account is activated.'}
           </p>
         </PortalCard>
       </ApplicantShell>
