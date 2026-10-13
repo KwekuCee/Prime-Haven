@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard, ImagePlus, X, Clock } from 'lucide-react';
+import { Rocket, ArrowLeft, ArrowRight, Check, Loader2, Send, Star, Banknote, LayoutDashboard, ImagePlus, X, Clock, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -540,11 +540,25 @@ const StartProject = () => {
                 <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-balance">What do you need?</h1>
                 <p className="text-muted-foreground text-lg">Select the service that fits your project.</p>
                 {!user && (
-                  <p className="text-sm text-muted-foreground">
-                    Not ready to pay yet?{' '}
-                    <Link to="/client/signup" className="font-semibold text-primary hover:underline">Create a free client account</Link>{' '}
-                    and pay for a service from your dashboard anytime. Already have one? <Link to="/client/login" className="font-semibold text-primary hover:underline">Sign in</Link>.
-                  </p>
+                  <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <UserPlus className="h-4 w-4" />
+                      </span>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">Create a free client account</p>
+                        <p className="text-sm text-muted-foreground">Sign up now — pay for a service from your dashboard whenever you're ready.</p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 pl-12 sm:pl-0">
+                      <Button asChild size="sm" className="h-9 rounded-full px-4">
+                        <Link to="/client/signup">Create free account</Link>
+                      </Button>
+                      <Button asChild size="sm" variant="ghost" className="h-9 rounded-full px-4 text-muted-foreground hover:text-foreground">
+                        <Link to="/client/login">Sign in</Link>
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
