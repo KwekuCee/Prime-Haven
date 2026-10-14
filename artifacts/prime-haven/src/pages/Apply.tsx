@@ -107,6 +107,15 @@ const Apply = () => {
         toast({ variant: 'destructive', title: 'Could not continue onboarding', description: message });
         return;
       }
+      const result = data as { portalPath?: string; status?: string; message?: string };
+      if (result.portalPath && result.portalPath.startsWith('/applicant/')) {
+        window.location.assign(result.portalPath);
+        return;
+      }
+      if (result.status === 'submitted') {
+        toast({ title: 'Application under review', description: result.message || 'We will email you once you are invited to the next stage.' });
+        return;
+      }
       setContinueSent(true);
     } catch (err) {
       toast({
