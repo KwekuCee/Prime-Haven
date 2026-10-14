@@ -105,21 +105,15 @@ const Index = () => {
           <CinematicReveal>
             <ServicesSection />
           </CinematicReveal>
-          <AdUnit slot="1675197526" />
-          <EzoicAd placeholderId={101} />
           <CinematicReveal direction="left">
             <PortfolioSection />
           </CinematicReveal>
           <CinematicReveal direction="right">
             <StatsSection />
           </CinematicReveal>
-          <AdUnit slot="1675197526" />
-          <EzoicAd placeholderId={102} />
           <CinematicReveal>
             <TestimonialsSection />
           </CinematicReveal>
-          <AdUnit slot="1675197526" />
-          <EzoicAd placeholderId={103} />
           <CinematicReveal direction="left">
             <FAQSection />
           </CinematicReveal>

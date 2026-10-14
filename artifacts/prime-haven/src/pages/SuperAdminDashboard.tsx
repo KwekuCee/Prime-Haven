@@ -1777,7 +1777,6 @@ const SuperAdminDashboard = () => {
         <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="space-y-4">
           {/* ========== OVERVIEW TAB ========== */}
           <TabsContent value="overview" className="mt-0 space-y-6">
-            <AdsToggleCard />
             {/* Executive Bento Metrics Hub — Featured Dark Treasury Card & Symmetrical Operational Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
               {/* 1. Marquee Platform Treasury & Revenue Hero Card (Featured Black Card) */}
