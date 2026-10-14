@@ -46,8 +46,7 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
     (supabase as any).from('designer_details').select('user_id, monthly_points, total_points, professional_title'),
     (supabase as any)
       .from('submissions')
-      .select('id, designer_id, project_name, service_type, client_ref, client_project_id, status, points_awarded, client_accepted, ph_approved, created_at')
-      .in('status', ['ph_approved', 'approved', 'completed', 'client_approved']),
+      .select('id, designer_id, project_name, service_type, client_ref, client_project_id, status, points_awarded, client_accepted, ph_approved, created_at'),
     (supabase as any).from('job_contracts').select('id, budget, title, category, status'),
     (supabase as any).from('job_contract_claims').select('id, contract_id, designer_id, status'),
     (supabase as any).from('client_projects').select('id, price_ghs, budget, title, category, accepted_designer_id, status'),
@@ -89,6 +88,12 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
   allSubmissions.forEach((sub) => {
     const designerId = sub.designer_id;
     if (!designerId) return;
+
+    const isApproved =
+      sub.client_accepted === true ||
+      sub.ph_approved === true ||
+      ['ph_approved', 'approved', 'completed', 'client_approved', 'client_accepted'].includes(String(sub.status || '').toLowerCase());
+    if (!isApproved) return;
 
     let matchedBudget = 0;
     let matchedProjectId: string | null = null;

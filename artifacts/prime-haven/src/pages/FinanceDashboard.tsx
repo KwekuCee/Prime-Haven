@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
-import { loadPlatformRevenue } from '@/lib/platformRevenue';
+import { loadPlatformRevenue, CANONICAL_SERVICES } from '@/lib/platformRevenue';
 
 const FinanceDashboard = () => {
     const navigate = useNavigate();
@@ -545,11 +545,14 @@ const FinanceDashboard = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         {((categoryRevenue.services && categoryRevenue.services.length > 0)
                             ? categoryRevenue.services
-                            : [
-                                { slug: 'graphic-design', label: 'Graphic Design', total: categoryRevenue.graphic, manualAllocation: categoryRevenue.graphic, contractBudget: 0, clientOrders: 0 },
-                                { slug: 'ui-ux-design', label: 'UI/UX Design', total: categoryRevenue.uiux, manualAllocation: categoryRevenue.uiux, contractBudget: 0, clientOrders: 0 },
-                                { slug: 'web-development', label: 'Web Development', total: categoryRevenue.web, manualAllocation: categoryRevenue.web, contractBudget: 0, clientOrders: 0 },
-                              ]
+                            : CANONICAL_SERVICES.map(s => ({
+                                slug: s.slug,
+                                label: s.label,
+                                total: 0,
+                                manualAllocation: 0,
+                                contractBudget: 0,
+                                clientOrders: 0,
+                              }))
                         ).map((s: any) => (
                             <div key={s.slug} className="rounded-lg border border-border/40 bg-card/40 p-3.5 flex flex-col justify-between">
                                 <div>

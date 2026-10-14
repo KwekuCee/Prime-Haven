@@ -301,11 +301,17 @@ const SubmitWork = () => {
         submissionData.parent_submission_id = correctionId;
       }
 
-      // Link delivery to client project
-      if (formData.selectedJobId && clientProjectIds.includes(formData.selectedJobId)) {
+      // Link delivery to client project or claimed job contract
+      if (formData.selectedJobId) {
         submissionData.client_project_id = formData.selectedJobId;
+        if (!submissionData.client_ref) {
+          submissionData.client_ref = formData.selectedJobId;
+        }
       } else if (parentSubmission?.client_project_id) {
         submissionData.client_project_id = parentSubmission.client_project_id;
+        if (!submissionData.client_ref) {
+          submissionData.client_ref = parentSubmission.client_project_id;
+        }
       }
 
       const { error } = await supabase.from('submissions').insert([submissionData]);

@@ -738,9 +738,8 @@ const SuperAdminDashboard = () => {
       const submission = submissions.find(s => s.id === submissionId);
       if (!submission) throw new Error('Submission not found');
 
-      // Use service-type-specific points instead of static value
-      const servicePointsMap: Record<string, number> = { logo: 45, branding: 50, uiux: 65, web: 65, print: 20, flyer: 40 };
-      const clientPoints = servicePointsMap[submission.service_type] || systemSettings.client_acceptance_points?.value || 40;
+      // Standard 40 points awarded for completed job / client acceptance
+      const clientPoints = systemSettings.client_acceptance_points?.value || 40;
 
       // Update submission
       const { error: updateError } = await supabase
@@ -912,7 +911,7 @@ const SuperAdminDashboard = () => {
       let totalAmount = 0;
 
       CANONICAL_SERVICES.forEach((s) => {
-        const val = parseFloat(revenueByCategory[s.slug] || revenueByCategory[s.legacyKey] || '0') || 0;
+        const val = parseFloat(revenueByCategory[s.slug] || '0') || 0;
         if (val > 0) {
           categoryData[s.slug] = val;
           categoryData[s.legacyKey] = val; // preserve legacy aliases
@@ -2432,9 +2431,23 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" size="sm" onClick={() => setIsRevenueModalOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleUpdateRevenue}><Save className="w-3.5 h-3.5 mr-1.5" />Save Allocations</Button>
+          <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row sm:justify-between items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setRevenueByCategory({});
+                setAllocationAmountInput('');
+              }}
+              className="text-destructive hover:bg-destructive/10 text-xs self-start sm:self-auto"
+            >
+              Clear All Allocations
+            </Button>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button variant="outline" size="sm" onClick={() => setIsRevenueModalOpen(false)}>Cancel</Button>
+              <Button size="sm" onClick={handleUpdateRevenue}><Save className="w-3.5 h-3.5 mr-1.5" />Save Allocations</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
