@@ -107,6 +107,15 @@ const Apply = () => {
         toast({ variant: 'destructive', title: 'Could not continue onboarding', description: message });
         return;
       }
+      const result = data as { portalPath?: string; status?: string; message?: string };
+      if (result.portalPath && result.portalPath.startsWith('/applicant/')) {
+        window.location.assign(result.portalPath);
+        return;
+      }
+      if (result.status === 'submitted') {
+        toast({ title: 'Application under review', description: result.message || 'We will email you once you are invited to the next stage.' });
+        return;
+      }
       setContinueSent(true);
     } catch (err) {
       toast({
@@ -395,7 +404,7 @@ const Apply = () => {
                     <Input id="continue-phone" type="tel" autoComplete="tel" className={inputClass} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+233 ..." required />
                   </div>
                   <Button type="submit" disabled={continuing} className="h-12 w-full rounded-xl text-base">
-                    {continuing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending secure link…</> : 'Continue onboarding'}
+                    {continuing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Finding your application…</> : 'Continue onboarding'}
                   </Button>
                 </form>
               )}

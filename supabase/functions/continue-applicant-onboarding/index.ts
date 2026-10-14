@@ -56,6 +56,9 @@ serve(withCors(async (req: Request): Promise<Response> => {
     const nameMatches = applicant?.full_name.trim().replace(/\s+/g, " ").toLowerCase() === fullName.toLowerCase();
     const savedPhoneDigits = String(applicant?.phone || "").replace(/\D/g, "");
     const phoneMatches = !savedPhoneDigits || savedPhoneDigits === phoneDigits;
+    if (applicant && nameMatches && phoneMatches && applicant.status === "submitted") {
+      return json({ success: true, status: "submitted", message: "Your application is still under review. We'll email you once you're invited to the next stage." });
+    }
     if (
       !applicant ||
       !nameMatches ||
@@ -63,6 +66,11 @@ serve(withCors(async (req: Request): Promise<Response> => {
       !["invited", "in_review", "passed", "paid", "active"].includes(applicant.status)
     ) {
       return json(GENERIC_RESPONSE);
+    }
+
+    // Details match: take the applicant straight back to where they stopped.
+    if (applicant.access_token) {
+      return json({ success: true, status: applicant.status, portalPath: `/applicant/${applicant.access_token}` });
     }
 
     const origin = safePublicOrigin(req.headers.get("origin"));
