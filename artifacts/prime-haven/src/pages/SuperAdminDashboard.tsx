@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
-import { loadPlatformRevenue } from '@/lib/platformRevenue';
+import { loadPlatformRevenue, CANONICAL_SERVICES } from '@/lib/platformRevenue';
 import { recalculateSalaries } from '@/lib/recalculateSalaries';
 import { motion } from 'framer-motion';
 import {
@@ -275,7 +275,14 @@ const SuperAdminDashboard = () => {
     avgApprovalTime: 0
   });
   const [revenueBreakdown, setRevenueBreakdown] = useState({ clients: 0, fees: 0 });
-  const [categoryRevenue, setCategoryRevenue] = useState({ graphic: 0, uiux: 0, web: 0, total: 0 });
+  const [categoryRevenue, setCategoryRevenue] = useState<{
+    graphic: number;
+    uiux: number;
+    web: number;
+    total: number;
+    byService?: Record<string, any>;
+    services?: any[];
+  }>({ graphic: 0, uiux: 0, web: 0, total: 0 });
   const [users, setUsers] = useState<User[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -291,7 +298,9 @@ const SuperAdminDashboard = () => {
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const [revenueInput, setRevenueInput] = useState('');
   const [exchangeRateInput, setExchangeRateInput] = useState('10');
-  const [revenueByCategory, setRevenueByCategory] = useState({ graphic: '', uiux: '', web: '' });
+  const [revenueByCategory, setRevenueByCategory] = useState<Record<string, string>>({});
+  const [selectedServiceToAllocate, setSelectedServiceToAllocate] = useState<string>('graphic-design');
+  const [allocationAmountInput, setAllocationAmountInput] = useState<string>('');
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -881,13 +890,36 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Update monthly revenue by category
+  const openRevenueModal = useCallback(() => {
+    const cat = (systemSettings as any).monthly_revenue_by_category || {};
+    const initialMap: Record<string, string> = {};
+    CANONICAL_SERVICES.forEach((s) => {
+      const val = cat[s.slug] ?? cat[s.legacyKey];
+      if (val !== undefined && val !== null && Number(val) > 0) {
+        initialMap[s.slug] = String(val);
+      }
+    });
+    setRevenueByCategory(initialMap);
+    setSelectedServiceToAllocate('graphic-design');
+    setAllocationAmountInput(initialMap['graphic-design'] || '');
+    setIsRevenueModalOpen(true);
+  }, [systemSettings]);
+
+  // Update monthly revenue by category for all services
   const handleUpdateRevenue = async () => {
     try {
-      const graphicAmt = parseFloat(revenueByCategory.graphic) || 0;
-      const uiuxAmt = parseFloat(revenueByCategory.uiux) || 0;
-      const webAmt = parseFloat(revenueByCategory.web) || 0;
-      const totalAmount = graphicAmt + uiuxAmt + webAmt;
+      const categoryData: Record<string, number> = {};
+      let totalAmount = 0;
+
+      CANONICAL_SERVICES.forEach((s) => {
+        const val = parseFloat(revenueByCategory[s.slug] || revenueByCategory[s.legacyKey] || '0') || 0;
+        if (val > 0) {
+          categoryData[s.slug] = val;
+          categoryData[s.legacyKey] = val; // preserve legacy aliases
+          totalAmount += val;
+        }
+      });
+
       const rateAmount = parseFloat(exchangeRateInput) || 10;
 
       if (totalAmount < 0) {
@@ -897,7 +929,6 @@ const SuperAdminDashboard = () => {
 
       const currentDate = new Date();
       const revenueData = { amount: totalAmount, currency: 'GHS', month: currentDate.getMonth() + 1, year: currentDate.getFullYear() };
-      const categoryData = { graphic: graphicAmt, uiux: uiuxAmt, web: webAmt };
 
       // Upsert settings
       await Promise.all([
@@ -911,7 +942,7 @@ const SuperAdminDashboard = () => {
         await supabase.from('system_logs').insert({
           action_type: 'revenue_updated',
           admin_id: user.id,
-          description: `Revenue & Rate updated — Rate: ${rateAmount}, Graphic: GH₵${graphicAmt.toFixed(2)}, UI/UX: GH₵${uiuxAmt.toFixed(2)}, Web: GH₵${webAmt.toFixed(2)}`,
+          description: `Revenue & Rate updated — Rate: ${rateAmount}, Total Allocated: GH₵${totalAmount.toFixed(2)} across ${Object.keys(categoryData).length / 2} services`,
           timestamp: new Date().toISOString(),
         });
       }
@@ -921,9 +952,8 @@ const SuperAdminDashboard = () => {
       // Recalculate salaries by category
       await recalculateSalaries();
 
-      toast({ title: 'Revenue Updated', description: `Total: GH₵${totalAmount.toFixed(2)}. Salaries recalculated by category.` });
+      toast({ title: 'Revenue Updated', description: `Total: GH₵${totalAmount.toFixed(2)}. Salaries recalculated across all services.` });
       setIsRevenueModalOpen(false);
-      setRevenueByCategory({ graphic: '', uiux: '', web: '' });
       await loadDashboardDataSafe();
     } catch (error: any) {
       console.error('Revenue update error:', error);
@@ -1513,11 +1543,7 @@ const SuperAdminDashboard = () => {
             <p className="text-xs sm:text-sm text-slate-400 mt-1">Real-time health, department output, talent payouts, and milestone review queue</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-on-ink hover:bg-white/20 hover:text-on-ink" onClick={() => {
-              const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
-              setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
-              setIsRevenueModalOpen(true);
-            }}>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-on-ink hover:bg-white/20 hover:text-on-ink" onClick={openRevenueModal}>
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
               Revenue Allocation
             </Button>
@@ -1593,20 +1619,40 @@ const SuperAdminDashboard = () => {
 
                   {/* Profession Revenue Breakdown Strip */}
                   <div className="mt-4 pt-3 border-t border-slate-800/80">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-mono mb-2">Profession Allocation</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
-                        <span className="text-[9px] uppercase text-slate-400 font-mono block truncate">Graphic Design</span>
-                        <span className="text-xs font-bold font-mono text-purple-300">GH₵{categoryRevenue.graphic.toLocaleString()}</span>
-                      </div>
-                      <div className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
-                        <span className="text-[9px] uppercase text-slate-400 font-mono block truncate">UI/UX Design</span>
-                        <span className="text-xs font-bold font-mono text-cyan-300">GH₵{categoryRevenue.uiux.toLocaleString()}</span>
-                      </div>
-                      <div className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
-                        <span className="text-[9px] uppercase text-slate-400 font-mono block truncate">Web Dev</span>
-                        <span className="text-xs font-bold font-mono text-emerald-300">GH₵{categoryRevenue.web.toLocaleString()}</span>
-                      </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">Profession Allocation</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[10px] text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                        onClick={openRevenueModal}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {((categoryRevenue.services && categoryRevenue.services.length > 0)
+                        ? categoryRevenue.services
+                        : CANONICAL_SERVICES.map(s => ({
+                            slug: s.slug,
+                            label: s.label,
+                            total: (categoryRevenue as any)[s.legacyKey] || 0
+                          }))
+                      ).filter(item => item.total > 0).slice(0, 8).map((item) => (
+                        <div key={item.slug} className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
+                          <span className="text-[9px] uppercase text-slate-400 font-mono block truncate" title={item.label}>
+                            {item.label}
+                          </span>
+                          <span className="text-xs font-bold font-mono text-emerald-300">
+                            GH₵{Number(item.total).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                      ))}
+                      {(!categoryRevenue.services || categoryRevenue.services.filter(i => i.total > 0).length === 0) && (
+                        <div className="col-span-full py-2 text-center text-[11px] text-slate-400">
+                          No profession allocations set yet. Click "Configure" to assign revenue.
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1860,11 +1906,7 @@ const SuperAdminDashboard = () => {
                   <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'submissions' })}>
                     <FileCheck className="w-3.5 h-3.5 text-primary" /> Review Submissions Queue
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => {
-                    const cat = systemSettings.monthly_revenue_by_category || { graphic: 0, uiux: 0, web: 0 };
-                    setRevenueByCategory({ graphic: String(cat.graphic || ''), uiux: String(cat.uiux || ''), web: String(cat.web || '') });
-                    setIsRevenueModalOpen(true);
-                  }}>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={openRevenueModal}>
                     <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Update Revenue Targets
                   </Button>
                   <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'users' })}>
@@ -2249,16 +2291,120 @@ const SuperAdminDashboard = () => {
       {/* ========== DIALOGS ========== */}
       {/* Revenue Modal */}
       <Dialog open={isRevenueModalOpen} onOpenChange={setIsRevenueModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Update Revenue</DialogTitle>
-            <DialogDescription className="text-xs">Set revenue by category. Salaries auto-recalculate.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-emerald-500" />
+              Profession Revenue Allocation
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Select any of the 8 platform services from the dropdown to allocate revenue. Talent earnings auto-recalculate with the 70% profit split.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-3">
-            <div><Label className="text-xs font-medium">Graphic Design (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.graphic} onChange={e => setRevenueByCategory(p => ({ ...p, graphic: e.target.value }))} className="mt-1 h-9" /></div>
-            <div><Label className="text-xs font-medium">UI/UX Design (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.uiux} onChange={e => setRevenueByCategory(p => ({ ...p, uiux: e.target.value }))} className="mt-1 h-9" /></div>
-            <div><Label className="text-xs font-medium">Web Development (GH₵)</Label><Input type="number" placeholder="0.00" value={revenueByCategory.web} onChange={e => setRevenueByCategory(p => ({ ...p, web: e.target.value }))} className="mt-1 h-9" /></div>
-            <div className="space-y-1.5">
+
+          <div className="space-y-4 py-2">
+            {/* Service Selector Dropdown & Amount Input */}
+            <div className="p-3.5 rounded-xl border border-border/60 bg-muted/30 space-y-3">
+              <Label className="text-xs font-semibold text-foreground">Select Service &amp; Set Allocation</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                <div className="sm:col-span-7">
+                  <Select
+                    value={selectedServiceToAllocate}
+                    onValueChange={(val) => {
+                      setSelectedServiceToAllocate(val);
+                      setAllocationAmountInput(revenueByCategory[val] || '');
+                    }}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Choose a service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CANONICAL_SERVICES.map((s) => (
+                        <SelectItem key={s.slug} value={s.slug} className="text-xs">
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-5 flex gap-1.5">
+                  <Input
+                    type="number"
+                    placeholder="GH₵ 0.00"
+                    value={allocationAmountInput}
+                    onChange={(e) => setAllocationAmountInput(e.target.value)}
+                    className="h-9 text-xs"
+                    min="0"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-9 px-3 text-xs shrink-0"
+                    onClick={() => {
+                      const amt = parseFloat(allocationAmountInput);
+                      setRevenueByCategory((prev) => ({
+                        ...prev,
+                        [selectedServiceToAllocate]: Number.isFinite(amt) && amt > 0 ? String(amt) : '',
+                      }));
+                    }}
+                  >
+                    Set
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Currently Allocated Services Breakdown */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs font-semibold">Allocated Services Breakdown</Label>
+                <span className="text-[11px] text-muted-foreground">
+                  {Object.entries(revenueByCategory).filter(([_, v]) => parseFloat(v) > 0).length} of 8 services active
+                </span>
+              </div>
+              <div className="border border-border/60 rounded-xl divide-y divide-border/40 max-h-48 overflow-y-auto">
+                {CANONICAL_SERVICES.map((s) => {
+                  const rawVal = revenueByCategory[s.slug] || '';
+                  const valNum = parseFloat(rawVal) || 0;
+                  return (
+                    <div key={s.slug} className="p-2.5 flex items-center justify-between gap-3 text-xs hover:bg-muted/30 transition-colors">
+                      <div className="min-w-0">
+                        <span className="font-medium text-foreground block truncate">{s.label}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {valNum > 0 ? `Talent 70%: GH₵${(valNum * 0.7).toFixed(2)}` : 'No revenue allocated'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          value={rawVal}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setRevenueByCategory((p) => ({ ...p, [s.slug]: v }));
+                          }}
+                          className="w-24 h-7 text-xs text-right font-mono"
+                        />
+                        {valNum > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => setRevenueByCategory((p) => ({ ...p, [s.slug]: '' }))}
+                            title="Clear allocation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Exchange Rate */}
+            <div className="space-y-1.5 pt-1">
               <Label className="text-xs font-medium flex justify-between items-center">
                 System Exchange Rate (1 USD = ? GHS)
                 <Button variant="ghost" className="h-5 px-1.5 text-[10px] text-primary" onClick={handleFetchLiveRate} disabled={isFetchingRate}>
@@ -2266,17 +2412,29 @@ const SuperAdminDashboard = () => {
                   Fetch International
                 </Button>
               </Label>
-              <Input type="number" placeholder="10.00" value={exchangeRateInput} onChange={e => setExchangeRateInput(e.target.value)} className="mt-1 h-9 border-primary/30" />
+              <Input type="number" placeholder="10.00" value={exchangeRateInput} onChange={e => setExchangeRateInput(e.target.value)} className="h-9 border-primary/30" />
             </div>
-            <div className="p-3 rounded-lg bg-muted/50 text-xs">
-              <span className="text-muted-foreground">Total: </span>
-              <span className="font-bold">GH₵{((parseFloat(revenueByCategory.graphic) || 0) + (parseFloat(revenueByCategory.uiux) || 0) + (parseFloat(revenueByCategory.web) || 0)).toFixed(2)}</span>
-              <span className="text-muted-foreground ml-2">· Share: {systemSettings.revenue_share_percentage?.value || 50}%</span>
+
+            {/* Grand Total Summary Card */}
+            <div className="p-3 rounded-xl bg-muted/60 border border-border/50 text-xs flex items-center justify-between">
+              <div>
+                <span className="text-muted-foreground block text-[11px]">Total Monthly Allocated Pool</span>
+                <span className="text-base font-extrabold font-mono text-emerald-500">
+                  GH₵{CANONICAL_SERVICES.reduce((sum, s) => sum + (parseFloat(revenueByCategory[s.slug] || '0') || 0), 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="text-right text-[11px] text-muted-foreground">
+                <span>Talent 70% Share: </span>
+                <strong className="text-foreground font-mono">
+                  GH₵{(CANONICAL_SERVICES.reduce((sum, s) => sum + (parseFloat(revenueByCategory[s.slug] || '0') || 0), 0) * 0.7).toFixed(2)}
+                </strong>
+              </div>
             </div>
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" size="sm" onClick={() => setIsRevenueModalOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleUpdateRevenue}><Save className="w-3.5 h-3.5 mr-1.5" />Save</Button>
+            <Button size="sm" onClick={handleUpdateRevenue}><Save className="w-3.5 h-3.5 mr-1.5" />Save Allocations</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

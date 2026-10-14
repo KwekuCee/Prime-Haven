@@ -49,7 +49,14 @@ const FinanceDashboard = () => {
     const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
     const [newDebt, setNewDebt] = useState({ client_name: '', project_name: '', amount_owed: 0 });
 
-    const [categoryRevenue, setCategoryRevenue] = useState({ graphic: 0, uiux: 0, web: 0, total: 0 });
+    const [categoryRevenue, setCategoryRevenue] = useState<{
+        graphic: number;
+        uiux: number;
+        web: number;
+        total: number;
+        byService?: Record<string, any>;
+        services?: any[];
+    }>({ graphic: 0, uiux: 0, web: 0, total: 0 });
     const [stats, setStats] = useState({
         totalRevenue: 0,
         escrow: 0,
@@ -535,30 +542,40 @@ const FinanceDashboard = () => {
                         </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="rounded-lg border border-border/40 bg-card/40 p-3.5">
-                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block">Graphic Design Pool</span>
-                            <div className="text-xl font-bold font-mono text-purple-400 mt-1">
-                                GH₵ {categoryRevenue.graphic.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {((categoryRevenue.services && categoryRevenue.services.length > 0)
+                            ? categoryRevenue.services
+                            : [
+                                { slug: 'graphic-design', label: 'Graphic Design', total: categoryRevenue.graphic, manualAllocation: categoryRevenue.graphic, contractBudget: 0, clientOrders: 0 },
+                                { slug: 'ui-ux-design', label: 'UI/UX Design', total: categoryRevenue.uiux, manualAllocation: categoryRevenue.uiux, contractBudget: 0, clientOrders: 0 },
+                                { slug: 'web-development', label: 'Web Development', total: categoryRevenue.web, manualAllocation: categoryRevenue.web, contractBudget: 0, clientOrders: 0 },
+                              ]
+                        ).map((s: any) => (
+                            <div key={s.slug} className="rounded-lg border border-border/40 bg-card/40 p-3.5 flex flex-col justify-between">
+                                <div>
+                                    <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block truncate" title={s.label}>
+                                        {s.label} Pool
+                                    </span>
+                                    <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
+                                        GH₵ {Number(s.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground flex flex-col gap-0.5">
+                                    <div className="flex justify-between">
+                                        <span>Allocated / Budget:</span>
+                                        <span className="font-mono text-foreground font-medium">GH₵{Number((s.manualAllocation || 0) + (s.contractBudget || 0)).toFixed(0)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Client Orders:</span>
+                                        <span className="font-mono text-foreground font-medium">GH₵{Number(s.clientOrders || 0).toFixed(0)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-emerald-500 font-semibold mt-0.5">
+                                        <span>Talent 70%:</span>
+                                        <span className="font-mono">GH₵{(Number(s.total || 0) * 0.7).toFixed(0)}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <span className="text-[10px] text-muted-foreground mt-1 block">Points-weighted share</span>
-                        </div>
-
-                        <div className="rounded-lg border border-border/40 bg-card/40 p-3.5">
-                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block">UI/UX Design Pool</span>
-                            <div className="text-xl font-bold font-mono text-cyan-400 mt-1">
-                                GH₵ {categoryRevenue.uiux.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground mt-1 block">Points-weighted share</span>
-                        </div>
-
-                        <div className="rounded-lg border border-border/40 bg-card/40 p-3.5">
-                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block">Web Development Pool</span>
-                            <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
-                                GH₵ {categoryRevenue.web.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground mt-1 block">60% submission split</span>
-                        </div>
+                        ))}
                     </div>
                 </div>
 
