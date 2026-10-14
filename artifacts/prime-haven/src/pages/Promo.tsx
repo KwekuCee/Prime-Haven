@@ -21,7 +21,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
-import AdsterraStats from '@/components/admin/AdsterraStats';
 import ManageSitePromos from '@/components/admin/ManageSitePromos';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -164,9 +163,6 @@ const PromoDashboard = () => {
                         <TabsTrigger value="assets" className="px-6 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                             <Tag className="w-4 h-4 mr-2" /> Marketing Assets
                         </TabsTrigger>
-                        <TabsTrigger value="ads" className="px-6 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all whitespace-nowrap">
-                            <Globe className="w-4 h-4 mr-2" /> Ad Performance
-                        </TabsTrigger>
                         <TabsTrigger value="partners" className="px-6 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                             <Users className="w-4 h-4 mr-2" /> Partners
                         </TabsTrigger>
@@ -197,36 +193,6 @@ const PromoDashboard = () => {
                         </motion.div>
                     </TabsContent>
 
-                    <TabsContent value="ads" className="space-y-4 focus-visible:outline-none">
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <Card className="glass-card overflow-hidden border-border/50">
-                                <CardHeader className="border-b border-border/50 mb-6">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                        <div>
-                                            <CardTitle className="text-xl">Adsterra Analytics</CardTitle>
-                                            <CardDescription>Real-time performance tracking and revenue stats</CardDescription>
-                                        </div>
-                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                            <div className="px-4 py-2 bg-primary/5 rounded-lg border border-primary/10">
-                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Today's Est</p>
-                                                <p className="text-sm font-bold text-primary">$42.50</p>
-                                            </div>
-                                            <div className="px-4 py-2 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
-                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">CTR</p>
-                                                <p className="text-sm font-bold text-emerald-500">2.4%</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <AdsterraStats />
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    </TabsContent>
                     <TabsContent value="partners" className="space-y-4 focus-visible:outline-none">
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}

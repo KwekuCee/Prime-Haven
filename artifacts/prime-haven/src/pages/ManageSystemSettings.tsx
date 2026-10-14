@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,7 +81,6 @@ const ManageSystemSettings = () => {
   const [saving, setSaving] = useState<string | null>(null);
 
   const [numbers, setNumbers] = useState<Record<string, string>>({});
-  const [adsEnabled, setAdsEnabled] = useState(false);
   const [botToken, setBotToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [channels, setChannels] = useState<Record<string, string>>({});
@@ -111,7 +109,6 @@ const ManageSystemSettings = () => {
       nextNumbers[key] = String(readNumber(byKey.get(key), 0));
     });
     setNumbers(nextNumbers);
-    setAdsEnabled(readBoolean(byKey.get('ads_enabled'), false));
     setBotToken(readString(byKey.get('discord_bot_token'), ''));
 
     const rawChannels = byKey.get('discord_order_channels');
@@ -159,12 +156,6 @@ const ManageSystemSettings = () => {
     }
     const previous = rows.find((r) => r.key === key)?.value;
     await persist(key, wrapLike(previous, parsed));
-  };
-
-  const saveAds = async (next: boolean) => {
-    setAdsEnabled(next);
-    const previous = rows.find((r) => r.key === 'ads_enabled')?.value;
-    await persist('ads_enabled', wrapLike(previous, next), 'Toggle ad display on the site');
   };
 
   const saveChannels = async () => {
@@ -285,31 +276,6 @@ const ManageSystemSettings = () => {
                 </p>
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        {/* Site toggles */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <DollarSign className="h-5 w-5 text-primary" /> Monetisation
-            </CardTitle>
-            <CardDescription>Controls whether ad slots render for visitors.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between rounded-xl border p-4">
-              <div>
-                <p className="font-medium">Ads enabled</p>
-                <p className="text-sm text-muted-foreground">
-                  Turn off to hide every ad placement across the site immediately.
-                </p>
-              </div>
-              <Switch
-                checked={adsEnabled}
-                onCheckedChange={saveAds}
-                disabled={saving === 'ads_enabled'}
-              />
-            </div>
           </CardContent>
         </Card>
 

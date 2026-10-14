@@ -14,8 +14,6 @@ import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PromoPopup from '@/components/PromoPopup';
-import AdUnit from '@/components/AdUnit';
-import EzoicAd from '@/components/EzoicAd';
 import CinematicReveal from '@/components/CinematicReveal';
 
 const Index = () => {
@@ -107,21 +105,15 @@ const Index = () => {
           <CinematicReveal>
             <ServicesSection />
           </CinematicReveal>
-          <AdUnit slot="1675197526" />
-          <EzoicAd placeholderId={101} />
           <CinematicReveal direction="left">
             <PortfolioSection />
           </CinematicReveal>
           <CinematicReveal direction="right">
             <StatsSection />
           </CinematicReveal>
-          <AdUnit slot="1675197526" />
-          <EzoicAd placeholderId={102} />
           <CinematicReveal>
             <TestimonialsSection />
           </CinematicReveal>
-          <AdUnit slot="1675197526" />
-          <EzoicAd placeholderId={103} />
           <CinematicReveal direction="left">
             <FAQSection />
           </CinematicReveal>
