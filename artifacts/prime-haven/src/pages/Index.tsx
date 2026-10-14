@@ -14,8 +14,6 @@ import JoinSection from '@/components/JoinSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PromoPopup from '@/components/PromoPopup';
-import AdUnit from '@/components/AdUnit';
-import EzoicAd from '@/components/EzoicAd';
 import CinematicReveal from '@/components/CinematicReveal';
 
 const Index = () => {

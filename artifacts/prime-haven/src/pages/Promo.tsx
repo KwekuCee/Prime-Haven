@@ -21,7 +21,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import ManageMarketingAssets from '@/components/admin/ManageMarketingAssets';
-import AdsterraStats from '@/components/admin/AdsterraStats';
 import ManageSitePromos from '@/components/admin/ManageSitePromos';
 import { supabase } from '@/integrations/supabase/client';
 import {

@@ -13,7 +13,6 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
-import EzoicAd from '@/components/EzoicAd';
 
 interface BlogPostData {
   id: string;
