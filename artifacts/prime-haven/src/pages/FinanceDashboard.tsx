@@ -49,6 +49,7 @@ const FinanceDashboard = () => {
     const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
     const [newDebt, setNewDebt] = useState({ client_name: '', project_name: '', amount_owed: 0 });
 
+    const [categoryRevenue, setCategoryRevenue] = useState({ graphic: 0, uiux: 0, web: 0, total: 0 });
     const [stats, setStats] = useState({
         totalRevenue: 0,
         escrow: 0,
@@ -94,6 +95,9 @@ const FinanceDashboard = () => {
             const revenue = await loadPlatformRevenue().catch(() => null);
             const clientRevenueGhs = revenue?.clientRevenueGhs || 0;
             const escrow = revenue?.escrow || 0;
+            if (revenue?.categoryRevenue) {
+                setCategoryRevenue(revenue.categoryRevenue);
+            }
 
             // Completed ledger payments (used for the 70/30 client split below).
             const completedPayments = (paymentsData || []).filter((p: any) => p.status === 'completed');
@@ -512,6 +516,49 @@ const FinanceDashboard = () => {
                         </div>
                         <div className="text-3xl font-bold tracking-tight">GH₵ {stats.pendingPayouts.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <div className="mt-2 text-[10px] text-red-500 flex items-center gap-1"><Clock className="w-3 h-3" />Total salaries waiting</div>
+                    </div>
+                </div>
+
+                {/* Department Revenue Allocation */}
+                <div className="rounded-xl border border-border/50 bg-card/60 p-5 shadow-xs mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h2 className="text-base font-bold flex items-center gap-2">
+                                <DollarSign className="w-4 h-4 text-emerald-500" /> Profession Revenue Allocation
+                            </h2>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Monthly revenue distributed to department pools for talent salary calculations.
+                            </p>
+                        </div>
+                        <Badge variant="outline" className="text-xs font-mono font-bold text-emerald-500 border-emerald-500/30 bg-emerald-500/10 self-start sm:self-auto">
+                            Allocated Pool: GH₵ {categoryRevenue.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="rounded-lg border border-border/40 bg-card/40 p-3.5">
+                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block">Graphic Design Pool</span>
+                            <div className="text-xl font-bold font-mono text-purple-400 mt-1">
+                                GH₵ {categoryRevenue.graphic.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground mt-1 block">Points-weighted share</span>
+                        </div>
+
+                        <div className="rounded-lg border border-border/40 bg-card/40 p-3.5">
+                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block">UI/UX Design Pool</span>
+                            <div className="text-xl font-bold font-mono text-cyan-400 mt-1">
+                                GH₵ {categoryRevenue.uiux.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground mt-1 block">Points-weighted share</span>
+                        </div>
+
+                        <div className="rounded-lg border border-border/40 bg-card/40 p-3.5">
+                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block">Web Development Pool</span>
+                            <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
+                                GH₵ {categoryRevenue.web.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground mt-1 block">60% submission split</span>
+                        </div>
                     </div>
                 </div>
 

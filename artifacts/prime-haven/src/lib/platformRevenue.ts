@@ -23,6 +23,13 @@ export interface PlatformRevenue {
   paidEscrow: number;
   /** Total revenue shown on both dashboards. */
   grossRevenue: number;
+  /** Category-allocated revenue by department. */
+  categoryRevenue: {
+    graphic: number;
+    uiux: number;
+    web: number;
+    total: number;
+  };
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -34,7 +41,7 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
       .eq('status', 'completed')
       .is('archived_at', null),
     (supabase.from('client_debts') as any).select('amount_owed, status'),
-    supabase.from('system_settings').select('key, value').eq('key', 'monthly_revenue'),
+    supabase.from('system_settings').select('key, value').in('key', ['monthly_revenue', 'monthly_revenue_by_category']),
     loadClientRevenue().catch(() => null),
   ]);
 
@@ -49,11 +56,22 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
     else escrow += amount;
   });
 
-  const settings = (settingsRes?.data || []) as Array<{ value: any }>;
-  const configuredMonthly = settings.length > 0 ? Number(settings[0]?.value?.amount) || 0 : 0;
+  const settingsRows = (settingsRes?.data || []) as Array<{ key: string; value: any }>;
+  const monthlyRevenueSetting = settingsRows.find((s) => s.key === 'monthly_revenue')?.value;
+  const categorySetting = settingsRows.find((s) => s.key === 'monthly_revenue_by_category')?.value || {};
+
+  const graphic = Number(categorySetting.graphic) || 0;
+  const uiux = Number(categorySetting.uiux) || 0;
+  const web = Number(categorySetting.web) || 0;
+  const categoryTotal = graphic + uiux + web;
+
+  let configuredMonthly = Number(monthlyRevenueSetting?.amount) || 0;
+  if (configuredMonthly === 0 && categoryTotal > 0) {
+    configuredMonthly = categoryTotal;
+  }
 
   const clientRevenueGhs = clientRev?.totalGhs || 0;
-  const grossRevenue = Math.max(feeRevenue + clientRevenueGhs, configuredMonthly) + paidEscrow;
+  const grossRevenue = Math.max(feeRevenue + clientRevenueGhs, configuredMonthly, categoryTotal) + paidEscrow;
 
   return {
     feeRevenue: round2(feeRevenue),
@@ -62,5 +80,11 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
     escrow: round2(escrow),
     paidEscrow: round2(paidEscrow),
     grossRevenue: round2(grossRevenue),
+    categoryRevenue: {
+      graphic: round2(graphic),
+      uiux: round2(uiux),
+      web: round2(web),
+      total: round2(categoryTotal),
+    },
   };
 };

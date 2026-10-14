@@ -462,9 +462,24 @@ const Dashboard = () => {
   };
 
   const showEarnings = settings.show_earnings;
-  const correctionRequests = submissions.filter((s) => s.status === 'correction_requested');
+  const correctionRequests = submissions.filter((s) => s.status === 'correction_requested' || s.status === 'rejected' || s.status === 'client_rejected');
   const getCorrectionLink = (submission: Submission) =>
     `/submit-work?correction=${submission.id}&project=${encodeURIComponent(submission.project_name)}&client=${encodeURIComponent(submission.client_ref || '')}&service=${encodeURIComponent(submission.service_type || '')}`;
+
+  const getDeadlineInfo = (submission: Submission) => {
+    const baseDate = new Date(submission.updated_at || submission.created_at || Date.now()).getTime();
+    const deadlineDate = baseDate + 48 * 60 * 60 * 1000;
+    const msRemaining = deadlineDate - Date.now();
+    const hoursRemaining = Math.max(0, Math.floor(msRemaining / (1000 * 60 * 60)));
+    const minutesRemaining = Math.max(0, Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60)));
+    const isExpired = msRemaining <= 0;
+    return {
+      hoursRemaining,
+      minutesRemaining,
+      isExpired,
+      formatted: isExpired ? '2-day deadline passed' : `${hoursRemaining}h ${minutesRemaining}m remaining`
+    };
+  };
 
   if (loading || authLoading) {
     return (
@@ -618,34 +633,49 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Correction Requests */}
+        {/* Correction & Redo Requests */}
         {correctionRequests.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="mb-6 rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm p-5">
+            className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/5 backdrop-blur-sm p-5 shadow-xs">
             <div className="flex items-center justify-between gap-4 mb-4">
               <div>
-                <h2 className="text-lg font-heading font-bold">Corrections Requested</h2>
-                <p className="text-xs text-muted-foreground">Submissions needing your revised work.</p>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-heading font-bold text-foreground">Corrections &amp; Redos Needed</h2>
+                  <Badge className="bg-amber-500 text-black font-bold text-[10px]">{correctionRequests.length}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">Please review the reviewer feedback and submit your corrected revision within the 2-day deadline.</p>
               </div>
             </div>
             <div className="grid gap-3">
-              {correctionRequests.map((submission) => (
-                <div key={submission.id} className="rounded-2xl border border-border/50 bg-background/80 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold">{submission.project_name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">{submission.client_ref ? `Client: ${ submission.client_ref } ` : 'Client not specified'}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Status: <span className="font-semibold">Correction Requested</span>
-                    </p>
-                    {submission.rejection_reason && (
-                      <p className="text-[11px] text-amber-500 mt-1">Feedback: {submission.rejection_reason}</p>
-                    )}
+              {correctionRequests.map((submission) => {
+                const deadline = getDeadlineInfo(submission);
+                const isRejected = submission.status === 'rejected' || submission.status === 'client_rejected';
+                return (
+                  <div key={submission.id} className="rounded-2xl border border-border/60 bg-card/90 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-xs">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-bold text-foreground">{submission.project_name}</p>
+                        <Badge variant="outline" className={`text-[10px] font-semibold ${isRejected ? 'border-red-500/50 text-red-500 bg-red-500/10' : 'border-amber-500/50 text-amber-500 bg-amber-500/10'}`}>
+                          {isRejected ? 'Redo Required' : 'Correction Needed'}
+                        </Badge>
+                        <Badge variant="outline" className={`text-[10px] font-mono gap-1 ${deadline.isExpired ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-amber-500 text-amber-500 bg-amber-500/10'}`}>
+                          <Clock className="w-3 h-3" /> 2-Day Deadline: {deadline.formatted}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{submission.client_ref ? `Client: ${submission.client_ref}` : 'Internal Milestone'}</p>
+                      {submission.rejection_reason && (
+                        <div className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 mt-1">
+                          <span className="font-bold">Reviewer Note:</span> {submission.rejection_reason}
+                        </div>
+                      )}
+                    </div>
+                    <Button size="sm" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-black font-bold shrink-0 gap-1.5" onClick={() => navigate(getCorrectionLink(submission))}>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Submit Correction
+                    </Button>
                   </div>
-                  <Button size="sm" variant="outline" className="w-full md:w-auto" onClick={() => navigate(getCorrectionLink(submission))}>
-                    Submit Correction
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}

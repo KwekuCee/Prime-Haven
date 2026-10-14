@@ -70,7 +70,7 @@ const SubmitWork = () => {
   const [availableJobs, setAvailableJobs] = useState<JobOption[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [startedProject, setStartedProject] = useState<{ jobId: string; title: string } | null>(null);
-  const [parentSubmission, setParentSubmission] = useState<{ ph_approved: boolean } | null>(null);
+  const [parentSubmission, setParentSubmission] = useState<any>(null);
   const [clientProjectIds, setClientProjectIds] = useState<string[]>([]);
 
   const correctionId = searchParams.get('correction');
@@ -87,14 +87,14 @@ const SubmitWork = () => {
 
   // Check if user has a started project
   useEffect(() => {
-    if (user) {
+    if (user && !correctionId) {
       const stored = localStorage.getItem(`started_project_${user.id}`);
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
           setStartedProject(parsed);
           // Auto-select the started project in the dropdown
-          if (parsed?.jobId && !correctionId) {
+          if (parsed?.jobId) {
             setFormData(prev => ({ ...prev, selectedJobId: parsed.jobId, projectName: prev.projectName || parsed.title || '' }));
           }
         } catch { }
@@ -166,17 +166,32 @@ const SubmitWork = () => {
           category: o.service_type
         }));
 
-        const data = [...availableCP, ...availableJC, ...availableLegacy];
+        let data = [...availableCP, ...availableJC, ...availableLegacy];
+
+        // If in correction mode, inject parent job option if available
+        if (correctionId) {
+          const correctionName = correctionProject ? decodeURIComponent(correctionProject) : 'Correction Task';
+          data = [
+            {
+              id: correctionId,
+              title: `${correctionName} (Revision)`,
+              client_name: correctionClient ? decodeURIComponent(correctionClient) : null,
+              category: correctionService || 'logo',
+            },
+            ...data
+          ];
+        }
+
         setAvailableJobs(data as JobOption[]);
         setClientProjectIds(availableCP.map((p: any) => p.id));
 
         // Auto-select job for corrections
-        if (correctionId && correctionClient) {
-          const decodedClient = decodeURIComponent(correctionClient);
-          const matchingJob = data.find(j => j.client_name === decodedClient || j.title.includes(decodedClient));
-          if (matchingJob) {
-            setFormData(prev => ({ ...prev, selectedJobId: matchingJob.id, clientReference: decodedClient }));
-          }
+        if (correctionId) {
+          setFormData(prev => ({
+            ...prev,
+            selectedJobId: correctionId,
+            clientReference: correctionClient ? decodeURIComponent(correctionClient) : prev.clientReference,
+          }));
         }
       } catch (err) { console.error('Error loading jobs:', err); }
       finally { setJobsLoading(false); }
@@ -186,23 +201,39 @@ const SubmitWork = () => {
     if (correctionId) {
       const loadCorrectionParent = async () => {
         try {
-          const { data, error } = await supabase.from('submissions').select('ph_approved').eq('id', correctionId).maybeSingle();
-          if (!error && data) setParentSubmission(data as { ph_approved: boolean });
+          const { data, error } = await supabase
+            .from('submissions')
+            .select('*')
+            .eq('id', correctionId)
+            .maybeSingle();
+          if (!error && data) {
+            setParentSubmission(data);
+            setFormData(prev => ({
+              ...prev,
+              projectName: prev.projectName || `${data.project_name || 'Project'} (CR)`,
+              clientReference: prev.clientReference || data.client_ref || '',
+              serviceType: prev.serviceType || data.service_type || 'logo',
+              selectedJobId: data.client_project_id || correctionId,
+            }));
+          }
         } catch (err) {
           console.error('Error loading parent submission:', err);
         }
       };
       loadCorrectionParent();
     }
-  }, [user, correctionId, correctionClient]);
+  }, [user, correctionId, correctionClient, correctionProject, correctionService]);
 
   useEffect(() => {
     if (correctionId) {
       setFormData(prev => ({
         ...prev,
-        projectName: correctionProject ? `${decodeURIComponent(correctionProject)}(CR)` : prev.projectName,
+        projectName: correctionProject
+          ? (decodeURIComponent(correctionProject).endsWith('(CR)') ? decodeURIComponent(correctionProject) : `${decodeURIComponent(correctionProject)} (CR)`)
+          : prev.projectName,
         clientReference: correctionClient ? decodeURIComponent(correctionClient) : prev.clientReference,
         serviceType: correctionService || prev.serviceType,
+        selectedJobId: prev.selectedJobId || correctionId,
       }));
     }
   }, [correctionId, correctionProject, correctionClient, correctionService]);
@@ -213,7 +244,7 @@ const SubmitWork = () => {
 
   const handleJobSelect = (jobId: string) => {
     // If there's a started project, only allow selecting that project
-    if (startedProject && startedProject.jobId && jobId !== startedProject.jobId) {
+    if (!correctionId && startedProject && startedProject.jobId && jobId !== startedProject.jobId) {
       toast({
         title: "Project Already Started",
         description: `You must submit your work for "${startedProject.title}" before starting another project.`,
@@ -226,8 +257,6 @@ const SubmitWork = () => {
   };
 
   const isLinkOnlyService = formData.serviceType === 'uiux' || formData.serviceType === 'web';
-
-  // DropZoneUpload handles files now
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,7 +277,7 @@ const SubmitWork = () => {
     const hasLink = isLinkOnlyService && formData.designLink.trim();
     if (!isLinkOnlyService && successfulUploads.length === 0) { toast({ title: "Files required", variant: "destructive" }); return; }
     if (isLinkOnlyService && successfulUploads.length === 0 && !hasLink) { toast({ title: "Files or link required", variant: "destructive" }); return; }
-    if (!formData.selectedJobId && !formData.clientReference.trim()) { toast({ title: "Job selection required", variant: "destructive" }); return; }
+    if (!correctionId && !formData.selectedJobId && !formData.clientReference.trim()) { toast({ title: "Job selection required", variant: "destructive" }); return; }
 
     setLoading(true);
     try {
@@ -260,34 +289,71 @@ const SubmitWork = () => {
         client_ref: formData.clientReference.trim(),
         files_urls: fileUrls,
         submission_date: new Date().toISOString(),
-        // The client is the only approver — every delivery starts awaiting client review
+        // Awaiting QA & client review
         status: 'pending',
         points_awarded: 0,
         revisions_count: 0,
         client_preference: false,
         ...((isLinkOnlyService && formData.designLink.trim()) ? { design_link: formData.designLink.trim() } : {}),
       };
-      if (correctionId) submissionData.parent_submission_id = correctionId;
-      // Link the delivery to the client project so the client can review it in their portal
+
+      if (correctionId) {
+        submissionData.parent_submission_id = correctionId;
+      }
+
+      // Link delivery to client project
       if (formData.selectedJobId && clientProjectIds.includes(formData.selectedJobId)) {
         submissionData.client_project_id = formData.selectedJobId;
+      } else if (parentSubmission?.client_project_id) {
+        submissionData.client_project_id = parentSubmission.client_project_id;
       }
+
       const { error } = await supabase.from('submissions').insert([submissionData]);
       if (error) throw error;
 
-      // Reset the user's active contract state so they can claim new jobs
-      if (formData.selectedJobId) {
-        const { error: workflowError } = await (supabase as any).rpc('submit_job_contract_work', { p_contract_id: formData.selectedJobId });
-        if (workflowError) throw workflowError;
+      // Update parent submission to show revision has been submitted
+      if (correctionId) {
+        try {
+          await supabase.from('submissions').update({
+            status: 'revision_submitted',
+            updated_at: new Date().toISOString()
+          } as any).eq('id', correctionId);
+        } catch (subErr) {
+          console.warn('Could not update parent submission status:', subErr);
+        }
       }
 
-      try { await supabase.functions.invoke('notify-designer', { body: { designerId: user.id, projectName: formData.projectName.trim(), notificationType: 'new_submission', serviceType: formData.serviceType } }); } catch { }
+      // Reset the user's active contract state only for original jobs
+      if (formData.selectedJobId && !correctionId) {
+        try {
+          await (supabase as any).rpc('submit_job_contract_work', { p_contract_id: formData.selectedJobId });
+        } catch (workflowError) {
+          console.warn('submit_job_contract_work info:', workflowError);
+        }
+      }
+
+      try {
+        await supabase.functions.invoke('notify-designer', {
+          body: {
+            designerId: user.id,
+            projectName: formData.projectName.trim(),
+            notificationType: correctionId ? 'new_submission' : 'new_submission',
+            serviceType: formData.serviceType,
+            correctionNote: correctionId ? 'Correction revision submitted for QA review' : undefined,
+          }
+        });
+      } catch { }
 
       // Clear local started project state and remove submitted job from dropdown
       if (user) localStorage.removeItem(`started_project_${user.id}`);
       setAvailableJobs(prev => prev.filter(j => j.id !== formData.selectedJobId));
 
-      toast({ title: "Submission successful!", description: "Sent to the client for review. Your points and earnings are released once they approve." });
+      toast({
+        title: correctionId ? "Correction submitted!" : "Submission successful!",
+        description: correctionId
+          ? "Sent to QA and client for review. Tagged as correction."
+          : "Sent to the client for review. Your points and earnings are released once they approve."
+      });
       uploadedFiles.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview); });
       navigate('/dashboard');
     } catch (error: any) {
@@ -304,6 +370,32 @@ const SubmitWork = () => {
     <DashboardLayout>
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">
         <TalentCooldownBanner cooldownUntil={cooldownUntil} cooldownReason={cooldownReason} />
+
+        {correctionId && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3.5 shadow-xs"
+          >
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+              <Upload className="w-4 h-4" />
+            </div>
+            <div className="space-y-1 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-amber-500 text-black font-bold text-[10px] tracking-wider uppercase">Correction Revision</Badge>
+                <span className="text-xs font-semibold text-foreground">{formData.projectName}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                You are submitting your corrected work. This submission will automatically be prioritized and tagged as a <strong>Correction</strong> in the QA Review Queue.
+              </p>
+              {parentSubmission?.rejection_reason && (
+                <div className="mt-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/25">
+                  <span className="font-bold">Reviewer Feedback:</span> {parentSubmission.rejection_reason}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
@@ -334,25 +426,32 @@ const SubmitWork = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">Job Contract *</Label>
-                      <Select value={formData.selectedJobId} onValueChange={handleJobSelect}>
-                        <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40">
-                          <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            // If a project has been started, only show that one
-                            const visibleJobs = (startedProject && !correctionId)
-                              ? availableJobs.filter(j => j.id === startedProject.jobId)
-                              : availableJobs;
-                            if (visibleJobs.length === 0 && !jobsLoading) {
-                              return <SelectItem value="none" disabled>{startedProject ? 'Started project not found in active list' : 'No active jobs — start one first'}</SelectItem>;
-                            }
-                            return visibleJobs.map(job => (
-                              <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name} ` : ''}{correctionId ? ' (CR)' : ''}</SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
+                      {correctionId ? (
+                        <div className="mt-1.5 h-9 px-3 rounded-md bg-muted/20 border border-border/40 flex items-center justify-between text-xs font-medium">
+                          <span className="truncate">{formData.projectName || 'Selected Revision'}</span>
+                          <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-amber-500 border-amber-500/30">Correction</Badge>
+                        </div>
+                      ) : (
+                        <Select value={formData.selectedJobId} onValueChange={handleJobSelect}>
+                          <SelectTrigger className="mt-1.5 h-9 text-xs bg-muted/20 border-border/40">
+                            <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(() => {
+                              // If a project has been started, only show that one
+                              const visibleJobs = (startedProject && !correctionId)
+                                ? availableJobs.filter(j => j.id === startedProject.jobId)
+                                : availableJobs;
+                              if (visibleJobs.length === 0 && !jobsLoading) {
+                                return <SelectItem value="none" disabled>{startedProject ? 'Started project not found in active list' : 'No active jobs — start one first'}</SelectItem>;
+                              }
+                              return visibleJobs.map(job => (
+                                <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name} ` : ''}</SelectItem>
+                              ));
+                            })()}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                     <div>
                       <Label className="text-xs">Deadline (Optional)</Label>

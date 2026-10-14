@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchSystemSettings } from '@/lib/systemSettings';
+import { recalculateSalaries } from '@/lib/recalculateSalaries';
 import { useAuth } from '@/hooks/useAuth';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
@@ -153,6 +154,7 @@ const QADashboard = () => {
                 await supabase.from('system_logs').insert({ action_type: 'client_acceptance', admin_id: user.id, description: `[QA Global] Client accepted: ${submission.project_name} (+${clientPoints} pts)`, timestamp: new Date().toISOString() });
             }
 
+            await recalculateSalaries();
             toast({ title: 'Client Accepted', description: `+${clientPoints} additional points!` });
             await loadData();
         } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
@@ -161,9 +163,34 @@ const QADashboard = () => {
     const handleRejectSubmission = async () => {
         if (!rejectSubmission || !rejectionReason.trim()) return;
         try {
-            await supabase.from('submissions').update({ status: 'rejected', rejection_reason: rejectionReason.trim(), updated_at: new Date().toISOString() } as any).eq('id', rejectSubmission.id);
-            if (user) { await supabase.from('system_logs').insert({ action_type: 'submission_rejected', admin_id: user.id, description: `[QA Global] Rejected: ${rejectSubmission.project_name}`, timestamp: new Date().toISOString() }); }
-            toast({ title: 'Rejected' });
+            await supabase.from('submissions').update({
+                status: 'rejected',
+                rejection_reason: rejectionReason.trim(),
+                updated_at: new Date().toISOString()
+            } as any).eq('id', rejectSubmission.id);
+
+            // Notify designer with 2-day redo instruction
+            try {
+                await supabase.functions.invoke('notify-designer', {
+                    body: {
+                        designerId: rejectSubmission.designer_id,
+                        projectName: rejectSubmission.project_name,
+                        notificationType: 'correction_requested',
+                        serviceType: rejectSubmission.service_type,
+                        correctionNote: `${rejectionReason.trim()} (Please redo and submit your revision within 2 days)`,
+                    }
+                });
+            } catch {}
+
+            if (user) {
+                await supabase.from('system_logs').insert({
+                    action_type: 'submission_rejected',
+                    admin_id: user.id,
+                    description: `[QA Global] Rejected: ${rejectSubmission.project_name} — 2-day redo assigned: ${rejectionReason.trim()}`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            toast({ title: 'Marked for Redo', description: 'Designer notified to redo and submit correction within 2 days.' });
             setRejectSubmission(null); setRejectionReason('');
             await loadData();
         } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
@@ -172,9 +199,33 @@ const QADashboard = () => {
     const handleClientRejection = async () => {
         if (!clientRejectSubmission || !clientRejectionReason.trim()) return;
         try {
-            await supabase.from('submissions').update({ status: 'client_rejected', rejection_reason: clientRejectionReason.trim(), updated_at: new Date().toISOString() } as any).eq('id', clientRejectSubmission.id);
-            if (user) { await supabase.from('system_logs').insert({ action_type: 'client_rejected', admin_id: user.id, description: `[QA Global] Client rejected: ${clientRejectSubmission.project_name}`, timestamp: new Date().toISOString() }); }
-            toast({ title: 'Client Rejected', description: 'Points retained.' });
+            await supabase.from('submissions').update({
+                status: 'client_rejected',
+                rejection_reason: clientRejectionReason.trim(),
+                updated_at: new Date().toISOString()
+            } as any).eq('id', clientRejectSubmission.id);
+
+            try {
+                await supabase.functions.invoke('notify-designer', {
+                    body: {
+                        designerId: clientRejectSubmission.designer_id,
+                        projectName: clientRejectSubmission.project_name,
+                        notificationType: 'client_rejected',
+                        serviceType: clientRejectSubmission.service_type,
+                        correctionNote: `${clientRejectionReason.trim()} (Please redo and submit within 2 days)`,
+                    }
+                });
+            } catch {}
+
+            if (user) {
+                await supabase.from('system_logs').insert({
+                    action_type: 'client_rejected',
+                    admin_id: user.id,
+                    description: `[QA Global] Client rejected: ${clientRejectSubmission.project_name}`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            toast({ title: 'Client Rejected', description: 'Points retained. Designer notified to redo.' });
             setClientRejectSubmission(null); setClientRejectionReason('');
             await loadData();
         } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
@@ -187,9 +238,33 @@ const QADashboard = () => {
             return;
         }
         try {
-            await supabase.from('submissions').update({ status: 'correction_requested', rejection_reason: correctionNote.trim(), updated_at: new Date().toISOString() } as any).eq('id', correctionRequestSubmission.id);
-            if (user) { await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `[QA Global] Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() }); }
-            toast({ title: 'Correction Requested', description: 'Designer notified.' });
+            await supabase.from('submissions').update({
+                status: 'correction_requested',
+                rejection_reason: correctionNote.trim(),
+                updated_at: new Date().toISOString()
+            } as any).eq('id', correctionRequestSubmission.id);
+
+            try {
+                await supabase.functions.invoke('notify-designer', {
+                    body: {
+                        designerId: correctionRequestSubmission.designer_id,
+                        projectName: correctionRequestSubmission.project_name,
+                        notificationType: 'correction_requested',
+                        serviceType: correctionRequestSubmission.service_type,
+                        correctionNote: `${correctionNote.trim()} (Please submit revision within 2 days)`,
+                    }
+                });
+            } catch {}
+
+            if (user) {
+                await supabase.from('system_logs').insert({
+                    action_type: 'correction_requested',
+                    admin_id: user.id,
+                    description: `[QA Global] Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            toast({ title: 'Correction Requested', description: 'Designer notified to submit revision within 2 days.' });
             setCorrectionRequestSubmission(null); setCorrectionNote('');
             await loadData();
         } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
@@ -218,6 +293,7 @@ const QADashboard = () => {
             if (user) {
                 await supabase.from('system_logs').insert({ action_type: 'submission_revoked', admin_id: user.id, description: `[QA Global] Revoked submission: ${submission.project_name} (−${pointsToRevoke} pts from ${submission.designer_name})`, timestamp: new Date().toISOString() });
             }
+            await recalculateSalaries();
             toast({ title: 'Submission Revoked', description: `${pointsToRevoke} points deducted.` });
             await loadData();
         } catch (error: any) { toast({ title: 'Revoke Failed', description: error.message, variant: 'destructive' }); }
@@ -260,7 +336,8 @@ const QADashboard = () => {
         let filtered = submissions;
         if (selectedService !== 'all') filtered = filtered.filter(s => s.service_type === selectedService);
         if (selectedStatus !== 'all') {
-            if (selectedStatus === 'pending') filtered = filtered.filter(s => !s.ph_approved && s.status !== 'rejected');
+            if (selectedStatus === 'corrections') filtered = filtered.filter(s => !!s.parent_submission_id);
+            else if (selectedStatus === 'pending') filtered = filtered.filter(s => !s.ph_approved && s.status !== 'rejected');
             else if (selectedStatus === 'ph_approved') filtered = filtered.filter(s => s.ph_approved && !s.client_accepted);
             else if (selectedStatus === 'approved') filtered = filtered.filter(s => s.client_accepted);
             else filtered = filtered.filter(s => s.status === selectedStatus);
@@ -353,6 +430,7 @@ const QADashboard = () => {
                                 <SelectTrigger className="h-8 text-sm w-full sm:w-36 bg-card/50"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Stages</SelectItem>
+                                    <SelectItem value="corrections">Corrections</SelectItem>
                                     <SelectItem value="pending">Pending QA</SelectItem>
                                     <SelectItem value="ph_approved">Awaiting Client</SelectItem>
                                     <SelectItem value="approved">Approved</SelectItem>
@@ -384,8 +462,14 @@ const QADashboard = () => {
                                     {filteredSubmissions.length > 0 ? filteredSubmissions.map((s: any) => (
                                         <TableRow key={s.id} className="border-border/30">
                                             <TableCell className="font-semibold text-sm">
-                                                {s.project_name}
-                                                {s.parent_submission_id && <Badge variant="outline" className="ml-2 text-[10px] bg-red-500/10 text-red-500">Correction</Badge>}
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span>{s.project_name}</span>
+                                                    {s.parent_submission_id && (
+                                                        <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-500 border-amber-500/40 font-bold tracking-wider uppercase">
+                                                            Correction
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <p className="font-semibold text-sm">{s.designer_name}</p>

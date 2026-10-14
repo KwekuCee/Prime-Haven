@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchSystemSettings } from '@/lib/systemSettings';
+import { recalculateSalaries } from '@/lib/recalculateSalaries';
 import { useAuth } from '@/hooks/useAuth';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
@@ -112,6 +113,7 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
               p_dept_label: config.deptLabel,
           });
           if (error) throw error;
+          await recalculateSalaries();
           toast({ title: 'Marked Completed', description: points > 0 ? `+${points} points awarded.` : 'Project closed out.' });
           await loadData();
       } catch (error: any) {
@@ -126,6 +128,7 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
         p_submission_id: submissionId, p_points: clientPoints, p_dept_label: config.deptLabel,
       });
       if (error) throw error;
+      await recalculateSalaries();
       toast({ title: 'Client Accepted', description: `+${data?.points ?? 0} additional points!` });
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
@@ -172,6 +175,7 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
         p_submission_id: submissionId, p_dept_label: config.deptLabel,
       });
       if (error) throw error;
+      await recalculateSalaries();
       toast({ title: 'Revoked', description: `${data?.points_revoked ?? 0} points deducted.` });
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
@@ -184,6 +188,7 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
       if (selectedStatus === 'pending') filtered = filtered.filter((s: any) => !s.ph_approved && s.status !== 'rejected');
       else if (selectedStatus === 'ph_approved') filtered = filtered.filter((s: any) => s.ph_approved && !s.client_accepted);
       else if (selectedStatus === 'approved') filtered = filtered.filter((s: any) => s.client_accepted);
+      else if (selectedStatus === 'corrections') filtered = filtered.filter((s: any) => !!s.parent_submission_id || ['correction_requested', 'revision_submitted'].includes(s.status));
       else filtered = filtered.filter((s: any) => s.status === selectedStatus);
     }
     if (searchQuery) {
@@ -256,6 +261,7 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
                   <SelectItem value="pending">Awaiting review</SelectItem>
                   <SelectItem value="ph_approved">With client</SelectItem>
                   <SelectItem value="approved">Completed</SelectItem>
+                  <SelectItem value="corrections">Corrections</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -277,7 +283,16 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
                 <TableBody>
                   {filteredSubmissions.length > 0 ? filteredSubmissions.map((s: any) => (
                     <TableRow key={s.id} className="border-border/30">
-                      <TableCell className="font-semibold">{s.project_name}</TableCell>
+                      <TableCell className="font-semibold">
+                        <div className="flex items-center gap-2">
+                          <span>{s.project_name}</span>
+                          {s.parent_submission_id && (
+                            <Badge className="bg-amber-500/20 text-amber-500 border border-amber-500/40 text-[10px] font-bold">
+                              Correction
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <p className="font-semibold text-sm">{s.designer_name}</p>
                         <p className="text-[10px] text-muted-foreground">{s.designer_email}</p>

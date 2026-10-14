@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { loadPlatformRevenue } from '@/lib/platformRevenue';
+import { recalculateSalaries } from '@/lib/recalculateSalaries';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -274,6 +275,7 @@ const SuperAdminDashboard = () => {
     avgApprovalTime: 0
   });
   const [revenueBreakdown, setRevenueBreakdown] = useState({ clients: 0, fees: 0 });
+  const [categoryRevenue, setCategoryRevenue] = useState({ graphic: 0, uiux: 0, web: 0, total: 0 });
   const [users, setUsers] = useState<User[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -317,143 +319,9 @@ const SuperAdminDashboard = () => {
   const handleRecalculateSalaries = async () => {
     try {
       setIsRecalculatingSalaries(true);
-
-      // Load current revenue settings
-      const { data: settingsData } = await supabase
-        .from('system_settings')
-        .select('key, value')
-        .in('key', ['monthly_revenue_by_category', 'revenue_share_percentage', 'monthly_revenue']);
-
-      const settings: Record<string, any> = {};
-      (settingsData || []).forEach((s: { key: string; value: any }) => { settings[s.key] = s.value; });
-
-      // Use category breakdown if available, otherwise fall back to total monthly revenue
-      let graphicAmt = 0, uiuxAmt = 0, webAmt = 0;
-      const categoryRevenue = settings.monthly_revenue_by_category;
-      if (categoryRevenue && (Number(categoryRevenue.graphic || 0) > 0 || Number(categoryRevenue.uiux || 0) > 0 || Number(categoryRevenue.web || 0) > 0)) {
-        graphicAmt = Number(categoryRevenue.graphic || 0);
-        uiuxAmt = Number(categoryRevenue.uiux || 0);
-        webAmt = Number(categoryRevenue.web || 0);
-      } else {
-        // Fallback: use total monthly_revenue as the graphic design pool
-        const totalRevenue = Number(settings.monthly_revenue?.amount || 0);
-        graphicAmt = totalRevenue;
-      }
-      const revenueShare = settings.revenue_share_percentage?.value || 50;
-      const shareRatio = revenueShare / 100;
       const nowIso = new Date().toISOString();
 
-      const { data: allDesigners } = await (supabase as any)
-        .from('designer_details')
-        .select('user_id, monthly_points, professional_title');
-
-      // Only fetch current month's approved submissions for salary calculation
-      const now = new Date();
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { data: allSubmissions } = await (supabase as any)
-        .from('submissions')
-        .select('designer_id, service_type, points_awarded')
-        .in('status', ['ph_approved', 'approved'])
-        .gte('created_at', firstOfMonth);
-
-      if (allDesigners && allSubmissions) {
-        const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
-
-        // Separate web developers from other designers
-        const webDevIds = new Set(
-          (allDesigners as any[] || [])
-            .filter((d: DesignerDetailsRaw) => {
-              const cat = normalizeCategory(d.professional_title ?? null);
-              return cat === 'Web Developer';
-            })
-            .map((d: DesignerDetailsRaw) => d.user_id)
-        );
-
-        // Non-web designers with monthly points > 0 are eligible for points-based salary
-        const eligibleDesignerIds = new Set(
-          (allDesigners as any[] || [])
-            .filter((d: DesignerDetailsRaw) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
-            .map((d: DesignerDetailsRaw) => d.user_id)
-        );
-
-        const designerCategoryPoints: Record<string, { graphic: number; uiux: number }> = {};
-        (allDesigners as any[] || []).forEach((d: DesignerDetailsRaw) => {
-          if (!webDevIds.has(d.user_id)) {
-            designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0 };
-          }
-        });
-
-        // Count web dev submissions per developer for revenue split
-        const webDevSubmissions: Record<string, number> = {};
-        let totalWebDevSubmissions = 0;
-
-        (allSubmissions as any[] || []).forEach((s: SubmissionRaw) => {
-          if (s.service_type === 'web' && webDevIds.has(s.designer_id)) {
-            webDevSubmissions[s.designer_id] = (webDevSubmissions[s.designer_id] || 0) + 1;
-            totalWebDevSubmissions++;
-            return;
-          }
-
-          if (!eligibleDesignerIds.has(s.designer_id)) return;
-          const pts = Number(s.points_awarded || 0);
-          if (pts <= 0) return;
-          if (graphicTypes.includes(s.service_type || '')) designerCategoryPoints[s.designer_id].graphic += pts;
-          else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
-        });
-
-        // Use "current points" (monthly_points) as the weight, but split by submission ratio
-        const designersEffectivePoints: Record<string, { graphic: number; uiux: number }> = {};
-        const effectiveTotals = { graphic: 0, uiux: 0 };
-
-        (allDesigners as any[] || []).forEach((d: DesignerDetailsRaw) => {
-          if (webDevIds.has(d.user_id)) return;
-
-          const totalMonthlyPts = Number(d.monthly_points || 0);
-          if (totalMonthlyPts <= 0) return;
-
-          const subPts = designerCategoryPoints[d.user_id] || { graphic: 0, uiux: 0 };
-          const subTotal = subPts.graphic + subPts.uiux;
-
-          let effectiveG = 0;
-          let effectiveU = 0;
-
-          if (subTotal > 0) {
-            effectiveG = (subPts.graphic / subTotal) * totalMonthlyPts;
-            effectiveU = (subPts.uiux / subTotal) * totalMonthlyPts;
-          } else {
-            // No submissions but has points (gift points?) -> assign to primary category
-            const cat = normalizeCategory(d.professional_title ?? null);
-            if (cat === 'UI/UX Designer') effectiveU = totalMonthlyPts;
-            else effectiveG = totalMonthlyPts;
-          }
-
-          designersEffectivePoints[d.user_id] = { graphic: effectiveG, uiux: effectiveU };
-          effectiveTotals.graphic += effectiveG;
-          effectiveTotals.uiux += effectiveU;
-        });
-
-        await Promise.all(
-          (allDesigners as any[]).map((designer: any) => {
-            // Web developers: 60% of web revenue split by their submissions
-            if (webDevIds.has(designer.user_id)) {
-              const devSubs = webDevSubmissions[designer.user_id] || 0;
-              const webSalary = totalWebDevSubmissions > 0 ? (devSubs / totalWebDevSubmissions) * (webAmt * 0.6) : 0;
-              const safeSalary = Number.isFinite(webSalary) && webSalary > 0 ? Number(webSalary.toFixed(2)) : 0;
-              return (supabase as any).from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
-            }
-
-            const ep = designersEffectivePoints[designer.user_id] || { graphic: 0, uiux: 0 };
-            const graphicSalary = effectiveTotals.graphic > 0 ? (ep.graphic / effectiveTotals.graphic) * (graphicAmt * shareRatio) : 0;
-            const uiuxSalary = effectiveTotals.uiux > 0 ? (ep.uiux / effectiveTotals.uiux) * (uiuxAmt * shareRatio) : 0;
-            const totalSalary = graphicSalary + uiuxSalary;
-            const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
-            return (supabase as any).from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
-          })
-        );
-
-        // Hard guard for non-web designers with no points
-        await (supabase as any).from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
-      }
+      await recalculateSalaries();
 
       if (user) {
         await supabase.from('system_logs').insert({
@@ -653,6 +521,9 @@ const SuperAdminDashboard = () => {
       const feeRevenue = revenue?.feeRevenue || 0;
       const clientRevenueGhs = revenue?.clientRevenueGhs || 0;
       setRevenueBreakdown({ clients: clientRevenueGhs, fees: feeRevenue });
+      if (revenue?.categoryRevenue) {
+        setCategoryRevenue(revenue.categoryRevenue);
+      }
       const totalRevenue = revenue?.grossRevenue || 0;
 
       const conversionRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
@@ -808,6 +679,7 @@ const SuperAdminDashboard = () => {
             })
             .eq('user_id', submission.designer_id);
         }
+        await recalculateSalaries();
       }
 
       // Log the action
@@ -896,6 +768,7 @@ const SuperAdminDashboard = () => {
             updated_at: new Date().toISOString()
           })
           .eq('user_id', submission.designer_id);
+        await recalculateSalaries();
       }
 
       // Log the action
@@ -1045,110 +918,8 @@ const SuperAdminDashboard = () => {
 
       setSystemSettings(prev => ({ ...prev, monthly_revenue: revenueData, monthly_revenue_by_category: categoryData, usd_to_ghs_rate: rateAmount }));
 
-      // Recalculate salaries by category (web devs get 60% of web revenue)
-      const revenueShare = systemSettings.revenue_share_percentage?.value || 50;
-      const shareRatio = revenueShare / 100;
-      const nowIso = new Date().toISOString();
-
-      const { data: allDesigners } = await supabase
-        .from('designer_details')
-        .select('user_id, monthly_points, professional_title');
-
-      const { data: allSubmissions } = await supabase
-        .from('submissions')
-        .select('designer_id, service_type, points_awarded')
-        .in('status', ['ph_approved', 'approved']);
-
-      if (allDesigners && allSubmissions) {
-        const graphicTypes = ['logo', 'branding', 'print', 'flyer'];
-
-        const webDevIds = new Set(
-          allDesigners
-            .filter((d: any) => normalizeCategory(d.professional_title) === 'Web Developer')
-            .map((d: any) => d.user_id)
-        );
-
-        const eligibleDesignerIds = new Set(
-          allDesigners
-            .filter((d: any) => Number(d.monthly_points || 0) > 0 && !webDevIds.has(d.user_id))
-            .map((d: any) => d.user_id)
-        );
-
-        const designerCategoryPoints: Record<string, { graphic: number; uiux: number }> = {};
-        allDesigners.forEach((d: any) => {
-          if (!webDevIds.has(d.user_id)) {
-            designerCategoryPoints[d.user_id] = { graphic: 0, uiux: 0 };
-          }
-        });
-
-        const webDevSubmissions: Record<string, number> = {};
-        let totalWebDevSubmissions = 0;
-
-        allSubmissions.forEach((s: any) => {
-          if (s.service_type === 'web' && webDevIds.has(s.designer_id)) {
-            webDevSubmissions[s.designer_id] = (webDevSubmissions[s.designer_id] || 0) + 1;
-            totalWebDevSubmissions++;
-            return;
-          }
-          if (!eligibleDesignerIds.has(s.designer_id)) return;
-          const pts = Number(s.points_awarded || 0);
-          if (pts <= 0) return;
-          if (graphicTypes.includes(s.service_type)) designerCategoryPoints[s.designer_id].graphic += pts;
-          else if (s.service_type === 'uiux') designerCategoryPoints[s.designer_id].uiux += pts;
-        });
-
-        // Use "current points" (monthly_points) as the weight, but split by submission ratio
-        const designersEffectivePoints: Record<string, { graphic: number; uiux: number }> = {};
-        const effectiveTotals = { graphic: 0, uiux: 0 };
-
-        allDesigners.forEach((d: any) => {
-          if (webDevIds.has(d.user_id)) return;
-
-          const totalMonthlyPts = Number(d.monthly_points || 0);
-          if (totalMonthlyPts <= 0) return;
-
-          const subPts = designerCategoryPoints[d.user_id] || { graphic: 0, uiux: 0 };
-          const subTotal = subPts.graphic + subPts.uiux;
-
-          let effectiveG = 0;
-          let effectiveU = 0;
-
-          if (subTotal > 0) {
-            effectiveG = (subPts.graphic / subTotal) * totalMonthlyPts;
-            effectiveU = (subPts.uiux / subTotal) * totalMonthlyPts;
-          } else {
-            // No submissions but has points (gift points?) -> assign to primary category
-            const cat = normalizeCategory(d.professional_title ?? null);
-            if (cat === 'UI/UX Designer') effectiveU = totalMonthlyPts;
-            else effectiveG = totalMonthlyPts;
-          }
-
-          designersEffectivePoints[d.user_id] = { graphic: effectiveG, uiux: effectiveU };
-          effectiveTotals.graphic += effectiveG;
-          effectiveTotals.uiux += effectiveU;
-        });
-
-        await Promise.all(
-          allDesigners.map((designer: any) => {
-            if (webDevIds.has(designer.user_id)) {
-              const devSubs = webDevSubmissions[designer.user_id] || 0;
-              const webSalary = totalWebDevSubmissions > 0 ? (devSubs / totalWebDevSubmissions) * (webAmt * 0.6) : 0;
-              const safeSalary = Number.isFinite(webSalary) && webSalary > 0 ? Number(webSalary.toFixed(2)) : 0;
-              return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
-            }
-
-            const ep = designersEffectivePoints[designer.user_id] || { graphic: 0, uiux: 0 };
-            const graphicSalary = effectiveTotals.graphic > 0 ? (ep.graphic / effectiveTotals.graphic) * (graphicAmt * shareRatio) : 0;
-            const uiuxSalary = effectiveTotals.uiux > 0 ? (ep.uiux / effectiveTotals.uiux) * (uiuxAmt * shareRatio) : 0;
-            const totalSalary = graphicSalary + uiuxSalary;
-            const safeSalary = Number.isFinite(totalSalary) && totalSalary > 0 ? Number(totalSalary.toFixed(2)) : 0;
-            return supabase.from('designer_details').update({ salary_estimated: safeSalary, updated_at: nowIso }).eq('user_id', designer.user_id);
-          })
-        );
-
-        // Hard guard
-        await supabase.from('designer_details').update({ salary_estimated: 0, updated_at: nowIso }).or('monthly_points.is.null,monthly_points.lte.0');
-      }
+      // Recalculate salaries by category
+      await recalculateSalaries();
 
       toast({ title: 'Revenue Updated', description: `Total: GH₵${totalAmount.toFixed(2)}. Salaries recalculated by category.` });
       setIsRevenueModalOpen(false);
@@ -1215,6 +986,7 @@ const SuperAdminDashboard = () => {
             monthly_points: Math.max(0, (designerData.monthly_points || 0) - pointsToRevoke),
             updated_at: new Date().toISOString()
           }).eq('user_id', submission.designer_id);
+          await recalculateSalaries();
         }
       }
 
@@ -1370,6 +1142,7 @@ const SuperAdminDashboard = () => {
             updated_at: new Date().toISOString()
           })
           .eq('user_id', giftPointsUser.id);
+        await recalculateSalaries();
       }
 
       if (user) {
@@ -1804,15 +1577,41 @@ const SuperAdminDashboard = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <p className="text-xs text-slate-400 font-medium">Gross Platform Volume</p>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-xs text-slate-400 font-medium">Gross Platform Volume</p>
+                        {categoryRevenue.total > 0 && (
+                          <Badge variant="outline" className="text-[10px] font-mono text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                            Allocated Pool: GH₵{categoryRevenue.total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono tabular-nums text-on-ink">
                         GH₵{(stats.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
 
+                  {/* Profession Revenue Breakdown Strip */}
+                  <div className="mt-4 pt-3 border-t border-slate-800/80">
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-mono mb-2">Profession Allocation</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
+                        <span className="text-[9px] uppercase text-slate-400 font-mono block truncate">Graphic Design</span>
+                        <span className="text-xs font-bold font-mono text-purple-300">GH₵{categoryRevenue.graphic.toLocaleString()}</span>
+                      </div>
+                      <div className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
+                        <span className="text-[9px] uppercase text-slate-400 font-mono block truncate">UI/UX Design</span>
+                        <span className="text-xs font-bold font-mono text-cyan-300">GH₵{categoryRevenue.uiux.toLocaleString()}</span>
+                      </div>
+                      <div className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
+                        <span className="text-[9px] uppercase text-slate-400 font-mono block truncate">Web Dev</span>
+                        <span className="text-xs font-bold font-mono text-emerald-300">GH₵{categoryRevenue.web.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Financial Breakdown & Sparkline Wave */}
-                  <div className="space-y-3 mt-6 pt-4 border-t border-slate-800/80">
+                  <div className="space-y-3 mt-4 pt-3 border-t border-slate-800/80">
                     <div className="grid grid-cols-2 gap-2.5">
                       <div className="bg-white/[0.04] border border-white/5 rounded-2xl p-2.5">
                         <span className="text-[10px] uppercase text-slate-400 font-mono block">Client Escrow</span>
@@ -1997,7 +1796,14 @@ const SuperAdminDashboard = () => {
                   {submissions.slice(0, 5).map(s => (
                     <div key={s.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors">
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-900 truncate">{s.project_name}</div>
+                        <div className="text-sm font-semibold text-slate-900 truncate flex items-center gap-2">
+                          <span>{s.project_name}</span>
+                          {s.parent_submission_id && (
+                            <Badge className="bg-amber-500/20 text-amber-600 border border-amber-500/30 text-[10px] font-bold">
+                              Correction
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-[11px] text-slate-500">{s.designer_name} · {s.service_type}</div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
