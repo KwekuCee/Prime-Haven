@@ -5,6 +5,7 @@ import {
   TrendingUp, Award, Clock, FileCheck, Upload, Wallet, Settings,
   Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap,
   PlayCircle, ArrowUpRight, Flame, Target
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -467,7 +468,7 @@ const Dashboard = () => {
     `/submit-work?correction=${submission.id}&project=${encodeURIComponent(submission.project_name)}&client=${encodeURIComponent(submission.client_ref || '')}&service=${encodeURIComponent(submission.service_type || '')}`;
 
   const getDeadlineInfo = (submission: Submission) => {
-    const baseDate = new Date(submission.updated_at || submission.created_at || Date.now()).getTime();
+    const baseDate = new Date((submission as any).updated_at || submission.created_at || Date.now()).getTime();
     const deadlineDate = baseDate + 48 * 60 * 60 * 1000;
     const msRemaining = deadlineDate - Date.now();
     const hoursRemaining = Math.max(0, Math.floor(msRemaining / (1000 * 60 * 60)));

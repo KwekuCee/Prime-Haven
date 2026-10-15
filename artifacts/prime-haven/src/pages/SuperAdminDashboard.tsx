@@ -186,7 +186,7 @@ interface SystemSettings {
   ph_approval_points: { value: number };
   client_acceptance_points: { value: number };
   revenue_share_percentage: { value: number };
-  monthly_revenue_by_category?: { graphic: number; uiux: number; web: number };
+  monthly_revenue_by_category?: Record<string, number>;
   correction_points?: { value: number } | number;
   usd_to_ghs_rate?: { value: number } | number;
 }
@@ -1649,7 +1649,7 @@ const SuperAdminDashboard = () => {
                       ))}
                       {(!categoryRevenue.services || categoryRevenue.services.filter(i => i.total > 0).length === 0) && (
                         <div className="col-span-full py-2 text-center text-[11px] text-slate-400">
-                          No profession allocations set yet. Click "Configure" to assign revenue.
+                          No completed contracts or gateway payments yet.
                         </div>
                       )}
                     </div>
