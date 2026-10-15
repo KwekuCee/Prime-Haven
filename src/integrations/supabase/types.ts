@@ -441,55 +441,32 @@ export type Database = {
       client_debts: {
         Row: {
           amount_owed: number
-          client_id: string | null
           client_name: string
-          client_phone: string | null
           created_at: string
           id: string
-          korapay_reference: string | null
-          network_provider: string | null
-          paid_at: string | null
           project_name: string | null
           status: string | null
           updated_at: string
         }
         Insert: {
           amount_owed?: number
-          client_id?: string | null
           client_name: string
-          client_phone?: string | null
           created_at?: string
           id?: string
-          korapay_reference?: string | null
-          network_provider?: string | null
-          paid_at?: string | null
           project_name?: string | null
           status?: string | null
           updated_at?: string
         }
         Update: {
           amount_owed?: number
-          client_id?: string | null
           client_name?: string
-          client_phone?: string | null
           created_at?: string
           id?: string
-          korapay_reference?: string | null
-          network_provider?: string | null
-          paid_at?: string | null
           project_name?: string | null
           status?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "client_debts_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       client_orders: {
         Row: {
