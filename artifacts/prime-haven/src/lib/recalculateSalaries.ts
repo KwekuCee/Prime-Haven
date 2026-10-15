@@ -248,6 +248,11 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
   let manualUiux = Number(categoryRevenue.uiux ?? categoryRevenue['ui-ux-design']) || 0;
   let manualWeb = Number(categoryRevenue.web ?? categoryRevenue['web-development']) || 0;
 
+  // Discard old demo numbers (6500 for graphic, 3500 for web, 1200 for mobile)
+  if (manualGraphic === 6500) manualGraphic = 0;
+  if (manualWeb === 3500) manualWeb = 0;
+  if (manualUiux === 1200) manualUiux = 0;
+
   let totalGraphicSalary = 0;
   let totalUiuxSalary = 0;
   let totalWebSalary = 0;

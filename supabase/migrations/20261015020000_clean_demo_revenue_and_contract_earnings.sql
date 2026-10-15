@@ -49,6 +49,26 @@ ALTER TABLE public.job_contracts
   ADD COLUMN IF NOT EXISTS target_professions text[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS budget text DEFAULT '0';
 
+-- Enable RLS and add full admin and viewer policies on job_contracts
+ALTER TABLE public.job_contracts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can view and manage all job contracts" ON public.job_contracts;
+CREATE POLICY "Admins can view and manage all job contracts"
+ON public.job_contracts FOR ALL TO authenticated
+USING (
+  has_role(auth.uid(), 'superadmin'::app_role)
+  OR has_role(auth.uid(), 'masteradmin'::app_role)
+)
+WITH CHECK (
+  has_role(auth.uid(), 'superadmin'::app_role)
+  OR has_role(auth.uid(), 'masteradmin'::app_role)
+);
+
+DROP POLICY IF EXISTS "Authenticated users view open contracts" ON public.job_contracts;
+CREATE POLICY "Authenticated users view open contracts"
+ON public.job_contracts FOR SELECT TO authenticated
+USING (true);
+
 -- ====================================================================
 -- 3. ENSURE job_contract_claims TABLE AND POLICIES
 -- ====================================================================
@@ -135,6 +155,15 @@ WITH CHECK (
 CREATE INDEX IF NOT EXISTS idx_job_earnings_designer ON public.job_earnings(designer_id);
 CREATE INDEX IF NOT EXISTS idx_job_earnings_submission ON public.job_earnings(submission_id);
 CREATE INDEX IF NOT EXISTS idx_job_earnings_project ON public.job_earnings(project_id);
+
+-- Reset leftover estimated salaries in designer_details so no talent sees phantom salary
+UPDATE public.designer_details
+   SET salary_estimated = COALESCE((
+     SELECT SUM(je.amount)
+       FROM public.job_earnings je
+      WHERE je.designer_id = designer_details.user_id
+        AND je.status = 'available'
+   ), 0);
 
 -- ====================================================================
 -- 5. UPDATED admin_client_accept_submission RPC FUNCTION

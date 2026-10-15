@@ -155,8 +155,12 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
 
   CANONICAL_SERVICES.forEach((service) => {
     // Check both slug and legacy key for manual setting
-    // Manual/demo allocations are no longer counted — only real money.
-    const manualAmt = 0;
+    const rawManual = Number(categorySetting[service.slug] ?? categorySetting[service.legacyKey]) || 0;
+    // Discard old demo numbers (6500 for graphic, 3500 for web, 1200 for mobile)
+    const isDemoVal = (service.slug === 'graphic-design' && rawManual === 6500) ||
+                      (service.slug === 'web-development' && rawManual === 3500) ||
+                      (service.slug === 'mobile-app-development' && rawManual === 1200);
+    const manualAmt = isDemoVal ? 0 : rawManual;
     const contractBudget = contractBudgetsByService[service.slug] || 0;
     const clientOrders = clientOrdersByService[service.slug] || 0;
     const total = manualAmt + contractBudget + clientOrders;

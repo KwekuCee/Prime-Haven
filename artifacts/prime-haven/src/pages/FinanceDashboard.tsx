@@ -543,42 +543,39 @@ const FinanceDashboard = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {((categoryRevenue.services && categoryRevenue.services.length > 0)
-                            ? categoryRevenue.services
-                            : CANONICAL_SERVICES.map(s => ({
-                                slug: s.slug,
-                                label: s.label,
-                                total: 0,
-                                manualAllocation: 0,
-                                contractBudget: 0,
-                                clientOrders: 0,
-                              }))
-                        ).map((s: any) => (
-                            <div key={s.slug} className="rounded-lg border border-border/40 bg-card/40 p-3.5 flex flex-col justify-between">
-                                <div>
-                                    <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block truncate" title={s.label}>
-                                        {s.label} Pool
-                                    </span>
-                                    <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
-                                        GH₵ {Number(s.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {categoryRevenue.services && categoryRevenue.services.filter((s: any) => (s.total || 0) > 0).length > 0 ? (
+                            categoryRevenue.services.filter((s: any) => (s.total || 0) > 0).map((s: any) => (
+                                <div key={s.slug} className="rounded-lg border border-border/40 bg-card/40 p-3.5 flex flex-col justify-between">
+                                    <div>
+                                        <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block truncate" title={s.label}>
+                                            {s.label} Pool
+                                        </span>
+                                        <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
+                                            GH₵ {Number(s.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground flex flex-col gap-0.5">
+                                        <div className="flex justify-between">
+                                            <span>Allocated / Budget:</span>
+                                            <span className="font-mono text-foreground font-medium">GH₵{Number((s.manualAllocation || 0) + (s.contractBudget || 0)).toFixed(0)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Client Orders:</span>
+                                            <span className="font-mono text-foreground font-medium">GH₵{Number(s.clientOrders || 0).toFixed(0)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-emerald-500 font-semibold mt-0.5">
+                                            <span>Talent 70%:</span>
+                                            <span className="font-mono">GH₵{(Number(s.total || 0) * 0.7).toFixed(0)}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground flex flex-col gap-0.5">
-                                    <div className="flex justify-between">
-                                        <span>Allocated / Budget:</span>
-                                        <span className="font-mono text-foreground font-medium">GH₵{Number((s.manualAllocation || 0) + (s.contractBudget || 0)).toFixed(0)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Client Orders:</span>
-                                        <span className="font-mono text-foreground font-medium">GH₵{Number(s.clientOrders || 0).toFixed(0)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-emerald-500 font-semibold mt-0.5">
-                                        <span>Talent 70%:</span>
-                                        <span className="font-mono">GH₵{(Number(s.total || 0) * 0.7).toFixed(0)}</span>
-                                    </div>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full py-8 text-center text-xs text-muted-foreground bg-card/20 rounded-xl border border-dashed border-border/50">
+                                No active profession allocations or contract budgets yet.
+                                Post a job contract or allocate budget in Super Admin to see pools here.
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
 

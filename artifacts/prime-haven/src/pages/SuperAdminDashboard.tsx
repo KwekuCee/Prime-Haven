@@ -365,6 +365,32 @@ const SuperAdminDashboard = () => {
         data.forEach((item: any) => {
           settings[item.key] = item.value;
         });
+
+        // Auto-purge old demo revenue allocations if present in system_settings
+        const cat = settings.monthly_revenue_by_category || {};
+        const hasDemoRevenue =
+          cat.graphic === 6500 ||
+          cat['graphic-design'] === 6500 ||
+          cat.web === 3500 ||
+          cat['web-development'] === 3500 ||
+          cat['mobile-app-development'] === 1200;
+
+        if (hasDemoRevenue) {
+          const cleanCat: Record<string, number> = {};
+          CANONICAL_SERVICES.forEach((s) => {
+            const v = Number(cat[s.slug] ?? cat[s.legacyKey]) || 0;
+            if (v > 0 && v !== 6500 && v !== 3500 && v !== 1200) {
+              cleanCat[s.slug] = v;
+              cleanCat[s.legacyKey] = v;
+            }
+          });
+          settings.monthly_revenue_by_category = cleanCat;
+          void supabase.from('system_settings').upsert(
+            { key: 'monthly_revenue_by_category', value: cleanCat, updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+          ).then(() => invalidateSystemSettings());
+        }
+
         setSystemSettings(prev => ({ ...prev, ...settings }));
         if (settings.usd_to_ghs_rate) {
           const rate = typeof settings.usd_to_ghs_rate === 'object' ? settings.usd_to_ghs_rate.value : settings.usd_to_ghs_rate;
@@ -893,8 +919,9 @@ const SuperAdminDashboard = () => {
     const cat = (systemSettings as any).monthly_revenue_by_category || {};
     const initialMap: Record<string, string> = {};
     CANONICAL_SERVICES.forEach((s) => {
-      const val = cat[s.slug] ?? cat[s.legacyKey];
-      if (val !== undefined && val !== null && Number(val) > 0) {
+      const val = Number(cat[s.slug] ?? cat[s.legacyKey]);
+      // Discard old demo numbers (6500, 3500, 1200)
+      if (val !== undefined && val !== null && !isNaN(val) && val > 0 && val !== 6500 && val !== 3500 && val !== 1200) {
         initialMap[s.slug] = String(val);
       }
     });
@@ -1635,7 +1662,7 @@ const SuperAdminDashboard = () => {
                         : CANONICAL_SERVICES.map(s => ({
                             slug: s.slug,
                             label: s.label,
-                            total: (categoryRevenue as any)[s.legacyKey] || 0
+                            total: 0
                           }))
                       ).filter(item => item.total > 0).slice(0, 8).map((item) => (
                         <div key={item.slug} className="bg-white/[0.04] border border-white/5 rounded-xl p-2">
