@@ -107,6 +107,102 @@ serve(async (req) => {
       .maybeSingle();
     if (existingPayment) return json({ success: true, message: "Already recorded.", ledger_id: existingPayment.id });
 
+    // Check if this reference is a client debt payment (starts with ph_debt_)
+    if (verified.reference.startsWith("ph_debt_")) {
+      const { data: debt } = await admin
+        .from("client_debts")
+        .select("*")
+        .eq("korapay_reference", verified.reference)
+        .maybeSingle();
+
+      if (debt) {
+        // Update client_debts status to paid
+        await admin
+          .from("client_debts")
+          .update({
+            status: "paid",
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", debt.id);
+
+        // Find associated user_id if client has a profile
+        let payerUserId: string | null = null;
+        if (debt.client_id) {
+          const { data: client } = await admin
+            .from("clients")
+            .select("email")
+            .eq("id", debt.client_id)
+            .maybeSingle();
+          if (client?.email) {
+            const { data: profile } = await admin
+              .from("profiles")
+              .select("id")
+              .eq("email", client.email)
+              .maybeSingle();
+            payerUserId = profile?.id ?? null;
+          }
+        }
+
+        // If no user profile linked, use first superadmin/masteradmin as system ledger actor
+        if (!payerUserId) {
+          const { data: adminRole } = await admin
+            .from("user_roles")
+            .select("user_id")
+            .in("role", ["superadmin", "masteradmin"])
+            .limit(1)
+            .maybeSingle();
+          payerUserId = adminRole?.user_id ?? "00000000-0000-0000-0000-000000000000";
+        }
+
+        const { data: inserted, error: insertError } = await admin
+          .from("payments")
+          .insert({
+            user_id: payerUserId,
+            amount: verified.amount,
+            type: "client_debt",
+            status: "completed",
+            transaction_id: verified.reference,
+            payment_gateway: "Korapay MoMo",
+            payment_details: {
+              source: "korapay_momo",
+              debt_id: debt.id,
+              client_name: debt.client_name,
+              project_name: debt.project_name,
+              currency: verified.currency,
+              description: `Escrow debt settled for ${debt.client_name} (${debt.project_name || "Project"})`,
+            },
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (insertError && (insertError as any).code !== "23505") {
+          console.error("payment-webhook debt ledger insert failed:", insertError);
+          return json({ error: "ledger_insert_failed", message: insertError.message }, 500);
+        }
+
+        await admin.from("system_logs").insert({
+          action_type: "client_debt_settled_via_momo",
+          description: `Client debt of GH₵${Number(verified.amount).toFixed(2)} settled for ${debt.client_name} via Korapay MoMo`,
+          new_value: {
+            debt_id: debt.id,
+            reference: verified.reference,
+            amount: verified.amount,
+            ledger_id: inserted?.id,
+          },
+        });
+
+        return json({
+          success: true,
+          type: "client_debt",
+          debt_id: debt.id,
+          ledger_id: inserted?.id,
+          amount: verified.amount,
+          message: "Client debt settled and recorded in payments ledger.",
+        });
+      }
+    }
+
     // Live USD -> GHS rate from settings (falls back to the platform default)
     const { data: rateSetting } = await admin
       .from("system_settings")

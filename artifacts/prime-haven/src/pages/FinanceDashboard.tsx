@@ -4,7 +4,8 @@ import {
     Building, CreditCard, DollarSign, Wallet, ArrowUpRight, ArrowDownRight,
     Activity, ArrowRightLeft, FileText, CheckCircle, Clock, Mail, Search,
     Users, Plus, Calendar, TrendingUp, Sparkles, Layers, Palette, Layout,
-    Globe, Smartphone, Clapperboard, Film, Megaphone, Cpu, Banknote
+    Globe, Smartphone, Clapperboard, Film, Megaphone, Cpu, Banknote,
+    Phone, Send, Copy, ExternalLink, Loader2, SmartphoneNfc, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +62,30 @@ const FinanceDashboard = () => {
     const [filter, setFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
-    const [newDebt, setNewDebt] = useState({ client_name: '', project_name: '', amount_owed: 0 });
+    const [newDebt, setNewDebt] = useState({
+        client_id: '',
+        client_name: '',
+        project_name: '',
+        amount_owed: 0,
+        client_phone: '',
+        network_provider: 'mtn',
+    });
+
+    const [momoModal, setMomoModal] = useState<{
+        open: boolean;
+        debt: any | null;
+        phone: string;
+        operator: string;
+        loading: boolean;
+        checkoutUrl: string | null;
+    }>({
+        open: false,
+        debt: null,
+        phone: '',
+        operator: 'mtn',
+        loading: false,
+        checkoutUrl: null,
+    });
 
     const [categoryRevenue, setCategoryRevenue] = useState<{
         graphic: number;
@@ -118,7 +142,7 @@ const FinanceDashboard = () => {
                 supabase.from('profiles').select('id, full_name, email'),
                 supabase.from('system_settings').select('key, value').eq('key', 'monthly_revenue'),
                 supabase.from('client_debts').select('*').order('created_at', { ascending: false }),
-                supabase.from('clients').select('id, name'),
+                supabase.from('clients').select('id, name, whatsapp, email'),
                 supabase.from('submissions').select('id, project_name, client_ref').eq('client_accepted', true)
             ]);
 
@@ -285,13 +309,89 @@ const FinanceDashboard = () => {
     const handleCreateDebt = async () => {
         if (!newDebt.client_name || !newDebt.amount_owed) return;
         try {
-            await supabase.from('client_debts').insert(newDebt);
-            toast({ title: 'Debt Recorded', description: 'Escrow amount successfully logged.' });
-            setNewDebt({ client_name: '', project_name: '', amount_owed: 0 });
+            await (supabase.from('client_debts') as any).insert({
+                client_id: newDebt.client_id || null,
+                client_name: newDebt.client_name,
+                project_name: newDebt.project_name || null,
+                amount_owed: Number(newDebt.amount_owed),
+                client_phone: newDebt.client_phone || null,
+                network_provider: newDebt.network_provider || 'mtn',
+                status: 'pending',
+            });
+            toast({ title: 'Debt Recorded', description: 'Escrow debt successfully logged with MoMo details.' });
+            setNewDebt({ client_id: '', client_name: '', project_name: '', amount_owed: 0, client_phone: '', network_provider: 'mtn' });
             setIsDebtModalOpen(false);
             await loadFinancialData();
         } catch (error: any) {
             toast({ title: 'Failed to record debt', description: error.message, variant: 'destructive' });
+        }
+    };
+
+    const handleOpenMoMoModal = (debt: any) => {
+        let defaultPhone = debt.client_phone || '';
+        if (!defaultPhone && debt.client_id) {
+            const client = systemClients.find((c: any) => c.id === debt.client_id);
+            if (client?.whatsapp) defaultPhone = client.whatsapp;
+        } else if (!defaultPhone) {
+            const client = systemClients.find((c: any) => c.name === debt.client_name);
+            if (client?.whatsapp) defaultPhone = client.whatsapp;
+        }
+
+        setMomoModal({
+            open: true,
+            debt,
+            phone: defaultPhone,
+            operator: debt.network_provider || 'mtn',
+            loading: false,
+            checkoutUrl: null,
+        });
+    };
+
+    const handleTriggerMoMoPayment = async (channel: 'ussd_push' | 'checkout_link') => {
+        if (!momoModal.debt) return;
+        setMomoModal(prev => ({ ...prev, loading: true }));
+        try {
+            const { data, error } = await supabase.functions.invoke('collect-debt-payment', {
+                body: {
+                    debt_id: momoModal.debt.id,
+                    phone_number: momoModal.phone,
+                    operator: momoModal.operator,
+                    channel,
+                }
+            });
+
+            if (error || (data as any)?.error) {
+                const message = (data as any)?.message || error?.message || 'Debt collection failed';
+                throw new Error(message);
+            }
+
+            if (channel === 'ussd_push') {
+                toast({
+                    title: 'MoMo Prompt Sent!',
+                    description: "USSD prompt pushed to client's phone. Awaiting MoMo PIN authorization."
+                });
+                setMomoModal(prev => ({ ...prev, open: false, loading: false }));
+            } else {
+                const checkoutUrl = (data as any)?.checkout_url;
+                if (checkoutUrl) {
+                    await navigator.clipboard.writeText(checkoutUrl).catch(() => {});
+                    setMomoModal(prev => ({ ...prev, checkoutUrl, loading: false }));
+                    toast({
+                        title: 'Checkout Link Ready',
+                        description: 'Payment link copied to clipboard! You can share it directly with the client.'
+                    });
+                } else {
+                    setMomoModal(prev => ({ ...prev, open: false, loading: false }));
+                }
+            }
+            await loadFinancialData();
+        } catch (err: any) {
+            toast({
+                title: 'Request Failed',
+                description: err.message,
+                variant: 'destructive'
+            });
+            setMomoModal(prev => ({ ...prev, loading: false }));
         }
     };
 
@@ -753,21 +853,71 @@ const FinanceDashboard = () => {
                             <TableBody>
                                 {clientDebts.length > 0 ? clientDebts.map((d: any) => (
                                     <TableRow key={d.id} className="border-border/30">
-                                        <TableCell className="font-semibold text-sm">{d.client_name}</TableCell>
+                                        <TableCell className="font-semibold text-sm">
+                                            <div>{d.client_name}</div>
+                                            {d.client_phone && (
+                                                <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 font-normal">
+                                                    <Phone className="w-3 h-3 text-muted-foreground/70" />
+                                                    <span>{d.client_phone}</span>
+                                                    <span className="uppercase text-[10px] bg-muted/60 px-1 py-0.2 rounded text-muted-foreground font-mono">
+                                                        {d.network_provider || 'mtn'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-muted-foreground text-xs">{d.project_name || '-'}</TableCell>
                                         <TableCell className="text-xs text-muted-foreground">{format(new Date(d.created_at), 'MMM d, yy')}</TableCell>
                                         <TableCell>
-                                            <span className={`font-bold ${d.status === 'pending' ? 'text-amber-500' : 'text-emerald-500 line-through'}`}>
+                                            <span className={`font-bold ${d.status === 'pending' || d.status === 'processing' ? 'text-amber-500' : 'text-emerald-500 line-through'}`}>
                                                 GH₵ {Number(d.amount_owed).toLocaleString()}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {d.status === 'pending' ? (
-                                                <Button size="sm" variant="outline" className="border-emerald-500 text-emerald-500 h-8" onClick={() => handleMarkDebtPaid(d.id)}>
-                                                    <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid
-                                                </Button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        className="bg-amber-600 hover:bg-amber-700 text-white h-8 text-xs font-medium shadow-sm"
+                                                        onClick={() => handleOpenMoMoModal(d)}
+                                                    >
+                                                        <SmartphoneNfc className="w-3.5 h-3.5 mr-1" /> Request MoMo Push
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10 h-8 text-xs"
+                                                        onClick={() => handleMarkDebtPaid(d.id)}
+                                                    >
+                                                        <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid
+                                                    </Button>
+                                                </div>
+                                            ) : d.status === 'processing' ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Badge variant="outline" className="border-amber-500/40 text-amber-500 bg-amber-500/10 flex items-center gap-1.5 py-1 px-2.5">
+                                                        <Loader2 className="w-3 h-3 animate-spin" /> Awaiting Client PIN
+                                                    </Badge>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                                                        onClick={() => handleOpenMoMoModal(d)}
+                                                        title="Re-open MoMo Prompt / Link"
+                                                    >
+                                                        <RefreshCw className="w-3 h-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10 h-8 text-xs"
+                                                        onClick={() => handleMarkDebtPaid(d.id)}
+                                                    >
+                                                        <CheckCircle className="w-3 h-3 mr-1" /> Mark Paid
+                                                    </Button>
+                                                </div>
                                             ) : (
-                                                <Badge variant="outline" className="border-emerald-500 text-emerald-500 bg-emerald-500/10">Settled</Badge>
+                                                <Badge variant="outline" className="border-emerald-500/50 text-emerald-500 bg-emerald-500/10 flex items-center gap-1 py-1 px-2.5 ml-auto w-fit">
+                                                    <CheckCircle className="w-3 h-3" /> Paid via MoMo
+                                                </Badge>
                                             )}
                                         </TableCell>
                                     </TableRow>
@@ -965,12 +1115,26 @@ const FinanceDashboard = () => {
 
             {/* Modals */}
             <Dialog open={isDebtModalOpen} onOpenChange={setIsDebtModalOpen}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Add Escrow Debt</DialogTitle><DialogDescription>Record a client order that hasn't been fully paid to escrow yet.</DialogDescription></DialogHeader>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Add Escrow Debt</DialogTitle>
+                        <DialogDescription>Record a client order that hasn't been fully paid to escrow yet.</DialogDescription>
+                    </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Client Name</Label>
-                            <Select value={newDebt.client_name} onValueChange={v => setNewDebt({ ...newDebt, client_name: v })}>
+                            <Label className="text-right text-xs">Client Name</Label>
+                            <Select
+                                value={newDebt.client_name}
+                                onValueChange={v => {
+                                    const selectedClient = systemClients.find((c: any) => c.name === v);
+                                    setNewDebt({
+                                        ...newDebt,
+                                        client_name: v,
+                                        client_id: selectedClient?.id || '',
+                                        client_phone: selectedClient?.whatsapp || newDebt.client_phone || '',
+                                    });
+                                }}
+                            >
                                 <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder="Select a client..." />
                                 </SelectTrigger>
@@ -982,7 +1146,7 @@ const FinanceDashboard = () => {
                             </Select>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Project</Label>
+                            <Label className="text-right text-xs">Project</Label>
                             <Select value={newDebt.project_name} onValueChange={v => setNewDebt({ ...newDebt, project_name: v })}>
                                 <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder="Select a project..." />
@@ -1001,11 +1165,169 @@ const FinanceDashboard = () => {
                             </Select>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Amount Owed</Label>
-                            <Input type="number" className="col-span-3" value={newDebt.amount_owed} onChange={e => setNewDebt({ ...newDebt, amount_owed: Number(e.target.value) })} />
+                            <Label className="text-right text-xs">Amount Owed</Label>
+                            <Input
+                                type="number"
+                                className="col-span-3"
+                                placeholder="0.00"
+                                value={newDebt.amount_owed || ''}
+                                onChange={e => setNewDebt({ ...newDebt, amount_owed: Number(e.target.value) })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right text-xs">MoMo Phone</Label>
+                            <Input
+                                type="tel"
+                                className="col-span-3"
+                                placeholder="024XXXXXXX"
+                                value={newDebt.client_phone}
+                                onChange={e => setNewDebt({ ...newDebt, client_phone: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right text-xs">Network</Label>
+                            <Select
+                                value={newDebt.network_provider}
+                                onValueChange={v => setNewDebt({ ...newDebt, network_provider: v })}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select network..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                                    <SelectItem value="vodafone">Telecel Cash (Vodafone)</SelectItem>
+                                    <SelectItem value="airteltigo">AT Money (AirtelTigo)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
-                    <DialogFooter><Button onClick={handleCreateDebt} className="bg-amber-600 hover:bg-amber-700">Record Escrow</Button></DialogFooter>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsDebtModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleCreateDebt} className="bg-amber-600 hover:bg-amber-700">Record Escrow</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* MoMo Push Confirmation & Checkout Link Modal */}
+            <Dialog open={momoModal.open} onOpenChange={open => setMomoModal(prev => ({ ...prev, open }))}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <SmartphoneNfc className="w-5 h-5 text-amber-500" />
+                            Request Mobile Money Payment
+                        </DialogTitle>
+                        <DialogDescription>
+                            Korapay will send a real-time USSD push prompt directly to the client's phone, or you can generate a hosted checkout link.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {momoModal.debt && (
+                        <div className="space-y-4 py-2">
+                            <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 space-y-2 text-xs">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Client:</span>
+                                    <span className="font-semibold text-foreground">{momoModal.debt.client_name}</span>
+                                </div>
+                                {momoModal.debt.project_name && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">Project:</span>
+                                        <span className="text-foreground">{momoModal.debt.project_name}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-2 border-t border-border/40">
+                                    <span className="text-muted-foreground font-medium">Amount to Charge:</span>
+                                    <span className="font-mono font-bold text-amber-500 text-sm">
+                                        GH₵ {Number(momoModal.debt.amount_owed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Client Mobile Money Number</Label>
+                                    <Input
+                                        type="tel"
+                                        placeholder="e.g. 0244123456"
+                                        value={momoModal.phone}
+                                        onChange={e => setMomoModal(prev => ({ ...prev, phone: e.target.value }))}
+                                        disabled={momoModal.loading}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">Prompt will be pushed directly to this device for MoMo PIN entry.</p>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Network Operator</Label>
+                                    <Select
+                                        value={momoModal.operator}
+                                        onValueChange={v => setMomoModal(prev => ({ ...prev, operator: v }))}
+                                        disabled={momoModal.loading}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select network" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                                            <SelectItem value="vodafone">Telecel Cash (Vodafone)</SelectItem>
+                                            <SelectItem value="airteltigo">AT Money (AirtelTigo)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {momoModal.checkoutUrl && (
+                                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
+                                    <p className="text-xs font-medium text-emerald-400">Checkout Link Generated!</p>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            readOnly
+                                            value={momoModal.checkoutUrl}
+                                            className="h-8 text-xs font-mono bg-background"
+                                        />
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-8 px-2.5 shrink-0"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(momoModal.checkoutUrl || '');
+                                                toast({ title: 'Copied!', description: 'Link copied to clipboard.' });
+                                            }}
+                                        >
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            disabled={momoModal.loading || !momoModal.phone}
+                            onClick={() => handleTriggerMoMoPayment('checkout_link')}
+                        >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                            Get Payment Link
+                        </Button>
+                        <Button
+                            className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-medium"
+                            disabled={momoModal.loading || !momoModal.phone}
+                            onClick={() => handleTriggerMoMoPayment('ussd_push')}
+                        >
+                            {momoModal.loading ? (
+                                <>
+                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                    Pushing Prompt...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="w-3.5 h-3.5 mr-1.5" />
+                                    Send USSD Prompt
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

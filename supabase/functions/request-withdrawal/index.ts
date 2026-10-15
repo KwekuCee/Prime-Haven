@@ -7,8 +7,17 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 
+const KORAPAY_SECRET_KEY = Deno.env.get("KORAPAY_SECRET_KEY") || "";
 const CEO_EMAIL = "primehaven26@gmail.com";
 const MIN_WITHDRAWAL = 100;
+
+const PROVIDER_MAP: Record<string, string> = {
+  mtn: "MTN",
+  vodafone: "VOD",
+  telecel: "VOD",
+  airteltigo: "ATL",
+  at: "ATL",
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Headers":
@@ -73,7 +82,7 @@ serve(withCors(async (req) => {
     const reference = result.reference;
     const method = { provider: result.provider, phone_number: result.phone_number, account_name: result.account_name };
 
-    // Requester profile for the alert email
+    // Requester profile
     const { data: profile } = await admin
       .from("profiles")
       .select("full_name, email")
@@ -88,11 +97,108 @@ serve(withCors(async (req) => {
       new_value: { withdrawal_id: wd.id, amount, reference, payout_method: method.provider },
     });
 
-    // Alert the CEO
+    // Automated Instant MoMo Disbursement Attempt
+    let isInstantDisbursed = false;
+    if (KORAPAY_SECRET_KEY) {
+      try {
+        const { error: claimErr } = await admin.rpc("claim_withdrawal_for_payout_service", {
+          p_withdrawal_id: wd.id,
+        });
+
+        if (!claimErr) {
+          const operator = PROVIDER_MAP[method.provider?.toLowerCase()] || String(method.provider).toUpperCase();
+          const disbursePayload = {
+            reference,
+            destination: {
+              type: "mobile_money",
+              amount,
+              currency: "GHS",
+              narration: `Prime Haven Earnings: ${profile?.full_name || "Talent"}`,
+              mobile_money: {
+                operator,
+                mobile_number: method.phone_number,
+              },
+              customer: {
+                name: method.account_name || profile?.full_name || "Talent",
+                email: profile?.email || "talent@primehaven.tech",
+              },
+            },
+          };
+
+          console.log(`Initiating instant MoMo disburse of GH₵${amount} to ${method.phone_number} (${operator})`);
+
+          const disburseResp = await fetch("https://api.korapay.com/merchant/api/v1/transactions/disburse", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${KORAPAY_SECRET_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(disbursePayload),
+          });
+
+          const disburseData = await disburseResp.json().catch(() => ({}));
+          console.log("Korapay disburse response:", JSON.stringify(disburseData));
+
+          const korapayStatus = disburseData?.data?.status || "";
+          const isSuccess = disburseResp.ok && (disburseData?.status === true || korapayStatus === "success" || korapayStatus === "processing");
+
+          if (isSuccess) {
+            const finalStatus = korapayStatus === "processing" ? "processing" : "approved";
+            await admin.rpc("finalise_withdrawal_payout_service", {
+              p_withdrawal_id: wd.id,
+              p_admin_id: userId,
+              p_status: finalStatus,
+              p_gateway: "Korapay MoMo",
+              p_reference: reference,
+            });
+
+            await admin.from("system_logs").insert({
+              admin_id: userId,
+              action_type: "talent_withdrawal_instant_disbursed",
+              description: `Instant MoMo payout of GH₵${amount.toFixed(2)} dispatched to ${method.phone_number} (${operator})`,
+              new_value: { withdrawal_id: wd.id, amount, reference, korapay_status: korapayStatus },
+            });
+
+            isInstantDisbursed = true;
+          } else {
+            console.warn("Korapay instant disburse declined, falling back to pending approval:", disburseData?.message);
+            // Revert status to pending so admin can review in Finance Hub
+            await admin
+              .from("withdrawals")
+              .update({
+                status: "pending",
+                failure_reason: `Instant payout fallback: ${disburseData?.message || "Gateway response"}`,
+              })
+              .eq("id", wd.id);
+          }
+        }
+      } catch (disburseErr) {
+        console.error("Instant disburse exception:", disburseErr);
+        await admin
+          .from("withdrawals")
+          .update({
+            status: "pending",
+            failure_reason: `Instant payout error: ${(disburseErr as Error).message}`,
+          })
+          .eq("id", wd.id);
+      }
+    }
+
+    if (isInstantDisbursed) {
+      return json({
+        success: true,
+        status: "approved",
+        withdrawal_id: wd.id,
+        amount,
+        reference,
+        message: "Payout sent directly to your MoMo wallet!",
+      });
+    }
+
+    // Alert the CEO for manual review (fallback when instant disburse didn't complete)
     let emailSent = false;
     if (Deno.env.get("RESEND_API_KEY")) {
       try {
-
         const html = `
         <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6;padding:24px;font-family:Arial,Helvetica,sans-serif">
           <tr><td align="center">
@@ -134,6 +240,7 @@ serve(withCors(async (req) => {
 
     return json({
       success: true,
+      status: "pending",
       withdrawal_id: wd.id,
       amount,
       reference,
