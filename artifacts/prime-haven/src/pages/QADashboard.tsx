@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     ClipboardCheck, Clock, AlertTriangle, ShieldCheck,
-    Search, ExternalLink, ImageIcon, CheckCircle, XCircle, ThumbsUp, Edit, ChevronRight, Settings, Download
+    Search, ExternalLink, ImageIcon, CheckCircle, XCircle, ThumbsUp, Edit, Settings, Download,
+    RotateCcw, Palette, Layers, Globe, Smartphone, Clapperboard, Film, Megaphone, Cpu
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,22 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchSystemSettings } from '@/lib/systemSettings';
 import { recalculateSalaries } from '@/lib/recalculateSalaries';
+import { CANONICAL_SERVICES, normalizeServiceSlug } from '@/lib/platformRevenue';
 import { useAuth } from '@/hooks/useAuth';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
@@ -25,8 +37,20 @@ import { format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 15;
 
+const DEPARTMENT_ICONS: Record<string, any> = {
+    'graphic-design': Palette,
+    'ui-ux-design': Layers,
+    'web-development': Globe,
+    'mobile-app-development': Smartphone,
+    'motion-graphics': Clapperboard,
+    'video-editing': Film,
+    'social-media-management': Megaphone,
+    'general-it-solutions': Cpu,
+};
+
 const QADashboard = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
 
@@ -49,10 +73,23 @@ const QADashboard = () => {
     const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<any>(null);
     const [correctionNote, setCorrectionNote] = useState('');
 
+    // Delete & Re-list State
+    const [deleteRelistSubmission, setDeleteRelistSubmission] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const [systemSettings, setSystemSettings] = useState<any>({
         ph_approval_points: { value: 15 },
         client_acceptance_points: { value: 40 },
     });
+
+    // Check if ?dept= query param is present on mount or change
+    useEffect(() => {
+        const dept = searchParams.get('dept');
+        if (dept) {
+            const normalized = normalizeServiceSlug(dept);
+            setSelectedService(normalized);
+        }
+    }, [searchParams]);
 
     const loadData = useCallback(async () => {
         try {
@@ -104,58 +141,30 @@ const QADashboard = () => {
         checkAccess();
     }, [user, authLoading, navigate, loadData]);
 
-    // Robust functionalities cloned from earlier versions
-    // Admin completion override — clients approve their own work; this closes out
-    // anything left pending in the queue.
     const handleMarkCompleted = async (submissionId: string) => {
         try {
             const submission = submissions.find((s: any) => s.id === submissionId);
             if (!submission) throw new Error('Submission not found');
             const basePoints = systemSettings.client_acceptance_points?.value || 40;
             const points = submission.parent_submission_id ? 0 : basePoints;
-            const { error } = await (supabase as any).rpc('admin_client_accept_submission', {
+            const { data, error } = await (supabase as any).rpc('admin_client_accept_submission', {
                 p_submission_id: submissionId,
                 p_points: points,
                 p_dept_label: 'QA Global',
             });
             if (error) throw error;
-            toast({ title: 'Marked Completed', description: points > 0 ? `+${points} points awarded.` : 'Project closed out.' });
+            const awardedPoints = data?.points ?? points;
+            const earnedShare = data?.earned ?? 0;
+            toast({
+                title: 'Marked Completed',
+                description: awardedPoints > 0
+                    ? `+${awardedPoints} points awarded${earnedShare > 0 ? ` & GH₵${earnedShare} credited (70% split)` : ''}.`
+                    : 'Project closed out.'
+            });
             await loadData();
         } catch (error: any) {
             toast({ title: 'Failed', description: error.message || 'Please try again.', variant: 'destructive' });
         }
-    };
-
-    const handleClientAcceptance = async (submissionId: string) => {
-        try {
-            const submission = submissions.find((s: any) => s.id === submissionId);
-            if (!submission) throw new Error('Submission not found');
-
-            const clientPoints = systemSettings.client_acceptance_points?.value || 40;
-
-            await supabase.from('submissions').update({
-                client_accepted: true, client_accepted_at: new Date().toISOString(), client_accepted_by: user?.id,
-                points_awarded: (submission.points_awarded || 0) + clientPoints, status: 'approved',
-                final_approval_date: new Date().toISOString(), updated_at: new Date().toISOString()
-            }).eq('id', submissionId);
-
-            const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();
-            if (designerData) {
-                await supabase.from('designer_details').update({
-                    total_points: (designerData.total_points || 0) + clientPoints,
-                    monthly_points: (designerData.monthly_points || 0) + clientPoints,
-                    updated_at: new Date().toISOString()
-                }).eq('user_id', submission.designer_id);
-            }
-
-            if (user) {
-                await supabase.from('system_logs').insert({ action_type: 'client_acceptance', admin_id: user.id, description: `[QA Global] Client accepted: ${submission.project_name} (+${clientPoints} pts)`, timestamp: new Date().toISOString() });
-            }
-
-            await recalculateSalaries();
-            toast({ title: 'Client Accepted', description: `+${clientPoints} additional points!` });
-            await loadData();
-        } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
     };
 
     const handleRejectSubmission = async () => {
@@ -167,7 +176,6 @@ const QADashboard = () => {
                 updated_at: new Date().toISOString()
             } as any).eq('id', rejectSubmission.id);
 
-            // Notify designer with 2-day redo instruction
             try {
                 await supabase.functions.invoke('notify-designer', {
                     body: {
@@ -297,14 +305,40 @@ const QADashboard = () => {
         } catch (error: any) { toast({ title: 'Revoke Failed', description: error.message, variant: 'destructive' }); }
     };
 
+    const handleDeleteAndRelist = async () => {
+        if (!deleteRelistSubmission) return;
+        try {
+            setIsDeleting(true);
+            const { error } = await (supabase as any).rpc('admin_delete_submission_and_relist_contract', {
+                p_submission_id: deleteRelistSubmission.id,
+            });
+            if (error) throw error;
+            toast({
+                title: 'Submission Deleted & Re-listed',
+                description: 'Submission deleted. Contract is now active on the marketplace.',
+            });
+            setDeleteRelistSubmission(null);
+            await loadData();
+        } catch (error: any) {
+            toast({
+                title: 'Action Failed',
+                description: error.message || 'Could not delete submission.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const handleExport = () => {
         const data = filteredSubmissions.map(s => ({
             ID: s.id,
             'Project Name': s.project_name,
             Designer: s.designer_name,
             'Service Type': s.service_type,
+            Department: normalizeServiceSlug(s.service_type),
             Status: s.status,
-            'Mark Completedd': s.ph_approved ? 'Yes' : 'No',
+            'Mark Completed': s.ph_approved ? 'Yes' : 'No',
             'Client Accepted': s.client_accepted ? 'Yes' : 'No',
             'Points Awarded': s.points_awarded || 0,
             'Submitted Date': format(new Date(s.created_at), 'yyyy-MM-dd HH:mm'),
@@ -330,9 +364,25 @@ const QADashboard = () => {
 
     useEffect(() => { setPage(1); }, [selectedStatus, selectedService, searchQuery]);
 
+    // Live count per canonical department
+    const deptCounts = useMemo(() => {
+        const counts: Record<string, number> = { all: submissions.length };
+        CANONICAL_SERVICES.forEach(s => { counts[s.slug] = 0; });
+        submissions.forEach(sub => {
+            const slug = normalizeServiceSlug(sub.service_type);
+            counts[slug] = (counts[slug] || 0) + 1;
+        });
+        return counts;
+    }, [submissions]);
+
     const filteredSubmissionsRaw = useMemo(() => {
         let filtered = submissions;
-        if (selectedService !== 'all') filtered = filtered.filter(s => s.service_type === selectedService);
+        if (selectedService !== 'all') {
+            filtered = filtered.filter(s => {
+                const norm = normalizeServiceSlug(s.service_type);
+                return norm === selectedService || s.service_type === selectedService;
+            });
+        }
         if (selectedStatus !== 'all') {
             if (selectedStatus === 'corrections') filtered = filtered.filter(s => !!s.parent_submission_id);
             else if (selectedStatus === 'pending') filtered = filtered.filter(s => !s.ph_approved && s.status !== 'rejected');
@@ -360,8 +410,6 @@ const QADashboard = () => {
         delivered: submissions.filter(s => s.client_accepted).length,
     };
 
-    const serviceCategories = Array.from(new Set(submissions.map(s => s.service_type))).filter(Boolean);
-
     if (initialAuthCheck || loading) return <SuperAdminLayout><div className="flex items-center justify-center py-32"><div className="w-10 h-10 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin" /></div></SuperAdminLayout>;
 
     return (
@@ -372,11 +420,11 @@ const QADashboard = () => {
                         <h1 className="text-xl sm:text-2xl font-heading font-bold text-cyan-500 flex items-center gap-2">
                             <ShieldCheck className="w-6 h-6" /> Quality Assurance & PM Operations
                         </h1>
-                        <p className="text-xs text-muted-foreground mt-0.5">Global oversight of all deliverables, bottlenecks, and cross-category approvals.</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Global oversight of all deliverables, bottlenecks, and cross-category approvals across all 8 tracks.</p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-cyan-500/50 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Lifecycle Tasks</span>
@@ -407,20 +455,74 @@ const QADashboard = () => {
                     </div>
                 </div>
 
+                {/* 8 Canonical Department Filter Tabs */}
+                <div className="mb-4">
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedService('all')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                                selectedService === 'all'
+                                    ? 'bg-cyan-500 text-black shadow-md'
+                                    : 'bg-card/70 text-muted-foreground hover:text-foreground hover:bg-card border border-border/40'
+                            }`}
+                        >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            All Departments
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${selectedService === 'all' ? 'bg-black/20 text-black font-bold' : 'bg-muted text-muted-foreground'}`}>
+                                {deptCounts.all || 0}
+                            </span>
+                        </button>
+                        {CANONICAL_SERVICES.map((dept) => {
+                            const IconComponent = DEPARTMENT_ICONS[dept.slug] || Layers;
+                            const isActive = selectedService === dept.slug;
+                            const count = deptCounts[dept.slug] || 0;
+                            return (
+                                <button
+                                    key={dept.slug}
+                                    type="button"
+                                    onClick={() => setSelectedService(dept.slug)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                                        isActive
+                                            ? 'bg-cyan-500 text-black shadow-md'
+                                            : 'bg-card/70 text-muted-foreground hover:text-foreground hover:bg-card border border-border/40'
+                                    }`}
+                                >
+                                    <IconComponent className="w-3.5 h-3.5" />
+                                    {dept.label}
+                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isActive ? 'bg-black/20 text-black font-bold' : 'bg-muted text-muted-foreground'}`}>
+                                        {count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 <div className="rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden mb-8">
                     <div className="p-4 sm:p-5 border-b border-border/50 bg-card/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div><h2 className="text-base font-bold flex items-center gap-2"><Search className="w-4 h-4 text-cyan-500" /> Global Review Queue</h2></div>
+                        <div>
+                            <h2 className="text-base font-bold flex items-center gap-2">
+                                <Search className="w-4 h-4 text-cyan-500" />
+                                Review Queue
+                                {selectedService !== 'all' && (
+                                    <Badge variant="outline" className="text-[10px] border-cyan-500/40 text-cyan-400 bg-cyan-500/10">
+                                        {CANONICAL_SERVICES.find(s => s.slug === selectedService)?.label || selectedService}
+                                    </Badge>
+                                )}
+                            </h2>
+                        </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <div className="relative">
                                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
-                                <Input placeholder="Search overall queue..." className="pl-8 h-8 text-sm w-full sm:w-40 bg-card/50" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                                <Input placeholder="Search overall queue..." className="pl-8 h-8 text-sm w-full sm:w-44 bg-card/50" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                             </div>
                             <Select value={selectedService} onValueChange={setSelectedService}>
-                                <SelectTrigger className="h-8 text-sm w-full sm:w-36 bg-card/50"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="h-8 text-sm w-full sm:w-44 bg-card/50"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Global (All Depts)</SelectItem>
-                                    {serviceCategories.map((s: string) => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                                    {CANONICAL_SERVICES.map((s) => (
+                                        <SelectItem key={s.slug} value={s.slug}>{s.label}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -473,7 +575,11 @@ const QADashboard = () => {
                                                 <p className="font-semibold text-sm">{s.designer_name}</p>
                                                 <p className="text-[10px] text-muted-foreground">{s.designer_email}</p>
                                             </TableCell>
-                                            <TableCell><Badge variant="outline" className="text-[10px]">{s.service_type}</Badge></TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="text-[10px]">
+                                                    {CANONICAL_SERVICES.find(c => c.slug === normalizeServiceSlug(s.service_type))?.label || s.service_type}
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${s.client_accepted ? 'border-emerald-500 text-emerald-500' :
                                                     s.status === 'client_rejected' ? 'border-red-500 text-red-500' :
@@ -490,71 +596,89 @@ const QADashboard = () => {
                                             <TableCell><span className="font-bold text-cyan-500">{s.points_awarded || 0}</span></TableCell>
                                             <TableCell className="text-xs text-muted-foreground">{format(new Date(s.created_at), 'MMM d, yy')}</TableCell>
                                             <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                                                            <Settings className="w-4 h-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 bg-card/95 backdrop-blur-xl border-border/50">
-                                                        <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Review Actions</DropdownMenuLabel>
-                                                        <DropdownMenuSeparator className="bg-border/50" />
-                                                        {s.design_link && (
-                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-primary/10 transition-colors" onClick={() => setPreviewLinkUrl(s.design_link)}>
-                                                                <ExternalLink className="w-3.5 h-3.5 mr-2 text-primary" /> Inspect Web Link
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {s.files_urls?.length > 0 && (
-                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-primary/10 transition-colors" onClick={() => setViewFilesSubmission(s)}>
-                                                                <ImageIcon className="w-3.5 h-3.5 mr-2 text-primary" /> Inspect Files
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {(s.design_link || s.files_urls?.length > 0) && <DropdownMenuSeparator className="bg-border/50" />}
-                                                        {!s.ph_approved && !s.client_accepted && s.status !== 'rejected' && (
-                                                            <>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
-                                                                    <CheckCircle className="w-3.5 h-3.5 mr-2" /> Mark Completed
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 hidden sm:inline-flex"
+                                                        onClick={() => setDeleteRelistSubmission(s)}
+                                                        title="Delete submission and release contract back to marketplace"
+                                                    >
+                                                        <RotateCcw className="w-3 h-3 mr-1" /> Re-list
+                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                                                <Settings className="w-4 h-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-xl border-border/50">
+                                                            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Review Actions</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator className="bg-border/50" />
+                                                            {s.design_link && (
+                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-primary/10 transition-colors" onClick={() => setPreviewLinkUrl(s.design_link)}>
+                                                                    <ExternalLink className="w-3.5 h-3.5 mr-2 text-primary" /> Inspect Web Link
                                                                 </DropdownMenuItem>
+                                                            )}
+                                                            {s.files_urls?.length > 0 && (
+                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-primary/10 transition-colors" onClick={() => setViewFilesSubmission(s)}>
+                                                                    <ImageIcon className="w-3.5 h-3.5 mr-2 text-primary" /> Inspect Files
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {(s.design_link || s.files_urls?.length > 0) && <DropdownMenuSeparator className="bg-border/50" />}
+                                                            {!s.ph_approved && !s.client_accepted && s.status !== 'rejected' && (
+                                                                <>
+                                                                    <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
+                                                                        <CheckCircle className="w-3.5 h-3.5 mr-2" /> Mark Completed
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                                                        <XCircle className="w-3.5 h-3.5 mr-2" /> QA Reject & Return
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
+                                                            {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
+                                                                <>
+                                                                    <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
+                                                                        <ThumbsUp className="w-3.5 h-3.5 mr-2" /> Mark Completed
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setClientRejectSubmission(s); setClientRejectionReason(''); }}>
+                                                                        <XCircle className="w-3.5 h-3.5 mr-2" /> Mark Client Rejected
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
+                                                            {s.status !== 'rejected' && s.status !== 'approved' && !s.client_accepted && s.status !== 'correction_requested' && (
+                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-amber-500/10 text-amber-500 transition-colors" onClick={() => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}>
+                                                                    <Edit className="w-3.5 h-3.5 mr-2" /> Request Correction
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {s.status === 'client_rejected' && (
                                                                 <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
-                                                                    <XCircle className="w-3.5 h-3.5 mr-2" /> QA Reject & Return
+                                                                    <XCircle className="w-3.5 h-3.5 mr-2" /> Final Reject
                                                                 </DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                        {s.ph_approved && !s.client_accepted && s.status !== 'client_rejected' && (
-                                                            <>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-emerald-500/10 text-emerald-500 transition-colors" onClick={() => handleMarkCompleted(s.id)}>
-                                                                    <ThumbsUp className="w-3.5 h-3.5 mr-2" /> Mark Completed
+                                                            )}
+                                                            {s.status === 'correction_requested' && (
+                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
+                                                                    <XCircle className="w-3.5 h-3.5 mr-2" /> Cancel & Reject
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setClientRejectSubmission(s); setClientRejectionReason(''); }}>
-                                                                    <XCircle className="w-3.5 h-3.5 mr-2" /> Mark Client Rejected
-                                                                </DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                        {s.status !== 'rejected' && s.status !== 'approved' && !s.client_accepted && s.status !== 'correction_requested' && (
-                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-amber-500/10 text-amber-500 transition-colors" onClick={() => { setCorrectionRequestSubmission(s); setCorrectionNote(''); }}>
-                                                                <Edit className="w-3.5 h-3.5 mr-2" /> Request Correction
+                                                            )}
+                                                            {s.status !== 'rejected' && (s.points_awarded || 0) > 0 && (
+                                                                <>
+                                                                    <DropdownMenuSeparator className="bg-border/50" />
+                                                                    <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => handleRevokeSubmission(s.id)}>
+                                                                        <AlertTriangle className="w-3.5 h-3.5 mr-2" /> Revoke Approval
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
+                                                            <DropdownMenuSeparator className="bg-border/50" />
+                                                            <DropdownMenuItem
+                                                                className="text-xs cursor-pointer focus:bg-destructive/15 text-destructive font-semibold transition-colors"
+                                                                onClick={() => setDeleteRelistSubmission(s)}
+                                                            >
+                                                                <RotateCcw className="w-3.5 h-3.5 mr-2 text-destructive" /> Delete & Re-list Contract
                                                             </DropdownMenuItem>
-                                                        )}
-                                                        {s.status === 'client_rejected' && (
-                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
-                                                                <XCircle className="w-3.5 h-3.5 mr-2" /> Final Reject
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {s.status === 'correction_requested' && (
-                                                            <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => { setRejectSubmission(s); setRejectionReason(''); }}>
-                                                                <XCircle className="w-3.5 h-3.5 mr-2" /> Cancel & Reject
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {s.status !== 'rejected' && (s.points_awarded || 0) > 0 && (
-                                                            <>
-                                                                <DropdownMenuSeparator className="bg-border/50" />
-                                                                <DropdownMenuItem className="text-xs cursor-pointer focus:bg-red-500/10 text-red-500 transition-colors" onClick={() => handleRevokeSubmission(s.id)}>
-                                                                    <AlertTriangle className="w-3.5 h-3.5 mr-2" /> Revoke Approval
-                                                                </DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     )) : (
@@ -613,6 +737,46 @@ const QADashboard = () => {
                     <div className="flex-1 px-6 pb-6"><iframe src={previewLinkUrl || ''} className="w-full h-full rounded-lg border border-border" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" title="Link Preview" /></div>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete & Re-list Confirmation AlertDialog */}
+            <AlertDialog open={!!deleteRelistSubmission} onOpenChange={(open) => { if (!open && !isDeleting) setDeleteRelistSubmission(null); }}>
+                <AlertDialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/60">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-500 flex items-center gap-2 text-base font-bold">
+                            <AlertTriangle className="w-5 h-5 text-red-500" /> Delete Submission & Re-list Contract
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
+                            Are you sure you want to delete this submission? This will permanently delete the submission and make the contract active and available on the marketplace again.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {deleteRelistSubmission && (
+                        <div className="p-3 my-2 rounded-xl bg-destructive/10 border border-destructive/20 text-xs space-y-1.5 font-medium">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Project:</span>
+                                <span className="font-semibold text-foreground truncate max-w-[240px]">{deleteRelistSubmission.project_name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Talent:</span>
+                                <span className="text-foreground">{deleteRelistSubmission.designer_name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Department:</span>
+                                <Badge variant="outline" className="text-[10px]">{deleteRelistSubmission.service_type}</Badge>
+                            </div>
+                        </div>
+                    )}
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                            onClick={handleDeleteAndRelist}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Deleting & Re-listing...' : 'Delete & Re-list'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </SuperAdminLayout>
     );
 };

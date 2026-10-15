@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   CheckCircle, XCircle, Search, Clock, ExternalLink, ImageIcon,
-  Edit, ThumbsUp, Settings, AlertTriangle, Layers, Activity, BadgeCheck, Inbox
+  Edit, ThumbsUp, Settings, AlertTriangle, Layers, Activity, BadgeCheck, Inbox, RotateCcw
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +65,8 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<any>(null);
   const [correctionNote, setCorrectionNote] = useState('');
+  const [deleteRelistSubmission, setDeleteRelistSubmission] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [systemSettings, setSystemSettings] = useState<any>({
     ph_approval_points: { value: 15 },
@@ -178,6 +190,31 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
       toast({ title: 'Revoked', description: `${data?.points_revoked ?? 0} points deducted.` });
       await loadData();
     } catch (error: any) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); }
+  };
+
+  const handleDeleteAndRelist = async () => {
+    if (!deleteRelistSubmission) return;
+    try {
+      setIsDeleting(true);
+      const { error } = await (supabase as any).rpc('admin_delete_submission_and_relist_contract', {
+        p_submission_id: deleteRelistSubmission.id,
+      });
+      if (error) throw error;
+      toast({
+        title: 'Submission Deleted & Re-listed',
+        description: 'Submission deleted. Contract is now active on the marketplace.',
+      });
+      setDeleteRelistSubmission(null);
+      await loadData();
+    } catch (error: any) {
+      toast({
+        title: 'Action Failed',
+        description: error.message || 'Could not delete submission.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
 
@@ -381,6 +418,13 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
                                 </DropdownMenuItem>
                               </>
                             )}
+                            <DropdownMenuSeparator className="bg-border/50" />
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer focus:bg-destructive/15 text-destructive font-semibold transition-colors"
+                              onClick={() => setDeleteRelistSubmission(s)}
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 mr-2 text-destructive" /> Delete & Re-list Contract
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -434,6 +478,46 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
           <div className="flex-1 px-6 pb-6"><iframe src={previewLinkUrl || ''} className="w-full h-full rounded-lg border border-border" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" title="Link Preview" /></div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete & Re-list Confirmation AlertDialog */}
+      <AlertDialog open={!!deleteRelistSubmission} onOpenChange={(open) => { if (!open && !isDeleting) setDeleteRelistSubmission(null); }}>
+        <AlertDialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/60">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500 flex items-center gap-2 text-base font-bold">
+              <AlertTriangle className="w-5 h-5 text-red-500" /> Delete Submission & Re-list Contract
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
+              Are you sure you want to delete this submission? This will permanently delete the submission and make the contract active and available on the marketplace again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteRelistSubmission && (
+            <div className="p-3 my-2 rounded-xl bg-destructive/10 border border-destructive/20 text-xs space-y-1.5 font-medium">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Project:</span>
+                <span className="font-semibold text-foreground truncate max-w-[240px]">{deleteRelistSubmission.project_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Talent:</span>
+                <span className="text-foreground">{deleteRelistSubmission.designer_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Department:</span>
+                <Badge variant="outline" className="text-[10px]">{deleteRelistSubmission.service_type}</Badge>
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+              onClick={handleDeleteAndRelist}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting & Re-listing...' : 'Delete & Re-list'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SuperAdminLayout>
   );
 };

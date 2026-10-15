@@ -42,7 +42,12 @@ import {
   ExternalLink,
   ChevronDown,
   Banknote,
-  Compass
+  Compass,
+  Smartphone,
+  Clapperboard,
+  Film,
+  Megaphone,
+  Cpu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -117,7 +122,11 @@ const navSections: NavSection[] = [
       { label: 'Web Development', icon: Globe, path: '/superadmin/web', badge: 'Dev', badgeColor: 'bg-blue-100 text-blue-800 border-blue-200' },
       { label: 'UI/UX Design', icon: Layout, path: '/superadmin/uiux', badge: 'Figma', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200' },
       { label: 'Graphic Design', icon: Palette, path: '/superadmin/graphic-design', badge: 'Brand', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' },
-      { label: 'SMM & Content Media', icon: MonitorPlay, path: '/superadmin', tab: 'smm' },
+      { label: 'Mobile App Dev', icon: Smartphone, path: '/superadmin/qa-reviewer?dept=mobile-app-development', badge: 'App', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+      { label: 'Motion Graphics', icon: Clapperboard, path: '/superadmin/qa-reviewer?dept=motion-graphics', badge: 'Motion', badgeColor: 'bg-rose-100 text-rose-800 border-rose-200' },
+      { label: 'Video Editing', icon: Film, path: '/superadmin/qa-reviewer?dept=video-editing', badge: 'Cut', badgeColor: 'bg-orange-100 text-orange-800 border-orange-200' },
+      { label: 'Social Media Management', icon: Megaphone, path: '/superadmin/qa-reviewer?dept=social-media-management', badge: 'SMM', badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
+      { label: 'General IT Solutions', icon: Cpu, path: '/superadmin/qa-reviewer?dept=general-it-solutions', badge: 'IT', badgeColor: 'bg-violet-100 text-violet-800 border-violet-200' },
     ],
   },
   {
@@ -170,9 +179,17 @@ const SuperAdminLayout = ({ children, onRefresh, loading }: SuperAdminLayoutProp
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   const currentTab = searchParams.get('tab') || '';
+  const currentDept = searchParams.get('dept') || '';
   const currentPath = location.pathname;
 
   const isActive = (item: NavItem) => {
+    if (item.path?.includes('?dept=')) {
+      const itemDept = item.path.split('?dept=')[1];
+      return currentPath === '/superadmin/qa-reviewer' && currentDept === itemDept;
+    }
+    if (item.path === '/superadmin/qa-reviewer') {
+      return currentPath === '/superadmin/qa-reviewer' && !currentDept;
+    }
     if (item.path === '/superadmin' && item.tab) {
       return currentPath === '/superadmin' && currentTab === item.tab;
     }

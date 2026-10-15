@@ -8,6 +8,8 @@ export interface ProfessionAllocationItem {
   contractBudget: number;
   clientOrders: number;
   total: number;
+  talentPool70: number;
+  platformShare30: number;
 }
 
 export const CANONICAL_SERVICES: Array<{ slug: string; label: string; legacyKey: string }> = [
@@ -18,7 +20,7 @@ export const CANONICAL_SERVICES: Array<{ slug: string; label: string; legacyKey:
   { slug: 'motion-graphics', label: 'Motion Graphics', legacyKey: 'motion' },
   { slug: 'video-editing', label: 'Video Editing', legacyKey: 'video' },
   { slug: 'social-media-management', label: 'Social Media Management', legacyKey: 'smm' },
-  { slug: 'it-solutions', label: 'General IT Solutions', legacyKey: 'it' },
+  { slug: 'general-it-solutions', label: 'General IT Solutions', legacyKey: 'it-solutions' },
 ];
 
 /**
@@ -33,7 +35,7 @@ export const normalizeServiceSlug = (cat: string | null | undefined): string => 
   if (c.includes('motion') || c.includes('animat')) return 'motion-graphics';
   if (c.includes('video') || c.includes('edit')) return 'video-editing';
   if (c.includes('social') || c.includes('smm') || c.includes('media')) return 'social-media-management';
-  if (c.includes('it') || c.includes('tech') || c.includes('support') || c.includes('solution') || c.includes('infrastruct')) return 'it-solutions';
+  if (c.includes('it') || c.includes('tech') || c.includes('support') || c.includes('solution') || c.includes('infrastruct')) return 'general-it-solutions';
   return 'graphic-design';
 };
 
@@ -123,10 +125,11 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   const usdRate = clientRev?.rate || 15.5;
 
   // Accumulate contract budgets by canonical service
+  // Includes open, active, claimed, in_progress, completed contracts so active marketplace jobs immediately contribute to the department pool
   const contractBudgetsByService: Record<string, number> = {};
+  const activeContractStatuses = ['open', 'active', 'claimed', 'in_progress', 'completed'];
   ((contractsRes?.data || []) as Array<{ category: string | null; budget: string | null; status: string | null }>).forEach((c) => {
-    // Only exclude cancelled contracts — posted contract budgets show under their profession immediately
-    if (c.status === 'cancelled') return;
+    if (!c.status || !activeContractStatuses.includes(c.status.toLowerCase())) return;
     const slug = normalizeServiceSlug(c.category);
     const amt = parseBudgetGhs(c.budget);
     contractBudgetsByService[slug] = (contractBudgetsByService[slug] || 0) + amt;
@@ -154,8 +157,12 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   let totalProfessionAllocation = 0;
 
   CANONICAL_SERVICES.forEach((service) => {
-    // Check both slug and legacy key for manual setting
-    const rawManual = Number(categorySetting[service.slug] ?? categorySetting[service.legacyKey]) || 0;
+    // Check slug, legacy key, and alternate aliases for manual setting
+    const rawManual = Number(
+      categorySetting[service.slug] ??
+      categorySetting[service.legacyKey] ??
+      (service.slug === 'general-it-solutions' ? (categorySetting['it'] ?? categorySetting['it-solutions']) : undefined)
+    ) || 0;
     // Discard old demo numbers (6500 for graphic, 3500 for web, 1200 for mobile)
     const isDemoVal = (service.slug === 'graphic-design' && rawManual === 6500) ||
                       (service.slug === 'web-development' && rawManual === 3500) ||
@@ -164,6 +171,8 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
     const contractBudget = contractBudgetsByService[service.slug] || 0;
     const clientOrders = clientOrdersByService[service.slug] || 0;
     const total = manualAmt + contractBudget + clientOrders;
+    const talentPool70 = round2(total * 0.70);
+    const platformShare30 = round2(total * 0.30);
 
     const item: ProfessionAllocationItem = {
       slug: service.slug,
@@ -172,9 +181,14 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
       contractBudget: round2(contractBudget),
       clientOrders: round2(clientOrders),
       total: round2(total),
+      talentPool70,
+      platformShare30,
     };
 
     byService[service.slug] = item;
+    if (service.slug === 'general-it-solutions') {
+      byService['it-solutions'] = item;
+    }
     servicesList.push(item);
     totalProfessionAllocation += total;
   });
