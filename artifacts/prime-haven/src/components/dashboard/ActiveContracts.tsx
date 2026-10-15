@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, ExternalLink, AlertCircle, CheckCircle2, FileText, MessageSquare } from 'lucide-react';
+import { Clock, ExternalLink, AlertCircle, CheckCircle2, FileText, MessageSquare, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,8 +21,14 @@ interface ActiveContract {
     project_status: string;
     price: number;
     source: 'client_projects' | 'client_orders' | 'job_contracts';
-    assignment_status?: 'claimed' | 'in_progress' | 'submitted' | 'active';
+    assignment_status?: 'claimed' | 'in_progress' | 'submitted' | 'active' | 'completed';
     chat_project_id?: string | null;
+    pendingCorrection?: {
+        id: string;
+        rejection_reason?: string | null;
+        service_type?: string | null;
+        client_ref?: string | null;
+    } | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -74,7 +80,7 @@ const ActiveContracts = () => {
                     )
                 `)
                 .eq('designer_id', user.id)
-                .in('status', ['claimed', 'in_progress', 'active']);
+                .in('status', ['claimed', 'in_progress', 'active', 'submitted']);
 
             if (assignmentError) throw assignmentError;
 
@@ -96,7 +102,7 @@ const ActiveContracts = () => {
                     )
                 `)
                 .eq('designer_id', user.id)
-                .in('status', ['claimed', 'active', 'in_progress']);
+                .in('status', ['claimed', 'active', 'in_progress', 'submitted']);
 
             if (contractClaimsError) throw contractClaimsError;
 
@@ -107,6 +113,13 @@ const ActiveContracts = () => {
                 .neq('project_status', 'completed');
 
             if (orderError) throw orderError;
+
+            // Fetch submissions with correction/rejection flags
+            const { data: corrections } = await (supabase as any)
+                .from('submissions')
+                .select('id, project_name, contract_id, client_project_id, client_ref, service_type, status, rejection_reason, created_at, updated_at')
+                .eq('designer_id', user.id)
+                .in('status', ['correction_requested', 'rejected', 'client_rejected']);
 
             const unified: ActiveContract[] = [
                 ...(assignments || [])
@@ -153,15 +166,40 @@ const ActiveContracts = () => {
                 }))
             ];
 
+            // Match pending corrections
+            unified.forEach(item => {
+                const match = (corrections || []).find((c: any) =>
+                    (c.contract_id && c.contract_id === item.id) ||
+                    (c.client_project_id && (c.client_project_id === item.id || c.client_project_id === item.chat_project_id)) ||
+                    (c.project_name && item.title && c.project_name.trim().toLowerCase() === item.title.trim().toLowerCase())
+                );
+                if (match) {
+                    item.pendingCorrection = {
+                        id: match.id,
+                        rejection_reason: match.rejection_reason,
+                        service_type: match.service_type,
+                        client_ref: match.client_ref,
+                    };
+                }
+            });
+
             const seen = new Set();
             const nowTime = new Date();
             const filtered = unified
                 .filter(item => {
                     const isDuplicate = seen.has(item.id);
                     seen.add(item.id);
+                    const isCompleted = item.project_status === 'completed' || item.project_status === 'approved' || item.assignment_status === 'completed';
+                    if (isCompleted) return false;
+
+                    // Keep contracts with pending corrections even if previous assignment_status was submitted
+                    if (item.pendingCorrection) {
+                        return !isDuplicate;
+                    }
+
                     const isExpired = isAfter(nowTime, new Date(item.deadline_at));
-                    const isSubmitted = item.assignment_status === 'submitted' || item.project_status === 'submitted' || item.project_status === 'completed';
-                    return !isDuplicate && !isExpired && !isSubmitted;
+                    const isSubmittedWithoutCorrection = item.assignment_status === 'submitted' || item.project_status === 'submitted';
+                    return !isDuplicate && !isExpired && !isSubmittedWithoutCorrection;
                 });
 
             setContracts(filtered.sort((a, b) => new Date(a.deadline_at).getTime() - new Date(b.deadline_at).getTime()));
@@ -190,7 +228,6 @@ const ActiveContracts = () => {
                 if (error) throw error;
             }
 
-
             // Clear local storage started state
             localStorage.removeItem(`started_project_${user.id}`);
             toast({ title: 'Job Released 🔄', description: 'The project has been released back to the marketplace pool.' });
@@ -202,17 +239,25 @@ const ActiveContracts = () => {
         }
     };
 
-    const handleStartWork = async (projectId: string) => {
+    const handleStartWork = async (contract: ActiveContract) => {
         if (!user) return;
-        setStarting(projectId);
+        setStarting(contract.id);
         try {
-            const { error } = await (supabase as any).rpc('start_job_contract_work', { p_contract_id: projectId });
-            if (error) throw error;
+            if (contract.source === 'job_contracts') {
+                const { error } = await (supabase as any).rpc('start_job_contract_work', { p_contract_id: contract.id });
+                if (error) throw error;
+            } else if (contract.source === 'client_projects') {
+                const { error } = await (supabase as any).rpc('start_project_work', { p_project_id: contract.id });
+                if (error) throw error;
+            } else {
+                await (supabase.from('client_orders') as any)
+                    .update({ project_status: 'in_progress' })
+                    .eq('id', contract.id);
+            }
 
-            const contract = contracts.find(c => c.id === projectId);
             localStorage.setItem(`started_project_${user.id}`, JSON.stringify({
-                jobId: projectId,
-                title: contract?.title || 'Active Project',
+                jobId: contract.id,
+                title: contract.title || 'Active Project',
                 startedAt: new Date().toISOString()
             }));
 
@@ -284,7 +329,11 @@ const ActiveContracts = () => {
                                     <div className="flex-1">
                                         <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Status</p>
                                         <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                            {contract.assignment_status === 'claimed' ? (
+                                            {contract.pendingCorrection ? (
+                                                <Badge variant="outline" className="border-amber-500/50 text-amber-500 bg-amber-500/10 text-[10px] font-bold">
+                                                    Correction Required
+                                                </Badge>
+                                            ) : contract.assignment_status === 'claimed' ? (
                                                 <>
                                                     <div className="w-2 h-2 rounded-full bg-yellow-500" />
                                                     <span>Claimed — not started</span>
@@ -323,12 +372,24 @@ const ActiveContracts = () => {
                                                 <MessageSquare className="w-3.5 h-3.5 text-primary" />
                                             </Button>
                                         )}
-                                        {contract.assignment_status === 'claimed' ? (
+                                        {contract.pendingCorrection ? (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 text-xs font-bold px-3 gap-1.5 bg-amber-500 hover:bg-amber-600 text-black shrink-0"
+                                                onClick={() => {
+                                                    const sub = contract.pendingCorrection!;
+                                                    navigate(`/submit-work?correction=${sub.id}&project=${encodeURIComponent(contract.title)}&client=${encodeURIComponent(sub.client_ref || '')}&service=${encodeURIComponent(sub.service_type || '')}`);
+                                                }}
+                                            >
+                                                <RefreshCw className="w-3.5 h-3.5" />
+                                                Submit Correction
+                                            </Button>
+                                        ) : contract.assignment_status === 'claimed' ? (
                                             <Button
                                                 size="sm"
                                                 className="h-8 text-xs font-bold px-3 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
                                                 disabled={starting === contract.id}
-                                                onClick={() => handleStartWork(contract.id)}
+                                                onClick={() => handleStartWork(contract)}
                                             >
                                                 {starting === contract.id ? 'Starting...' : 'Start Work'}
                                             </Button>

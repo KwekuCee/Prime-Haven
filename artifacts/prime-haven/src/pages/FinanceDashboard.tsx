@@ -314,21 +314,29 @@ const FinanceDashboard = () => {
     }, [user, authLoading, navigate, loadFinancialData]);
 
     const handleCreateDebt = async () => {
-        if (!newDebt.client_name || !newDebt.amount_owed) return;
+        if (!newDebt.client_name.trim() || !newDebt.amount_owed) return;
         try {
-            await (supabase.from('client_debts') as any).insert({
+            const { data, error } = await (supabase.from('client_debts') as any).insert({
                 client_id: newDebt.client_id || null,
-                client_name: newDebt.client_name,
-                project_name: newDebt.project_name || null,
+                client_name: newDebt.client_name.trim(),
+                project_name: newDebt.project_name?.trim() || null,
                 amount_owed: Number(newDebt.amount_owed),
-                client_phone: newDebt.client_phone || null,
+                client_phone: newDebt.client_phone?.trim() || null,
                 network_provider: newDebt.network_provider || 'mtn',
                 status: 'pending',
-            });
+            }).select().single();
+
+            if (error) throw error;
+
+            // Optimistically prepend to clientDebts state so it immediately shows in the records
+            if (data) {
+                setClientDebts(prev => [data, ...prev]);
+            }
+
             toast({ title: 'Debt Recorded', description: 'Escrow debt successfully logged with MoMo details.' });
             setNewDebt({ client_id: '', client_name: '', project_name: '', amount_owed: 0, client_phone: '', network_provider: 'mtn' });
             setIsDebtModalOpen(false);
-            await loadFinancialData();
+            loadFinancialData();
         } catch (error: any) {
             toast({ title: 'Failed to record debt', description: error.message, variant: 'destructive' });
         }
@@ -712,17 +720,17 @@ const FinanceDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Card 2: Pending Salaries to be Paid */}
+                        {/* Card 2: Pending Salaries */}
                         <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-amber-500/50 transition-all">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Salaries to be Paid</span>
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Salaries</span>
                                 <Clock className="w-4 h-4 text-amber-400" />
                             </div>
                             <div className="text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
-                                GH₵ {financeMetrics.monthPendingSalaries.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                GH₵ {financeMetrics.allTimePendingSalaries.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
-                                Current outstanding 70% share awaiting payout
+                                70% Talent Accrued minus Salaries Paid
                             </div>
                         </div>
 

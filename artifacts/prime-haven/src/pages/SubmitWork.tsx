@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -93,6 +93,16 @@ const SubmitWork = () => {
   const [cooldownUntil, setCooldownUntil] = useState<string | null>(null);
   const [cooldownReason, setCooldownReason] = useState<string | null>(null);
 
+  const uniqueServiceTypes = useMemo(() => {
+    const seen = new Set<string>();
+    return serviceTypes.filter(s => {
+      const key = s.label.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, []);
+
   // Check if user has a started project
   useEffect(() => {
     if (user && !correctionId) {
@@ -129,12 +139,12 @@ const SubmitWork = () => {
           setCooldownReason(null);
         }
 
-        // 1. Started client_projects — only assignments the designer has clicked "Start Work" on
+        // 1. Claimed client_projects
         const { data: cpAssignments } = await supabase
           .from('project_assignments')
           .select(`status, project:client_projects(id, title, category)`)
           .eq('designer_id', user.id)
-          .in('status', ['in_progress', 'active']);
+          .in('status', ['claimed', 'active', 'in_progress']);
 
         const availableCP: JobOption[] = (cpAssignments || [])
           .filter((a: any) => a.project)
@@ -147,12 +157,12 @@ const SubmitWork = () => {
             clientProjectId: a.project.id,
           }));
 
-        // 2. Claimed job_contracts — only jobs where work has actually been STARTED
+        // 2. Claimed job_contracts
         const { data: jcClaims } = await supabase
           .from('job_contract_claims')
           .select(`contract:job_contracts(id, title, category, client_project_id)`)
           .eq('designer_id', user.id)
-          .in('status', ['active', 'in_progress']);
+          .in('status', ['claimed', 'active', 'in_progress']);
 
         const availableJC: JobOption[] = (jcClaims || [])
           .filter((c: any) => c.contract)
@@ -268,17 +278,14 @@ const SubmitWork = () => {
   };
 
   const handleJobSelect = (jobId: string) => {
-    // If there's a started project, only allow selecting that project
-    if (!correctionId && startedProject && startedProject.jobId && jobId !== startedProject.jobId) {
-      toast({
-        title: "Project Already Started",
-        description: `You must submit your work for "${startedProject.title}" before starting another project.`,
-        variant: "destructive",
-      });
-      return;
-    }
     const job = availableJobs.find(j => j.id === jobId);
-    setFormData(prev => ({ ...prev, selectedJobId: jobId, clientReference: job?.client_name || '', projectName: prev.projectName || job?.title || '' }));
+    setFormData(prev => ({
+      ...prev,
+      selectedJobId: jobId,
+      clientReference: job?.client_name || prev.clientReference,
+      projectName: prev.projectName || job?.title || '',
+      serviceType: job?.category && SERVICE_TYPES.some(s => s.id === job.category) ? job.category : prev.serviceType,
+    }));
   };
 
   const isLinkOnlyService = formData.serviceType === 'uiux' || formData.serviceType === 'web';
@@ -445,7 +452,7 @@ const SubmitWork = () => {
     } finally { setLoading(false); }
   };
 
-  const getSelectedService = () => serviceTypes.find(s => s.id === formData.serviceType);
+  const getSelectedService = () => uniqueServiceTypes.find(s => s.id === formData.serviceType) || serviceTypes.find(s => s.id === formData.serviceType);
   const successfulUploads = uploadedFiles.filter(f => f.url && !f.error);
   const uploadingFiles = uploadedFiles.filter(f => f.uploading);
   const isCooldown = checkCooldownStatus(cooldownUntil).isInCooldown;
@@ -521,18 +528,13 @@ const SubmitWork = () => {
                             <SelectValue placeholder={jobsLoading ? "Loading..." : "Select a job"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {(() => {
-                              // If a project has been started, only show that one
-                              const visibleJobs = (startedProject && !correctionId)
-                                ? availableJobs.filter(j => j.id === startedProject.jobId)
-                                : availableJobs;
-                              if (visibleJobs.length === 0 && !jobsLoading) {
-                                return <SelectItem value="none" disabled>{startedProject ? 'Started project not found in active list' : 'No active jobs — start one first'}</SelectItem>;
-                              }
-                              return visibleJobs.map(job => (
+                            {availableJobs.length === 0 && !jobsLoading ? (
+                              <SelectItem value="none" disabled>No active jobs — start one first</SelectItem>
+                            ) : (
+                              availableJobs.map(job => (
                                 <SelectItem key={job.id} value={job.id}>{job.title} {job.client_name ? `— ${job.client_name} ` : ''}</SelectItem>
-                              ));
-                            })()}
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       )}
@@ -548,7 +550,7 @@ const SubmitWork = () => {
               {/* Service Type */}
               <SectionCard icon={Tag} title="Service Type" desc="Select your work category" delay={0.1}>
                 <RadioGroup value={formData.serviceType} onValueChange={(v) => setFormData(p => ({ ...p, serviceType: v }))} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {serviceTypes.map((s) => (
+                  {uniqueServiceTypes.map((s) => (
                     <div key={s.id}>
                       <RadioGroupItem value={s.id} id={s.id} className="peer sr-only" />
                       <Label htmlFor={s.id} className="flex flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/10 p-3 hover:bg-muted/20 cursor-pointer transition-all peer-data-[state=checked]:border-primary/50 peer-data-[state=checked]:bg-primary/5">

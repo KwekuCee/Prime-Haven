@@ -641,10 +641,10 @@ const Dashboard = () => {
             <div className="flex items-center justify-between gap-4 mb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-heading font-bold text-foreground">Corrections &amp; Redos Needed</h2>
+                  <h2 className="text-lg font-heading font-bold text-foreground">Corrections Requiring Action</h2>
                   <Badge className="bg-amber-500 text-black font-bold text-[10px]">{correctionRequests.length}</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">Please review the reviewer feedback and submit your corrected revision within the 2-day deadline.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Please review the reviewer feedback and submit your corrected revision within the 48-hour deadline.</p>
               </div>
             </div>
             <div className="grid gap-3">
@@ -660,7 +660,7 @@ const Dashboard = () => {
                           {isRejected ? 'Redo Required' : 'Correction Needed'}
                         </Badge>
                         <Badge variant="outline" className={`text-[10px] font-mono gap-1 ${deadline.isExpired ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-amber-500 text-amber-500 bg-amber-500/10'}`}>
-                          <Clock className="w-3 h-3" /> 2-Day Deadline: {deadline.formatted}
+                          <Clock className="w-3 h-3" /> 48h Deadline: {deadline.formatted}
                         </Badge>
                       </div>
                       <p className="text-[11px] text-muted-foreground">{submission.client_ref ? `Client: ${submission.client_ref}` : 'Internal Milestone'}</p>
