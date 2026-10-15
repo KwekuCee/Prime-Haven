@@ -295,12 +295,7 @@ const SuperAdminDashboard = () => {
     client_acceptance_points: { value: 40 },
     revenue_share_percentage: { value: 50 }
   });
-  const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
-  const [revenueInput, setRevenueInput] = useState('');
-  const [exchangeRateInput, setExchangeRateInput] = useState('10');
-  const [revenueByCategory, setRevenueByCategory] = useState<Record<string, string>>({});
-  const [selectedServiceToAllocate, setSelectedServiceToAllocate] = useState<string>('graphic-design');
-  const [allocationAmountInput, setAllocationAmountInput] = useState<string>('');
+
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -316,7 +311,7 @@ const SuperAdminDashboard = () => {
   const [clientRejectionReason, setClientRejectionReason] = useState('');
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isRecalculatingSalaries, setIsRecalculatingSalaries] = useState(false);
-  const [isFetchingRate, setIsFetchingRate] = useState(false);
+
   const [submissionsPage, setSubmissionsPage] = useState(1);
   const [logsPage, setLogsPage] = useState(1);
   const [previewLinkUrl, setPreviewLinkUrl] = useState<string | null>(null);
@@ -885,107 +880,7 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // Fetch live international exchange rate (USD to GHS)
-  const handleFetchLiveRate = async () => {
-    try {
-      setIsFetchingRate(true);
-      const response = await fetch('https://open.er-api.com/v6/latest/USD');
-      const data = await response.json();
 
-      if (data && data.rates && data.rates.GHS) {
-        const liveRate = data.rates.GHS;
-        setExchangeRateInput(liveRate.toFixed(2));
-        toast({
-          title: 'Live Rate Fetched',
-          description: `Current international rate: 1 USD = ${liveRate.toFixed(2)} GHS`
-        });
-      } else {
-        throw new Error('Could not parse exchange rate data');
-      }
-    } catch (error: any) {
-      console.error('Fetch rate error:', error);
-      toast({
-        title: 'Fetch Failed',
-        description: 'Using fallback rate (10.00). Please check your internet connection.',
-        variant: 'destructive'
-      });
-      setExchangeRateInput('10.00');
-    } finally {
-      setIsFetchingRate(false);
-    }
-  };
-
-  const openRevenueModal = useCallback(() => {
-    const cat = (systemSettings as any).monthly_revenue_by_category || {};
-    const initialMap: Record<string, string> = {};
-    CANONICAL_SERVICES.forEach((s) => {
-      const val = Number(cat[s.slug] ?? cat[s.legacyKey]);
-      // Discard old demo numbers (6500, 3500, 1200)
-      if (val !== undefined && val !== null && !isNaN(val) && val > 0 && val !== 6500 && val !== 3500 && val !== 1200) {
-        initialMap[s.slug] = String(val);
-      }
-    });
-    setRevenueByCategory(initialMap);
-    setSelectedServiceToAllocate('graphic-design');
-    setAllocationAmountInput(initialMap['graphic-design'] || '');
-    setIsRevenueModalOpen(true);
-  }, [systemSettings]);
-
-  // Update monthly revenue by category for all services
-  const handleUpdateRevenue = async () => {
-    try {
-      const categoryData: Record<string, number> = {};
-      let totalAmount = 0;
-
-      CANONICAL_SERVICES.forEach((s) => {
-        const val = parseFloat(revenueByCategory[s.slug] || '0') || 0;
-        if (val > 0) {
-          categoryData[s.slug] = val;
-          categoryData[s.legacyKey] = val; // preserve legacy aliases
-          totalAmount += val;
-        }
-      });
-
-      const rateAmount = parseFloat(exchangeRateInput) || 10;
-
-      if (totalAmount < 0) {
-        toast({ title: 'Invalid Amount', description: 'Revenue amounts must be positive.', variant: 'destructive' });
-        return;
-      }
-
-      const currentDate = new Date();
-      const revenueData = { amount: totalAmount, currency: 'GHS', month: currentDate.getMonth() + 1, year: currentDate.getFullYear() };
-
-      // Upsert settings
-      await Promise.all([
-        supabase.from('system_settings').upsert({ key: 'monthly_revenue', value: revenueData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
-        supabase.from('system_settings').upsert({ key: 'monthly_revenue_by_category', value: categoryData, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
-        supabase.from('system_settings').upsert({ key: 'usd_to_ghs_rate', value: rateAmount, updated_at: new Date().toISOString(), updated_by: user?.id }, { onConflict: 'key' }),
-      ]);
-      invalidateSystemSettings();
-
-      if (user) {
-        await supabase.from('system_logs').insert({
-          action_type: 'revenue_updated',
-          admin_id: user.id,
-          description: `Revenue & Rate updated — Rate: ${rateAmount}, Total Allocated: GH₵${totalAmount.toFixed(2)} across ${Object.keys(categoryData).length / 2} services`,
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      setSystemSettings(prev => ({ ...prev, monthly_revenue: revenueData, monthly_revenue_by_category: categoryData, usd_to_ghs_rate: rateAmount }));
-
-      // Recalculate salaries by category
-      await recalculateSalaries();
-
-      toast({ title: 'Revenue Updated', description: `Total: GH₵${totalAmount.toFixed(2)}. Salaries recalculated across all services.` });
-      setIsRevenueModalOpen(false);
-      await loadDashboardDataSafe();
-    } catch (error: any) {
-      console.error('Revenue update error:', error);
-      toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
-    }
-  };
 
   // Handle correction request with note
   const handleRequestCorrectionWithNote = async () => {
@@ -1569,10 +1464,7 @@ const SuperAdminDashboard = () => {
             <p className="text-xs sm:text-sm text-slate-400 mt-1">Real-time health, department output, talent payouts, and milestone review queue</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-on-ink hover:bg-white/20 hover:text-on-ink" onClick={openRevenueModal}>
-              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              Revenue Allocation
-            </Button>
+
             <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-white/15 bg-white/10 text-on-ink hover:bg-white/20 hover:text-on-ink" onClick={handleRecalculateSalaries} disabled={isRecalculatingSalaries}>
               {isRecalculatingSalaries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5 text-primary" />}
               <span className="hidden sm:inline">Recalculate Salaries</span>
@@ -2315,169 +2207,7 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* ========== DIALOGS ========== */}
-      {/* Revenue Modal */}
-      <Dialog open={isRevenueModalOpen} onOpenChange={setIsRevenueModalOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-500" />
-              Profession Revenue Allocation
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Select any of the 8 platform services from the dropdown to allocate revenue. Talent earnings auto-recalculate with the 70% profit split.
-            </DialogDescription>
-          </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            {/* Service Selector Dropdown & Amount Input */}
-            <div className="p-3.5 rounded-xl border border-border/60 bg-muted/30 space-y-3">
-              <Label className="text-xs font-semibold text-foreground">Select Service &amp; Set Allocation</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                <div className="sm:col-span-7">
-                  <Select
-                    value={selectedServiceToAllocate}
-                    onValueChange={(val) => {
-                      setSelectedServiceToAllocate(val);
-                      setAllocationAmountInput(revenueByCategory[val] || '');
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue placeholder="Choose a service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CANONICAL_SERVICES.map((s) => (
-                        <SelectItem key={s.slug} value={s.slug} className="text-xs">
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="sm:col-span-5 flex gap-1.5">
-                  <Input
-                    type="number"
-                    placeholder="GH₵ 0.00"
-                    value={allocationAmountInput}
-                    onChange={(e) => setAllocationAmountInput(e.target.value)}
-                    className="h-9 text-xs"
-                    min="0"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-9 px-3 text-xs shrink-0"
-                    onClick={() => {
-                      const amt = parseFloat(allocationAmountInput);
-                      setRevenueByCategory((prev) => ({
-                        ...prev,
-                        [selectedServiceToAllocate]: Number.isFinite(amt) && amt > 0 ? String(amt) : '',
-                      }));
-                    }}
-                  >
-                    Set
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Currently Allocated Services Breakdown */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs font-semibold">Allocated Services Breakdown</Label>
-                <span className="text-[11px] text-muted-foreground">
-                  {Object.entries(revenueByCategory).filter(([_, v]) => parseFloat(v) > 0).length} of 8 services active
-                </span>
-              </div>
-              <div className="border border-border/60 rounded-xl divide-y divide-border/40 max-h-48 overflow-y-auto">
-                {CANONICAL_SERVICES.map((s) => {
-                  const rawVal = revenueByCategory[s.slug] || '';
-                  const valNum = parseFloat(rawVal) || 0;
-                  return (
-                    <div key={s.slug} className="p-2.5 flex items-center justify-between gap-3 text-xs hover:bg-muted/30 transition-colors">
-                      <div className="min-w-0">
-                        <span className="font-medium text-foreground block truncate">{s.label}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {valNum > 0 ? `Talent 70%: GH₵${(valNum * 0.7).toFixed(2)}` : 'No revenue allocated'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={rawVal}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setRevenueByCategory((p) => ({ ...p, [s.slug]: v }));
-                          }}
-                          className="w-24 h-7 text-xs text-right font-mono"
-                        />
-                        {valNum > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => setRevenueByCategory((p) => ({ ...p, [s.slug]: '' }))}
-                            title="Clear allocation"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Exchange Rate */}
-            <div className="space-y-1.5 pt-1">
-              <Label className="text-xs font-medium flex justify-between items-center">
-                System Exchange Rate (1 USD = ? GHS)
-                <Button variant="ghost" className="h-5 px-1.5 text-[10px] text-primary" onClick={handleFetchLiveRate} disabled={isFetchingRate}>
-                  {isFetchingRate ? <RefreshCw className="w-2.5 h-2.5 animate-spin mr-1" /> : <TrendingUp className="w-2.5 h-2.5 mr-1" />}
-                  Fetch International
-                </Button>
-              </Label>
-              <Input type="number" placeholder="10.00" value={exchangeRateInput} onChange={e => setExchangeRateInput(e.target.value)} className="h-9 border-primary/30" />
-            </div>
-
-            {/* Grand Total Summary Card */}
-            <div className="p-3 rounded-xl bg-muted/60 border border-border/50 text-xs flex items-center justify-between">
-              <div>
-                <span className="text-muted-foreground block text-[11px]">Total Monthly Allocated Pool</span>
-                <span className="text-base font-extrabold font-mono text-emerald-500">
-                  GH₵{CANONICAL_SERVICES.reduce((sum, s) => sum + (parseFloat(revenueByCategory[s.slug] || '0') || 0), 0).toFixed(2)}
-                </span>
-              </div>
-              <div className="text-right text-[11px] text-muted-foreground">
-                <span>Talent 70% Share: </span>
-                <strong className="text-foreground font-mono">
-                  GH₵{(CANONICAL_SERVICES.reduce((sum, s) => sum + (parseFloat(revenueByCategory[s.slug] || '0') || 0), 0) * 0.7).toFixed(2)}
-                </strong>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row sm:justify-between items-center">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setRevenueByCategory({});
-                setAllocationAmountInput('');
-              }}
-              className="text-destructive hover:bg-destructive/10 text-xs self-start sm:self-auto"
-            >
-              Clear All Allocations
-            </Button>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <Button variant="outline" size="sm" onClick={() => setIsRevenueModalOpen(false)}>Cancel</Button>
-              <Button size="sm" onClick={handleUpdateRevenue}><Save className="w-3.5 h-3.5 mr-1.5" />Save Allocations</Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <SubmissionFilesDialog open={!!viewFilesSubmission} onOpenChange={(open) => !open && setViewFilesSubmission(null)} submission={viewFilesSubmission} />
 

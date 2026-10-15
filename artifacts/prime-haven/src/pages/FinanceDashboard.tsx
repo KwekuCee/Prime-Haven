@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     Building, CreditCard, DollarSign, Wallet, ArrowUpRight, ArrowDownRight,
     Activity, ArrowRightLeft, FileText, CheckCircle, Clock, Mail, Search,
-    Users, Plus
+    Users, Plus, Calendar, TrendingUp, Sparkles, Layers, Palette, Layout,
+    Globe, Smartphone, Clapperboard, Film, Megaphone, Cpu, Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,19 @@ import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 import { loadPlatformRevenue, CANONICAL_SERVICES } from '@/lib/platformRevenue';
+
+const getDepartmentIcon = (slug: string) => {
+    switch (slug) {
+        case 'graphic-design': return Palette;
+        case 'ui-ux-design': return Layout;
+        case 'web-development': return Globe;
+        case 'motion-graphics': return Clapperboard;
+        case 'video-editing': return Film;
+        case 'social-media-management': return Megaphone;
+        case 'general-it-solutions': return Cpu;
+        default: return Layers;
+    }
+};
 
 const FinanceDashboard = () => {
     const navigate = useNavigate();
@@ -57,6 +71,19 @@ const FinanceDashboard = () => {
         byService?: Record<string, any>;
         services?: any[];
     }>({ graphic: 0, uiux: 0, web: 0, total: 0 });
+
+    const [financeMetrics, setFinanceMetrics] = useState({
+        allTimeGross: 0,
+        allTimeSalariesPaid: 0,
+        allTimePendingSalaries: 0,
+        allTimeTalentShare: 0,
+        allTimePlatformProfit: 0,
+        monthGross: 0,
+        monthPendingSalaries: 0,
+        monthSalariesPaid: 0,
+        monthPlatformProfit: 0,
+    });
+
     const [stats, setStats] = useState({
         totalRevenue: 0,
         escrow: 0,
@@ -102,8 +129,21 @@ const FinanceDashboard = () => {
             const revenue = await loadPlatformRevenue().catch(() => null);
             const clientRevenueGhs = revenue?.clientRevenueGhs || 0;
             const escrow = revenue?.escrow || 0;
-            if (revenue?.categoryRevenue) {
-                setCategoryRevenue(revenue.categoryRevenue);
+            if (revenue) {
+                setFinanceMetrics({
+                    allTimeGross: revenue.allTimeGross,
+                    allTimeSalariesPaid: revenue.allTimeSalariesPaid,
+                    allTimePendingSalaries: revenue.allTimePendingSalaries,
+                    allTimeTalentShare: revenue.allTimeTalentShare,
+                    allTimePlatformProfit: revenue.allTimePlatformProfit,
+                    monthGross: revenue.monthGross,
+                    monthPendingSalaries: revenue.monthPendingSalaries,
+                    monthSalariesPaid: revenue.monthSalariesPaid,
+                    monthPlatformProfit: revenue.monthPlatformProfit,
+                });
+                if (revenue.categoryRevenue) {
+                    setCategoryRevenue(revenue.categoryRevenue);
+                }
             }
 
             // Completed ledger payments (used for the 70/30 client split below).
@@ -479,103 +519,210 @@ const FinanceDashboard = () => {
                     <p className="text-xs text-muted-foreground mt-0.5">Real-time revenue tracking, platform profit tracking, and talent payouts.</p>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-indigo-500/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total System Revenue</span>
-                            <DollarSign className="w-4 h-4 text-indigo-500" />
-                        </div>
-                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="mt-2 text-[10px] text-emerald-500 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />Orders + System Config</div>
+                {/* Section 1: All-Time Financial Overview */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-3">
+                        <TrendingUp className="w-4 h-4 text-indigo-400" />
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">All-Time Financial Overview</h2>
                     </div>
-                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-amber-500/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Funds in Escrow & Debts</span>
-                            <Wallet className="w-4 h-4 text-amber-500" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Card 1: Total Platform Revenue */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-indigo-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Platform Revenue</span>
+                                <DollarSign className="w-4 h-4 text-indigo-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight">
+                                GH₵ {financeMetrics.allTimeGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                <ArrowUpRight className="w-3 h-3 text-emerald-400" /> All client orders, projects & fees
+                            </div>
                         </div>
-                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.escrow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="mt-2 text-[10px] text-amber-500 flex items-center gap-1">Clients still owing</div>
-                    </div>
-                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-emerald-500/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Prime Haven Profit</span>
-                            <Activity className="w-4 h-4 text-emerald-500" />
-                        </div>
-                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="mt-2 text-[10px] text-emerald-500 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />Revenue minus payouts</div>
-                    </div>
-                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-indigo-500/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Gateway Collections (70 / 30)</span>
-                            <ArrowRightLeft className="w-4 h-4 text-indigo-500" />
-                        </div>
-                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.collected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
-                            Talent share GH₵ {stats.talentShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            {' • '}Prime Haven GH₵ {stats.platformShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                    </div>
 
-                    <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-red-500/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Talent Payouts</span>
-                            <CreditCard className="w-4 h-4 text-red-500" />
+                        {/* Card 2: Total Salaries Paid */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-sky-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Salaries Paid</span>
+                                <Wallet className="w-4 h-4 text-sky-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-sky-400">
+                                GH₵ {financeMetrics.allTimeSalariesPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                Disbursed talent withdrawals & payouts
+                            </div>
                         </div>
-                        <div className="text-3xl font-bold tracking-tight">GH₵ {stats.pendingPayouts.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="mt-2 text-[10px] text-red-500 flex items-center gap-1"><Clock className="w-3 h-3" />Total salaries waiting</div>
+
+                        {/* Card 3: Total Talent Accrued (70%) */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-purple-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Talent Accrued (70%)</span>
+                                <Users className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-purple-400">
+                                GH₵ {financeMetrics.allTimeTalentShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                Cumulative 70% share across approved jobs
+                            </div>
+                        </div>
+
+                        {/* Card 4: Total Prime Haven Profit (30%) */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-emerald-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Prime Haven Profit (30%)</span>
+                                <Activity className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-400">
+                                GH₵ {financeMetrics.allTimePlatformProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                All-time 30% platform margin + fees
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Department Revenue Allocation */}
+                {/* Section 2: This Month's Financials */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Calendar className="w-4 h-4 text-amber-400" />
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">This Month's Financials</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Card 1: This Month's Gross Revenue */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-indigo-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">This Month's Revenue</span>
+                                <DollarSign className="w-4 h-4 text-indigo-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight">
+                                GH₵ {financeMetrics.monthGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                Current calendar month gross intake
+                            </div>
+                        </div>
+
+                        {/* Card 2: Pending Salaries to be Paid */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-amber-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Salaries to be Paid</span>
+                                <Clock className="w-4 h-4 text-amber-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
+                                GH₵ {financeMetrics.monthPendingSalaries.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                Current outstanding 70% share awaiting payout
+                            </div>
+                        </div>
+
+                        {/* Card 3: Salaries Disbursed This Month */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-sky-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Salaries Disbursed This Month</span>
+                                <CreditCard className="w-4 h-4 text-sky-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-sky-400">
+                                GH₵ {financeMetrics.monthSalariesPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                Payouts completed this month
+                            </div>
+                        </div>
+
+                        {/* Card 4: Prime Haven Profit This Month */}
+                        <div className="rounded-xl border border-border/50 bg-card/80 p-5 hover:border-emerald-500/50 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Prime Haven Profit This Month</span>
+                                <Sparkles className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-400">
+                                GH₵ {financeMetrics.monthPlatformProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                                Realized 30% platform margin this month
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section 3: Department Breakdown Grid */}
                 <div className="rounded-xl border border-border/50 bg-card/60 p-5 shadow-xs mb-8">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <div>
                             <h2 className="text-base font-bold flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 text-emerald-500" /> Profession Revenue Allocation
+                                <Layers className="w-4 h-4 text-indigo-400" /> Department Revenue Breakdown
                             </h2>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                Monthly revenue distributed to department pools for talent salary calculations.
+                                Organic revenue pools derived from active contracts and client projects across all 8 tracks.
                             </p>
                         </div>
-                        <Badge variant="outline" className="text-xs font-mono font-bold text-emerald-500 border-emerald-500/30 bg-emerald-500/10 self-start sm:self-auto">
-                            Allocated Pool: GH₵ {categoryRevenue.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <Badge variant="outline" className="text-xs font-mono font-bold text-indigo-400 border-indigo-500/30 bg-indigo-500/10 self-start sm:self-auto">
+                            Total Department Volume: GH₵ {categoryRevenue.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Badge>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {categoryRevenue.services && categoryRevenue.services.filter((s: any) => (s.total || 0) > 0).length > 0 ? (
-                            categoryRevenue.services.filter((s: any) => (s.total || 0) > 0).map((s: any) => (
-                                <div key={s.slug} className="rounded-lg border border-border/40 bg-card/40 p-3.5 flex flex-col justify-between">
-                                    <div>
-                                        <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider block truncate" title={s.label}>
-                                            {s.label} Pool
-                                        </span>
-                                        <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
-                                            GH₵ {Number(s.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {(() => {
+                            const activeServices = (categoryRevenue.services || []).filter(
+                                (s: any) => s.slug !== 'mobile-app-development' && Number(s.total || 0) > 0
+                            );
+                            if (activeServices.length === 0) {
+                                return (
+                                    <div className="col-span-full py-8 text-center text-xs text-muted-foreground bg-card/20 rounded-xl border border-dashed border-border/50">
+                                        No active department revenue recorded yet.
+                                        Revenues, department pools, and talent payouts derive organically from live contracts and client orders.
+                                    </div>
+                                );
+                            }
+                            return activeServices.map((s: any) => {
+                                const IconComponent = getDepartmentIcon(s.slug);
+                                const totalVal = Number(s.total || 0);
+                                const talent70 = Number(s.talentPool70 ?? (totalVal * 0.7));
+                                const ph30 = Number(s.platformShare30 ?? (totalVal * 0.3));
+                                return (
+                                    <div key={s.slug} className="rounded-lg border border-border/40 bg-card/40 p-4 flex flex-col justify-between hover:border-indigo-500/40 transition-colors">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 rounded-md bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                                                        <IconComponent className="w-4 h-4" />
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-foreground tracking-tight block truncate" title={s.label}>
+                                                        {s.label}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-xl font-bold font-mono text-indigo-400 mt-1">
+                                                GH₵ {totalVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 pt-2.5 border-t border-border/30 text-[11px] flex flex-col gap-1.5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground text-[10px]">Contracts:</span>
+                                                <span className="font-mono text-foreground font-medium text-[10px]">GH₵{Number(s.contractBudget || 0).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground text-[10px]">Orders:</span>
+                                                <span className="font-mono text-foreground font-medium text-[10px]">GH₵{Number(s.clientOrders || 0).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-1 pt-1 border-t border-border/20">
+                                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+                                                    70% Talent: GH₵{talent70.toFixed(0)}
+                                                </Badge>
+                                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-indigo-500/30 text-indigo-400 bg-indigo-500/10">
+                                                    30% PH: GH₵{ph30.toFixed(0)}
+                                                </Badge>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground flex flex-col gap-0.5">
-                                        <div className="flex justify-between">
-                                            <span>Allocated / Budget:</span>
-                                            <span className="font-mono text-foreground font-medium">GH₵{Number((s.manualAllocation || 0) + (s.contractBudget || 0)).toFixed(0)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Client Orders:</span>
-                                            <span className="font-mono text-foreground font-medium">GH₵{Number(s.clientOrders || 0).toFixed(0)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-emerald-500 font-semibold mt-0.5">
-                                            <span>Talent 70%:</span>
-                                            <span className="font-mono">GH₵{(Number(s.total || 0) * 0.7).toFixed(0)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="col-span-full py-8 text-center text-xs text-muted-foreground bg-card/20 rounded-xl border border-dashed border-border/50">
-                                No active profession allocations or contract budgets yet.
-                                Post a job contract or allocate budget in Super Admin to see pools here.
-                            </div>
-                        )}
+                                );
+                            });
+                        })()}
                     </div>
                 </div>
 
