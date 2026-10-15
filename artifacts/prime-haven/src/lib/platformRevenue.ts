@@ -102,7 +102,7 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
     loadClientRevenue().catch(() => null),
     (supabase.from('job_contracts') as any).select('id, category, budget, status'),
     (supabase.from('client_orders') as any).select('id, service_type, price, payment_status'),
-    (supabase.from('client_projects') as any).select('id, category, price_ghs, budget, payment_status'),
+    (supabase.from('client_projects') as any).select('id, category, price_ghs, price_usd, paid_at'),
   ]);
 
   const feeRevenue = ((paymentsRes?.data || []) as Array<{ amount: number | null }>)
@@ -120,10 +120,13 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   const monthlyRevenueSetting = settingsRows.find((s) => s.key === 'monthly_revenue')?.value;
   const categorySetting = settingsRows.find((s) => s.key === 'monthly_revenue_by_category')?.value || {};
 
+  const usdRate = clientRev?.rate || 15.5;
+
   // Accumulate contract budgets by canonical service
   const contractBudgetsByService: Record<string, number> = {};
   ((contractsRes?.data || []) as Array<{ category: string | null; budget: string | null; status: string | null }>).forEach((c) => {
-    if (c.status === 'cancelled') return;
+    // Only contracts a talent has completed count toward revenue.
+    if (c.status !== 'completed') return;
     const slug = normalizeServiceSlug(c.category);
     const amt = parseBudgetGhs(c.budget);
     contractBudgetsByService[slug] = (contractBudgetsByService[slug] || 0) + amt;
@@ -132,16 +135,16 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   // Accumulate client orders / projects by canonical service
   const clientOrdersByService: Record<string, number> = {};
   ((ordersRes?.data || []) as Array<{ service_type: string | null; price: number | null; payment_status: string | null }>).forEach((o) => {
-    if (o.payment_status && !['paid', 'success', 'completed'].includes(o.payment_status)) return;
+    if (!o.payment_status || !['paid', 'success', 'completed'].includes(o.payment_status)) return;
     const slug = normalizeServiceSlug(o.service_type);
-    const amt = Number(o.price) || 0;
+    const amt = (Number(o.price) || 0) * usdRate; // order prices are in USD
     clientOrdersByService[slug] = (clientOrdersByService[slug] || 0) + amt;
   });
 
-  ((projectsRes?.data || []) as Array<{ category: string | null; price_ghs: number | null; budget: string | null; payment_status: string | null }>).forEach((p) => {
-    if (p.payment_status && !['paid', 'success', 'completed'].includes(p.payment_status)) return;
+  ((projectsRes?.data || []) as Array<{ category: string | null; price_ghs: number | null; price_usd: number | null; paid_at: string | null }>).forEach((p) => {
+    if (!p.paid_at) return; // only money confirmed by the payment gateway
     const slug = normalizeServiceSlug(p.category);
-    const amt = Number(p.price_ghs) || parseBudgetGhs(p.budget);
+    const amt = Number(p.price_ghs) || (Number(p.price_usd) || 0) * usdRate;
     clientOrdersByService[slug] = (clientOrdersByService[slug] || 0) + amt;
   });
 
@@ -152,7 +155,8 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
 
   CANONICAL_SERVICES.forEach((service) => {
     // Check both slug and legacy key for manual setting
-    const manualAmt = Number(categorySetting[service.slug] ?? categorySetting[service.legacyKey]) || 0;
+    // Manual/demo allocations are no longer counted — only real money.
+    const manualAmt = 0;
     const contractBudget = contractBudgetsByService[service.slug] || 0;
     const clientOrders = clientOrdersByService[service.slug] || 0;
     const total = manualAmt + contractBudget + clientOrders;
@@ -176,7 +180,7 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   const webTotal = byService['web-development']?.total || 0;
 
   let configuredMonthly = Number(monthlyRevenueSetting?.amount) || 0;
-  if (configuredMonthly === 0 && totalProfessionAllocation > 0) {
+  if (totalProfessionAllocation > 0) {
     configuredMonthly = totalProfessionAllocation;
   }
 

@@ -175,7 +175,7 @@ const SubmitWork = () => {
             {
               id: correctionId,
               title: `${correctionName} (Revision)`,
-              client_name: correctionClient ? decodeURIComponent(correctionClient) : null,
+              client_name: (correctionClient ? decodeURIComponent(correctionClient) : null) as any,
               category: correctionService || 'logo',
             },
             ...data
