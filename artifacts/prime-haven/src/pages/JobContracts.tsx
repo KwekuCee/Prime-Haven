@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
+import { recalculateSalaries } from '@/lib/recalculateSalaries';
 
 const JOB_CATEGORIES = [
   { id: 'graphic-design', label: 'Graphic Design' },
@@ -350,6 +351,45 @@ const JobContracts = () => {
           });
         } catch (discordErr) {
           console.error('Discord update failed:', discordErr);
+        }
+      }
+
+      // If marked completed by admin, complete claims, award 40 points to claiming talents, and recalculate salaries (70% profit split)
+      if (newStatus === 'completed') {
+        try {
+          await (supabase.from('job_contract_claims') as any)
+            .update({ status: 'completed' })
+            .eq('contract_id', contract.id);
+
+          const talentIds = new Set<string>();
+          if (Array.isArray(contract.active_designer_ids)) {
+            contract.active_designer_ids.forEach((id: string) => { if (id) talentIds.add(id); });
+          }
+          const { data: claimsData } = await (supabase.from('job_contract_claims') as any)
+            .select('designer_id')
+            .eq('contract_id', contract.id);
+          (claimsData || []).forEach((c: any) => { if (c.designer_id) talentIds.add(c.designer_id); });
+
+          for (const talentId of talentIds) {
+            const { data: dData } = await (supabase.from('designer_details') as any)
+              .select('monthly_points, total_points')
+              .eq('user_id', talentId)
+              .maybeSingle();
+            if (dData) {
+              await (supabase.from('designer_details') as any)
+                .update({
+                  monthly_points: (dData.monthly_points || 0) + 40,
+                  total_points: (dData.total_points || 0) + 40,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('user_id', talentId);
+            }
+          }
+
+          // Trigger platform recalculation to credit 70% share of contract budget
+          await recalculateSalaries();
+        } catch (compErr) {
+          console.warn('Post-completion hook error:', compErr);
         }
       }
 

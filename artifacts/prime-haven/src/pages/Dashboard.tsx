@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Award, Clock, FileCheck, Upload, Wallet, Settings,
   Loader2, Trophy, Medal, Star, DollarSign, EyeOff, Zap,
-  PlayCircle, ArrowUpRight, Flame, Target
+  PlayCircle, ArrowUpRight, Flame, Target,
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -365,47 +365,47 @@ const Dashboard = () => {
         );
 
         const profilesMap = new Map((profilesResult.data as any[] || []).map((p: { id: string; full_name?: string }) => [p.id, p.full_name]));
-        if (designersResult.data && designersResult.data.length > 0) {
-          const processedLeaderboard: LeaderboardEntry[] = (designersResult.data as any[]).map((entry: { user_id: string; total_points?: number; monthly_points?: number; professional_title?: string; talent_score?: number }) => {
-            const profTitle = entry.professional_title ? String(entry.professional_title).trim() : '';
-            return {
-              user_id: entry.user_id,
-              full_name: profilesMap.get(entry.user_id) || 'Anonymous',
-              total_points: entry.total_points || 0,
-              monthly_points: entry.monthly_points || 0,
-              professional_title: profTitle || 'Designer',
-              talent_score: entry.talent_score || 0,
-            } as LeaderboardEntry;
-          });
-          const userCategory = normalizeCategory(designerResult.data?.professional_title || null);
-          const categoryLeaderboard = processedLeaderboard
-            .filter(e => normalizeCategory(e.professional_title) === userCategory)
-            .sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+        const processedLeaderboard: LeaderboardEntry[] = ((designersResult.data || []) as any[]).map((entry: { user_id: string; total_points?: number; monthly_points?: number; professional_title?: string; talent_score?: number }) => {
+          const profTitle = entry.professional_title ? String(entry.professional_title).trim() : '';
+          return {
+            user_id: entry.user_id,
+            full_name: profilesMap.get(entry.user_id) || 'Anonymous',
+            total_points: entry.total_points || 0,
+            monthly_points: entry.monthly_points || 0,
+            professional_title: profTitle || 'Designer',
+            talent_score: entry.talent_score || 0,
+          } as LeaderboardEntry;
+        });
+        const userCategory = normalizeCategory(designerResult.data?.professional_title || null);
+        const categoryLeaderboard = processedLeaderboard
+          .filter(e => normalizeCategory(e.professional_title) === userCategory)
+          .sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
 
-          setLeaderboard(categoryLeaderboard);
-          const userRank = categoryLeaderboard.findIndex(e => e.user_id === user.id) + 1;
+        setLeaderboard(categoryLeaderboard);
+        const userRank = categoryLeaderboard.findIndex(e => e.user_id === user.id) + 1;
 
-          let monthlyRevenue = 0;
-          if (settingsResult.data) {
-            const s: Record<string, unknown> = {};
-            (settingsResult.data as { key: string; value: unknown }[]).forEach((item) => { s[item.key] = item.value; });
-            const mr = s.monthly_revenue;
-            if (mr && typeof mr === 'object' && 'amount' in (mr as Record<string, unknown>)) {
-              const amt = (mr as Record<string, unknown>)['amount'];
-              monthlyRevenue = Number((amt as number) || 0);
-            }
+        let monthlyRevenue = 0;
+        if (settingsResult.data) {
+          const s: Record<string, unknown> = {};
+          (settingsResult.data as { key: string; value: unknown }[]).forEach((item) => { s[item.key] = item.value; });
+          const mr = s.monthly_revenue;
+          if (mr && typeof mr === 'object' && 'amount' in (mr as Record<string, unknown>)) {
+            const amt = (mr as Record<string, unknown>)['amount'];
+            monthlyRevenue = Number((amt as number) || 0);
           }
-
-          setStats({
-            totalPoints: designerResult.data?.total_points || 0,
-            monthlyRank: userRank || 0,
-            totalDesigners: categoryLeaderboard.length,
-            estSalary: availableEarned,
-            totalSubmissions: submissionsResult.data?.length || 0,
-            approvedSubmissions: submissionsResult.data?.filter((sub: Submission) => sub.status === 'approved' || sub.client_accepted).length || 0,
-            monthlyRevenue,
-          });
         }
+
+        const estSalary = availableEarned > 0 ? availableEarned : (Number(designerResult.data?.salary_estimated) || 0);
+
+        setStats({
+          totalPoints: designerResult.data?.total_points || 0,
+          monthlyRank: userRank || 1,
+          totalDesigners: Math.max(1, categoryLeaderboard.length),
+          estSalary,
+          totalSubmissions: submissionsResult.data?.length || 0,
+          approvedSubmissions: submissionsResult.data?.filter((sub: Submission) => sub.status === 'approved' || sub.client_accepted).length || 0,
+          monthlyRevenue,
+        });
       } catch (error) {
         console.error('Error loading dashboard:', error);
       } finally {

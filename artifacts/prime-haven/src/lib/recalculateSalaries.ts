@@ -79,10 +79,12 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
 
   // Calculate 70% contract earnings per designer
   const contractEarningsByDesigner: Record<string, number> = {};
+  const creditedProjectsByDesigner: Record<string, Set<string>> = {};
   const earningsToSync: any[] = [];
 
   allDesigners.forEach((designer) => {
     contractEarningsByDesigner[designer.user_id] = 0;
+    creditedProjectsByDesigner[designer.user_id] = new Set<string>();
   });
 
   allSubmissions.forEach((sub) => {
@@ -150,6 +152,9 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
 
     // If a contract/project budget was matched, credit 70% to talent
     if (matchedBudget > 0) {
+      if (matchedProjectId && creditedProjectsByDesigner[designerId]) {
+        creditedProjectsByDesigner[designerId].add(matchedProjectId);
+      }
       const talentEarned = Math.round(matchedBudget * shareRatio * 100) / 100;
       contractEarningsByDesigner[designerId] = (contractEarningsByDesigner[designerId] || 0) + talentEarned;
 
@@ -165,6 +170,76 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
         updated_at: nowIso,
       });
     }
+  });
+
+  // 4. Also credit any completed job contracts directly to claiming talents even if no formal submission was filed
+  contractsMap.forEach((c: any) => {
+    if (c.status !== 'completed') return;
+    const contractBudget = parseBudgetGhs(c.budget);
+    if (contractBudget <= 0) return;
+
+    const claimingTalents = new Set<string>();
+    if (Array.isArray(c.active_designer_ids)) {
+      c.active_designer_ids.forEach((id: string) => { if (id) claimingTalents.add(id); });
+    }
+    claims.forEach((cl: any) => {
+      if (cl.contract_id === c.id && cl.designer_id) {
+        claimingTalents.add(cl.designer_id);
+      }
+    });
+
+    claimingTalents.forEach((designerId) => {
+      if (!creditedProjectsByDesigner[designerId]) {
+        creditedProjectsByDesigner[designerId] = new Set<string>();
+      }
+      if (creditedProjectsByDesigner[designerId].has(c.id)) {
+        return; // Already credited through submission
+      }
+      creditedProjectsByDesigner[designerId].add(c.id);
+
+      const talentEarned = Math.round(contractBudget * shareRatio * 100) / 100;
+      contractEarningsByDesigner[designerId] = (contractEarningsByDesigner[designerId] || 0) + talentEarned;
+
+      earningsToSync.push({
+        designer_id: designerId,
+        submission_id: null,
+        project_id: c.id,
+        job_price: contractBudget,
+        share_percent: revenueSharePercent,
+        amount: talentEarned,
+        currency: 'GHS',
+        status: 'available',
+        updated_at: nowIso,
+      });
+    });
+  });
+
+  // 5. Credit any completed client projects to accepted designer if not already credited
+  projectsMap.forEach((p: any) => {
+    if (p.status !== 'completed' || !p.accepted_designer_id) return;
+    const projBudget = Number(p.price_ghs) || parseBudgetGhs(p.budget);
+    if (projBudget <= 0) return;
+    const designerId = p.accepted_designer_id;
+    if (!creditedProjectsByDesigner[designerId]) {
+      creditedProjectsByDesigner[designerId] = new Set<string>();
+    }
+    if (creditedProjectsByDesigner[designerId].has(p.id)) return;
+    creditedProjectsByDesigner[designerId].add(p.id);
+
+    const talentEarned = Math.round(projBudget * shareRatio * 100) / 100;
+    contractEarningsByDesigner[designerId] = (contractEarningsByDesigner[designerId] || 0) + talentEarned;
+
+    earningsToSync.push({
+      designer_id: designerId,
+      submission_id: null,
+      project_id: p.id,
+      job_price: projBudget,
+      share_percent: revenueSharePercent,
+      amount: talentEarned,
+      currency: 'GHS',
+      status: 'available',
+      updated_at: nowIso,
+    });
   });
 
   // Calculate points-based category pool shares for any additional unallocated monthly pools
@@ -216,12 +291,16 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
   if (earningsToSync.length > 0) {
     try {
       for (const earning of earningsToSync) {
-        // Upsert by checking existing earning for this submission_id
-        const { data: existing } = await (supabase as any)
-          .from('job_earnings')
-          .select('id')
-          .eq('submission_id', earning.submission_id)
-          .maybeSingle();
+        // Upsert by checking existing earning for this submission_id or project_id & designer_id
+        let existingQuery = (supabase as any).from('job_earnings').select('id');
+        if (earning.submission_id) {
+          existingQuery = existingQuery.eq('submission_id', earning.submission_id);
+        } else if (earning.project_id && earning.designer_id) {
+          existingQuery = existingQuery.eq('project_id', earning.project_id).eq('designer_id', earning.designer_id);
+        } else {
+          continue;
+        }
+        const { data: existing } = await existingQuery.maybeSingle();
 
         if (existing?.id) {
           await (supabase as any)

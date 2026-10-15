@@ -125,8 +125,8 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   // Accumulate contract budgets by canonical service
   const contractBudgetsByService: Record<string, number> = {};
   ((contractsRes?.data || []) as Array<{ category: string | null; budget: string | null; status: string | null }>).forEach((c) => {
-    // Only contracts a talent has completed count toward revenue.
-    if (c.status !== 'completed') return;
+    // Only exclude cancelled contracts — posted contract budgets show under their profession immediately
+    if (c.status === 'cancelled') return;
     const slug = normalizeServiceSlug(c.category);
     const amt = parseBudgetGhs(c.budget);
     contractBudgetsByService[slug] = (contractBudgetsByService[slug] || 0) + amt;
