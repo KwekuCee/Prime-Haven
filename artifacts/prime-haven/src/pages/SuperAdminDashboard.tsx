@@ -387,10 +387,6 @@ const SuperAdminDashboard = () => {
         }
 
         setSystemSettings(prev => ({ ...prev, ...settings }));
-        if (settings.usd_to_ghs_rate) {
-          const rate = typeof settings.usd_to_ghs_rate === 'object' ? settings.usd_to_ghs_rate.value : settings.usd_to_ghs_rate;
-          setExchangeRateInput(String(rate || 10));
-        }
       }
     } catch (error) {
       console.error('Error loading system settings:', error);
@@ -1526,9 +1522,9 @@ const SuperAdminDashboard = () => {
                         variant="ghost"
                         size="sm"
                         className="h-5 px-1.5 text-[10px] text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
-                        onClick={openRevenueModal}
+                        onClick={() => navigate('/superadmin/finance')}
                       >
-                        Configure
+                        Finance Hub
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1807,8 +1803,8 @@ const SuperAdminDashboard = () => {
                   <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'submissions' })}>
                     <FileCheck className="w-3.5 h-3.5 text-primary" /> Review Submissions Queue
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={openRevenueModal}>
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Update Revenue Targets
+                  <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => navigate('/superadmin/finance')}>
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Finance & Revenue Hub
                   </Button>
                   <Button variant="outline" size="sm" className="w-full justify-start h-9 text-xs gap-2 rounded-xl bg-white/[0.06] border border-white/10 text-on-ink hover:bg-white/[0.12] hover:text-on-ink" onClick={() => setSearchParams({ tab: 'users' })}>
                     <Users className="w-3.5 h-3.5 text-blue-400" /> Manage User Database
@@ -2192,9 +2188,9 @@ const SuperAdminDashboard = () => {
       {/* ========== DIALOGS ========== */}
 
 
-      <SubmissionFilesDialog open={!!viewFilesSubmission} onOpenChange={(open) => !open && setViewFilesSubmission(null)} submission={viewFilesSubmission} />
+      <SubmissionFilesDialog open={!!viewFilesSubmission} onOpenChange={(open: boolean) => !open && setViewFilesSubmission(null)} submission={viewFilesSubmission} />
 
-      <AlertDialog open={!!deleteConfirmUser} onOpenChange={(open) => !open && setDeleteConfirmUser(null)}>
+      <AlertDialog open={!!deleteConfirmUser} onOpenChange={(open: boolean) => !open && setDeleteConfirmUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="w-4 h-4" />Delete Designer?</AlertDialogTitle>
@@ -2209,7 +2205,7 @@ const SuperAdminDashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!rejectSubmission} onOpenChange={(open) => { if (!open) { setRejectSubmission(null); setRejectionReason(''); } }}>
+      <Dialog open={!!rejectSubmission} onOpenChange={(open: boolean) => { if (!open) { setRejectSubmission(null); setRejectionReason(''); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Reject Submission</DialogTitle>
@@ -2223,7 +2219,7 @@ const SuperAdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!clientRejectSubmission} onOpenChange={(open) => { if (!open) { setClientRejectSubmission(null); setClientRejectionReason(''); } }}>
+      <Dialog open={!!clientRejectSubmission} onOpenChange={(open: boolean) => { if (!open) { setClientRejectSubmission(null); setClientRejectionReason(''); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Client Rejection</DialogTitle>
@@ -2237,7 +2233,7 @@ const SuperAdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!correctionRequestSubmission} onOpenChange={(open) => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
+      <Dialog open={!!correctionRequestSubmission} onOpenChange={(open: boolean) => { if (!open) { setCorrectionRequestSubmission(null); setCorrectionNote(''); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Request Correction</DialogTitle>
@@ -2253,7 +2249,7 @@ const SuperAdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!giftPointsUser} onOpenChange={(open) => { if (!open) { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); } }}>
+      <Dialog open={!!giftPointsUser} onOpenChange={(open: boolean) => { if (!open) { setGiftPointsUser(null); setGiftPointsAmount(''); setGiftPointsReason(''); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Gift Points</DialogTitle>
@@ -2270,10 +2266,10 @@ const SuperAdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      <EditUserDialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)} user={editUser} currentAdminId={user?.id} onSaved={() => loadDashboardDataSafe()} />
+      <EditUserDialog open={!!editUser} onOpenChange={(open: boolean) => !open && setEditUser(null)} user={editUser} currentAdminId={user?.id} onSaved={() => loadDashboardDataSafe()} />
 
       {/* Link Preview */}
-      <Dialog open={!!previewLinkUrl} onOpenChange={(open) => !open && setPreviewLinkUrl(null)}>
+      <Dialog open={!!previewLinkUrl} onOpenChange={(open: boolean) => !open && setPreviewLinkUrl(null)}>
         <DialogContent className="max-w-5xl h-[80vh] p-0 flex flex-col">
           <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
             <div className="flex items-center justify-between gap-2">

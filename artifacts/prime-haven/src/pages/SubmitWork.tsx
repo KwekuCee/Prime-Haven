@@ -223,7 +223,7 @@ const SubmitWork = () => {
             .eq('id', correctionId)
             .maybeSingle();
           if (!error && data) {
-            if (data.designer_id !== user.id) {
+            if (!user || data.designer_id !== user.id) {
               toast({
                 title: 'Authorization Error',
                 description: 'Only the assigned professional who submitted the original work can submit corrections.',
@@ -331,7 +331,7 @@ const SubmitWork = () => {
 
       if (correctionId) {
         // Enforce claiming talent authorization
-        if (parentSubmission && parentSubmission.designer_id !== user.id) {
+        if (parentSubmission && (!user || parentSubmission.designer_id !== user.id)) {
           toast({
             title: "Authorization Error",
             description: "Only the assigned professional who submitted the original work can submit corrections.",
