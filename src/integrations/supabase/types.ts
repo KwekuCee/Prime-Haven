@@ -976,12 +976,14 @@ export type Database = {
         Row: {
           active_designer_ids: string[]
           active_designers_count: number
+          assigned_to: string | null
           budget: string | null
           cancellation_reason: string | null
           category: string
           claimed_at: string | null
           client_name: string | null
           client_project_id: string | null
+          completed_at: string | null
           created_at: string
           deadline: string | null
           deadline_at: string | null
@@ -1002,12 +1004,14 @@ export type Database = {
         Insert: {
           active_designer_ids?: string[]
           active_designers_count?: number
+          assigned_to?: string | null
           budget?: string | null
           cancellation_reason?: string | null
           category: string
           claimed_at?: string | null
           client_name?: string | null
           client_project_id?: string | null
+          completed_at?: string | null
           created_at?: string
           deadline?: string | null
           deadline_at?: string | null
@@ -1028,12 +1032,14 @@ export type Database = {
         Update: {
           active_designer_ids?: string[]
           active_designers_count?: number
+          assigned_to?: string | null
           budget?: string | null
           cancellation_reason?: string | null
           category?: string
           claimed_at?: string | null
           client_name?: string | null
           client_project_id?: string | null
+          completed_at?: string | null
           created_at?: string
           deadline?: string | null
           deadline_at?: string | null
@@ -1064,6 +1070,7 @@ export type Database = {
       job_earnings: {
         Row: {
           amount: number
+          contract_id: string | null
           created_at: string
           currency: string
           designer_id: string
@@ -1077,6 +1084,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          contract_id?: string | null
           created_at?: string
           currency?: string
           designer_id: string
@@ -1090,6 +1098,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          contract_id?: string | null
           created_at?: string
           currency?: string
           designer_id?: string
@@ -2226,6 +2235,7 @@ export type Database = {
           client_preference: boolean | null
           client_project_id: string | null
           client_ref: string | null
+          contract_id: string | null
           created_at: string
           design_link: string | null
           designer_id: string
@@ -2253,6 +2263,7 @@ export type Database = {
           client_preference?: boolean | null
           client_project_id?: string | null
           client_ref?: string | null
+          contract_id?: string | null
           created_at?: string
           design_link?: string | null
           designer_id: string
@@ -2280,6 +2291,7 @@ export type Database = {
           client_preference?: boolean | null
           client_project_id?: string | null
           client_ref?: string | null
+          contract_id?: string | null
           created_at?: string
           design_link?: string | null
           designer_id?: string
@@ -2319,33 +2331,42 @@ export type Database = {
       }
       system_logs: {
         Row: {
+          action: string | null
           action_type: string
           admin_id: string | null
           description: string | null
+          details: Json | null
           id: string
           ip_address: unknown
           new_value: Json | null
           old_value: Json | null
+          performed_by: string | null
           timestamp: string | null
         }
         Insert: {
+          action?: string | null
           action_type: string
           admin_id?: string | null
           description?: string | null
+          details?: Json | null
           id?: string
           ip_address?: unknown
           new_value?: Json | null
           old_value?: Json | null
+          performed_by?: string | null
           timestamp?: string | null
         }
         Update: {
+          action?: string | null
           action_type?: string
           admin_id?: string | null
           description?: string | null
+          details?: Json | null
           id?: string
           ip_address?: unknown
           new_value?: Json | null
           old_value?: Json | null
+          performed_by?: string | null
           timestamp?: string | null
         }
         Relationships: []
@@ -2811,6 +2832,10 @@ export type Database = {
           p_points: number
           p_submission_id: string
         }
+        Returns: Json
+      }
+      admin_delete_submission_and_relist_contract: {
+        Args: { p_submission_id: string }
         Returns: Json
       }
       admin_ph_approve_submission: {
