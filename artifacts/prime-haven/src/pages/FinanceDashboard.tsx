@@ -295,13 +295,20 @@ const FinanceDashboard = () => {
         const checkAccess = async () => {
             if (!user) { navigate('/superadmin-login', { replace: true }); return; }
             try {
-                const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-                if (!roleData || !['superadmin', 'masteradmin'].includes(roleData.role)) {
-                    navigate('/dashboard', { replace: true }); return;
+                const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+                const roles = (roleRows || []).map((r: any) => String(r.role || '').trim().toLowerCase());
+                if (!roles.some((r) => ['superadmin', 'masteradmin'].includes(r))) {
+                    navigate('/dashboard', { replace: true });
+                    return;
                 }
                 setInitialAuthCheck(false);
                 await loadFinancialData();
-            } catch { navigate('/superadmin-login', { replace: true }); }
+            } catch (err) {
+                console.error('Error during finance access verification:', err);
+                setInitialAuthCheck(false);
+            } finally {
+                setInitialAuthCheck(false);
+            }
         };
         checkAccess();
     }, [user, authLoading, navigate, loadFinancialData]);

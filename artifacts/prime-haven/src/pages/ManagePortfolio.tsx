@@ -64,13 +64,13 @@ const ManagePortfolio = () => {
         return;
       }
 
-      const { data: roleData } = await supabase
+      const { data: roleRows } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
-      if (!roleData || !['superadmin', 'masteradmin'].includes(roleData.role)) {
+      const roles = (roleRows || []).map((r: any) => String(r.role || '').trim().toLowerCase());
+      if (!roles.some((r) => ['superadmin', 'masteradmin'].includes(r))) {
         toast({
           variant: 'destructive',
           title: 'Access Denied',

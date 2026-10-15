@@ -39,7 +39,7 @@ const PayoutReconciliation = () => {
     };
     (earnings || []).forEach((e: any) => {
       const r = get(e.designer_id);
-      if (e.status === 'earned' || e.status === 'paid') r.earned += Number(e.amount) || 0;
+      if (['earned', 'paid', 'available'].includes(e.status)) r.earned += Number(e.amount) || 0;
       else if (e.status === 'pending') r.pendingEarnings += Number(e.amount) || 0;
     });
     const refs = new Map<string, number>();
@@ -78,9 +78,9 @@ const PayoutReconciliation = () => {
   }), { earned: 0, paid: 0, flight: 0, flagged: 0 }), [rows]);
 
   const cards = [
-    { label: 'Earned by professionals', value: `$${money(totals.earned)}` },
-    { label: 'Paid out', value: `$${money(totals.paid)}` },
-    { label: 'Waiting to be paid', value: `$${money(totals.flight)}` },
+    { label: 'Earned by professionals', value: `GH₵${money(totals.earned)}` },
+    { label: 'Paid out', value: `GH₵${money(totals.paid)}` },
+    { label: 'Waiting to be paid', value: `GH₵${money(totals.flight)}` },
     { label: 'Accounts needing attention', value: String(totals.flagged) },
   ];
 
@@ -123,11 +123,11 @@ const PayoutReconciliation = () => {
               {rows.map((r) => (
                 <TableRow key={r.userId}>
                   <TableCell className="font-medium whitespace-nowrap">{r.name}</TableCell>
-                  <TableCell className="text-right">${money(r.earned)}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">${money(r.pendingEarnings)}</TableCell>
-                  <TableCell className="text-right">${money(r.paidOut)}</TableCell>
-                  <TableCell className="text-right">${money(r.inFlight)}</TableCell>
-                  <TableCell className={`text-right font-semibold ${r.balance < 0 ? 'text-destructive' : ''}`}>${money(r.balance)}</TableCell>
+                  <TableCell className="text-right">GH₵{money(r.earned)}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">GH₵{money(r.pendingEarnings)}</TableCell>
+                  <TableCell className="text-right">GH₵{money(r.paidOut)}</TableCell>
+                  <TableCell className="text-right">GH₵{money(r.inFlight)}</TableCell>
+                  <TableCell className={`text-right font-semibold ${r.balance < 0 ? 'text-destructive' : ''}`}>GH₵{money(r.balance)}</TableCell>
                   <TableCell className="min-w-[180px]">
                     {r.issues.length === 0 ? (
                       <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" /> Matches</span>

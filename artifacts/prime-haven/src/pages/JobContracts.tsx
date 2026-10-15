@@ -159,12 +159,12 @@ const JobContracts = () => {
       return;
     }
     const checkAccess = async () => {
-      const { data } = await supabase
+      const { data: roleRows } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .single();
-      if (!data || !['superadmin', 'masteradmin'].includes(data.role)) {
+        .eq('user_id', user.id);
+      const roles = (roleRows || []).map((r: any) => String(r.role || '').trim().toLowerCase());
+      if (!roles.some((r) => ['superadmin', 'masteradmin'].includes(r))) {
         navigate('/dashboard', { replace: true });
         return;
       }
@@ -658,7 +658,7 @@ const JobContracts = () => {
                               variant="ghost"
                               size="icon" aria-label="View details"
                               title="View Related Submissions"
-                              onClick={() => window.open(`/superadmin/submissions?contract=${encodeURIComponent(c.title)}`, '_blank')}
+                              onClick={() => window.open(`/superadmin/qa-reviewer?contract=${encodeURIComponent(c.title)}`, '_blank')}
                             >
                               <FileSearch className="w-4 h-4 text-muted-foreground hover:text-primary" />
                             </Button>

@@ -24,7 +24,15 @@ import { checkCooldownStatus } from '@/lib/deadlineTimer';
 const serviceTypes = SERVICE_TYPES;
 
 interface UploadedFile { file: File; preview: string; uploading: boolean; url?: string; error?: string; }
-interface JobOption { id: string; title: string; client_name: string | null; category: string; }
+interface JobOption {
+  id: string;
+  title: string;
+  client_name: string | null;
+  category: string;
+  type: 'client_project' | 'job_contract' | 'legacy_order' | 'correction';
+  contractId?: string;
+  clientProjectId?: string | null;
+}
 
 const normalizeCategory = (title: string | null): string => {
   const t = (title || '').toLowerCase();
@@ -128,29 +136,34 @@ const SubmitWork = () => {
           .eq('designer_id', user.id)
           .in('status', ['in_progress', 'active']);
 
-        const availableCP = (cpAssignments || [])
+        const availableCP: JobOption[] = (cpAssignments || [])
           .filter((a: any) => a.project)
           .map((a: any) => ({
             id: a.project.id,
             title: a.project.title,
             client_name: null,
-            category: a.project.category
+            category: a.project.category,
+            type: 'client_project',
+            clientProjectId: a.project.id,
           }));
 
         // 2. Claimed job_contracts — only jobs where work has actually been STARTED
         const { data: jcClaims } = await supabase
           .from('job_contract_claims')
-          .select(`contract:job_contracts(id, title, category)`)
+          .select(`contract:job_contracts(id, title, category, client_project_id)`)
           .eq('designer_id', user.id)
           .in('status', ['active', 'in_progress']);
 
-        const availableJC = (jcClaims || [])
+        const availableJC: JobOption[] = (jcClaims || [])
           .filter((c: any) => c.contract)
           .map((c: any) => ({
             id: c.contract.id,
             title: c.contract.title,
             client_name: null,
-            category: c.contract.category
+            category: c.contract.category,
+            type: 'job_contract',
+            contractId: c.contract.id,
+            clientProjectId: c.contract.client_project_id || null,
           }));
 
         // 3. Legacy client_orders
@@ -159,14 +172,16 @@ const SubmitWork = () => {
           .eq('assigned_designer_id', user.id)
           .neq('project_status', 'completed');
 
-        const availableLegacy = (legacyOrders || []).map((o: any) => ({
+        const availableLegacy: JobOption[] = (legacyOrders || []).map((o: any) => ({
           id: o.id,
           title: `Legacy Order: ${o.service_type}`,
           client_name: null,
-          category: o.service_type
+          category: o.service_type,
+          type: 'legacy_order',
+          clientProjectId: null,
         }));
 
-        let data = [...availableCP, ...availableJC, ...availableLegacy];
+        let data: JobOption[] = [...availableCP, ...availableJC, ...availableLegacy];
 
         // If in correction mode, inject parent job option if available
         if (correctionId) {
@@ -177,13 +192,14 @@ const SubmitWork = () => {
               title: `${correctionName} (Revision)`,
               client_name: (correctionClient ? decodeURIComponent(correctionClient) : null) as any,
               category: correctionService || 'logo',
+              type: 'correction',
             },
             ...data
           ];
         }
 
-        setAvailableJobs(data as JobOption[]);
-        setClientProjectIds(availableCP.map((p: any) => p.id));
+        setAvailableJobs(data);
+        setClientProjectIds(availableCP.map((p) => p.id));
 
         // Auto-select job for corrections
         if (correctionId) {
@@ -207,13 +223,22 @@ const SubmitWork = () => {
             .eq('id', correctionId)
             .maybeSingle();
           if (!error && data) {
+            if (data.designer_id !== user.id) {
+              toast({
+                title: 'Authorization Error',
+                description: 'Only the assigned professional who submitted the original work can submit corrections.',
+                variant: 'destructive',
+              });
+              navigate('/dashboard');
+              return;
+            }
             setParentSubmission(data);
             setFormData(prev => ({
               ...prev,
               projectName: prev.projectName || `${data.project_name || 'Project'} (CR)`,
               clientReference: prev.clientReference || data.client_ref || '',
               serviceType: prev.serviceType || data.service_type || 'logo',
-              selectedJobId: data.client_project_id || correctionId,
+              selectedJobId: correctionId,
             }));
           }
         } catch (err) {
@@ -301,21 +326,74 @@ const SubmitWork = () => {
         submissionData.parent_submission_id = correctionId;
       }
 
-      // Link delivery to client project or claimed job contract
-      if (formData.selectedJobId) {
-        submissionData.client_project_id = formData.selectedJobId;
-        if (!submissionData.client_ref) {
-          submissionData.client_ref = formData.selectedJobId;
+      let resolvedContractId: string | null = null;
+      let resolvedClientProjectId: string | null = null;
+
+      if (correctionId) {
+        // Enforce claiming talent authorization
+        if (parentSubmission && parentSubmission.designer_id !== user.id) {
+          toast({
+            title: "Authorization Error",
+            description: "Only the assigned professional who submitted the original work can submit corrections.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
         }
-      } else if (parentSubmission?.client_project_id) {
-        submissionData.client_project_id = parentSubmission.client_project_id;
+        submissionData.parent_submission_id = correctionId;
+        resolvedContractId = parentSubmission?.contract_id || null;
+        resolvedClientProjectId = parentSubmission?.client_project_id || null;
         if (!submissionData.client_ref) {
-          submissionData.client_ref = parentSubmission.client_project_id;
+          submissionData.client_ref = parentSubmission?.client_ref || formData.clientReference.trim() || formData.projectName.trim();
+        }
+      } else if (formData.selectedJobId) {
+        const selected = availableJobs.find(j => j.id === formData.selectedJobId);
+        if (selected?.type === 'job_contract') {
+          resolvedContractId = selected.id;
+          resolvedClientProjectId = selected.clientProjectId || null;
+        } else if (selected?.type === 'client_project') {
+          resolvedClientProjectId = selected.id;
+          resolvedContractId = null;
+        } else {
+          // Server-authoritative lookup for edge cases
+          const { data: jc } = await supabase
+            .from('job_contracts')
+            .select('id, client_project_id, title')
+            .eq('id', formData.selectedJobId)
+            .maybeSingle();
+
+          if (jc) {
+            resolvedContractId = jc.id;
+            resolvedClientProjectId = jc.client_project_id || null;
+          } else {
+            const { data: cp } = await supabase
+              .from('client_projects')
+              .select('id, title')
+              .eq('id', formData.selectedJobId)
+              .maybeSingle();
+
+            if (cp) {
+              resolvedClientProjectId = cp.id;
+              resolvedContractId = null;
+            }
+          }
+        }
+        if (!submissionData.client_ref) {
+          submissionData.client_ref = selected?.client_name || selected?.title || formData.projectName.trim();
         }
       }
 
+      submissionData.contract_id = resolvedContractId;
+      submissionData.client_project_id = resolvedClientProjectId;
+      if (!submissionData.client_ref) {
+        submissionData.client_ref = formData.projectName.trim();
+      }
+
       const { error } = await supabase.from('submissions').insert([submissionData]);
-      if (error) throw error;
+      if (error) {
+        console.error('Submission insert error:', error);
+        throw new Error(error.message || 'Could not save deliverable to database.');
+      }
 
       // Update parent submission to show revision has been submitted
       if (correctionId) {
@@ -330,9 +408,9 @@ const SubmitWork = () => {
       }
 
       // Reset the user's active contract state only for original jobs
-      if (formData.selectedJobId && !correctionId) {
+      if (resolvedContractId && !correctionId) {
         try {
-          await (supabase as any).rpc('submit_job_contract_work', { p_contract_id: formData.selectedJobId });
+          await (supabase as any).rpc('submit_job_contract_work', { p_contract_id: resolvedContractId });
         } catch (workflowError) {
           console.warn('submit_job_contract_work info:', workflowError);
         }

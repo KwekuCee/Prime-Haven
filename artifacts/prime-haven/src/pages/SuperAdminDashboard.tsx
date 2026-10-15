@@ -600,28 +600,25 @@ const SuperAdminDashboard = () => {
     }
 
     const checkAdminAccess = async () => {
-      console.log('🔒 Checking admin access via Supabase Auth...');
-
       if (!user) {
-        console.log('❌ No authenticated user, redirecting to login');
-        toast({
-          title: "Access Denied",
-          description: "Please login as admin first.",
-          variant: "destructive",
-        });
         navigate('/superadmin-login', { replace: true });
         return;
       }
 
       try {
-        const { data: roleData, error: roleError } = await supabase
+        const { data: roleRows, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
-          .single();
+          .eq('user_id', user.id);
 
-        if (roleError || !roleData) {
-          console.log('❌ No role found for user');
+        if (roleError) {
+          console.error('Error fetching admin roles:', roleError);
+        }
+
+        const roles = (roleRows || []).map((r: any) => String(r.role || '').trim().toLowerCase());
+        const hasAdminRole = roles.some((r) => ['superadmin', 'masteradmin'].includes(r));
+
+        if (!hasAdminRole) {
           toast({
             title: "Access Denied",
             description: "You do not have admin privileges.",
@@ -631,31 +628,17 @@ const SuperAdminDashboard = () => {
           return;
         }
 
-        const validAdminRoles = ['superadmin', 'masteradmin'];
-        if (!validAdminRoles.includes(roleData.role)) {
-          console.log('❌ User is not an admin, role:', roleData.role);
-          toast({
-            title: "Access Denied",
-            description: "You do not have admin privileges.",
-            variant: "destructive",
-          });
-          navigate('/dashboard', { replace: true });
-          return;
-        }
-
-        console.log('✅ Admin authenticated:', user.email, 'Role:', roleData.role);
         setInitialAuthCheck(false);
-
         await loadDashboardDataSafe();
-
       } catch (error) {
-        console.error('❌ Auth check error:', error);
+        console.error('Auth check error in SuperAdminDashboard:', error);
         toast({
           title: "Authentication Error",
-          description: "Please login again.",
+          description: "Please check your connection and try again.",
           variant: "destructive",
         });
-        navigate('/superadmin-login', { replace: true });
+      } finally {
+        setInitialAuthCheck(false);
       }
     };
 

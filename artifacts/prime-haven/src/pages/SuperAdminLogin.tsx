@@ -87,7 +87,7 @@ const SuperAdminLogin = () => {
           .select('role')
           .eq('user_id', authData.user.id);
 
-        const roles = (roleRows || []).map((r: any) => String(r.role));
+        const roles = (roleRows || []).map((r: any) => String(r.role || '').trim().toLowerCase());
         if (!roles.includes('superadmin') && !roles.includes('masteradmin')) {
           await supabase.auth.signOut();
           toast({
