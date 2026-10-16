@@ -135,9 +135,10 @@ serve(
       }
 
       // 3. Generate unique transaction reference
-      const reference = `ph_debt_${debt.id.replace(/-/g, "").slice(0, 8)}_${Date.now()}`;
+      let reference = `ph_debt_${debt.id.replace(/-/g, "").slice(0, 8)}_${Date.now()}`;
 
       // 4. USSD Mobile Money Push Prompt
+      let fellBackFromUssd = false;
       if (channel === "ussd_push") {
         const payload = {
           reference,
@@ -169,45 +170,57 @@ serve(
         console.log("Korapay charge response:", JSON.stringify(resBody));
 
         if (!resp.ok || resBody?.status === false) {
-          const msg = resBody?.message || `Korapay returned HTTP ${resp.status}`;
-          return json(
-            {
-              error: "korapay_charge_failed",
-              message: `Could not trigger MoMo prompt: ${msg}`,
-              details: resBody,
-            },
-            502,
-          );
+          const msg = String(resBody?.message || `Korapay returned HTTP ${resp.status}`);
+          // The Korapay account isn't allowed to push MoMo prompts directly via API.
+          // Fall back to Korapay's hosted payment page, where the client enters
+          // their number and still receives the MoMo prompt on their phone.
+          if (/not permitted/i.test(msg)) {
+            console.log("Direct MoMo charge not permitted for merchant; falling back to hosted checkout.");
+            fellBackFromUssd = true;
+            reference = `${reference}_link`;
+          } else {
+            return json(
+              {
+                error: "korapay_charge_failed",
+                message: `Could not trigger MoMo prompt: ${msg}`,
+                details: resBody,
+              },
+              502,
+            );
+          }
         }
 
-        // Update debt status
-        await admin
-          .from("client_debts")
-          .update({
-            korapay_reference: reference,
-            status: "processing",
-            client_phone: formattedPhone,
-            network_provider: operator,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", debt.id);
+        if (!fellBackFromUssd) {
+          // Update debt status
+          await admin
+            .from("client_debts")
+            .update({
+              korapay_reference: reference,
+              status: "processing",
+              client_phone: formattedPhone,
+              network_provider: operator,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", debt.id);
 
-        await admin.from("system_logs").insert({
-          admin_id: adminUserId,
-          action_type: "client_debt_momo_prompt_sent",
-          description: `Sent MoMo prompt of GH₵${amount.toFixed(2)} to ${formattedPhone} for debt: ${debt.client_name}`,
-          new_value: { debt_id: debt.id, reference, phone: formattedPhone, operator: resolvedOperator, amount },
-        });
+          await admin.from("system_logs").insert({
+            admin_id: adminUserId,
+            action_type: "client_debt_momo_prompt_sent",
+            description: `Sent MoMo prompt of GH₵${amount.toFixed(2)} to ${formattedPhone} for debt: ${debt.client_name}`,
+            new_value: { debt_id: debt.id, reference, phone: formattedPhone, operator: resolvedOperator, amount },
+          });
 
-        return json({
-          success: true,
-          reference,
-          channel: "ussd_push",
-          message: "USSD prompt pushed to client's phone. Awaiting MoMo PIN authorization.",
-        });
+          return json({
+            success: true,
+            reference,
+            channel: "ussd_push",
+            message: "USSD prompt pushed to client's phone. Awaiting MoMo PIN authorization.",
+          });
+        }
       }
 
-      // 5. Hosted Checkout Link Fallback
+      // 5. Hosted Checkout Link (also used as fallback when direct MoMo push isn't permitted)
+
       const initPayload = {
         reference,
         amount,
@@ -269,7 +282,10 @@ serve(
         reference,
         checkout_url: checkoutUrl,
         channel: "checkout_link",
-        message: "Payment link generated successfully.",
+        fallback_from_ussd: fellBackFromUssd,
+        message: fellBackFromUssd
+          ? "Direct MoMo prompts aren't enabled on the Korapay account yet, so a payment link was created instead. The client opens it, enters their number and approves the MoMo prompt."
+          : "Payment link generated successfully.",
       });
     } catch (e) {
       console.error("collect-debt-payment error:", e);
