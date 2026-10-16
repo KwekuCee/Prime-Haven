@@ -970,6 +970,7 @@ export type Database = {
           designer_id: string
           id: string
           status: string
+          updated_at: string
         }
         Insert: {
           claimed_at?: string
@@ -977,6 +978,7 @@ export type Database = {
           designer_id: string
           id?: string
           status?: string
+          updated_at?: string
         }
         Update: {
           claimed_at?: string
@@ -984,6 +986,7 @@ export type Database = {
           designer_id?: string
           id?: string
           status?: string
+          updated_at?: string
         }
         Relationships: [
           {
