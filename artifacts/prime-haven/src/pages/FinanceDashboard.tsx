@@ -449,7 +449,7 @@ const FinanceDashboard = () => {
         throw new Error(message);
       }
 
-      if (channel === "ussd_push") {
+      if ((data as any)?.channel === "ussd_push") {
         toast({
           title: "MoMo Prompt Sent!",
           description: "USSD prompt pushed to client's phone. Awaiting MoMo PIN authorization.",
@@ -457,12 +457,15 @@ const FinanceDashboard = () => {
         setMomoModal((prev) => ({ ...prev, open: false, loading: false }));
       } else {
         const checkoutUrl = (data as any)?.checkout_url;
+        const fellBack = Boolean((data as any)?.fallback_from_ussd);
         if (checkoutUrl) {
           await navigator.clipboard.writeText(checkoutUrl).catch(() => {});
           setMomoModal((prev) => ({ ...prev, checkoutUrl, loading: false }));
           toast({
-            title: "Checkout Link Ready",
-            description: "Payment link copied to clipboard! You can share it directly with the client.",
+            title: fellBack ? "Payment Link Created Instead" : "Checkout Link Ready",
+            description: fellBack
+              ? "Direct MoMo prompts aren't enabled on your Korapay account yet. Link copied — send it to the client; they enter their number and approve the MoMo prompt."
+              : "Payment link copied to clipboard! You can share it directly with the client.",
           });
         } else {
           setMomoModal((prev) => ({ ...prev, open: false, loading: false }));
