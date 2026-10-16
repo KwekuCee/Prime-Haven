@@ -247,7 +247,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             const projectMarket: OpenOrder[] = (projects || [])
                 .filter((p: any) => {
-                    const reqProfs: string[] = p.required_professions || [];
+                    const reqProfs: string[] = (p.required_professions || []).map(normalizeProfession);
                     const profMatch = reqProfs.length === 0 || reqProfs.some((rp: string) => userProfessions.includes(rp));
                     return profMatch;
                 })
@@ -300,7 +300,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             const jobMarket: OpenOrder[] = (contracts || [])
                 .filter((c: any) => {
-                    const targetProfs: string[] = c.target_professions || [];
+                    const targetProfs: string[] = (c.target_professions || []).map(normalizeProfession);
                     if (targetProfs.length > 0) {
                         return targetProfs.some(p => userProfessions.includes(p));
                     }
