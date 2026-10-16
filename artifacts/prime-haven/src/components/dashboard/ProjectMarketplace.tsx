@@ -100,6 +100,40 @@ const deriveProfession = (title: string | null | undefined): string => {
     return 'Graphic Designer';
 };
 
+// Normalizes any stored profession value (slug like 'graphic-designer' or label
+// like 'Graphic Designer') to the canonical label used by PROFESSION_MAPPING.
+const SLUG_TO_PROFESSION: Record<string, string> = {
+    'graphic-designer': 'Graphic Designer',
+    'graphic-design': 'Graphic Designer',
+    'ui-ux-designer': 'UI/UX Designer',
+    'ui-ux-design': 'UI/UX Designer',
+    'web-developer': 'Web Developer',
+    'web-development': 'Web Developer',
+    'mobile-app-developer': 'Mobile App Developer',
+    'mobile-app-development': 'Mobile App Developer',
+    'motion-graphics-designer': 'Motion Graphics Designer',
+    'motion-graphics': 'Motion Graphics Designer',
+    'video-editor': 'Video Editor',
+    'video-editing': 'Video Editor',
+    'social-media-manager': 'Social Media Manager',
+    'social-media-management': 'Social Media Manager',
+    'it-specialist': 'IT Specialist',
+    'it-solutions': 'IT Specialist',
+    'general-it-solutions': 'IT Specialist',
+};
+
+const normalizeProfession = (value: string | null | undefined): string => {
+    const v = (value || '').trim();
+    if (!v) return '';
+    const lower = v.toLowerCase();
+    if (SLUG_TO_PROFESSION[lower]) return SLUG_TO_PROFESSION[lower];
+    // Already a canonical label?
+    const labels = new Set(Object.values(SLUG_TO_PROFESSION));
+    if (labels.has(v)) return v;
+    // Fall back to keyword derivation for free-text titles
+    return deriveProfession(v);
+};
+
 
 
 interface ProjectMarketplaceProps {
