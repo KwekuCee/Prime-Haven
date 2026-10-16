@@ -100,6 +100,40 @@ const deriveProfession = (title: string | null | undefined): string => {
     return 'Graphic Designer';
 };
 
+// Normalizes any stored profession value (slug like 'graphic-designer' or label
+// like 'Graphic Designer') to the canonical label used by PROFESSION_MAPPING.
+const SLUG_TO_PROFESSION: Record<string, string> = {
+    'graphic-designer': 'Graphic Designer',
+    'graphic-design': 'Graphic Designer',
+    'ui-ux-designer': 'UI/UX Designer',
+    'ui-ux-design': 'UI/UX Designer',
+    'web-developer': 'Web Developer',
+    'web-development': 'Web Developer',
+    'mobile-app-developer': 'Mobile App Developer',
+    'mobile-app-development': 'Mobile App Developer',
+    'motion-graphics-designer': 'Motion Graphics Designer',
+    'motion-graphics': 'Motion Graphics Designer',
+    'video-editor': 'Video Editor',
+    'video-editing': 'Video Editor',
+    'social-media-manager': 'Social Media Manager',
+    'social-media-management': 'Social Media Manager',
+    'it-specialist': 'IT Specialist',
+    'it-solutions': 'IT Specialist',
+    'general-it-solutions': 'IT Specialist',
+};
+
+const normalizeProfession = (value: string | null | undefined): string => {
+    const v = (value || '').trim();
+    if (!v) return '';
+    const lower = v.toLowerCase();
+    if (SLUG_TO_PROFESSION[lower]) return SLUG_TO_PROFESSION[lower];
+    // Already a canonical label?
+    const labels = new Set(Object.values(SLUG_TO_PROFESSION));
+    if (labels.has(v)) return v;
+    // Fall back to keyword derivation for free-text titles
+    return deriveProfession(v);
+};
+
 
 
 interface ProjectMarketplaceProps {
@@ -152,10 +186,15 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
             setSharePercent(share);
 
             const derivedProf = deriveProfession(designer?.professional_title);
-            // Use the professions array if it has items, otherwise fallback to derived
-            const userProfessions = designer?.professions && designer.professions.length > 0
+            // Use the professions array if it has items, otherwise fallback to derived.
+            // Normalize every value (slugs like 'graphic-designer' or labels) to the
+            // canonical labels used by PROFESSION_MAPPING so filtering actually matches.
+            const rawProfessions: string[] = designer?.professions && designer.professions.length > 0
                 ? designer.professions
                 : [derivedProf];
+            const userProfessions = Array.from(new Set(
+                rawProfessions.map(normalizeProfession).filter(Boolean)
+            ));
 
             // 1. Fetch from client_projects via secure RPC (excludes client PII)
             const { data: projectsRaw, error: projectsError } = await (supabase as any)
@@ -208,7 +247,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             const projectMarket: OpenOrder[] = (projects || [])
                 .filter((p: any) => {
-                    const reqProfs: string[] = p.required_professions || [];
+                    const reqProfs: string[] = (p.required_professions || []).map(normalizeProfession);
                     const profMatch = reqProfs.length === 0 || reqProfs.some((rp: string) => userProfessions.includes(rp));
                     return profMatch;
                 })
@@ -261,7 +300,7 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
 
             const jobMarket: OpenOrder[] = (contracts || [])
                 .filter((c: any) => {
-                    const targetProfs: string[] = c.target_professions || [];
+                    const targetProfs: string[] = (c.target_professions || []).map(normalizeProfession);
                     if (targetProfs.length > 0) {
                         return targetProfs.some(p => userProfessions.includes(p));
                     }
