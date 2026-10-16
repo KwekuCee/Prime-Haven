@@ -186,10 +186,15 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
             setSharePercent(share);
 
             const derivedProf = deriveProfession(designer?.professional_title);
-            // Use the professions array if it has items, otherwise fallback to derived
-            const userProfessions = designer?.professions && designer.professions.length > 0
+            // Use the professions array if it has items, otherwise fallback to derived.
+            // Normalize every value (slugs like 'graphic-designer' or labels) to the
+            // canonical labels used by PROFESSION_MAPPING so filtering actually matches.
+            const rawProfessions: string[] = designer?.professions && designer.professions.length > 0
                 ? designer.professions
                 : [derivedProf];
+            const userProfessions = Array.from(new Set(
+                rawProfessions.map(normalizeProfession).filter(Boolean)
+            ));
 
             // 1. Fetch from client_projects via secure RPC (excludes client PII)
             const { data: projectsRaw, error: projectsError } = await (supabase as any)
