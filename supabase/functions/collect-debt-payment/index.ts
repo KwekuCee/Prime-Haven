@@ -17,12 +17,17 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+// Korapay accepts only these exact network names (title case):
+// Airtel, Equitel, Expresso, Moov, Mtn, Nsanomomo, Orange, Safaricom,
+// Telkom, Tigo, Vodafone, Vodacom, ...
 const OPERATOR_MAP: Record<string, string> = {
-  mtn: "MTN",
-  vodafone: "VODAFONE",
-  telecel: "VODAFONE",
-  airteltigo: "AIRTELTIGO",
-  at: "AIRTELTIGO",
+  mtn: "Mtn",
+  vodafone: "Vodafone",
+  telecel: "Vodafone",
+  airteltigo: "Airtel",
+  airtel: "Airtel",
+  tigo: "Tigo",
+  at: "Airtel",
 };
 
 function formatMoMoPhone(raw: string): string {
@@ -115,7 +120,7 @@ serve(
       }
 
       const formattedPhone = formatMoMoPhone(phoneNumber);
-      const resolvedOperator = OPERATOR_MAP[operator] || operator.toUpperCase();
+      const resolvedOperator = OPERATOR_MAP[operator] || "Mtn";
       const amount = Number(debt.amount_owed);
 
       if (!amount || amount <= 0) {
