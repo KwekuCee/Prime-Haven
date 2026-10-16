@@ -42,8 +42,20 @@ function encodeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
-  await resendSend({ from: FROM_ADDRESS, to, subject, html });
+const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[a-z]{2,}$/i;
+
+// Email is best-effort: an invalid address or provider error must not fail the notification.
+async function sendEmail(to: string | null | undefined, subject: string, html: string) {
+  const addr = (to || "").trim();
+  if (!EMAIL_RE.test(addr)) {
+    console.warn(`Skipping email: invalid recipient address "${addr}"`);
+    return;
+  }
+  try {
+    await resendSend({ from: FROM_ADDRESS, to: addr, subject, html });
+  } catch (e) {
+    console.error("Email send failed (non-fatal):", e);
+  }
 }
 
 async function postToDiscord(channelId: string, embed: any): Promise<string | null> {
