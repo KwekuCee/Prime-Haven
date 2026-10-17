@@ -873,7 +873,7 @@ const FinanceDashboard = () => {
                 })}
               </div>
               <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
-                70% talent accrued minus salaries withdrawn
+                Sum of estimated salaries across all registered talents
               </div>
             </div>
 

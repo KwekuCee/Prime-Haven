@@ -123,7 +123,7 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   const startOfMonthMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const inMonth = (d?: string | null) => (d ? new Date(d).getTime() >= startOfMonthMs : false);
 
-  const [payments, debts, contracts, orders, projects, withdrawals, applicants, submissions, clientRev] =
+  const [payments, debts, contracts, orders, projects, withdrawals, applicants, submissions, talentDetails, clientRev] =
     await Promise.all([
       safe(
         (supabase.from("payments") as any)
@@ -142,9 +142,15 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
       safe((supabase.from("withdrawals") as any).select("amount, currency, status, processed_at, created_at")),
       safe((supabase.from("applicants") as any).select("id, paid_at").not("paid_at", "is", null)),
       safe((supabase.from("submissions") as any).select("contract_id, client_accepted, status")),
+      safe((supabase.from("designer_details") as any).select("salary_estimated")),
       loadClientRevenue().catch(() => null),
     ]);
   const usdRate = clientRev?.rate || 15.5;
+
+  const totalTalentExpectedSalaries = (talentDetails || []).reduce((sum: number, d: any) => {
+    const val = Number(d.salary_estimated) || 0;
+    return sum + val;
+  }, 0);
 
   const accepted = new Set<string>();
   submissions.forEach((s: any) => {
@@ -257,8 +263,9 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   const talentShare = splittableGross * 0.7;
   // Prime Haven profit = 30% of splittable revenue + 100% of registration fees.
   const profit = splittableGross * 0.3 + regFees;
-  const pending = Math.max(0, talentShare - salariesPaid);
-  const monthPending = Math.max(0, monthSplittable * 0.7 - monthSalariesPaid);
+  // Strictly the sum of all talents' expected/estimated salaries
+  const pending = totalTalentExpectedSalaries;
+  const monthPending = totalTalentExpectedSalaries;
 
   const byService: Record<string, ProfessionAllocationItem> = {};
   const services: ProfessionAllocationItem[] = [];
@@ -288,11 +295,11 @@ export const loadPlatformRevenue = async (): Promise<PlatformRevenue> => {
   return {
     allTimeGross: round2(allTimeGross),
     allTimeSalariesPaid: round2(salariesPaid),
-    allTimePendingSalaries: round2(pending),
+    allTimePendingSalaries: round2(totalTalentExpectedSalaries),
     allTimeTalentShare: round2(talentShare),
     allTimePlatformProfit: round2(profit),
     monthGross: round2(monthGross),
-    monthPendingSalaries: round2(monthPending),
+    monthPendingSalaries: round2(totalTalentExpectedSalaries),
     monthSalariesPaid: round2(monthSalariesPaid),
     monthPlatformProfit: round2(monthSplittable * 0.3 + monthRegFees),
     feeRevenue: round2(regFees),
