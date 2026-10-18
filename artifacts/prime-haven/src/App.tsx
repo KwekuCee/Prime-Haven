@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { GlobalCommandPalette } from "./components/GlobalCommandPalette";
 import { TechStackLoader } from "./components/ui/TechStackLoader";
+import VisitorTracker from "./components/VisitorTracker";
 import ClientRoute from "./components/client/ClientRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProfessionalRoute from "./components/auth/ProfessionalRoute";
@@ -54,7 +55,6 @@ const Apply = lazyWithReload(() => import("./pages/Apply"));
 const ApplicantPortal = lazyWithReload(() => import("./pages/ApplicantPortal"));
 const InstallPrompt = lazyWithReload(() => import("./components/InstallPrompt"));
 const OAuthConsent = lazyWithReload(() => import("./pages/OAuthConsent"));
-const VisitorTracker = lazyWithReload(() => import("./components/VisitorTracker"));
 const GlobalPromoManager = lazyWithReload(() => import("./components/GlobalPromoManager"));
 
 // Lazy load dashboard pages for better initial bundle size
