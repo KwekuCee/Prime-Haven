@@ -50,7 +50,7 @@ export default defineConfig({
   },
   root: projectDir,
   build: {
-    outDir: path.resolve(workspaceRoot, "dist"),
+    outDir: path.resolve(projectDir, "dist"),
     emptyOutDir: true,
     reportCompressedSize: false,
     chunkSizeWarningLimit: 3000,
