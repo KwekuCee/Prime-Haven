@@ -2906,6 +2906,7 @@ export type Database = {
         Args: { p_reference: string; p_withdrawal_id: string }
         Returns: Json
       }
+      clear_paid_client_debts: { Args: { p_ids?: string[] }; Returns: Json }
       current_user_email: { Args: never; Returns: string }
       ensure_client_role: { Args: never; Returns: boolean }
       finalise_withdrawal_payout_service: {
