@@ -157,9 +157,15 @@ const CategoryAdminDashboard = ({ category, categoryLabel, serviceTypes }: Categ
       const clientPoints = systemSettings.client_acceptance_points?.value || 40;
 
       await supabase.from('submissions').update({
-        client_accepted: true, client_accepted_at: new Date().toISOString(), client_accepted_by: user?.id,
-        points_awarded: (submission.points_awarded || 0) + clientPoints, status: 'approved',
-        final_approval_date: new Date().toISOString(), updated_at: new Date().toISOString()
+        ph_approved: true,
+        ph_approved_at: submission.ph_approved_at || new Date().toISOString(),
+        client_accepted: true,
+        client_accepted_at: new Date().toISOString(),
+        client_accepted_by: user?.id,
+        points_awarded: (submission.points_awarded || 0) + clientPoints,
+        status: 'approved',
+        final_approval_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }).eq('id', submissionId);
 
       const { data: designerData } = await supabase.from('designer_details').select('total_points, monthly_points').eq('user_id', submission.designer_id).maybeSingle();

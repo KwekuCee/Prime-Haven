@@ -36,6 +36,7 @@ import {
   Loader2,
   SmartphoneNfc,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -665,7 +666,7 @@ const FinanceDashboard = () => {
   };
 
   const handleExportAndClearPaidEscrow = async () => {
-    const paid = clientDebts.filter((d: any) => d.status === "paid");
+    const paid = clientDebts.filter((d: any) => (d.status || "").toLowerCase() === "paid");
     if (paid.length === 0) {
       toast({ title: "Nothing to export", description: "No paid escrow records to clear." });
       return;
@@ -690,16 +691,58 @@ const FinanceDashboard = () => {
 
     // Delete paid rows after export
     const ids = paid.map((d: any) => d.id);
-    const { error } = await supabase.from("client_debts").delete().in("id", ids);
-    if (error) {
-      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+
+    // Optimistically update UI so paid rows disappear immediately
+    setClientDebts((prev) => prev.filter((d: any) => !ids.includes(d.id)));
+
+    // Try server RPC first, then fallback to direct delete
+    let deleteError: any = null;
+    try {
+      const { error: rpcErr } = await (supabase as any).rpc("clear_paid_client_debts", { p_ids: ids });
+      if (rpcErr) {
+        const { error: directErr } = await supabase.from("client_debts").delete().in("id", ids);
+        if (directErr) deleteError = directErr;
+      }
+    } catch {
+      const { error: directErr } = await supabase.from("client_debts").delete().in("id", ids);
+      if (directErr) deleteError = directErr;
+    }
+
+    if (deleteError) {
+      toast({ title: "Delete warning", description: deleteError.message, variant: "destructive" });
+      await loadFinancialData();
       return;
     }
+
     toast({
       title: "Exported & Cleared",
-      description: `${paid.length} paid escrow record${paid.length === 1 ? "" : "s"} saved to CSV and removed.`,
+      description: `${paid.length} paid escrow record${paid.length === 1 ? "" : "s"} saved to CSV and cleared.`,
     });
     await loadFinancialData();
+  };
+
+  const handleDeleteDebt = async (debtId: string) => {
+    try {
+      setClientDebts((prev) => prev.filter((d: any) => d.id !== debtId));
+      let deleteError: any = null;
+      try {
+        const { error: rpcErr } = await (supabase as any).rpc("clear_paid_client_debts", { p_ids: [debtId] });
+        if (rpcErr) {
+          const { error: directErr } = await supabase.from("client_debts").delete().eq("id", debtId);
+          if (directErr) deleteError = directErr;
+        }
+      } catch {
+        const { error: directErr } = await supabase.from("client_debts").delete().eq("id", debtId);
+        if (directErr) deleteError = directErr;
+      }
+
+      if (deleteError) throw deleteError;
+      toast({ title: "Record Cleared", description: "Debt record removed from escrow." });
+      await loadFinancialData();
+    } catch (err: any) {
+      toast({ title: "Could not delete", description: err.message, variant: "destructive" });
+      await loadFinancialData();
+    }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -1117,12 +1160,23 @@ const FinanceDashboard = () => {
                             </Button>
                           </div>
                         ) : (
-                          <Badge
-                            variant="outline"
-                            className="border-emerald-500/50 text-emerald-500 bg-emerald-500/10 flex items-center gap-1 py-1 px-2.5 ml-auto w-fit"
-                          >
-                            <CheckCircle className="w-3 h-3" /> Paid via MoMo
-                          </Badge>
+                          <div className="flex items-center justify-end gap-2">
+                            <Badge
+                              variant="outline"
+                              className="border-emerald-500/50 text-emerald-500 bg-emerald-500/10 flex items-center gap-1 py-1 px-2.5"
+                            >
+                              <CheckCircle className="w-3 h-3" /> Paid
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                              onClick={() => handleDeleteDebt(d.id)}
+                              title="Clear record from escrow"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>

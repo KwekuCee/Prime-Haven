@@ -229,3 +229,66 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'message', 'Work submitted successfully. User account reset for new claims.');
 END;
 $$;
+
+-- 5. Auto-sync ph_approved when client_accepted is true
+CREATE OR REPLACE FUNCTION public.sync_submission_client_accepted_ph_approved()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.client_accepted = true THEN
+    NEW.ph_approved := true;
+    IF NEW.ph_approved_at IS NULL THEN
+      NEW.ph_approved_at := COALESCE(NEW.client_accepted_at, now());
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_submission_client_accepted_ph_approved ON public.submissions;
+CREATE TRIGGER trg_sync_submission_client_accepted_ph_approved
+BEFORE INSERT OR UPDATE ON public.submissions
+FOR EACH ROW
+EXECUTE FUNCTION public.sync_submission_client_accepted_ph_approved();
+
+-- 6. RPC: clear_paid_client_debts
+CREATE OR REPLACE FUNCTION public.clear_paid_client_debts(p_ids uuid[] DEFAULT NULL)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count integer := 0;
+BEGIN
+  IF NOT (has_role(auth.uid(), 'superadmin'::app_role) OR has_role(auth.uid(), 'masteradmin'::app_role)) THEN
+    RAISE EXCEPTION 'not_authorized';
+  END IF;
+
+  IF p_ids IS NOT NULL AND array_length(p_ids, 1) > 0 THEN
+    DELETE FROM public.client_debts
+    WHERE id = ANY(p_ids) AND lower(COALESCE(status, '')) = 'paid';
+  ELSE
+    DELETE FROM public.client_debts
+    WHERE lower(COALESCE(status, '')) = 'paid';
+  END IF;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN jsonb_build_object('success', true, 'deleted_count', v_count);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.clear_paid_client_debts(uuid[]) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.clear_paid_client_debts(uuid[]) TO authenticated;
+
+-- Ensure RLS allows admins to delete paid records
+ALTER TABLE public.client_debts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can delete client_debts" ON public.client_debts;
+CREATE POLICY "Admins can delete client_debts"
+  ON public.client_debts FOR DELETE TO authenticated
+  USING (has_role(auth.uid(), 'superadmin'::app_role) OR has_role(auth.uid(), 'masteradmin'::app_role));
+

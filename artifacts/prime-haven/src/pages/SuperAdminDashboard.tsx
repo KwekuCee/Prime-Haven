@@ -142,6 +142,7 @@ interface Submission {
   ph_approved: boolean;
   client_accepted: boolean;
   ph_approved_at: string | null;
+  ph_approved_by?: string | null;
   client_accepted_at: string | null;
   parent_submission_id?: string | null;
   rejection_reason?: string | null;
@@ -745,6 +746,9 @@ const SuperAdminDashboard = () => {
       const { error: updateError } = await supabase
         .from('submissions')
         .update({
+          ph_approved: true,
+          ph_approved_at: submission.ph_approved_at || new Date().toISOString(),
+          ph_approved_by: submission.ph_approved_by || user?.id,
           client_accepted: true,
           client_accepted_at: new Date().toISOString(),
           client_accepted_by: user?.id,
