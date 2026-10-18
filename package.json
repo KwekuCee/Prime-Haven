@@ -16,5 +16,8 @@
     "drizzle-kit": "0.x",
     "drizzle-orm": "0.x",
     "postgres": "^3.4.9"
-  }
+  },
+  "workspaces": [
+    "artifacts/prime-haven"
+  ]
 }
