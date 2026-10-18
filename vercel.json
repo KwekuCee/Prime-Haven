@@ -1,36 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "prime-haven": {
-      "root": "artifacts/prime-haven",
-      "framework": "vite"
-    },
-    "api-server": {
-      "root": "artifacts/api-server",
-      "framework": "express"
-    },
-    "mockup-sandbox": {
-      "root": "artifacts/mockup-sandbox",
-      "framework": "vite"
-    },
-    "prime-haven-video": {
-      "root": "artifacts/prime-haven-video",
-      "framework": "vite",
-      "outputDirectory": "dist/public"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "api-server"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "prime-haven"
-      }
-    }
-  ]
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
