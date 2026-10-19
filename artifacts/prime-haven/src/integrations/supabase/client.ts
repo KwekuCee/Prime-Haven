@@ -31,7 +31,13 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     let targetInput: RequestInfo | URL = input;
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
-      const isDirectOrigin = hostname === 'primehaven.tech' || hostname === 'www.primehaven.tech';
+      const isLovablePreview = [
+        'lovableproject.com',
+        'lovableproject-dev.com',
+        'lovable.app',
+        'gpt-eng.com',
+        'gptengineer.run',
+      ].some((zone) => hostname === zone || hostname.endsWith(`.${zone}`));
       const functionsPrefix = `${SUPABASE_URL}/functions/v1/`;
       const rawUrl =
         typeof input === 'string'
@@ -40,7 +46,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
             ? input.toString()
             : input.url;
 
-      if (!isDirectOrigin && rawUrl.startsWith(functionsPrefix)) {
+      // Lovable preview needs the same-origin proxy. Deployed Vercel and
+      // Prime Haven domains must call Supabase directly; they do not expose
+      // the preview-only /functions/v1 route.
+      if (isLovablePreview && rawUrl.startsWith(functionsPrefix)) {
         const proxiedPath = `/functions/v1/${rawUrl.slice(functionsPrefix.length)}`;
         targetInput =
           typeof Request !== 'undefined' && input instanceof Request
