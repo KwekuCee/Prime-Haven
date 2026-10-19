@@ -16,6 +16,7 @@ import VisitorTracker from "./components/VisitorTracker";
 import ClientRoute from "./components/client/ClientRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProfessionalRoute from "./components/auth/ProfessionalRoute";
+import { Analytics } from "@vercel/analytics/react";
 
 
 const ReferralHandler = () => {
@@ -206,6 +207,7 @@ const App = () => {
           </TooltipProvider>
         </UserSettingsProvider>
       </ThemeProvider>
+      <Analytics />
     </QueryClientProvider>
   );
 };
