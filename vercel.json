@@ -5,10 +5,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/functions/v1/:path*",
-      "destination": "/api/functions/:path*"
-    },
-    {
       "source": "/((?!api/|functions/).*)",
       "destination": "/index.html"
     }
