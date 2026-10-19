@@ -12,6 +12,7 @@ const PATTERNS = [
   /^https:\/\/[a-z0-9-]+--99cdecd3-e271-46db-8f34-a596c4a5a6f5\.lovable\.app$/,
   /^https:\/\/99cdecd3-e271-46db-8f34-a596c4a5a6f5\.lovableproject\.com$/,
   /^https:\/\/[a-z0-9-]+\.([a-z0-9-]+\.)?run\.app$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/, // Allow Vercel preview & production domains
   /^http:\/\/localhost(:\d+)?$/,
   /^http:\/\/127\.0\.0\.1(:\d+)?$/,
 ];
@@ -25,12 +26,32 @@ type Handler = (req: Request) => Response | Promise<Response>;
 
 export const withCors = (handler: Handler): Handler => async (req: Request) => {
   const origin = req.headers.get("origin");
+
   if (!isAllowedOrigin(origin)) {
     return new Response(JSON.stringify({ error: "origin_not_allowed" }), {
       status: 403,
-      headers: { "Content-Type": "application/json", Vary: "Origin" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": origin || "*",
+        Vary: "Origin",
+      },
     });
   }
+
+  // Preflight handling inside withCors wrapper if method is OPTIONS
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin || "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+        Vary: "Origin",
+      },
+    });
+  }
+
   const res = await handler(req);
   if (origin) {
     const headers = new Headers(res.headers);
@@ -40,3 +61,4 @@ export const withCors = (handler: Handler): Handler => async (req: Request) => {
   }
   return res;
 };
+

@@ -1,29 +1,47 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-const corsHeaders = {
+export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(withCors(async (req: Request): Promise<Response> => {
+serve(async (req: Request): Promise<Response> => {
+  // 1. Handle HTTP OPTIONS preflight immediately
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // Validate environment configuration with CORS headers on failure
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in public-stats");
+      return new Response(
+        JSON.stringify({ success: false, error: "server_misconfigured" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Count active members
-    const { count: totalMembers } = await supabase
+    const { count: totalMembers, error: membersError } = await supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true);
+
+    if (membersError) throw membersError;
 
     // Count completed projects (client_accepted)
     const { count: projectsDelivered } = await supabase
@@ -65,7 +83,7 @@ serve(withCors(async (req: Request): Promise<Response> => {
       }
     });
 
-    // Designer member count only (do not expose admin headcount publicly)
+    // Designer member count only (never expose admin headcount publicly)
     const { count: designerCount } = await supabase
       .from("user_roles")
       .select("*", { count: "exact", head: true })
@@ -88,7 +106,11 @@ serve(withCors(async (req: Request): Promise<Response> => {
     console.error("Error fetching public stats:", error);
     return new Response(
       JSON.stringify({ success: false, error: "server_error" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
     );
   }
-}));
+});
+

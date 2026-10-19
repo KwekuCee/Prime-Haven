@@ -4,13 +4,13 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "dev": "pnpm --dir artifacts/prime-haven exec vite --config vite.config.ts --host 0.0.0.0 --port 3000",
-    "build": "pnpm --dir artifacts/prime-haven run build && pnpm run copy:dist",
+    "dev": "npm run dev --workspace=@workspace/prime-haven",
+    "build": "npm run build --workspace=@workspace/prime-haven && npm run copy:dist",
     "copy:dist": "node -e \"const fs=require('fs'); fs.rmSync('dist', { recursive: true, force: true }); if(fs.existsSync('artifacts/prime-haven/dist')){fs.cpSync('artifacts/prime-haven/dist', 'dist', { recursive: true });}\"",
-    "build:dev": "pnpm run build",
-    "serve": "pnpm --dir artifacts/prime-haven exec vite preview --config vite.config.ts --host 0.0.0.0 --port 3000",
-    "typecheck": "pnpm --dir artifacts/prime-haven exec tsc -p tsconfig.json --noEmit",
-    "lint": "pnpm --dir artifacts/prime-haven exec tsc -p tsconfig.json --noEmit"
+    "build:dev": "npm run build",
+    "serve": "npm run serve --workspace=@workspace/prime-haven",
+    "typecheck": "npm run typecheck --workspace=@workspace/prime-haven",
+    "lint": "npm run typecheck --workspace=@workspace/prime-haven"
   },
   "devDependencies": {
     "drizzle-kit": "0.x",
