@@ -1,9 +1,8 @@
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://kbxijzsrywcwnyvtbruh.supabase.co";
 
-export default async function handler(req: any, res: any) {
-  const origin = req.headers.origin || "*";
-  
-  // Set CORS headers
+module.exports = async function handler(req, res) {
+  const origin = (req.headers && req.headers.origin) || "*";
+
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.setHeader(
@@ -18,32 +17,33 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const pathParam = req.query?.path;
+  const pathParam = req.query && req.query.path;
   const functionPath = Array.isArray(pathParam) ? pathParam.join("/") : (pathParam || "");
   const targetUrl = `${SUPABASE_URL}/functions/v1/${functionPath}`;
 
   try {
-    const headers: Record<string, string> = {
-      // Forward with primehaven.tech origin so the upstream edge function accepts the request
+    const headers = {
       Origin: "https://primehaven.tech",
     };
 
-    for (const [key, val] of Object.entries(req.headers)) {
-      const lower = key.toLowerCase();
-      if (
-        lower === "authorization" ||
-        lower === "apikey" ||
-        lower === "content-type" ||
-        lower.startsWith("x-supabase-") ||
-        lower === "x-client-info"
-      ) {
-        if (typeof val === "string") {
-          headers[key] = val;
+    if (req.headers) {
+      for (const [key, val] of Object.entries(req.headers)) {
+        const lower = key.toLowerCase();
+        if (
+          lower === "authorization" ||
+          lower === "apikey" ||
+          lower === "content-type" ||
+          lower.startsWith("x-supabase-") ||
+          lower === "x-client-info"
+        ) {
+          if (typeof val === "string") {
+            headers[key] = val;
+          }
         }
       }
     }
 
-    const fetchOptions: RequestInit = {
+    const fetchOptions = {
       method: req.method,
       headers,
     };
@@ -61,10 +61,10 @@ export default async function handler(req: any, res: any) {
 
     const buffer = await upstreamRes.arrayBuffer();
     res.end(Buffer.from(buffer));
-  } catch (err: any) {
+  } catch (err) {
     console.error("Vercel Edge proxy error:", err);
     res.statusCode = 502;
     res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ success: false, error: "edge_proxy_failed", details: err?.message || String(err) }));
+    res.end(JSON.stringify({ success: false, error: "edge_proxy_failed", details: (err && err.message) || String(err) }));
   }
-}
+};
