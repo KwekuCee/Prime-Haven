@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 import { Label } from '@/components/ui/label';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -100,8 +100,8 @@ const TrackProject = () => {
   const refetchProject = async () => {
     if (!token) return;
     const resp = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-project-tracking?token=${token}`,
-      { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+      `${SUPABASE_URL}/functions/v1/get-project-tracking?token=${token}`,
+      { headers: { Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` } }
     );
     if (resp.ok) {
       const data = await resp.json();
@@ -129,8 +129,8 @@ const TrackProject = () => {
     let cancelled = false;
     const load = async () => {
       const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/project-chat?token=${token}`,
-        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+        `${SUPABASE_URL}/functions/v1/project-chat?token=${token}`,
+        { headers: { Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` } }
       );
       if (!cancelled && resp.ok) {
         const d = await resp.json();
@@ -148,18 +148,18 @@ const TrackProject = () => {
     setChatSending(true);
     try {
       const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/project-chat`,
+        `${SUPABASE_URL}/functions/v1/project-chat`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` },
           body: JSON.stringify({ token, content: chatInput.trim(), senderName: chatSenderName || project?.client_name }),
         }
       );
       if (!resp.ok) throw new Error('send failed');
       setChatInput('');
       const r = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/project-chat?token=${token}`,
-        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+        `${SUPABASE_URL}/functions/v1/project-chat?token=${token}`,
+        { headers: { Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` } }
       );
       if (r.ok) { const d = await r.json(); setMessages(d.messages || []); }
     } catch (e: any) {
@@ -181,10 +181,10 @@ const TrackProject = () => {
     setTipSubmitting(true);
     try {
       const intentResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-tip`,
+        `${SUPABASE_URL}/functions/v1/verify-tip`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` },
           body: JSON.stringify({ action: 'init', token, amount: amt, message: tipMessage }),
         }
       );
@@ -205,10 +205,10 @@ const TrackProject = () => {
         onSuccess: async () => {
           try {
             const resp = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-tip`,
+              `${SUPABASE_URL}/functions/v1/verify-tip`,
               {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` },
                 body: JSON.stringify({
                   reference: intent.reference,
                 }),
