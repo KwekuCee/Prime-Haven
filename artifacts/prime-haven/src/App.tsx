@@ -16,6 +16,7 @@ import VisitorTracker from "./components/VisitorTracker";
 import ClientRoute from "./components/client/ClientRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProfessionalRoute from "./components/auth/ProfessionalRoute";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 
 const ReferralHandler = () => {
@@ -132,6 +133,7 @@ const App = () => {
                 <GlobalPromoManager />
                 <GlobalCommandPalette />
                 <ThirdPartyLoader />
+                <SpeedInsights />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/register" element={<Navigate to="/apply" replace />} />
