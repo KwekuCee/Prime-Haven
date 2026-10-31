@@ -1,4 +1,5 @@
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://kbxijzsrywcwnyvtbruh.supabase.co";
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://iuoyngmfpxqgjutmvauj.supabase.co";
+const LEGACY_SUPABASE_URL = "https://kbxijzsrywcwnyvtbruh.supabase.co";
 
 module.exports = async function handler(req, res) {
   const origin = (req.headers && req.headers.origin) || "*";
