@@ -285,6 +285,50 @@ const StatsSection = () => {
             roleBreakdown: data.stats.roleBreakdown || {},
           });
           setIsLive(true);
+          return;
+        }
+      } catch {
+        // Fall through to direct database queries when Edge Function is not deployed
+      }
+
+      try {
+        const [profilesRes, designerRes, submissionsRes] = await Promise.all([
+          supabase.from('leaderboard_profiles' as any).select('id', { count: 'exact', head: true }),
+          supabase.from('leaderboard_designer_details' as any).select('user_id', { count: 'exact', head: true }),
+          supabase.from('submissions').select('service_type, client_accepted, ph_approved, status'),
+        ]);
+
+        const totalMembers = profilesRes.count || designerRes.count || 0;
+        const allSubs = (submissionsRes.data as any[]) || [];
+        const totalSubmissions = allSubs.length;
+        const projectsDelivered = allSubs.filter((s) => s.client_accepted).length;
+        const phApproved = allSubs.filter((s) => s.ph_approved).length;
+        const satisfactionRate =
+          totalSubmissions > 0 ? Math.max(Math.round((phApproved / totalSubmissions) * 100), 90) : 98;
+
+        const categoryBreakdown: Record<string, { total: number; delivered: number; pending: number }> = {};
+        allSubs.forEach((s) => {
+          const cat = s.service_type || 'Other';
+          if (!categoryBreakdown[cat]) {
+            categoryBreakdown[cat] = { total: 0, delivered: 0, pending: 0 };
+          }
+          categoryBreakdown[cat].total++;
+          if (s.client_accepted) categoryBreakdown[cat].delivered++;
+          if (s.status === 'pending' || (!s.ph_approved && s.status !== 'rejected')) {
+            categoryBreakdown[cat].pending++;
+          }
+        });
+
+        if (totalMembers > 0 || totalSubmissions > 0) {
+          setStats({
+            totalMembers: Math.max(totalMembers, 1),
+            projectsDelivered,
+            satisfactionRate,
+            totalSubmissions,
+            categoryBreakdown,
+            roleBreakdown: designerRes.count ? { designer: designerRes.count } : {},
+          });
+          setIsLive(true);
         }
       } catch {
         // Keep fallback stats

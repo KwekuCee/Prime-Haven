@@ -49,6 +49,7 @@ export default defineConfig({
     ],
   },
   root: projectDir,
+  envDir: workspaceRoot,
   build: {
     outDir: path.resolve(projectDir, "dist"),
     emptyOutDir: true,
@@ -63,7 +64,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/functions/v1": {
-        target: "https://kbxijzsrywcwnyvtbruh.supabase.co",
+        target: process.env.VITE_SUPABASE_URL || "https://kbxijzsrywcwnyvtbruh.supabase.co",
         changeOrigin: true,
         headers: {
           Origin: "https://primehaven.tech",
@@ -77,7 +78,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/functions/v1": {
-        target: "https://kbxijzsrywcwnyvtbruh.supabase.co",
+        target: process.env.VITE_SUPABASE_URL || "https://kbxijzsrywcwnyvtbruh.supabase.co",
         changeOrigin: true,
         headers: {
           Origin: "https://primehaven.tech",
