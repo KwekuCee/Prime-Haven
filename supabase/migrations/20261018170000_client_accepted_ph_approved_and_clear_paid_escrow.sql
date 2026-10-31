@@ -132,11 +132,23 @@ BEGIN
        WHERE contract_id = v_contract.id AND designer_id = v_sub.designer_id;
 
       IF v_talent_earned > 0 THEN
-        UPDATE public.designer_details
-           SET job_earnings = COALESCE(job_earnings, 0) + v_talent_earned,
-               salary_estimated = COALESCE(salary_estimated, 0) + v_talent_earned,
-               updated_at = now()
-         WHERE user_id = v_sub.designer_id;
+        IF NOT EXISTS (
+          SELECT 1 FROM public.job_earnings
+          WHERE submission_id = v_sub.id OR contract_id = v_contract.id
+        ) THEN
+          INSERT INTO public.job_earnings (
+            designer_id, project_id, contract_id, submission_id,
+            job_price, share_percent, amount, currency, status, created_at, updated_at
+          ) VALUES (
+            v_sub.designer_id, v_sub.client_project_id, v_contract.id, v_sub.id,
+            v_parsed_price, 70, v_talent_earned, 'GHS', 'available', now(), now()
+          );
+
+          UPDATE public.designer_details
+             SET salary_estimated = COALESCE(salary_estimated, 0) + v_talent_earned,
+                 updated_at = now()
+           WHERE user_id = v_sub.designer_id;
+        END IF;
       END IF;
     ELSE
       SELECT * INTO v_project FROM public.client_projects WHERE id = v_contract_id;
@@ -150,11 +162,23 @@ BEGIN
          WHERE id = v_project.id;
 
         IF v_talent_earned > 0 THEN
-          UPDATE public.designer_details
-             SET job_earnings = COALESCE(job_earnings, 0) + v_talent_earned,
-                 salary_estimated = COALESCE(salary_estimated, 0) + v_talent_earned,
-                 updated_at = now()
-           WHERE user_id = v_sub.designer_id;
+          IF NOT EXISTS (
+            SELECT 1 FROM public.job_earnings
+            WHERE submission_id = v_sub.id OR project_id = v_project.id
+          ) THEN
+            INSERT INTO public.job_earnings (
+              designer_id, project_id, contract_id, submission_id,
+              job_price, share_percent, amount, currency, status, created_at, updated_at
+            ) VALUES (
+              v_sub.designer_id, v_project.id, NULL, v_sub.id,
+              v_parsed_price, 70, v_talent_earned, 'GHS', 'available', now(), now()
+            );
+
+            UPDATE public.designer_details
+               SET salary_estimated = COALESCE(salary_estimated, 0) + v_talent_earned,
+                   updated_at = now()
+             WHERE user_id = v_sub.designer_id;
+          END IF;
         END IF;
       END IF;
     END IF;
@@ -359,13 +383,27 @@ BEGIN
   WHERE designer_id = v_sub.designer_id
     AND status IN ('assigned', 'claimed', 'active', 'in_progress', 'submitted');
 
-  -- 6. Award 70% share to designer details
+  -- 6. Award 70% share to job_earnings and designer_details.salary_estimated
   IF v_amount > 0 THEN
-    UPDATE public.designer_details
-    SET job_earnings = COALESCE(job_earnings, 0) + v_amount,
-        salary_estimated = COALESCE(salary_estimated, 0) + v_amount,
-        updated_at = now()
-    WHERE user_id = v_sub.designer_id;
+    IF NOT EXISTS (
+      SELECT 1 FROM public.job_earnings
+      WHERE submission_id = v_sub.id
+         OR (contract_id = v_contract.id AND v_contract.id IS NOT NULL)
+         OR (project_id = v_project.id AND v_project.id IS NOT NULL AND v_contract.id IS NULL)
+    ) THEN
+      INSERT INTO public.job_earnings (
+        designer_id, project_id, contract_id, submission_id,
+        job_price, share_percent, amount, currency, status, created_at, updated_at
+      ) VALUES (
+        v_sub.designer_id, v_project.id, v_contract.id, v_sub.id,
+        v_parsed_price, v_share, v_amount, 'GHS', 'available', now(), now()
+      );
+
+      UPDATE public.designer_details
+      SET salary_estimated = COALESCE(salary_estimated, 0) + v_amount,
+          updated_at = now()
+      WHERE user_id = v_sub.designer_id;
+    END IF;
   END IF;
 
   -- 7. Notify designer

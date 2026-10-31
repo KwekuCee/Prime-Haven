@@ -3,16 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://iuoyngmfpxqgjutmvauj.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b3luZ21mcHhxZ2p1dG12YXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDYxMzIsImV4cCI6MjEwOTAyMjEzMn0.M1RisZMMpOJucBmt7BrwktklhQSNBDgSh4aSRxJOh5k";
-
+export const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL || "https://iuoyngmfpxqgjutmvauj.supabase.co";
+export const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b3luZ21mcHhxZ2p1dG12YXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDYxMzIsImV4cCI6MjEwOTAyMjEzMn0.M1RisZMMpOJucBmt7BrwktklhQSNBDgSh4aSRxJOh5k";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
-  return (input, init) => {
+  return async (input, init) => {
     const headers = new Headers(
       typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
     );
@@ -28,28 +30,89 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
     headers.set('apikey', supabaseKey);
 
-    let targetInput: RequestInfo | URL = input;
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      const isDirectOrigin = hostname === 'primehaven.tech' || hostname === 'www.primehaven.tech';
-      const functionsPrefix = `${SUPABASE_URL}/functions/v1/`;
-      const rawUrl =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : input.url;
+    const rawUrl =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
 
-      if (!isDirectOrigin && rawUrl.startsWith(functionsPrefix)) {
-        const proxiedPath = `/functions/v1/${rawUrl.slice(functionsPrefix.length)}`;
-        targetInput =
-          typeof Request !== 'undefined' && input instanceof Request
-            ? new Request(proxiedPath, input)
-            : proxiedPath;
+    const method = (
+      init?.method ||
+      (typeof Request !== 'undefined' && input instanceof Request ? input.method : 'GET')
+    ).toUpperCase();
+
+    const bodySource =
+      init?.body ??
+      (typeof Request !== 'undefined' && input instanceof Request && method !== 'GET' && method !== 'HEAD'
+        ? await input.clone().text()
+        : undefined);
+
+    const isPrimaryUrl = rawUrl.startsWith(SUPABASE_URL);
+    const pathAndQuery = isPrimaryUrl ? rawUrl.slice(SUPABASE_URL.length) : '';
+    const isPasswordGrant =
+      isPrimaryUrl &&
+      pathAndQuery.startsWith('/auth/v1/token') &&
+      pathAndQuery.includes('grant_type=password');
+    const isEdgeFunction = isPrimaryUrl && pathAndQuery.startsWith('/functions/v1/');
+    const isServerHandledRpc =
+      isPrimaryUrl &&
+      (pathAndQuery.startsWith('/rest/v1/rpc/admin_client_accept_submission') ||
+        pathAndQuery.startsWith('/rest/v1/rpc/approve_project_submission'));
+
+    if (isPasswordGrant) {
+      const primaryRes = await fetch(rawUrl, {
+        ...init,
+        method,
+        headers,
+        body: bodySource,
+      });
+
+      if (primaryRes.ok) {
+        return primaryRes;
+      }
+
+      if (typeof window !== 'undefined' && typeof bodySource === 'string') {
+        try {
+          const migRes = await fetch('/api/migrate-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: bodySource,
+          });
+          if (migRes.ok) {
+            const migData = await migRes.json();
+            if (migData?.session) {
+              return new Response(JSON.stringify(migData.session), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      return primaryRes;
+    }
+
+    if ((isEdgeFunction || isServerHandledRpc) && typeof window !== 'undefined') {
+      try {
+        const localEdgeRes = await fetch(pathAndQuery, {
+          ...init,
+          method,
+          headers,
+          body: bodySource,
+        });
+        if (localEdgeRes.status !== 404) {
+          return localEdgeRes;
+        }
+      } catch {
+        // Fallback to direct Supabase URL
       }
     }
 
-    return fetch(targetInput, { ...init, headers });
+    return fetch(rawUrl, { ...init, method, headers, body: bodySource });
   };
 }
 

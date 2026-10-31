@@ -70,17 +70,7 @@ const SuperAdminLogin = () => {
           response.code === 'NOT_FOUND' ||
           response.message === 'Requested function was not found');
 
-      // Fallback to direct Supabase Auth when edge function is unreachable or not deployed
       if (isEdgeFunctionUnavailable) {
-        if (!data.username.includes('@')) {
-          toast({
-            variant: 'destructive',
-            title: 'Use Admin Email',
-            description: 'The admin-login Edge Function is not deployed on this Supabase project yet. Please sign in with your admin email address instead of username.',
-          });
-          return;
-        }
-
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: data.username.trim(),
           password: data.password,

@@ -14,10 +14,9 @@ export const fetchPortfolioMedia = async (designerId: string): Promise<Record<st
     const { data, error } = await supabase.functions.invoke('portfolio-media', {
       body: { designer_id: designerId },
     });
-    if (error) throw error;
+    if (error) return {};
     return (data as { media?: Record<string, string> })?.media ?? {};
-  } catch (err) {
-    console.error('Failed to resolve portfolio media:', err);
+  } catch {
     return {};
   }
 };

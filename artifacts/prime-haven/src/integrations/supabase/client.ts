@@ -9,43 +9,8 @@ export const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b3luZ21mcHhxZ2p1dG12YXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDYxMzIsImV4cCI6MjEwOTAyMjEzMn0.M1RisZMMpOJucBmt7BrwktklhQSNBDgSh4aSRxJOh5k";
 
-const LEGACY_SUPABASE_URL = "https://kbxijzsrywcwnyvtbruh.supabase.co";
-const LEGACY_SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtieGlqenNyeXdjd255dnRicnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2Mjg4MDIsImV4cCI6MjA4MzIwNDgwMn0.RduQgS5QJO9zRawpibzvgCmz5yZow2p-cqkpVa5guns";
-const LEGACY_PROJECT_REF = "kbxijzsrywcwnyvtbruh";
-
-let activeSessionProjectRef: string | null = null;
-
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
-}
-
-function getAuthenticatedJwtRef(token?: string | null): string | null {
-  if (!token) return null;
-  const clean = token.replace(/^Bearer\s+/i, '').trim();
-  const parts = clean.split('.');
-  if (parts.length !== 3) return null;
-  try {
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-    const payload = JSON.parse(atob(padded));
-    if (payload?.role && payload.role !== 'anon' && typeof payload.ref === 'string') {
-      return payload.ref;
-    }
-  } catch {
-    // ignore malformed JWT
-  }
-  return null;
-}
-
-function swapToLegacyHeaders(baseHeaders: Headers, primaryKey: string): Headers {
-  const legacyHeaders = new Headers(baseHeaders);
-  legacyHeaders.set('apikey', LEGACY_SUPABASE_KEY);
-  const auth = legacyHeaders.get('Authorization');
-  if (!auth || auth === `Bearer ${primaryKey}`) {
-    legacyHeaders.set('Authorization', `Bearer ${LEGACY_SUPABASE_KEY}`);
-  }
-  return legacyHeaders;
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -83,54 +48,20 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
         ? await input.clone().text()
         : undefined);
 
-    const authHeader = headers.get('Authorization');
-    const tokenRef = getAuthenticatedJwtRef(authHeader);
-    if (tokenRef) {
-      activeSessionProjectRef = tokenRef;
-    }
-
     const isPrimaryUrl = rawUrl.startsWith(SUPABASE_URL);
     const pathAndQuery = isPrimaryUrl ? rawUrl.slice(SUPABASE_URL.length) : '';
     const isPasswordGrant =
       isPrimaryUrl &&
       pathAndQuery.startsWith('/auth/v1/token') &&
       pathAndQuery.includes('grant_type=password');
-    const isRefreshGrant =
-      isPrimaryUrl &&
-      pathAndQuery.startsWith('/auth/v1/token') &&
-      pathAndQuery.includes('grant_type=refresh_token');
-    const isLogout = isPrimaryUrl && pathAndQuery.startsWith('/auth/v1/logout');
     const isEdgeFunction = isPrimaryUrl && pathAndQuery.startsWith('/functions/v1/');
-
-    if (isLogout) {
-      const useLegacy = tokenRef === LEGACY_PROJECT_REF || activeSessionProjectRef === LEGACY_PROJECT_REF;
-      activeSessionProjectRef = null;
-      if (useLegacy) {
-        return fetch(`${LEGACY_SUPABASE_URL}${pathAndQuery}`, {
-          ...init,
-          method,
-          headers: swapToLegacyHeaders(headers, supabaseKey),
-          body: bodySource,
-        });
-      }
-    }
-
-    // Route authenticated requests whose JWT belongs to the legacy project so RLS and auth/v1/user succeed
-    if (
+    const isServerHandledRpc =
       isPrimaryUrl &&
-      !isPasswordGrant &&
-      (tokenRef === LEGACY_PROJECT_REF || (isRefreshGrant && activeSessionProjectRef === LEGACY_PROJECT_REF))
-    ) {
-      return fetch(`${LEGACY_SUPABASE_URL}${pathAndQuery}`, {
-        ...init,
-        method,
-        headers: swapToLegacyHeaders(headers, supabaseKey),
-        body: bodySource,
-      });
-    }
+      (pathAndQuery.startsWith('/rest/v1/rpc/admin_client_accept_submission') ||
+        pathAndQuery.startsWith('/rest/v1/rpc/approve_project_submission'));
 
-    // 1. Password Sign-In: try new Supabase project first, then JIT-migrate / fallback from legacy project
-    if (isPasswordGrant && SUPABASE_URL !== LEGACY_SUPABASE_URL) {
+    // 1. Password Sign-In: authenticate against new Supabase project, and if password hash hasn't been synced yet, sync it into new Supabase auth.users via /api/migrate-auth
+    if (isPasswordGrant) {
       const primaryRes = await fetch(rawUrl, {
         ...init,
         method,
@@ -139,17 +70,9 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
       });
 
       if (primaryRes.ok) {
-        try {
-          const cloned = await primaryRes.clone().json();
-          const ref = getAuthenticatedJwtRef(cloned?.access_token);
-          if (ref) activeSessionProjectRef = ref;
-        } catch {
-          // ignore
-        }
         return primaryRes;
       }
 
-      // Try server-side JIT migration into new Supabase project if SUPABASE_SERVICE_ROLE_KEY is configured
       if (typeof window !== 'undefined' && typeof bodySource === 'string') {
         try {
           const migRes = await fetch('/api/migrate-auth', {
@@ -159,95 +82,36 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
           });
           if (migRes.ok) {
             const migData = await migRes.json();
-            if (migData?.migrated) {
-              const retryRes = await fetch(rawUrl, {
-                ...init,
-                method,
-                headers,
-                body: bodySource,
-              });
-              if (retryRes.ok) {
-                activeSessionProjectRef = getAuthenticatedJwtRef((await retryRes.clone().json())?.access_token);
-                return retryRes;
-              }
-            }
-          }
-        } catch {
-          // Server migration route unavailable; continue to legacy auth bridge
-        }
-      }
-
-      // Verify credentials against legacy Supabase project where original auth.users reside
-      const legacyRes = await fetch(`${LEGACY_SUPABASE_URL}${pathAndQuery}`, {
-        ...init,
-        method,
-        headers: swapToLegacyHeaders(headers, supabaseKey),
-        body: bodySource,
-      });
-
-      if (legacyRes.ok) {
-        activeSessionProjectRef = LEGACY_PROJECT_REF;
-        return legacyRes;
-      }
-
-      return primaryRes;
-    }
-
-    // 2. Edge Functions (e.g. admin-login for CEO username, public-stats, paystack-config):
-    // Try new Supabase project first; if 404 (not deployed on new project yet), bridge to legacy project
-    if (isEdgeFunction && SUPABASE_URL !== LEGACY_SUPABASE_URL) {
-      const primaryFnRes = await fetch(rawUrl, {
-        ...init,
-        method,
-        headers,
-        body: bodySource,
-      });
-
-      if (primaryFnRes.status !== 404) {
-        return primaryFnRes;
-      }
-
-      // If this is admin-login, try server-side JIT migration first
-      if (pathAndQuery.startsWith('/functions/v1/admin-login') && typeof window !== 'undefined' && typeof bodySource === 'string') {
-        try {
-          const migRes = await fetch('/api/migrate-auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: bodySource,
-          });
-          if (migRes.ok) {
-            const migData = await migRes.json();
-            if (migData?.session && migData?.user) {
-              activeSessionProjectRef = getAuthenticatedJwtRef(migData.session.access_token);
-              return new Response(JSON.stringify({ success: true, session: migData.session, user: migData.user }), {
+            if (migData?.session) {
+              return new Response(JSON.stringify(migData.session), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
               });
             }
           }
         } catch {
-          // Continue to legacy Edge Function
-        }
-      }
-
-      const legacyFnRes = await fetch(`${LEGACY_SUPABASE_URL}${pathAndQuery}`, {
-        ...init,
-        method,
-        headers: swapToLegacyHeaders(headers, supabaseKey),
-        body: bodySource,
-      });
-
-      if (legacyFnRes.ok && pathAndQuery.startsWith('/functions/v1/admin-login')) {
-        try {
-          const cloned = await legacyFnRes.clone().json();
-          const ref = getAuthenticatedJwtRef(cloned?.session?.access_token);
-          if (ref) activeSessionProjectRef = ref;
-        } catch {
           // ignore
         }
       }
 
-      return legacyFnRes;
+      return primaryRes;
+    }
+
+    // 2. Edge Functions and fixed RPC handlers: route through same-origin handler backed by the new Supabase project
+    if ((isEdgeFunction || isServerHandledRpc) && typeof window !== 'undefined') {
+      try {
+        const localEdgeRes = await fetch(pathAndQuery, {
+          ...init,
+          method,
+          headers,
+          body: bodySource,
+        });
+        if (localEdgeRes.status !== 404) {
+          return localEdgeRes;
+        }
+      } catch {
+        // Fallback to direct Supabase URL
+      }
     }
 
     return fetch(rawUrl, { ...init, method, headers, body: bodySource });
