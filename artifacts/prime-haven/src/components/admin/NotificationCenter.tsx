@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Bell, FileCheck, DollarSign, ShoppingCart, X, Clock } from 'lucide-react';
+import { Bell, FileCheck, DollarSign, ShoppingCart, X, Clock, Smartphone, Volume2, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { useDeviceNotifications } from '@/hooks/useDeviceNotifications';
 
 interface Notification {
   id: string;
-  type: 'submission' | 'payment' | 'order';
+  type: 'submission' | 'payment' | 'order' | 'claim' | 'job';
   title: string;
   description: string;
   timestamp: string;
@@ -19,6 +20,7 @@ interface Notification {
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const { supported, permission, isSubscribed, loading: pushLoading, enableNotifications, disableNotifications, sendTestNotification } = useDeviceNotifications();
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -109,6 +111,63 @@ const NotificationCenter = () => {
               Mark all read
             </Button>
           )}
+        </div>
+
+        {/* Device Push Alerts Bar */}
+        <div className="px-3 py-2 bg-primary/5 border-b border-border/40 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-md bg-background flex items-center justify-center shrink-0 border border-border/50">
+              <Smartphone className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-[11px] leading-tight">Device Alerts</p>
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                {isSubscribed ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Alerts active on this device
+                  </>
+                ) : permission === 'denied' ? (
+                  <span className="text-amber-500">Notifications blocked in browser</span>
+                ) : (
+                  'Receive alerts when site is closed'
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            {isSubscribed ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={sendTestNotification}
+                >
+                  Test
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] text-muted-foreground hover:text-destructive px-1.5"
+                  onClick={disableNotifications}
+                  disabled={pushLoading}
+                >
+                  Turn off
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                className="h-6 text-[10px] px-2.5 font-semibold bg-primary text-primary-foreground"
+                onClick={enableNotifications}
+                disabled={pushLoading || !supported || permission === 'denied'}
+              >
+                {pushLoading ? 'Activating...' : 'Turn on'}
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-80">
           {notifications.length > 0 ? (

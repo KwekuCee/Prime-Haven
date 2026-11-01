@@ -34,6 +34,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
+import { dispatchPlatformNotification } from '@/lib/webPush';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -203,6 +204,17 @@ const QADashboard = () => {
                     timestamp: new Date().toISOString()
                 });
             }
+            // Notify client on their mobile device / computer
+            dispatchPlatformNotification({
+                event: 'client_job_status',
+                submissionId: rejectSubmission.id,
+                title: rejectSubmission.project_name,
+                status: 'rejected',
+                reason: rejectionReason.trim(),
+                clientUserId: rejectSubmission.client_id,
+                clientEmail: rejectSubmission.client_email,
+            }).catch(() => {});
+
             toast({ title: 'Marked for Redo', description: 'Designer notified to redo and submit correction within 2 days.' });
             setRejectSubmission(null); setRejectionReason('');
             await loadData();
@@ -238,6 +250,18 @@ const QADashboard = () => {
                     timestamp: new Date().toISOString()
                 });
             }
+
+            // Notify client on their mobile device / computer
+            dispatchPlatformNotification({
+                event: 'client_job_status',
+                submissionId: clientRejectSubmission.id,
+                title: clientRejectSubmission.project_name,
+                status: 'rejected',
+                reason: clientRejectionReason.trim(),
+                clientUserId: clientRejectSubmission.client_id,
+                clientEmail: clientRejectSubmission.client_email,
+            }).catch(() => {});
+
             toast({ title: 'Client Rejected', description: 'Points retained. Designer notified to redo.' });
             setClientRejectSubmission(null); setClientRejectionReason('');
             await loadData();
@@ -277,6 +301,18 @@ const QADashboard = () => {
                     timestamp: new Date().toISOString()
                 });
             }
+
+            // Notify client on their mobile device / computer
+            dispatchPlatformNotification({
+                event: 'client_job_status',
+                submissionId: correctionRequestSubmission.id,
+                title: correctionRequestSubmission.project_name,
+                status: 'correction_requested',
+                reason: correctionNote.trim(),
+                clientUserId: correctionRequestSubmission.client_id,
+                clientEmail: correctionRequestSubmission.client_email,
+            }).catch(() => {});
+
             toast({ title: 'Correction Requested', description: 'Designer notified to submit revision within 2 days.' });
             setCorrectionRequestSubmission(null); setCorrectionNote('');
             await loadData();

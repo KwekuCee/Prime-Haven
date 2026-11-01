@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, BellOff, CheckCheck, ExternalLink, X, Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Bell, BellOff, CheckCheck, ExternalLink, X, Info, CheckCircle2, AlertTriangle, XCircle, Smartphone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotifications, AppNotification } from '@/hooks/useNotifications';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
+import { useDeviceNotifications } from '@/hooks/useDeviceNotifications';
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   info: Info,
@@ -59,6 +60,7 @@ const NotificationItem = ({ n, onRead }: { n: AppNotification; onRead: (id: stri
 const NotificationBell = () => {
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { supported, permission, isSubscribed, loading: pushLoading, enableNotifications, disableNotifications, sendTestNotification } = useDeviceNotifications();
   const ref = useRef<HTMLDivElement>(null);
 
   useOnClickOutside(ref, () => setOpen(false));
@@ -108,6 +110,63 @@ const NotificationBell = () => {
                 <Button variant="ghost" size="icon" aria-label="Close notifications" className="h-6 w-6" onClick={() => setOpen(false)}>
                   <X className="w-3 h-3" />
                 </Button>
+              </div>
+            </div>
+
+            {/* Device Push Alerts Bar */}
+            <div className="px-3 py-2 bg-primary/5 border-b border-border/40 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-md bg-background flex items-center justify-center shrink-0 border border-border/50">
+                  <Smartphone className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-[11px] leading-tight">Device Alerts</p>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    {isSubscribed ? (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Active on this device
+                      </>
+                    ) : permission === 'denied' ? (
+                      <span className="text-amber-500">Blocked in browser</span>
+                    ) : (
+                      'Alerts when site is closed'
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                {isSubscribed ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] px-2"
+                      onClick={sendTestNotification}
+                    >
+                      Test
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] text-muted-foreground hover:text-destructive px-1.5"
+                      onClick={disableNotifications}
+                      disabled={pushLoading}
+                    >
+                      Off
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-6 text-[10px] px-2.5 font-semibold bg-primary text-primary-foreground"
+                    onClick={enableNotifications}
+                    disabled={pushLoading || !supported || permission === 'denied'}
+                  >
+                    {pushLoading ? 'Turning on...' : 'Turn on'}
+                  </Button>
+                )}
               </div>
             </div>
 

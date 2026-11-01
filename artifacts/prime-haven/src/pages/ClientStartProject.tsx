@@ -16,6 +16,7 @@ import { resolveCheckoutAmount, formatUsd, formatGhs, type CheckoutAmount } from
 import { useUserSettings } from '@/contexts/UserSettingsContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import BookConsultationDialog from '@/components/BookConsultationDialog';
+import { dispatchPlatformNotification } from '@/lib/webPush';
 const isDevService = (t: string) => /web|app|mobile|video|motion|editing/i.test(t);
 const DEV_NOTE = 'Web development, mobile app development, and video editing prices vary with project scope, footage length, and animation requirements. We start with a free consultation call to scope your project and give you an accurate quote.';
 
@@ -318,8 +319,17 @@ const ClientStartProject = () => {
           console.error('Discord rpc notification failed:', discordErr);
         }
 
-        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
+        // Alert super admin and talents that a new project was posted
+        dispatchPlatformNotification({
+          event: 'project_posted',
+          projectId: 'promo_' + Date.now(),
+          title: `${selectedPricing.service_label} (${selectedPricing.tier}) — ${form.clientName}`,
+          clientName: form.clientName,
+          category: selectedPricing.discord_category,
+          budget: '$0 (Promo)',
+        }).catch(() => {});
 
+        toast({ title: 'Project Submitted! 🎉', description: 'Your 100% discounted project has been received. We\'ll get started right away!' });
 
         navigate('/client/dashboard');
 
@@ -405,8 +415,17 @@ const ClientStartProject = () => {
         throw new Error(data.error || data.message || 'Order processing failed');
       }
 
-      toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
+      // Alert super admin and talents that a new project was posted
+      dispatchPlatformNotification({
+        event: 'project_posted',
+        projectId: 'paid_' + Date.now(),
+        title: `${selectedPricing!.service_label} (${selectedPricing!.tier}) — ${form.clientName}`,
+        clientName: form.clientName,
+        category: selectedPricing!.discord_category,
+        budget: `GH₵${finalPrice}`,
+      }).catch(() => {});
 
+      toast({ title: 'Project Submitted! 🎉', description: 'Your project has been received. We\'ll get started right away!' });
 
       navigate('/client/dashboard');
     } catch (err: any) {

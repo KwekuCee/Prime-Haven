@@ -16,6 +16,7 @@ import VisitorTracker from "./components/VisitorTracker";
 import ClientRoute from "./components/client/ClientRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProfessionalRoute from "./components/auth/ProfessionalRoute";
+import DeviceNotificationSync from "./components/DeviceNotificationSync";
 
 
 const ReferralHandler = () => {
@@ -128,6 +129,7 @@ const App = () => {
             <BrowserRouter>
               <Suspense fallback={<TechStackLoader />}>
                 <InstallPrompt />
+                <DeviceNotificationSync />
                 <VisitorTracker />
                 <GlobalPromoManager />
                 <GlobalCommandPalette />

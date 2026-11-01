@@ -19,5 +19,8 @@
   },
   "workspaces": [
     "artifacts/prime-haven"
-  ]
+  ],
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
 }

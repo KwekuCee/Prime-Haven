@@ -28,6 +28,7 @@ import { fetchSystemSettings } from '@/lib/systemSettings';
 import { recalculateSalaries } from '@/lib/recalculateSalaries';
 import { useAuth } from '@/hooks/useAuth';
 import { SubmissionFilesDialog } from '@/components/admin/SubmissionFilesDialog';
+import { dispatchPlatformNotification } from '@/lib/webPush';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 
@@ -151,6 +152,18 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
     try {
       await supabase.from('submissions').update({ status: 'rejected', rejection_reason: rejectionReason.trim(), updated_at: new Date().toISOString() } as any).eq('id', rejectSubmission.id);
       if (user) await supabase.from('system_logs').insert({ action_type: 'submission_rejected', admin_id: user.id, description: `[${config.deptLabel}] Rejected: ${rejectSubmission.project_name}`, timestamp: new Date().toISOString() });
+
+      // Notify the particular client on their device
+      dispatchPlatformNotification({
+        event: 'client_job_status',
+        submissionId: rejectSubmission.id,
+        title: rejectSubmission.project_name,
+        status: 'rejected',
+        reason: rejectionReason.trim(),
+        clientUserId: rejectSubmission.client_id,
+        clientEmail: rejectSubmission.client_email,
+      }).catch(() => {});
+
       toast({ title: 'Rejected' });
       setRejectSubmission(null); setRejectionReason('');
       await loadData();
@@ -162,6 +175,18 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
     try {
       await supabase.from('submissions').update({ status: 'client_rejected', rejection_reason: clientRejectionReason.trim(), updated_at: new Date().toISOString() } as any).eq('id', clientRejectSubmission.id);
       if (user) await supabase.from('system_logs').insert({ action_type: 'client_rejected', admin_id: user.id, description: `[${config.deptLabel}] Client rejected: ${clientRejectSubmission.project_name}`, timestamp: new Date().toISOString() });
+
+      // Notify the particular client on their device
+      dispatchPlatformNotification({
+        event: 'client_job_status',
+        submissionId: clientRejectSubmission.id,
+        title: clientRejectSubmission.project_name,
+        status: 'rejected',
+        reason: clientRejectionReason.trim(),
+        clientUserId: clientRejectSubmission.client_id,
+        clientEmail: clientRejectSubmission.client_email,
+      }).catch(() => {});
+
       toast({ title: 'Client Rejected', description: 'Points retained.' });
       setClientRejectSubmission(null); setClientRejectionReason('');
       await loadData();
@@ -174,6 +199,18 @@ const DepartmentAdminDashboard = ({ config }: { config: DepartmentConfig }) => {
     try {
       await supabase.from('submissions').update({ status: 'correction_requested', rejection_reason: correctionNote.trim(), updated_at: new Date().toISOString() } as any).eq('id', correctionRequestSubmission.id);
       if (user) await supabase.from('system_logs').insert({ action_type: 'correction_requested', admin_id: user.id, description: `[${config.deptLabel}] Requested correction: ${correctionRequestSubmission.project_name} — Note: ${correctionNote.trim()}`, timestamp: new Date().toISOString() });
+
+      // Notify the particular client on their device
+      dispatchPlatformNotification({
+        event: 'client_job_status',
+        submissionId: correctionRequestSubmission.id,
+        title: correctionRequestSubmission.project_name,
+        status: 'correction_requested',
+        reason: correctionNote.trim(),
+        clientUserId: correctionRequestSubmission.client_id,
+        clientEmail: correctionRequestSubmission.client_email,
+      }).catch(() => {});
+
       toast({ title: 'Correction Requested', description: `${config.talentNoun} notified.` });
       setCorrectionRequestSubmission(null); setCorrectionNote('');
       await loadData();

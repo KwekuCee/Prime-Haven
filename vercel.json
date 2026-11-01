@@ -21,6 +21,22 @@
       "destination": "/api/backend?__route=/rest/v1/rpc/approve_project_submission"
     },
     {
+      "source": "/api/push-subscriptions",
+      "destination": "/api/backend?__route=/api/push-subscriptions"
+    },
+    {
+      "source": "/api/push-vapid-key",
+      "destination": "/api/backend?__route=/api/push-vapid-key"
+    },
+    {
+      "source": "/api/push-unsubscribe",
+      "destination": "/api/backend?__route=/api/push-unsubscribe"
+    },
+    {
+      "source": "/api/notify-event",
+      "destination": "/api/backend?__route=/api/notify-event"
+    },
+    {
       "source": "/((?!api/|functions/v1/|rest/v1/rpc/).*)",
       "destination": "/index.html"
     }

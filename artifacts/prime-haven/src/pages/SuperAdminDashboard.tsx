@@ -33,8 +33,12 @@ import {
   AlertTriangle,
   Banknote,
   Newspaper,
-  Send as SendIcon
+  Send as SendIcon,
+  Smartphone,
+  Volume2,
+  BellRing
 } from 'lucide-react';
+import { useDeviceNotifications } from '@/hooks/useDeviceNotifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1433,6 +1437,7 @@ const SuperAdminDashboard = () => {
   }
 
   const activeTab = searchParams.get('tab') || 'overview';
+  const { supported: pushSupported, permission: pushPermission, isSubscribed: isPushSubscribed, loading: pushLoading, enableNotifications: enablePush, sendTestNotification: sendPushTest } = useDeviceNotifications();
 
   return (
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
@@ -1470,6 +1475,58 @@ const SuperAdminDashboard = () => {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </div>
+        </div>
+
+        {/* Super Admin Device Alerts Banner */}
+        <div className="rounded-2xl border border-border/60 bg-card/80 p-4 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPushSubscribed ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-primary/10 text-primary border border-primary/20'}`}>
+              <Smartphone className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-foreground">Super Admin Device Alerts</span>
+                {isPushSubscribed ? (
+                  <Badge className="h-4 px-1.5 text-[9px] font-semibold bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse mr-1" />
+                    Alerts Active
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] text-muted-foreground">
+                    New Jobs &amp; Claims
+                  </Badge>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {isPushSubscribed
+                  ? 'Your devices (phones, mobile devices, laptops, computers) receive instant push alerts when clients post jobs and when talents accept jobs.'
+                  : 'Receive instant push notifications on your phone or laptop whenever a client posts a job or a talent accepts a job, even if the website is not open.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            {isPushSubscribed ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5 border-border/60"
+                onClick={sendPushTest}
+              >
+                <Volume2 className="w-3.5 h-3.5 text-primary" />
+                Test Alert
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground font-semibold shadow-xs"
+                onClick={enablePush}
+                disabled={pushLoading || !pushSupported || pushPermission === 'denied'}
+              >
+                <BellRing className="w-3.5 h-3.5" />
+                {pushLoading ? 'Activating...' : 'Turn On Admin Alerts'}
+              </Button>
+            )}
           </div>
         </div>
 

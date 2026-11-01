@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUsdRate } from '@/hooks/useUsdRate';
 import { TalentCooldownBanner } from '@/components/dashboard/TalentCooldownBanner';
 import { checkCooldownStatus } from '@/lib/deadlineTimer';
+import { dispatchPlatformNotification } from '@/lib/webPush';
 
 interface OpenOrder {
     id: string;
@@ -411,6 +412,15 @@ const ProjectMarketplace = ({ fullWidth = false }: ProjectMarketplaceProps) => {
                     .eq('project_status', 'unassigned');
                 if (error) throw error;
             }
+
+            // Alert ONLY the super admin when a job is accepted
+            dispatchPlatformNotification({
+              event: 'job_accepted',
+              jobId: order.id,
+              title: order.title,
+              talentName: user?.email || 'A talent',
+              talentId: user?.id,
+            }).catch(() => {});
 
             toast({
                 title: 'Project Claimed! 🚀',

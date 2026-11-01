@@ -24,6 +24,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { dispatchPlatformNotification } from '@/lib/webPush';
 
 const CATEGORIES: { value: string; label: string; profession: string }[] = [
   { value: 'graphic-design', label: 'Graphic Design', profession: 'Graphic Designer' },
@@ -99,6 +100,17 @@ const ClientPostJobDialog = ({ onPosted }: Props) => {
         status: 'pending',
       });
       if (error) throw error;
+
+      // Alert super admin and talents that a new job was posted
+      dispatchPlatformNotification({
+        event: 'project_posted',
+        projectId: 'client_post_' + Date.now(),
+        title: form.title.trim().slice(0, 200),
+        clientName: profile?.full_name || user.email || 'Client',
+        category: form.category,
+        budget: form.budget.trim() || undefined,
+      }).catch(() => {});
+
       toast({
         title: 'Job posted ✨',
         description: 'Designers can now see and claim your job.',

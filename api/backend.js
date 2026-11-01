@@ -10,6 +10,180 @@ const LEGACY_SUPABASE_KEY =
 
 const legacyTokenCache = new Map();
 
+let webpush = null;
+try {
+  webpush = require("web-push");
+} catch (e) {
+  try {
+    webpush = require("../../node_modules/web-push");
+  } catch {}
+}
+
+const VAPID_PUBLIC_KEY =
+  "BHZozIpQIh0Xspl-iFX2xptG7G7wXJ7l5KDtkn17tTIkgHJL3tOHlZRC6CK_KYRncG3-2_etKbvb8QXHTfsXRtU";
+const VAPID_PRIVATE_KEY =
+  "fyKH1lDEWsvg5ItPlksiqzw3789mwrnvYkoxMZZNk4s";
+
+if (webpush) {
+  try {
+    webpush.setVapidDetails(
+      "mailto:notifications@primehaven.tech",
+      VAPID_PUBLIC_KEY,
+      VAPID_PRIVATE_KEY
+    );
+  } catch (err) {
+    console.warn("VAPID details setup warning:", err);
+  }
+}
+
+let pushSubscriptionsCache = [];
+let pushSubscriptionsLoaded = false;
+
+async function ensurePushSubscriptionsLoaded(targetUrl, srHeaders) {
+  if (pushSubscriptionsLoaded && pushSubscriptionsCache.length > 0) return;
+  try {
+    const res = await fetch(
+      `${targetUrl}/rest/v1/system_settings?key=eq.web_push_subscriptions&select=value`,
+      { headers: srHeaders }
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows[0] && Array.isArray(rows[0].value)) {
+        pushSubscriptionsCache = rows[0].value;
+        pushSubscriptionsLoaded = true;
+      }
+    }
+  } catch (err) {
+    console.warn("Failed loading push subscriptions from system_settings:", err);
+  }
+}
+
+async function persistPushSubscription(targetUrl, srHeaders, record) {
+  await ensurePushSubscriptionsLoaded(targetUrl, srHeaders);
+  const endpoint = record && record.subscription && record.subscription.endpoint;
+  if (!endpoint) return;
+
+  const idx = pushSubscriptionsCache.findIndex(
+    (s) => s && s.subscription && s.subscription.endpoint === endpoint
+  );
+  if (idx >= 0) {
+    pushSubscriptionsCache[idx] = {
+      ...pushSubscriptionsCache[idx],
+      ...record,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    pushSubscriptionsCache.push({ ...record, updatedAt: new Date().toISOString() });
+  }
+
+  try {
+    await fetch(`${targetUrl}/rest/v1/system_settings?key=eq.web_push_subscriptions`, {
+      method: "PATCH",
+      headers: srHeaders,
+      body: JSON.stringify({
+        value: pushSubscriptionsCache,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.warn("Failed persisting push subscription:", err);
+  }
+}
+
+async function removePushSubscription(targetUrl, srHeaders, endpoint) {
+  if (!endpoint) return;
+  await ensurePushSubscriptionsLoaded(targetUrl, srHeaders);
+  pushSubscriptionsCache = pushSubscriptionsCache.filter(
+    (s) => !(s && s.subscription && s.subscription.endpoint === endpoint)
+  );
+  try {
+    await fetch(`${targetUrl}/rest/v1/system_settings?key=eq.web_push_subscriptions`, {
+      method: "PATCH",
+      headers: srHeaders,
+      body: JSON.stringify({
+        value: pushSubscriptionsCache,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } catch {}
+}
+
+async function sendWebPushToDevices(targetUrl, srHeaders, targets, payload) {
+  if (!webpush) return;
+  await ensurePushSubscriptionsLoaded(targetUrl, srHeaders);
+
+  const notificationPayload = JSON.stringify({
+    title: payload.title || "Prime Haven Alert",
+    body: payload.body || payload.message || "",
+    url: payload.url || payload.link || "/",
+    icon: payload.icon || "/logo-512.png",
+    badge: payload.badge || "/favicon.png",
+    tag: payload.tag || `ph-push-${Date.now()}`,
+    data: {
+      url: payload.url || payload.link || "/",
+      ...payload,
+    },
+  });
+
+  const deadEndpoints = [];
+
+  for (const item of pushSubscriptionsCache) {
+    if (!item || !item.subscription || !item.subscription.endpoint) continue;
+
+    let shouldDeliver = false;
+    if (targets.all) {
+      shouldDeliver = true;
+    }
+    if (targets.roles && item.role && targets.roles.includes(item.role)) {
+      shouldDeliver = true;
+    }
+    if (targets.userIds && item.userId && targets.userIds.includes(item.userId)) {
+      shouldDeliver = true;
+    }
+    if (targets.emails && item.email && targets.emails.includes(item.email)) {
+      shouldDeliver = true;
+    }
+
+    if (shouldDeliver) {
+      try {
+        await webpush.sendNotification(item.subscription, notificationPayload);
+      } catch (err) {
+        if (err && (err.statusCode === 410 || err.statusCode === 404)) {
+          deadEndpoints.push(item.subscription.endpoint);
+        } else {
+          console.warn("Push delivery warning:", err?.message || err);
+        }
+      }
+    }
+  }
+
+  if (deadEndpoints.length > 0) {
+    pushSubscriptionsCache = pushSubscriptionsCache.filter(
+      (s) => !deadEndpoints.includes(s?.subscription?.endpoint)
+    );
+  }
+}
+
+async function insertDatabaseNotification(targetUrl, srHeaders, notif) {
+  try {
+    await fetch(`${targetUrl}/rest/v1/notifications`, {
+      method: "POST",
+      headers: srHeaders,
+      body: JSON.stringify({
+        user_id: notif.user_id,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type || "info",
+        link: notif.link || "/dashboard",
+        read: false,
+        created_at: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.warn("Failed inserting notification to DB:", err);
+  }
+}
+
 function readJsonBody(req) {
   if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
     return Promise.resolve(req.body);
@@ -102,6 +276,10 @@ module.exports = async function backendHandler(req, res, next) {
 
   const isHandledRoute =
     urlPath === "/api/migrate-auth" ||
+    urlPath === "/api/push-vapid-key" ||
+    urlPath === "/api/push-subscriptions" ||
+    urlPath === "/api/push-unsubscribe" ||
+    urlPath === "/api/notify-event" ||
     urlPath.startsWith("/functions/v1/") ||
     urlPath === "/rest/v1/rpc/admin_client_accept_submission" ||
     urlPath === "/rest/v1/rpc/approve_project_submission";
@@ -142,6 +320,264 @@ module.exports = async function backendHandler(req, res, next) {
     Authorization: effectiveBearer,
     "Content-Type": "application/json",
   };
+
+  // Web Push VAPID Public Key
+  if (urlPath === "/api/push-vapid-key" || urlPath === "/functions/v1/push-vapid-key") {
+    return sendJson(res, 200, { publicKey: VAPID_PUBLIC_KEY });
+  }
+
+  // Save Push Subscription
+  if (
+    (urlPath === "/api/push-subscriptions" || urlPath === "/functions/v1/push-subscriptions") &&
+    req.method === "POST"
+  ) {
+    try {
+      const body = await readJsonBody(req);
+      await persistPushSubscription(targetUrl, srHeaders, body);
+      return sendJson(res, 200, { success: true });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err?.message });
+    }
+  }
+
+  // Remove Push Subscription
+  if (
+    (urlPath === "/api/push-unsubscribe" || urlPath === "/functions/v1/push-unsubscribe") &&
+    req.method === "POST"
+  ) {
+    try {
+      const body = await readJsonBody(req);
+      await removePushSubscription(targetUrl, srHeaders, body?.endpoint);
+      return sendJson(res, 200, { success: true });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err?.message });
+    }
+  }
+
+  // Platform Notification Event Dispatcher
+  if (
+    (urlPath === "/api/notify-event" || urlPath === "/functions/v1/notify-event") &&
+    req.method === "POST"
+  ) {
+    try {
+      const body = await readJsonBody(req);
+      const eventType = body && body.event;
+
+      // Event 1: New project posted by a client
+      // - Super Admin alerted that a new job has been posted
+      // - Talent alerted when a new job is posted
+      if (eventType === "project_posted") {
+        const title = body.title || "New Project";
+        const clientName = body.clientName || "Client";
+        const category = body.category || "creative";
+        const budget = body.budget || "";
+
+        // 1. Fetch super admins to insert in-app notifications
+        const saRes = await fetch(
+          `${targetUrl}/rest/v1/user_roles?role=in.(superadmin,masteradmin)&select=user_id`,
+          { headers: srHeaders }
+        );
+        const saRows = saRes.ok ? await saRes.json() : [];
+        if (Array.isArray(saRows)) {
+          for (const sa of saRows) {
+            if (sa?.user_id) {
+              await insertDatabaseNotification(targetUrl, srHeaders, {
+                user_id: sa.user_id,
+                title: "New Job Posted 💼",
+                message: `Client ${clientName} posted: "${title}"${budget ? ` (${budget})` : ""}`,
+                link: "/superadmin/manage-client-projects",
+                type: "info",
+              });
+            }
+          }
+        }
+
+        // 2. Fetch active talents to insert notifications
+        const talRes = await fetch(
+          `${targetUrl}/rest/v1/designer_details?select=user_id&limit=50`,
+          { headers: srHeaders }
+        );
+        const talRows = talRes.ok ? await talRes.json() : [];
+        if (Array.isArray(talRows)) {
+          for (const tal of talRows) {
+            if (tal?.user_id) {
+              await insertDatabaseNotification(targetUrl, srHeaders, {
+                user_id: tal.user_id,
+                title: "New Job Available! ✨",
+                message: `A new ${category} project is available to claim: "${title}"`,
+                link: "/marketplace",
+                type: "info",
+              });
+            }
+          }
+        }
+
+        // 3. Web Push to Super Admin devices
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          { roles: ["superadmin", "masteradmin"] },
+          {
+            title: "New Job Posted 💼",
+            body: `Client ${clientName} posted "${title}"`,
+            url: "/superadmin/manage-client-projects",
+            tag: `ph-job-posted-${Date.now()}`,
+          }
+        );
+
+        // 4. Web Push to Talent devices
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          { roles: ["talent", "designer"] },
+          {
+            title: "New Job Available! ✨",
+            body: `A new ${category} job is available: "${title}"`,
+            url: "/marketplace",
+            tag: `ph-job-available-${Date.now()}`,
+          }
+        );
+
+        return sendJson(res, 200, { success: true });
+      }
+
+      // Event 2: Job accepted/claimed
+      // - ONLY the super admin should be alerted
+      if (eventType === "job_accepted") {
+        const title = body.title || "Job Contract";
+        const talentName = body.talentName || "A talent";
+
+        const saRes = await fetch(
+          `${targetUrl}/rest/v1/user_roles?role=in.(superadmin,masteradmin)&select=user_id`,
+          { headers: srHeaders }
+        );
+        const saRows = saRes.ok ? await saRes.json() : [];
+        if (Array.isArray(saRows)) {
+          for (const sa of saRows) {
+            if (sa?.user_id) {
+              await insertDatabaseNotification(targetUrl, srHeaders, {
+                user_id: sa.user_id,
+                title: "Job Accepted! 🎯",
+                message: `${talentName} accepted the job "${title}"`,
+                link: "/superadmin/contracts",
+                type: "info",
+              });
+            }
+          }
+        }
+
+        // Push ONLY to super admins (talent is NOT alerted)
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          { roles: ["superadmin", "masteradmin"] },
+          {
+            title: "Job Accepted! 🎯",
+            body: `${talentName} accepted the job "${title}"`,
+            url: "/superadmin/contracts",
+            tag: `ph-job-accepted-${Date.now()}`,
+          }
+        );
+
+        return sendJson(res, 200, { success: true });
+      }
+
+      // Event 3: Particular client's job approved, rejected, or issued for correction
+      // - That particular client should receive a notification on their device
+      if (eventType === "client_job_status") {
+        const title = body.title || "Your Project";
+        const status = body.status;
+        const reason = body.reason || "";
+        let clientUserId = body.clientUserId || null;
+        const clientEmail = body.clientEmail ? String(body.clientEmail).toLowerCase() : null;
+
+        // Resolve client user id if not provided
+        if (!clientUserId && clientEmail) {
+          const uRes = await fetch(
+            `${targetUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(clientEmail)}&select=id&limit=1`,
+            { headers: srHeaders }
+          );
+          if (uRes.ok) {
+            const uRows = await uRes.json();
+            if (Array.isArray(uRows) && uRows[0]?.id) {
+              clientUserId = uRows[0].id;
+            }
+          }
+        }
+
+        let notifTitle = "";
+        let notifMessage = "";
+        let notifType = "info";
+
+        if (status === "approved") {
+          notifTitle = "Project Approved! 🎉";
+          notifMessage = `Your project "${title}" has been approved and completed.`;
+          notifType = "success";
+        } else if (status === "rejected" || status === "client_rejected") {
+          notifTitle = "Project Submission Update ⚠️";
+          notifMessage = `Submission for "${title}" was rejected: ${reason || "Please review feedback."}`;
+          notifType = "error";
+        } else if (status === "correction_requested") {
+          notifTitle = "Correction Requested 📝";
+          notifMessage = `Corrections requested for "${title}": ${reason || "Please review notes."}`;
+          notifType = "warning";
+        }
+
+        if (clientUserId) {
+          await insertDatabaseNotification(targetUrl, srHeaders, {
+            user_id: clientUserId,
+            title: notifTitle,
+            message: notifMessage,
+            type: notifType,
+            link: "/client/projects-review",
+          });
+        }
+
+        // Send Web Push directly to that client's device
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          {
+            userIds: clientUserId ? [clientUserId] : undefined,
+            emails: clientEmail ? [clientEmail] : undefined,
+          },
+          {
+            title: notifTitle,
+            body: notifMessage,
+            url: "/client/projects-review",
+            tag: `ph-client-status-${Date.now()}`,
+          }
+        );
+
+        return sendJson(res, 200, { success: true });
+      }
+
+      // Event 4: Test push
+      if (eventType === "test_push") {
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          {
+            userIds: body.userId ? [body.userId] : undefined,
+            emails: body.email ? [body.email] : undefined,
+            roles: body.role ? [body.role] : undefined,
+            all: !body.userId && !body.email && !body.role,
+          },
+          {
+            title: "Prime Haven Test Alert 🚀",
+            body: "Your device notifications are active and working smoothly!",
+            url: "/dashboard",
+          }
+        );
+        return sendJson(res, 200, { success: true });
+      }
+
+      return sendJson(res, 200, { success: true });
+    } catch (err) {
+      console.error("notify-event error:", err);
+      return sendJson(res, 500, { success: false, error: err?.message });
+    }
+  }
 
   // 0. /rest/v1/rpc/admin_client_accept_submission & /rest/v1/rpc/approve_project_submission
   if (
@@ -397,6 +833,39 @@ module.exports = async function backendHandler(req, res, next) {
           timestamp: nowIso,
         }),
       }).catch(() => {});
+
+      // Notify client on their devices that their project submission has been approved
+      const clientEmail = (v_project && v_project.client_email) || (v_contract && v_contract.client_email);
+      const clientUserId = (v_project && v_project.created_by) || (v_contract && v_contract.posted_by);
+      const projectName = (v_project && v_project.title) || (v_contract && v_contract.title) || v_sub.project_name || "Project";
+
+      try {
+        if (clientUserId) {
+          await insertDatabaseNotification(targetUrl, srHeaders, {
+            user_id: clientUserId,
+            title: "Project Approved! 🎉",
+            message: `Your project "${projectName}" has been approved and completed.`,
+            type: "success",
+            link: "/client/projects-review",
+          });
+        }
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          {
+            userIds: clientUserId ? [clientUserId] : undefined,
+            emails: clientEmail ? [String(clientEmail).toLowerCase()] : undefined,
+          },
+          {
+            title: "Project Approved! 🎉",
+            body: `Your project "${projectName}" has been approved and completed.`,
+            url: "/client/projects-review",
+            tag: `ph-approved-${v_sub.id}`,
+          }
+        );
+      } catch (alertErr) {
+        console.warn("Client approval alert dispatch failed:", alertErr);
+      }
 
       return sendJson(res, 200, {
         success: true,
