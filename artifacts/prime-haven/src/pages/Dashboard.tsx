@@ -125,7 +125,6 @@ const Dashboard = () => {
   const [hasStartedProject, setHasStartedProject] = useState(false);
   const [startedProjectInfo, setStartedProjectInfo] = useState<{ jobId: string; title: string; startedAt: string } | null>(null);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
-  const { supported, permission, isSubscribed, loading: pushLoading, enableNotifications, sendTestNotification } = useDeviceNotifications();
 
   useEffect(() => {
     if (user) {
@@ -568,63 +567,6 @@ const Dashboard = () => {
             </div>}
           />
           <div className="mt-3"><RankBadge points={designer?.total_points || 0} size="sm" showProgress /></div>
-        </motion.div>
-
-        {/* Device Notifications Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.04 }}
-          className="mb-6 p-4 rounded-2xl border border-border/60 bg-gradient-to-r from-card/90 via-card/50 to-background backdrop-blur-sm shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-        >
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isSubscribed ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-primary/10 text-primary border border-primary/20'}`}>
-              <Smartphone className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold">Device Alerts</span>
-                {isSubscribed ? (
-                  <Badge className="h-4 px-1.5 text-[9px] font-semibold bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse mr-1" />
-                    Alerts Active
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] text-muted-foreground">
-                    Instant Job Alerts
-                  </Badge>
-                )}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {isSubscribed
-                  ? 'Your devices (phones, mobile devices, laptops) will receive instant push notifications whenever new jobs are posted.'
-                  : 'Get notified on your phone, laptop, or computer the moment a new client job is posted, even if the website is closed.'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-            {isSubscribed ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs gap-1.5 border-border/60"
-                onClick={sendTestNotification}
-              >
-                <Volume2 className="w-3.5 h-3.5 text-primary" />
-                Test Alert
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground font-semibold shadow-xs"
-                onClick={enableNotifications}
-                disabled={pushLoading || !supported || permission === 'denied'}
-              >
-                <BellRing className="w-3.5 h-3.5" />
-                {pushLoading ? 'Activating...' : 'Turn On Device Alerts'}
-              </Button>
-            )}
-          </div>
         </motion.div>
 
         {/* Active Project Indicator */}

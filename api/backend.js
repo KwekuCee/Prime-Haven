@@ -1572,6 +1572,128 @@ module.exports = async function backendHandler(req, res, next) {
     }
   }
 
+  // 7b. /functions/v1/delete-user
+  if (urlPath === "/functions/v1/delete-user" && req.method === "POST") {
+    try {
+      const { user, isAdmin } = await verifyCaller(req);
+      if (!user) return sendJson(res, 401, { error: "Unauthorized" });
+      if (!isAdmin) return sendJson(res, 403, { error: "Forbidden: Superadmin access required" });
+
+      const body = await readJsonBody(req);
+      const targetUserId = String((body && (body.user_id || body.userId)) || "").trim();
+      if (!targetUserId) {
+        return sendJson(res, 400, { error: "Missing required field: user_id" });
+      }
+
+      // Check target profile / email to protect Master Admin / CEO
+      const pRes = await fetch(
+        `${targetUrl}/rest/v1/profiles?select=id,email,full_name,username&id=eq.${encodeURIComponent(targetUserId)}&limit=1`,
+        { headers: srHeaders }
+      );
+      const pRows = pRes.ok ? await pRes.json() : [];
+      const targetProfile = Array.isArray(pRows) ? pRows[0] : null;
+
+      const targetEmail = String((targetProfile && targetProfile.email) || "").toLowerCase().trim();
+      const targetUsername = String((targetProfile && targetProfile.username) || "").toLowerCase().trim();
+
+      if (
+        targetEmail === "ceo@primehaven.com" ||
+        targetEmail === "ceo@ph" ||
+        targetUsername === "ceo" ||
+        targetUserId === user.id
+      ) {
+        return sendJson(res, 400, { error: "The Master Admin / CEO account cannot be deleted." });
+      }
+
+      // Cascade clean up all foreign key tables in order
+      const endpointsToDelete = [
+        `auth_audit_logs?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `talent_activity_logs?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `notifications?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `smm_platform_connections?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `designer_details?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `user_roles?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `affiliate_referrals?referrer_id=eq.${encodeURIComponent(targetUserId)}`,
+        `affiliate_referrals?referred_user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `job_contract_claims?designer_id=eq.${encodeURIComponent(targetUserId)}`,
+        `submissions?designer_id=eq.${encodeURIComponent(targetUserId)}`,
+        `consultation_bookings?user_id=eq.${encodeURIComponent(targetUserId)}`,
+        `profiles?id=eq.${encodeURIComponent(targetUserId)}`,
+      ];
+
+      for (const ep of endpointsToDelete) {
+        try {
+          await fetch(`${targetUrl}/rest/v1/${ep}`, {
+            method: "DELETE",
+            headers: srHeaders,
+          });
+        } catch {}
+      }
+
+      // Nullify references in client_projects, clients, applicants
+      try {
+        await fetch(`${targetUrl}/rest/v1/client_projects?assigned_to=eq.${encodeURIComponent(targetUserId)}`, {
+          method: "PATCH",
+          headers: srHeaders,
+          body: JSON.stringify({ assigned_to: null, status: "open" }),
+        });
+      } catch {}
+
+      try {
+        await fetch(`${targetUrl}/rest/v1/clients?user_id=eq.${encodeURIComponent(targetUserId)}`, {
+          method: "PATCH",
+          headers: srHeaders,
+          body: JSON.stringify({ user_id: null }),
+        });
+      } catch {}
+
+      try {
+        await fetch(`${targetUrl}/rest/v1/applicants?user_id=eq.${encodeURIComponent(targetUserId)}`, {
+          method: "PATCH",
+          headers: srHeaders,
+          body: JSON.stringify({ user_id: null }),
+        });
+      } catch {}
+
+      // Delete from Supabase Auth admin API
+      try {
+        await fetch(`${targetUrl}/auth/v1/admin/users/${encodeURIComponent(targetUserId)}`, {
+          method: "DELETE",
+          headers: srHeaders,
+        });
+      } catch (authDelErr) {
+        console.warn("Auth user deletion warning:", authDelErr);
+      }
+
+      // Remove from pushSubscriptionsCache if present
+      pushSubscriptionsCache = pushSubscriptionsCache.filter(
+        (item) => item && item.userId !== targetUserId
+      );
+
+      // Log in system_logs
+      try {
+        await fetch(`${targetUrl}/rest/v1/system_logs`, {
+          method: "POST",
+          headers: srHeaders,
+          body: JSON.stringify({
+            action_type: "user_deleted",
+            admin_id: user.id,
+            description: `Permanently deleted user: ${targetProfile?.full_name || targetEmail || targetUserId}`,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      } catch {}
+
+      return sendJson(res, 200, {
+        success: true,
+        message: "User account and all related records deleted successfully.",
+      });
+    } catch (err) {
+      console.error("Delete user error:", err);
+      return sendJson(res, 500, { error: err?.message || "Failed to delete user" });
+    }
+  }
+
   // 8. /functions/v1/send-client-email
   if (urlPath === "/functions/v1/send-client-email" && req.method === "POST") {
     try {

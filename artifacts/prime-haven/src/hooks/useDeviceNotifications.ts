@@ -45,10 +45,10 @@ export function useDeviceNotifications(): UseDeviceNotificationsReturn {
     const perm = getNotificationPermissionState();
     setPermission(perm);
 
-    const status = await checkPushSubscriptionStatus();
+    const status = await checkPushSubscriptionStatus(user?.id);
     setIsSubscribed(status.isSubscribed);
     setLoading(false);
-  }, []);
+  }, [user?.id]);
 
   // Determine user role (superadmin, talent, client)
   useEffect(() => {

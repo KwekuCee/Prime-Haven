@@ -124,8 +124,8 @@ const NotificationBell = () => {
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                     {isSubscribed ? (
                       <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Active on this device
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
+                        Active for this account
                       </>
                     ) : permission === 'denied' ? (
                       <span className="text-amber-500">Blocked in browser</span>

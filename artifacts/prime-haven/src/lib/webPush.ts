@@ -189,6 +189,9 @@ export async function subscribeUserToPush(opts?: {
       }).catch((e) => console.warn('Failed saving push subscription to /api/push-subscriptions:', e));
 
       localStorage.setItem('ph_push_notifications_enabled', 'true');
+      if (opts?.userId) {
+        localStorage.setItem(`ph_device_alerts_${opts.userId}`, 'true');
+      }
     }
 
     return sub;
@@ -209,7 +212,7 @@ export async function unsubscribeUserFromPush(userId?: string): Promise<boolean>
     if (reg) {
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
-        await sub.unsubscribe();
+        await sub.unsubscribe().catch(() => {});
         await fetch('/api/push-unsubscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -218,6 +221,9 @@ export async function unsubscribeUserFromPush(userId?: string): Promise<boolean>
       }
     }
     localStorage.setItem('ph_push_notifications_enabled', 'false');
+    if (userId) {
+      localStorage.setItem(`ph_device_alerts_${userId}`, 'false');
+    }
     return true;
   } catch (err) {
     console.error('Error unsubscribing from Web Push:', err);
@@ -228,7 +234,7 @@ export async function unsubscribeUserFromPush(userId?: string): Promise<boolean>
 /**
  * Check if the user is currently subscribed on this device.
  */
-export async function checkPushSubscriptionStatus(): Promise<PushStatus> {
+export async function checkPushSubscriptionStatus(userId?: string): Promise<PushStatus> {
   if (!isPushSupported()) {
     return { supported: false, permission: 'unsupported', isSubscribed: false };
   }
@@ -241,10 +247,22 @@ export async function checkPushSubscriptionStatus(): Promise<PushStatus> {
   try {
     const reg = await navigator.serviceWorker.getRegistration('/');
     const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (!sub) {
+      return { supported: true, permission, isSubscribed: false };
+    }
+
+    if (userId && localStorage.getItem(`ph_device_alerts_${userId}`) === 'false') {
+      return { supported: true, permission, isSubscribed: false };
+    }
+
+    if (localStorage.getItem('ph_push_notifications_enabled') === 'false') {
+      return { supported: true, permission, isSubscribed: false };
+    }
+
     return {
       supported: true,
       permission,
-      isSubscribed: !!sub && localStorage.getItem('ph_push_notifications_enabled') !== 'false',
+      isSubscribed: true,
     };
   } catch {
     return { supported: true, permission, isSubscribed: false };

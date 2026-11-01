@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bell, Lock, User, Globe, Moon, Sun, Shield, Mail, Smartphone, Trash2,
-  Download, CheckCircle, Loader2, Settings as SettingsIcon
+  Download, CheckCircle, Loader2, Settings as SettingsIcon, Volume2, BellRing
 } from 'lucide-react';
+import { useDeviceNotifications } from '@/hooks/useDeviceNotifications';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -23,6 +24,32 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { settings, updateSetting, saveSettings } = useUserSettings();
+
+  const {
+    supported: pushSupported,
+    permission: pushPermission,
+    isSubscribed: isPushSubscribed,
+    loading: pushLoading,
+    enableNotifications,
+    disableNotifications,
+    sendTestNotification,
+  } = useDeviceNotifications();
+
+  const handleToggleDeviceAlerts = async (checked: boolean) => {
+    if (checked) {
+      const ok = await enableNotifications();
+      if (ok) {
+        toast({ title: 'Device Alerts Enabled', description: `Notifications active on this device for ${user?.email || 'your account'}.` });
+      } else if (pushPermission === 'denied') {
+        toast({ title: 'Permission Blocked', description: 'Notifications are blocked in your browser settings. Please allow notifications for this site.', variant: 'destructive' });
+      }
+    } else {
+      const ok = await disableNotifications();
+      if (ok) {
+        toast({ title: 'Device Alerts Disabled', description: 'You will no longer receive device push notifications on this device.' });
+      }
+    }
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -146,6 +173,64 @@ const Settings = () => {
                 <ToggleRow label="Payment Alerts" desc="Alerts for payments and earnings" checked={settings.payment_alerts} onChange={(v) => updateSetting('payment_alerts', v)} />
                 <ToggleRow label="Marketing Emails" desc="Promotional emails and offers" checked={settings.marketing_emails} onChange={(v) => updateSetting('marketing_emails', v)} />
                 <ToggleRow label="Push Notifications" desc="Browser notifications" checked={settings.push_notifications} onChange={(v) => updateSetting('push_notifications', v)} />
+              </div>
+            </SectionCard>
+
+            {/* Device Alerts */}
+            <SectionCard icon={Smartphone} title="Device Alerts" description="Web Push notifications on this phone, laptop, or computer" delay={0.12}>
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-xl bg-muted/20 border border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold">Status</span>
+                      {isPushSubscribed ? (
+                        <Badge variant="secondary" className="text-[10px] font-medium border border-border/60">
+                          Active for {userProfile?.email || user?.email || 'this account'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                          Disabled on this device
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {isPushSubscribed
+                        ? 'Instant job alerts will arrive on this device even when the website is closed.'
+                        : 'Turn on to receive instant alerts whenever new jobs and projects are posted.'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 self-end sm:self-center">
+                    <Switch
+                      checked={isPushSubscribed}
+                      disabled={pushLoading || !pushSupported || pushPermission === 'denied'}
+                      onCheckedChange={handleToggleDeviceAlerts}
+                      aria-label="Toggle Device Alerts"
+                    />
+                  </div>
+                </div>
+
+                {isPushSubscribed && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5 border-border/50"
+                      onClick={async () => {
+                        await sendTestNotification();
+                        toast({ title: 'Test Alert Sent', description: 'Check your device screen for the alert!' });
+                      }}
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-primary" />
+                      Send Test Alert
+                    </Button>
+                  </div>
+                )}
+
+                {pushPermission === 'denied' && (
+                  <p className="text-[11px] text-amber-500 bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20">
+                    Notifications are blocked by your browser. Please tap the permissions icon in your address bar to allow notifications.
+                  </p>
+                )}
               </div>
             </SectionCard>
 

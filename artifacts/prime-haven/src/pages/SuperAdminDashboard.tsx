@@ -267,7 +267,15 @@ const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
-  const { supported: pushSupported, permission: pushPermission, isSubscribed: isPushSubscribed, loading: pushLoading, enableNotifications: enablePush, sendTestNotification: sendPushTest } = useDeviceNotifications();
+  const {
+    supported: pushSupported,
+    permission: pushPermission,
+    isSubscribed: isPushSubscribed,
+    loading: pushLoading,
+    enableNotifications: enablePush,
+    disableNotifications: disablePush,
+    sendTestNotification: sendPushTest
+  } = useDeviceNotifications();
   const [loading, setLoading] = useState(true);
   const [initialAuthCheck, setInitialAuthCheck] = useState(true);
   const [stats, setStats] = useState<AdminStats>({
@@ -1032,11 +1040,34 @@ const SuperAdminDashboard = () => {
       const token = sessionData.session?.access_token;
       if (!token) throw new Error('Your session expired. Please sign in again.');
 
-      const { data, error } = await supabase.functions.invoke('delete-user', {
+      let resData: any = null;
+      let deleteSuccess = false;
+
+      // 1. Try invoking delete-user via functions
+      const invokeResult = await supabase.functions.invoke('delete-user', {
         body: { user_id: targetUser.id },
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).message || 'Could not delete this account.');
+
+      if (!invokeResult.error && invokeResult.data && !(invokeResult.data as any).error) {
+        deleteSuccess = true;
+        resData = invokeResult.data;
+      } else {
+        // 2. Direct fallback to /api/functions/delete-user
+        const fallbackRes = await fetch('/api/functions/delete-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ user_id: targetUser.id }),
+        });
+        resData = await fallbackRes.json().catch(() => ({}));
+        if (fallbackRes.ok && !resData.error) {
+          deleteSuccess = true;
+        } else {
+          throw new Error(resData?.error || resData?.message || invokeResult.error?.message || 'Could not delete this account.');
+        }
+      }
 
       toast({
         title: 'Account Deleted',
@@ -1481,50 +1512,78 @@ const SuperAdminDashboard = () => {
         {/* Super Admin Device Alerts Banner */}
         <div className="rounded-2xl border border-border/60 bg-card/80 p-4 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPushSubscribed ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-primary/10 text-primary border border-primary/20'}`}>
-              <Smartphone className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-muted/80 text-foreground border border-border/60">
+              <Smartphone className="w-4 h-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-foreground">Super Admin Device Alerts</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-foreground">Device Alerts</span>
                 {isPushSubscribed ? (
-                  <Badge className="h-4 px-1.5 text-[9px] font-semibold bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse mr-1" />
-                    Alerts Active
+                  <Badge variant="secondary" className="h-5 px-2 text-[10px] font-medium border border-border/80">
+                    Active for {adminDisplayName}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] text-muted-foreground">
-                    New Jobs &amp; Claims
+                  <Badge variant="outline" className="h-5 px-2 text-[10px] text-muted-foreground">
+                    Disabled on this device
                   </Badge>
                 )}
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  • {typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'Phone / Mobile' : 'Computer / Laptop'}
+                </span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {isPushSubscribed
-                  ? 'Your devices (phones, mobile devices, laptops, computers) receive instant push alerts when clients post jobs and when talents accept jobs.'
-                  : 'Receive instant push notifications on your phone or laptop whenever a client posts a job or a talent accepts a job, even if the website is not open.'}
+                  ? `Push notifications are active on this device for ${adminDisplayName}. You will receive alerts when clients post jobs or talents accept claims.`
+                  : 'Turn on alerts on this device (phone, laptop, or desktop) to receive instant notifications when clients post jobs or talents accept claims, even when closed.'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
             {isPushSubscribed ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs gap-1.5 border-border/60"
-                onClick={sendPushTest}
-              >
-                <Volume2 className="w-3.5 h-3.5 text-primary" />
-                Test Alert
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 border-border/60"
+                  onClick={async () => {
+                    await sendPushTest();
+                    toast({ title: 'Test Alert Sent', description: 'Alert delivered to your device screen!' });
+                  }}
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-primary" />
+                  Test Alert
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  onClick={async () => {
+                    const ok = await disablePush();
+                    if (ok) {
+                      toast({ title: 'Device Alerts Disabled', description: 'You will no longer receive alerts on this device.' });
+                    }
+                  }}
+                  disabled={pushLoading}
+                >
+                  Turn Off
+                </Button>
+              </>
             ) : (
               <Button
                 size="sm"
                 className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground font-semibold shadow-xs"
-                onClick={enablePush}
+                onClick={async () => {
+                  const ok = await enablePush();
+                  if (ok) {
+                    toast({ title: 'Device Alerts Enabled', description: `Alerts now active on this device for ${adminDisplayName}.` });
+                  } else if (pushPermission === 'denied') {
+                    toast({ title: 'Permission Blocked', description: 'Please allow notification permissions in your browser address bar.', variant: 'destructive' });
+                  }
+                }}
                 disabled={pushLoading || !pushSupported || pushPermission === 'denied'}
               >
                 <BellRing className="w-3.5 h-3.5" />
-                {pushLoading ? 'Activating...' : 'Turn On Admin Alerts'}
+                {pushLoading ? 'Activating...' : 'Turn On on This Device'}
               </Button>
             )}
           </div>
