@@ -4,6 +4,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function () {
+      function isExtensionNoise(msg, stack, filename) {
+        var combined = String(msg || '') + ' ' + String(stack || '') + ' ' + String(filename || '');
+        return (
+          combined.indexOf('chrome-extension://') !== -1 ||
+          combined.indexOf('moz-extension://') !== -1 ||
+          combined.indexOf('safari-extension://') !== -1 ||
+          combined.indexOf('Failed to connect to MetaMask') !== -1 ||
+          combined.indexOf('MetaMask') !== -1 ||
+          combined.indexOf('inpage.js') !== -1
+        );
+      }
+      window.addEventListener(
+        'error',
+        function (event) {
+          var err = event && event.error;
+          if (
+            isExtensionNoise(
+              event && event.message,
+              err && err.stack,
+              event && event.filename
+            )
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return false;
+          }
+        },
+        true
+      );
+      window.addEventListener(
+        'unhandledrejection',
+        function (event) {
+          var reason = event && event.reason;
+          var msg = reason && (reason.message || String(reason));
+          var stack = reason && reason.stack;
+          if (isExtensionNoise(msg, stack, '')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return false;
+          }
+        },
+        true
+      );
+    })();
+  </script>
   <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png?v=20260915">
   <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260915">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">

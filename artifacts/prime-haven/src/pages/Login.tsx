@@ -270,8 +270,8 @@ const Login = () => {
                 </label>
                 <input
                   id="email"
-                  type="email"
-                  autoComplete="email"
+                  type="text"
+                  autoComplete="username"
                   placeholder="name@talent.gh"
                   {...register('email')}
                   className={`w-full bg-transparent border-b-2 px-0 py-3 focus:outline-none focus:border-primary transition-colors placeholder:text-foreground/20 font-body ${

@@ -55,16 +55,19 @@ const AdminSignInForm = () => {
         }
       }
 
+      const isInvalidObjectResponse = !response || typeof response !== 'object';
       const isEdgeFunctionUnavailable =
-        Boolean(error) &&
-        (!response ||
-          response.error === 'origin_not_allowed' ||
-          response.code === 'NOT_FOUND' ||
-          response.message === 'Requested function was not found');
+        isInvalidObjectResponse ||
+        (Boolean(error) &&
+          (response.error === 'origin_not_allowed' ||
+            response.code === 'NOT_FOUND' ||
+            response.message === 'Requested function was not found'));
 
       if (isEdgeFunctionUnavailable) {
+        const rawUser = data.username.trim().toLowerCase();
+        const loginEmail = rawUser.includes('@') ? rawUser : `${rawUser}@ph`;
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: data.username.trim(),
+          email: loginEmail,
           password: data.password,
         });
 
@@ -117,13 +120,20 @@ const AdminSignInForm = () => {
       });
 
       if (response.session) {
+        let navigated = false;
+        const finishLogin = () => {
+          if (navigated) return;
+          navigated = true;
+          toast({ title: 'Access Granted', description: `Welcome back, ${response.user?.name || 'Admin'}!` });
+          navigate('/superadmin', { replace: true });
+        };
+
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session) {
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
             subscription.unsubscribe();
-            toast({ title: 'Access Granted', description: `Welcome back, ${response.user?.name || 'Admin'}!` });
-            navigate('/superadmin', { replace: true });
+            finishLogin();
           }
         });
 
@@ -131,6 +141,8 @@ const AdminSignInForm = () => {
           access_token: response.session.access_token,
           refresh_token: response.session.refresh_token,
         });
+        subscription.unsubscribe();
+        finishLogin();
       }
     } catch {
       toast({

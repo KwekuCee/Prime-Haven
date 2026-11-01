@@ -5,7 +5,23 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/migrate-auth",
+      "destination": "/api/migrate-auth"
+    },
+    {
+      "source": "/functions/v1/:path*",
+      "destination": "/api/functions/:path*"
+    },
+    {
+      "source": "/rest/v1/rpc/admin_client_accept_submission",
+      "destination": "/api/backend?__route=/rest/v1/rpc/admin_client_accept_submission"
+    },
+    {
+      "source": "/rest/v1/rpc/approve_project_submission",
+      "destination": "/api/backend?__route=/rest/v1/rpc/approve_project_submission"
+    },
+    {
+      "source": "/((?!api/|functions/v1/|rest/v1/rpc/).*)",
       "destination": "/index.html"
     }
   ]

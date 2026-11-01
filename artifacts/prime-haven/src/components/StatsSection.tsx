@@ -275,20 +275,41 @@ const StatsSection = () => {
     const fetchStats = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('public-stats');
-        if (!error && data?.success && data?.stats) {
+        if (!error && data?.success && data?.stats && (data.stats.totalSubmissions > 0 || data.stats.projectsDelivered > 0)) {
           setStats({
             totalMembers: Math.max(data.stats.totalMembers, 1),
             projectsDelivered: Math.max(data.stats.projectsDelivered, 0),
             satisfactionRate: data.stats.satisfactionRate,
             totalSubmissions: Math.max(data.stats.totalSubmissions, 0),
             categoryBreakdown: data.stats.categoryBreakdown || {},
-            roleBreakdown: data.stats.roleBreakdown || {},
+            roleBreakdown: data.stats.roleBreakdown || (data.stats.designerCount ? { designer: data.stats.designerCount } : {}),
           });
           setIsLive(true);
           return;
         }
       } catch {
-        // Fall through to direct database queries when Edge Function is not deployed
+        // Fall through to backup public-stats fetch or direct database queries
+      }
+
+      try {
+        const backupRes = await fetch('https://kbxijzsrywcwnyvtbruh.supabase.co/functions/v1/public-stats');
+        if (backupRes.ok) {
+          const backupData = await backupRes.json();
+          if (backupData?.success && backupData?.stats && backupData.stats.totalSubmissions > 0) {
+            setStats({
+              totalMembers: Math.max(backupData.stats.totalMembers, 1),
+              projectsDelivered: Math.max(backupData.stats.projectsDelivered, 0),
+              satisfactionRate: backupData.stats.satisfactionRate,
+              totalSubmissions: Math.max(backupData.stats.totalSubmissions, 0),
+              categoryBreakdown: backupData.stats.categoryBreakdown || {},
+              roleBreakdown: backupData.stats.roleBreakdown || (backupData.stats.designerCount ? { designer: backupData.stats.designerCount } : {}),
+            });
+            setIsLive(true);
+            return;
+          }
+        }
+      } catch {
+        // Fall through to direct database queries
       }
 
       try {
