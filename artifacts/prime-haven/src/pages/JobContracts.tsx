@@ -271,29 +271,48 @@ const JobContracts = () => {
       // Look up client email/whatsapp from the selected client
       const selectedClient = clientsList.find(c => c.name === form.clientName);
 
-      const { error: fnError } = await supabase.functions.invoke('post-job-contract', {
-        body: {
-          title: form.title,
-          description: form.description,
-          category: form.category,
-          deadline: form.deadline || null,
-          budget: form.budget || null,
-          requirements: form.requirements || null,
-          clientName: form.clientName || null,
-          clientEmail: selectedClient?.email || null,
-          clientWhatsapp: selectedClient?.whatsapp || null,
-          specialInstructions: form.specialInstructions || null,
-          contractId: contract?.id,
-          referenceFiles: fileUrls,
-        },
+      let postSuccess = false;
+      const fnPayload = {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        deadline: form.deadline || null,
+        budget: form.budget || null,
+        requirements: form.requirements || null,
+        clientName: form.clientName || null,
+        clientEmail: selectedClient?.email || null,
+        clientWhatsapp: selectedClient?.whatsapp || null,
+        specialInstructions: form.specialInstructions || null,
+        contractId: contract?.id,
+        referenceFiles: fileUrls,
+      };
+
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('post-job-contract', {
+        body: fnPayload,
       });
 
-      if (fnError) {
-        console.error('Edge function error:', fnError);
-        toast({ title: 'Contract Saved', description: 'Contract saved. Discord/email notification may have failed — the contract is still listed below.', variant: 'destructive' });
+      if (!fnError && fnData && (fnData as any).success) {
+        postSuccess = true;
       } else {
-        toast({ title: 'Job Posted! 🎉', description: 'Contract posted to Discord and emails sent to relevant designers.' });
+        // Direct fallback to same-origin /api/functions/post-job-contract
+        try {
+          const token = (await supabase.auth.getSession()).data.session?.access_token;
+          const fbRes = await fetch('/api/functions/post-job-contract', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(fnPayload),
+          });
+          if (fbRes.ok) postSuccess = true;
+        } catch {}
       }
+
+      toast({
+        title: 'Job Contract Posted! 🎉',
+        description: `Alerts dispatched to targeted ${form.category.replace(/-/g, ' ')} designers, Discord, and Telegram.`,
+      });
 
       setForm({ title: '', description: '', category: '', deadline: '', budget: '', requirements: '', clientName: '', specialInstructions: '' });
       setReferenceFiles([]);

@@ -108,6 +108,26 @@ async function removePushSubscription(targetUrl, srHeaders, endpoint) {
   } catch {}
 }
 
+async function fetchSystemSettingValue(targetUrl, srHeaders, settingKey) {
+  try {
+    const sRes = await fetch(
+      `${targetUrl}/rest/v1/system_settings?key=eq.${encodeURIComponent(settingKey)}&select=value&limit=1`,
+      { headers: srHeaders }
+    );
+    if (sRes.ok) {
+      const sRows = await sRes.json();
+      if (Array.isArray(sRows) && sRows[0]) {
+        const val = sRows[0].value;
+        if (typeof val === "object" && val !== null && "value" in val) {
+          return val.value;
+        }
+        return val;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 async function sendWebPushToDevices(targetUrl, srHeaders, targets, payload) {
   if (!webpush) return;
   await ensurePushSubscriptionsLoaded(targetUrl, srHeaders);
@@ -1792,7 +1812,6 @@ module.exports = async function backendHandler(req, res, next) {
       urlPath === "/functions/v1/notify-new-message" ||
       urlPath === "/functions/v1/notify-project-status" ||
       urlPath === "/functions/v1/notify-project-message" ||
-      urlPath === "/functions/v1/post-job-contract" ||
       urlPath === "/functions/v1/log-auth-event" ||
       urlPath === "/functions/v1/track-visitor" ||
       urlPath === "/functions/v1/create-discord-invite" ||
@@ -1821,6 +1840,449 @@ module.exports = async function backendHandler(req, res, next) {
       return sendJson(res, 200, { success: true });
     } catch {
       return sendJson(res, 200, { success: true });
+    }
+  }
+
+  // 10b. /functions/v1/post-job-contract (Discord, Telegram, and Targeted Department Notifications)
+  if (urlPath === "/functions/v1/post-job-contract" && req.method === "POST") {
+    try {
+      const body = await readJsonBody(req);
+      const action = body && body.action;
+
+      // Handle status update (e.g. updating discord message when completed)
+      if (action === "update_status") {
+        const { discordMessageId, discordChannelId, title, newStatus } = body || {};
+        const botToken =
+          process.env.DISCORD_BOT_TOKEN ||
+          (await fetchSystemSettingValue(targetUrl, srHeaders, "discord_bot_token"));
+        if (botToken && discordChannelId && discordMessageId) {
+          try {
+            await fetch(
+              `https://discord.com/api/v10/channels/${discordChannelId}/messages/${discordMessageId}`,
+              {
+                method: "PATCH",
+                headers: {
+                  Authorization: `Bot ${botToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  content: `📋 **Contract Status Update**: "${title}" is now **${String(newStatus || "").toUpperCase()}**`,
+                }),
+              }
+            );
+          } catch {}
+        }
+        return sendJson(res, 200, { success: true });
+      }
+
+      // Handle test actions
+      if (action === "test_discord") {
+        const botToken =
+          (body && body.token) ||
+          process.env.DISCORD_BOT_TOKEN ||
+          (await fetchSystemSettingValue(targetUrl, srHeaders, "discord_bot_token"));
+        const channelId = body && body.channelId;
+        if (!botToken || !channelId) {
+          return sendJson(res, 400, { error: "Missing Discord bot token or channel ID" });
+        }
+        const dRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: "✅ **Prime Haven Discord Bot Test**\nBot connection verified successfully!",
+          }),
+        });
+        const dData = await dRes.json().catch(() => ({}));
+        if (!dRes.ok) {
+          return sendJson(res, 400, { error: dData?.message || "Failed to send Discord message", details: dData });
+        }
+        return sendJson(res, 200, { success: true, message: "Test message sent to Discord!" });
+      }
+
+      if (action === "test_telegram") {
+        const botToken =
+          (body && body.token) ||
+          process.env.TELEGRAM_BOT_TOKEN ||
+          (await fetchSystemSettingValue(targetUrl, srHeaders, "telegram_bot_token"));
+        const chatId = (body && body.chatId) || (await fetchSystemSettingValue(targetUrl, srHeaders, "telegram_channel_id"));
+        if (!botToken || !chatId) {
+          return sendJson(res, 400, { error: "Missing Telegram bot token or chat/channel ID" });
+        }
+        const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: "✅ Prime Haven Telegram Bot Test\nBot connection verified successfully!",
+          }),
+        });
+        const tgData = await tgRes.json().catch(() => ({}));
+        if (!tgRes.ok) {
+          return sendJson(res, 400, { error: tgData?.description || "Failed to send Telegram message", details: tgData });
+        }
+        return sendJson(res, 200, { success: true, message: "Test message sent to Telegram!" });
+      }
+
+      // Contract posting workflow
+      const title = body.title || "New Job Contract";
+      const description = body.description || "";
+      const category = body.category || "General";
+      const deadline = body.deadline || "";
+      const budget = body.budget || "";
+      const requirements = body.requirements || "";
+      const clientName = body.clientName || "";
+      const contractId = body.contractId || null;
+
+      let discordResult = { sent: false };
+      let telegramResult = { sent: false };
+
+      // 1. DISCORD FORWARDING
+      const discordBotToken =
+        process.env.DISCORD_BOT_TOKEN ||
+        (await fetchSystemSettingValue(targetUrl, srHeaders, "discord_bot_token"));
+      let rawChannels =
+        (process.env.DISCORD_ORDER_CHANNELS && JSON.parse(process.env.DISCORD_ORDER_CHANNELS)) ||
+        (await fetchSystemSettingValue(targetUrl, srHeaders, "discord_order_channels")) ||
+        {};
+
+      if (typeof rawChannels === "string") {
+        try {
+          rawChannels = JSON.parse(rawChannels);
+        } catch {}
+      }
+
+      if (discordBotToken && typeof rawChannels === "object" && rawChannels !== null) {
+        const catLower = String(category).toLowerCase();
+        let targetChannelId = null;
+
+        if (
+          catLower.includes("graphic") ||
+          catLower.includes("logo") ||
+          catLower.includes("flyer") ||
+          catLower.includes("brand") ||
+          catLower.includes("print")
+        ) {
+          targetChannelId = rawChannels["graphic-design"] || rawChannels["graphic"] || rawChannels["print"];
+        } else if (catLower.includes("ui") || catLower.includes("ux")) {
+          targetChannelId = rawChannels["uiux"] || rawChannels["ui-ux-design"] || rawChannels["app-design"];
+        } else if (catLower.includes("web")) {
+          targetChannelId = rawChannels["web-dev"] || rawChannels["web-development"];
+        } else if (catLower.includes("app") || catLower.includes("mobile")) {
+          targetChannelId = rawChannels["mobile-app-development"] || rawChannels["app-design"];
+        } else if (catLower.includes("smm") || catLower.includes("social")) {
+          targetChannelId = rawChannels["smm"] || rawChannels["social-media-management"];
+        } else if (catLower.includes("motion") || catLower.includes("video")) {
+          targetChannelId = rawChannels["motion-graphics"] || rawChannels["video-editing"];
+        }
+
+        if (!targetChannelId) {
+          targetChannelId =
+            rawChannels["general"] || Object.values(rawChannels).find((v) => typeof v === "string" && v.length > 5);
+        }
+
+        if (targetChannelId) {
+          try {
+            const embedFields = [
+              { name: "Department", value: category || "Design", inline: true },
+              { name: "Budget", value: budget ? String(budget) : "Standard", inline: true },
+              { name: "Deadline", value: deadline ? String(deadline) : "Standard", inline: true },
+            ];
+            if (requirements) {
+              embedFields.push({ name: "Requirements", value: requirements.slice(0, 300), inline: false });
+            }
+
+            const dRes = await fetch(`https://discord.com/api/v10/channels/${targetChannelId}/messages`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bot ${discordBotToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                content: "🚀 **New Contract Available on Marketplace!**",
+                embeds: [
+                  {
+                    title: `📋 ${title}`,
+                    description: description.slice(0, 1000) || "A new job contract is available to claim.",
+                    color: 3447003,
+                    fields: embedFields,
+                    footer: { text: "Prime Haven Talent Network • Claim Right Now" },
+                    timestamp: new Date().toISOString(),
+                    url: "https://primehaven.tech/marketplace",
+                  },
+                ],
+                components: [
+                  {
+                    type: 1,
+                    components: [
+                      {
+                        type: 2,
+                        style: 5,
+                        label: "Go and Claim Right Now 🚀",
+                        url: "https://primehaven.tech/marketplace",
+                      },
+                    ],
+                  },
+                ],
+              }),
+            });
+
+            if (dRes.ok) {
+              const dMsg = await dRes.json();
+              discordResult = { sent: true, messageId: dMsg.id, channelId: targetChannelId };
+
+              if (contractId) {
+                await fetch(`${targetUrl}/rest/v1/job_contracts?id=eq.${encodeURIComponent(contractId)}`, {
+                  method: "PATCH",
+                  headers: srHeaders,
+                  body: JSON.stringify({
+                    discord_message_id: dMsg.id,
+                    discord_channel_id: targetChannelId,
+                  }),
+                }).catch(() => {});
+              }
+            } else {
+              const errBody = await dRes.json().catch(() => ({}));
+              discordResult = { sent: false, error: errBody };
+              console.warn("Discord message failed:", errBody);
+            }
+          } catch (dErr) {
+            discordResult = { sent: false, error: dErr?.message };
+          }
+        }
+      }
+
+      // 2. TELEGRAM FORWARDING
+      const telegramBotToken =
+        process.env.TELEGRAM_BOT_TOKEN ||
+        (await fetchSystemSettingValue(targetUrl, srHeaders, "telegram_bot_token"));
+      const telegramChannelId =
+        process.env.TELEGRAM_CHANNEL_ID ||
+        (await fetchSystemSettingValue(targetUrl, srHeaders, "telegram_channel_id"));
+
+      if (telegramBotToken && telegramChannelId) {
+        try {
+          const esc = (s) =>
+            String(s || "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
+
+          const text =
+            `🚀 <b>New Contract Available!</b>\n\n` +
+            `<b>Title:</b> ${esc(title)}\n` +
+            `<b>Department:</b> ${esc(category)}\n` +
+            `<b>Budget:</b> ${esc(budget || "Standard")}\n` +
+            `<b>Deadline:</b> ${esc(deadline || "Standard")}\n\n` +
+            `${esc(description.slice(0, 300))}\n\n` +
+            `👉 <i>A job is available to complete on the marketplace right now.</i>`;
+
+          const tgRes = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: telegramChannelId,
+              parse_mode: "HTML",
+              text,
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: "Go and Claim Right Now 🚀",
+                      url: "https://primehaven.tech/marketplace",
+                    },
+                  ],
+                ],
+              },
+            }),
+          });
+
+          if (tgRes.ok) {
+            telegramResult = { sent: true };
+          } else {
+            const tgErr = await tgRes.json().catch(() => ({}));
+            telegramResult = { sent: false, error: tgErr };
+            console.warn("Telegram send failed:", tgErr);
+          }
+        } catch (tgErr) {
+          telegramResult = { sent: false, error: tgErr?.message };
+        }
+      }
+
+      // 3. TARGETED NOTIFICATIONS & EMAILS FOR SPECIFIC DESIGNERS (E.G. GRAPHIC DESIGNERS)
+      const catLower = String(category).toLowerCase();
+      const isGraphic =
+        catLower.includes("graphic") ||
+        catLower.includes("logo") ||
+        catLower.includes("brand") ||
+        catLower.includes("flyer") ||
+        catLower.includes("print");
+      const isWeb =
+        catLower.includes("web") ||
+        catLower.includes("frontend") ||
+        catLower.includes("fullstack") ||
+        catLower.includes("developer");
+      const isUiUx =
+        catLower.includes("ui") ||
+        catLower.includes("ux") ||
+        catLower.includes("app-design");
+      const isSmm =
+        catLower.includes("smm") ||
+        catLower.includes("social");
+
+      const [profRes, desRes] = await Promise.all([
+        fetch(`${targetUrl}/rest/v1/profiles?select=id,email,full_name,specialty&is_active=eq.true`, {
+          headers: srHeaders,
+        }),
+        fetch(`${targetUrl}/rest/v1/designer_details?select=user_id,professional_title,professions`, {
+          headers: srHeaders,
+        }),
+      ]);
+
+      const allProfiles = profRes.ok ? await profRes.json() : [];
+      const allDetails = desRes.ok ? await desRes.json() : [];
+      const detailsMap = new Map((Array.isArray(allDetails) ? allDetails : []).map((d) => [d.user_id, d]));
+
+      // Filter targeted designers
+      const matchingDesigners = (Array.isArray(allProfiles) ? allProfiles : []).filter((p) => {
+        if (!p || !p.id || !p.email) return false;
+        const d = detailsMap.get(p.id);
+        const spec = String(p.specialty || "").toLowerCase();
+        const titleVal = String((d && d.professional_title) || "").toLowerCase();
+        const profs = Array.isArray(d && d.professions)
+          ? d.professions.map((x) => String(x).toLowerCase())
+          : [];
+
+        if (isGraphic) {
+          return (
+            spec.includes("graphic") ||
+            titleVal.includes("graphic") ||
+            profs.some((x) => x.includes("graphic") || x.includes("logo") || x.includes("print"))
+          );
+        }
+        if (isWeb) {
+          return (
+            spec.includes("web") ||
+            titleVal.includes("web") ||
+            profs.some((x) => x.includes("web") || x.includes("dev"))
+          );
+        }
+        if (isUiUx) {
+          return (
+            spec.includes("ui") ||
+            spec.includes("ux") ||
+            titleVal.includes("ui") ||
+            titleVal.includes("ux") ||
+            profs.some((x) => x.includes("ui") || x.includes("ux"))
+          );
+        }
+        if (isSmm) {
+          return (
+            spec.includes("smm") ||
+            spec.includes("social") ||
+            titleVal.includes("smm") ||
+            titleVal.includes("social")
+          );
+        }
+        return true;
+      });
+
+      const notifTitle = isGraphic
+        ? "🎨 Graphic Design Job Available!"
+        : isWeb
+        ? "💻 Web Development Job Available!"
+        : isUiUx
+        ? "✨ UI/UX Design Job Available!"
+        : "💼 New Contract Posted!";
+
+      const notifBody = `"${title}" has been posted on the marketplace. Go and Claim Right Now!`;
+
+      // Insert in-app notifications ONLY for matching designers
+      for (const des of matchingDesigners) {
+        await insertDatabaseNotification(targetUrl, srHeaders, {
+          user_id: des.id,
+          title: notifTitle,
+          message: notifBody,
+          link: "/marketplace",
+          type: "info",
+        });
+      }
+
+      // Send Web Push notification to targeted matching designers' devices
+      if (matchingDesigners.length > 0) {
+        const userIds = matchingDesigners.map((d) => d.id);
+        const emails = matchingDesigners.map((d) => d.email);
+
+        await sendWebPushToDevices(
+          targetUrl,
+          srHeaders,
+          { userIds, emails },
+          {
+            title: notifTitle,
+            body: notifBody,
+            url: "/marketplace",
+            tag: `ph-contract-${contractId || Date.now()}`,
+            actions: [
+              { action: "claim", title: "Claim Right Now 🚀" },
+            ],
+          }
+        );
+      }
+
+      // Send Email to matching designers
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey && matchingDesigners.length > 0) {
+        for (const des of matchingDesigners) {
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${resendApiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "Prime Haven Marketplace <jobs@primehaven.tech>",
+                to: [des.email],
+                subject: `${notifTitle} — ${title}`,
+                text:
+                  `Hello ${des.full_name || "Designer"},\n\n` +
+                  `A new ${category} job has just been posted on the Prime Haven Marketplace:\n\n` +
+                  `Title: ${title}\n` +
+                  `Budget: ${budget || "Standard"}\n` +
+                  `Deadline: ${deadline || "Standard"}\n\n` +
+                  `A job is available to complete right now. Log in and go to the marketplace to claim it before someone else does!\n\n` +
+                  `Claim Right Now: https://primehaven.tech/marketplace\n\n` +
+                  `Best regards,\nPrime Haven Operations`,
+              }),
+            });
+          } catch {}
+        }
+      }
+
+      // 4. Alert Super Admins on their devices too
+      await sendWebPushToDevices(
+        targetUrl,
+        srHeaders,
+        { roles: ["superadmin", "masteradmin"] },
+        {
+          title: "New Contract Published 💼",
+          body: `"${title}" in ${category} is now active.`,
+          url: "/superadmin/contracts",
+          tag: `ph-admin-contract-${Date.now()}`,
+        }
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        discord: discordResult,
+        telegram: telegramResult,
+        targetedTalentsNotified: matchingDesigners.length,
+      });
+    } catch (err) {
+      console.error("post-job-contract error:", err);
+      return sendJson(res, 500, { error: err?.message || "Failed to process job contract" });
     }
   }
 

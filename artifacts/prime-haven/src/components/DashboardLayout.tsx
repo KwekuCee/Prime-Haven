@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Upload, Wallet, Settings, LogOut, Menu, X, User,
-  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp, ShoppingBag, Activity
+  MessageSquare, Download, Shield, ChevronLeft, PlusCircle, CheckCircle, LifeBuoy, Users, Presentation, ArrowLeft, TrendingUp, ShoppingBag, Activity, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,51 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     loadProfile();
   }, [user]);
 
+  const effectiveIsClient = isClient || location.pathname.startsWith('/client');
+  const isAffiliateMode = location.pathname.startsWith('/affiliate');
+
+  const [latestContract, setLatestContract] = useState<{ id: string; title: string; category?: string; budget?: number } | null>(null);
+
+  useEffect(() => {
+    if (!user || effectiveIsClient) return;
+
+    const fetchLatestContract = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('job_contracts')
+          .select('id, title, category, budget, status, created_at')
+          .eq('status', 'open')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          setLatestContract(data[0] as any);
+        } else {
+          setLatestContract(null);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchLatestContract();
+
+    const channel = supabase
+      .channel('layout-job-contracts')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'job_contracts' },
+        () => {
+          fetchLatestContract();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, effectiveIsClient]);
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
@@ -69,9 +114,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
-
-  const effectiveIsClient = isClient || location.pathname.startsWith('/client');
-  const isAffiliateMode = location.pathname.startsWith('/affiliate');
 
   let navItems: { label: string; icon: typeof LayoutDashboard; path: string }[] = [];
   if (isAffiliateMode) {
@@ -205,6 +247,41 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             })}
           </nav>
 
+          {/* Mobile & Sidebar Unclaimed Job Prompt */}
+          {!collapsed && !effectiveIsClient && latestContract && (
+            <div className="mx-3 mb-2 p-3 rounded-xl bg-gradient-to-br from-amber-500/10 via-primary/10 to-indigo-500/10 border border-primary/25 shadow-sm">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    <p className="text-xs font-bold text-foreground">New Contract Available!</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                    {latestContract.title}
+                  </p>
+                  {latestContract.budget ? (
+                    <p className="text-[10px] font-semibold text-emerald-500 mt-0.5">
+                      Reward: GH₵{latestContract.budget}
+                    </p>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    className="w-full mt-2.5 h-7 text-[11px] font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      navigate('/marketplace');
+                    }}
+                  >
+                    Go and Claim Right Now 🚀
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className={`border-t border-sidebar-border ${collapsed ? 'p-2' : 'p-3'}`}>
             {isAdmin && !collapsed && (
@@ -309,6 +386,32 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
         {/* Page Content with Mobile Bottom Clearance */}
         <main className="flex-1 overflow-auto pb-24 lg:pb-0">
+          {/* Mobile Top Alert Banner for New Contracts */}
+          {!effectiveIsClient && latestContract && (
+            <div className="lg:hidden mx-3 mt-3 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-primary/15 to-purple-500/15 border border-primary/30 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate">
+                    New contract posted on marketplace!
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {latestContract.title} {latestContract.budget ? `• GH₵${latestContract.budget}` : ''}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="w-full sm:w-auto h-7 px-3 text-[11px] font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shrink-0"
+                onClick={() => navigate('/marketplace')}
+              >
+                Go and Claim Right Now 🚀
+              </Button>
+            </div>
+          )}
           {children}
         </main>
 

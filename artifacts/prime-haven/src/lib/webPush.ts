@@ -167,7 +167,7 @@ export async function subscribeUserToPush(opts?: {
       const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: appServerKey,
+        applicationServerKey: appServerKey as any,
       });
     }
 
@@ -283,11 +283,11 @@ export async function triggerLocalNotification(
     playNotificationSound();
   }
 
-  const notificationOptions: NotificationOptions = {
+  const notificationOptions: any = {
     body: options?.body || '',
     icon: options?.icon || '/logo-512.png',
     badge: options?.badge || '/favicon.png',
-    vibrate: options?.vibrate || [200, 100, 200],
+    vibrate: (options as any)?.vibrate || [200, 100, 200],
     tag: options?.tag || `ph-alert-${Date.now()}`,
     data: { url: options?.url || '/' },
     ...options,

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Save, Loader2, Settings as SettingsIcon, Coins, Percent, DollarSign,
-  MessageSquare, Eye, EyeOff, Code2, RefreshCw,
+  MessageSquare, Eye, EyeOff, Code2, RefreshCw, Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,6 +84,11 @@ const ManageSystemSettings = () => {
   const [botToken, setBotToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [channels, setChannels] = useState<Record<string, string>>({});
+  const [telegramBotToken, setTelegramBotToken] = useState('');
+  const [telegramChannelId, setTelegramChannelId] = useState('');
+  const [showTgToken, setShowTgToken] = useState(false);
+  const [testingDiscord, setTestingDiscord] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
   const [rawKey, setRawKey] = useState<string>('');
   const [rawValue, setRawValue] = useState<string>('');
 
@@ -110,6 +115,8 @@ const ManageSystemSettings = () => {
     });
     setNumbers(nextNumbers);
     setBotToken(readString(byKey.get('discord_bot_token'), ''));
+    setTelegramBotToken(readString(byKey.get('telegram_bot_token'), ''));
+    setTelegramChannelId(readString(byKey.get('telegram_channel_id'), ''));
 
     const rawChannels = byKey.get('discord_order_channels');
     const nextChannels: Record<string, string> = {};
@@ -165,6 +172,65 @@ const ManageSystemSettings = () => {
       if (trimmed) cleaned[k] = trimmed;
     });
     await persist('discord_order_channels', cleaned, 'Discord channel IDs for order notifications by category');
+  };
+
+  const handleTestDiscord = async () => {
+    setTestingDiscord(true);
+    try {
+      const firstChannel = channels['graphic-design'] || Object.values(channels).find((v) => v?.trim());
+      const res = await fetch('/api/functions/post-job-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_discord',
+          token: botToken.trim() || undefined,
+          channel_id: firstChannel ? firstChannel.trim() : undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data?.success) {
+        toast({ title: 'Discord Test Sent! 🚀', description: 'Check your Discord channel for the test message.' });
+      } else {
+        toast({
+          title: 'Discord Test Failed',
+          description: data?.error || data?.message || 'Check bot token & channel permissions.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error testing Discord', description: err?.message, variant: 'destructive' });
+    } finally {
+      setTestingDiscord(false);
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    setTestingTelegram(true);
+    try {
+      const res = await fetch('/api/functions/post-job-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_telegram',
+          token: telegramBotToken.trim() || undefined,
+          chat_id: telegramChannelId.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data?.success) {
+        toast({ title: 'Telegram Test Sent! 🚀', description: 'Check your Telegram channel for the test broadcast.' });
+      } else {
+        toast({
+          title: 'Telegram Test Failed',
+          description: data?.error || data?.message || 'Check bot token & channel chat ID permissions.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error testing Telegram', description: err?.message, variant: 'destructive' });
+    } finally {
+      setTestingTelegram(false);
+    }
   };
 
   const saveRaw = async () => {
@@ -330,12 +396,92 @@ const ManageSystemSettings = () => {
                 </div>
               ))}
             </div>
-            <Button onClick={saveChannels} disabled={saving === 'discord_order_channels'}>
-              {saving === 'discord_order_channels'
-                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                : <Save className="h-4 w-4 mr-2" />}
-              Save channel mapping
-            </Button>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Button onClick={saveChannels} disabled={saving === 'discord_order_channels'}>
+                {saving === 'discord_order_channels'
+                  ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  : <Save className="h-4 w-4 mr-2" />}
+                Save channel mapping
+              </Button>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={handleTestDiscord}
+                disabled={testingDiscord || !botToken.trim()}
+              >
+                {testingDiscord ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2 text-indigo-500" />}
+                Send Test Discord Alert
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Telegram Notifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Send className="h-5 w-5 text-sky-500" /> Telegram Channel Notifications
+            </CardTitle>
+            <CardDescription>Broadcast job contracts instantly to your Telegram channel or group.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="telegram_bot_token">Telegram Bot Token</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="telegram_bot_token"
+                  type={showTgToken ? 'text' : 'password'}
+                  value={telegramBotToken}
+                  onChange={(e) => setTelegramBotToken(e.target.value)}
+                  placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                />
+                <Button variant="outline" size="icon" aria-label="Toggle Telegram token visibility" onClick={() => setShowTgToken((s) => !s)} type="button">
+                  {showTgToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button
+                  onClick={() => persist('telegram_bot_token', telegramBotToken.trim(), 'Telegram bot token for posting order alerts')}
+                  disabled={saving === 'telegram_bot_token'}
+                >
+                  {saving === 'telegram_bot_token' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Get this from @BotFather on Telegram. Add your bot as an administrator to your channel with permission to post messages.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="telegram_channel_id">Telegram Channel / Group Chat ID</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="telegram_channel_id"
+                  value={telegramChannelId}
+                  onChange={(e) => setTelegramChannelId(e.target.value)}
+                  placeholder="e.g. @primehavenjobs or -1001234567890"
+                />
+                <Button
+                  onClick={() => persist('telegram_channel_id', telegramChannelId.trim(), 'Telegram channel ID for job broadcasts')}
+                  disabled={saving === 'telegram_channel_id'}
+                >
+                  {saving === 'telegram_channel_id' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                For public channels, use <span className="font-mono">@yourchannelusername</span>. For private channels/supergroups, use the numeric ID starting with <span className="font-mono">-100...</span>
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={handleTestTelegram}
+                disabled={testingTelegram || !telegramBotToken.trim() || !telegramChannelId.trim()}
+              >
+                {testingTelegram ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2 text-sky-500" />}
+                Send Test Telegram Alert
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
