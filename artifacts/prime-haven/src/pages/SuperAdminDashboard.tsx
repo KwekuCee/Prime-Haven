@@ -267,6 +267,7 @@ const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
+  const { supported: pushSupported, permission: pushPermission, isSubscribed: isPushSubscribed, loading: pushLoading, enableNotifications: enablePush, sendTestNotification: sendPushTest } = useDeviceNotifications();
   const [loading, setLoading] = useState(true);
   const [initialAuthCheck, setInitialAuthCheck] = useState(true);
   const [stats, setStats] = useState<AdminStats>({
@@ -1437,7 +1438,6 @@ const SuperAdminDashboard = () => {
   }
 
   const activeTab = searchParams.get('tab') || 'overview';
-  const { supported: pushSupported, permission: pushPermission, isSubscribed: isPushSubscribed, loading: pushLoading, enableNotifications: enablePush, sendTestNotification: sendPushTest } = useDeviceNotifications();
 
   return (
     <SuperAdminLayout onRefresh={loadDashboardDataSafe} loading={loading}>
