@@ -4,6 +4,7 @@ import { Upload, X, FileText, Image as ImageIcon, Archive, CheckCircle, Loader2,
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { uploadToStorage } from '@/lib/storageUpload';
 
 export interface UploadedFile {
   id: string;
@@ -63,15 +64,16 @@ const DropZoneUpload = ({
     }
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const path = `${user?.id || 'anon'}/${id}.${fileExt}`;
-      const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, {
-        contentType: file.type || 'application/octet-stream',
-        cacheControl: '3600',
+      const fileExt = file.name.split('.').pop() || 'bin';
+      const uploadResult = await uploadToStorage({
+        bucket,
+        file,
+        pathPrefix: user?.id || 'anon',
+        fileName: `${id}.${fileExt}`,
       });
-      if (upErr) throw upErr;
-      return { ...entry, uploading: false, url: path };
+      return { ...entry, uploading: false, url: uploadResult.path };
     } catch (err: any) {
+      console.error('DropZoneUpload error:', err);
       return { ...entry, uploading: false, error: err.message || 'Upload failed' };
     }
   }, [user, bucket, maxSizeMB]);

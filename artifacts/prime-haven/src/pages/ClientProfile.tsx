@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
+import { uploadToStorage } from '@/lib/storageUpload';
 
 const ClientProfile = () => {
     const { user } = useAuth();
@@ -68,10 +69,14 @@ const ClientProfile = () => {
         if (!file || !user) return;
         setUploadingPhoto(true);
         try {
-            const fileName = `clients/${user.id}/profile.${file.name.split('.').pop()}`;
-            const { error } = await supabase.storage.from('profile-pictures').upload(fileName, file, { upsert: true });
-            if (error) throw error;
-            const { data: { publicUrl } } = supabase.storage.from('profile-pictures').getPublicUrl(fileName);
+            const ext = file.name.split('.').pop() || 'png';
+            const uploadResult = await uploadToStorage({
+                bucket: 'profile-pictures',
+                file,
+                pathPrefix: `clients/${user.id}`,
+                fileName: `profile.${ext}`,
+            });
+            const publicUrl = uploadResult.url;
             setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
             await supabase.from('clients').update({
                 profile_photo_url: publicUrl,

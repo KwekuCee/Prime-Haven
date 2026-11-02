@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 import { CORE_SERVICES, TALENT_ROLE_OPTIONS } from '@/lib/coreServices';
 import { resolveCheckoutAmount, formatGhs, getUsdToGhsRate } from '@/lib/currency';
+import { uploadToStorage } from '@/lib/storageUpload';
 
 const KORAPAY_PUBLIC_KEY = "pk_live_AAZBw2DtmnyrGHfDJmNqkE4dKhw9gKQHVbz8Gds5";
 /** Flat one-time fee (USD) to unlock an additional profession. */
@@ -120,10 +121,14 @@ const EditProfile = () => {
     if (file.size > 5 * 1024 * 1024) { toast({ title: "File too large (max 5MB)", variant: "destructive" }); return; }
     setUploadingPhoto(true);
     try {
-      const fileName = `${user.id}/profile.${file.name.split('.').pop()}`;
-      const { error } = await supabase.storage.from('profile-pictures').upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from('profile-pictures').getPublicUrl(fileName);
+      const ext = file.name.split('.').pop() || 'png';
+      const uploadResult = await uploadToStorage({
+        bucket: 'profile-pictures',
+        file,
+        pathPrefix: user.id,
+        fileName: `profile.${ext}`,
+      });
+      const publicUrl = uploadResult.url;
       setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
       await supabase.from('designer_details').update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() }).eq('user_id', user.id);
       toast({ title: "Photo uploaded!" });

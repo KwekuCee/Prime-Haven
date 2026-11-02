@@ -37,6 +37,22 @@
       "destination": "/api/backend?__route=/api/notify-event"
     },
     {
+      "source": "/api/storage-upload-sign",
+      "destination": "/api/backend?__route=/api/storage-upload-sign"
+    },
+    {
+      "source": "/api/storage-upload",
+      "destination": "/api/backend?__route=/api/storage-upload"
+    },
+    {
+      "source": "/api/storage/signed-upload",
+      "destination": "/api/backend?__route=/api/storage-upload-sign"
+    },
+    {
+      "source": "/api/storage/upload",
+      "destination": "/api/backend?__route=/api/storage-upload"
+    },
+    {
       "source": "/((?!api/|functions/v1/|rest/v1/rpc/).*)",
       "destination": "/index.html"
     }

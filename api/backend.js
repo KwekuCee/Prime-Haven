@@ -300,6 +300,10 @@ module.exports = async function backendHandler(req, res, next) {
     urlPath === "/api/push-subscriptions" ||
     urlPath === "/api/push-unsubscribe" ||
     urlPath === "/api/notify-event" ||
+    urlPath === "/api/storage/signed-upload" ||
+    urlPath === "/api/storage-upload-sign" ||
+    urlPath === "/api/storage/upload" ||
+    urlPath === "/api/storage-upload" ||
     urlPath.startsWith("/functions/v1/") ||
     urlPath === "/rest/v1/rpc/admin_client_accept_submission" ||
     urlPath === "/rest/v1/rpc/approve_project_submission";
@@ -371,6 +375,123 @@ module.exports = async function backendHandler(req, res, next) {
       return sendJson(res, 200, { success: true });
     } catch (err) {
       return sendJson(res, 500, { success: false, error: err?.message });
+    }
+  }
+
+  // Allowed storage buckets for signed URLs and uploads
+  const ALLOWED_STORAGE_BUCKETS = new Set([
+    "job-reference-files",
+    "submissions",
+    "profile-pictures",
+    "portfolio-images",
+    "blog-images",
+    "email-assets",
+    "team-photos",
+    "client-order-attachments",
+    "smm-media",
+    "applicant-files",
+  ]);
+
+  // Storage Signed Upload URL Generator
+  if (
+    (urlPath === "/api/storage/signed-upload" ||
+      urlPath === "/api/storage-upload-sign" ||
+      urlPath === "/functions/v1/storage-upload-sign") &&
+    req.method === "POST"
+  ) {
+    try {
+      const body = await readJsonBody(req);
+      const rawBucket = String((body && body.bucket) || "job-reference-files").trim();
+      const bucket = ALLOWED_STORAGE_BUCKETS.has(rawBucket) ? rawBucket : "job-reference-files";
+      const rawPath = String((body && body.path) || "").trim();
+      if (!rawPath) {
+        return sendJson(res, 400, { success: false, error: "path_required" });
+      }
+      const cleanPath = rawPath.replace(/^\/+/, "").replace(/\.\./g, "_");
+
+      const signRes = await fetch(
+        `${targetUrl}/storage/v1/object/upload/sign/${bucket}/${cleanPath}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceRoleKey}`,
+            apikey: serviceRoleKey,
+          },
+        }
+      );
+
+      if (!signRes.ok) {
+        const errText = await signRes.text();
+        return sendJson(res, signRes.status, {
+          success: false,
+          error: "sign_failed",
+          details: errText,
+        });
+      }
+
+      const signData = await signRes.json();
+      const urlStr = (signData && (signData.url || signData.signedUrl)) || "";
+      const tokenMatch = urlStr.match(/[?&]token=([^&]+)/);
+
+      return sendJson(res, 200, {
+        success: true,
+        bucket,
+        path: cleanPath,
+        signedUploadUrl: urlStr.startsWith("http") ? urlStr : `${targetUrl}/storage/v1${urlStr}`,
+        token: (signData && signData.token) || (tokenMatch ? tokenMatch[1] : ""),
+        publicUrl: `${targetUrl}/storage/v1/object/public/${bucket}/${cleanPath}`,
+      });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err?.message || "unexpected_error" });
+    }
+  }
+
+  // Direct Storage Upload (Server-side bypass)
+  if (
+    (urlPath === "/api/storage/upload" ||
+      urlPath === "/api/storage-upload" ||
+      urlPath === "/functions/v1/storage-upload") &&
+    req.method === "POST"
+  ) {
+    try {
+      const body = await readJsonBody(req);
+      const rawBucket = String((body && body.bucket) || "job-reference-files").trim();
+      const bucket = ALLOWED_STORAGE_BUCKETS.has(rawBucket) ? rawBucket : "job-reference-files";
+      const rawPath = String((body && body.path) || "").trim();
+      const base64Data = String((body && body.base64Data) || "");
+      const contentType = String((body && body.contentType) || "application/octet-stream");
+
+      if (!rawPath || !base64Data) {
+        return sendJson(res, 400, { success: false, error: "path_and_data_required" });
+      }
+
+      const cleanPath = rawPath.replace(/^\/+/, "").replace(/\.\./g, "_");
+      const buffer = Buffer.from(base64Data, "base64");
+
+      const upRes = await fetch(`${targetUrl}/storage/v1/object/${bucket}/${cleanPath}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+          "Content-Type": contentType,
+          "x-upsert": "true",
+        },
+        body: buffer,
+      });
+
+      if (!upRes.ok) {
+        const errText = await upRes.text();
+        return sendJson(res, upRes.status, { success: false, error: "upload_failed", details: errText });
+      }
+
+      return sendJson(res, 200, {
+        success: true,
+        bucket,
+        path: cleanPath,
+        publicUrl: `${targetUrl}/storage/v1/object/public/${bucket}/${cleanPath}`,
+      });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err?.message || "unexpected_error" });
     }
   }
 
@@ -1957,6 +2078,8 @@ module.exports = async function backendHandler(req, res, next) {
       const requirements = body.requirements || "";
       const clientName = body.clientName || "";
       const contractId = body.contractId || null;
+      const rawRefFiles = body.referenceFiles || body.reference_files || [];
+      const referenceFiles = Array.isArray(rawRefFiles) ? rawRefFiles.filter(Boolean) : [];
 
       let discordResult = { sent: false };
       let telegramResult = { sent: false };
@@ -2015,6 +2138,28 @@ module.exports = async function backendHandler(req, res, next) {
             if (requirements) {
               embedFields.push({ name: "Requirements", value: requirements.slice(0, 300), inline: false });
             }
+            if (referenceFiles.length > 0) {
+              embedFields.push({
+                name: "Reference Files / Attachments",
+                value: referenceFiles.slice(0, 5).map((u, i) => `[Attachment ${i + 1}](${u})`).join(" • "),
+                inline: false,
+              });
+            }
+
+            const embedObj = {
+              title: `📋 ${title}`,
+              description: description.slice(0, 1000) || "A new job contract is available to claim.",
+              color: 3447003,
+              fields: embedFields,
+              footer: { text: "Prime Haven Talent Network • Claim Right Now" },
+              timestamp: new Date().toISOString(),
+              url: "https://primehaven.tech/marketplace",
+            };
+
+            const firstImage = referenceFiles.find((u) => /\.(jpe?g|png|webp|gif)($|\?)/i.test(String(u)));
+            if (firstImage) {
+              embedObj.image = { url: firstImage };
+            }
 
             const dRes = await fetch(`https://discord.com/api/v10/channels/${targetChannelId}/messages`, {
               method: "POST",
@@ -2024,17 +2169,7 @@ module.exports = async function backendHandler(req, res, next) {
               },
               body: JSON.stringify({
                 content: "🚀 **New Contract Available on Marketplace!**",
-                embeds: [
-                  {
-                    title: `📋 ${title}`,
-                    description: description.slice(0, 1000) || "A new job contract is available to claim.",
-                    color: 3447003,
-                    fields: embedFields,
-                    footer: { text: "Prime Haven Talent Network • Claim Right Now" },
-                    timestamp: new Date().toISOString(),
-                    url: "https://primehaven.tech/marketplace",
-                  },
-                ],
+                embeds: [embedObj],
                 components: [
                   {
                     type: 1,
@@ -2092,14 +2227,21 @@ module.exports = async function backendHandler(req, res, next) {
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
 
-          const text =
+          let text =
             `🚀 <b>New Contract Available!</b>\n\n` +
             `<b>Title:</b> ${esc(title)}\n` +
             `<b>Department:</b> ${esc(category)}\n` +
             `<b>Budget:</b> ${esc(budget || "Standard")}\n` +
             `<b>Deadline:</b> ${esc(deadline || "Standard")}\n\n` +
-            `${esc(description.slice(0, 300))}\n\n` +
-            `👉 <i>A job is available to complete on the marketplace right now.</i>`;
+            `${esc(description.slice(0, 300))}\n\n`;
+
+          if (referenceFiles.length > 0) {
+            text += `📎 <b>Reference Attachments:</b>\n` +
+              referenceFiles.slice(0, 3).map((u, i) => `• <a href="${esc(u)}">Attached Reference ${i + 1}</a>`).join("\n") +
+              `\n\n`;
+          }
+
+          text += `👉 <i>A job is available to complete on the marketplace right now.</i>`;
 
           const tgRes = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
             method: "POST",

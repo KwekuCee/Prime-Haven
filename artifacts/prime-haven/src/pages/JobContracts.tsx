@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Plus, Send, Calendar, DollarSign, Users, FileText,
   ArrowLeft, Trash2, Clock, CheckCircle, XCircle, Upload, Image as ImageIcon,
-  Loader2, RefreshCw, UserPlus, FileSearch, Mail
+  Loader2, RefreshCw, UserPlus, FileSearch, Mail, ExternalLink, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import SuperAdminLayout from '@/components/admin/SuperAdminLayout';
 import { format } from 'date-fns';
 import { recalculateSalaries } from '@/lib/recalculateSalaries';
+import { uploadToStorage } from '@/lib/storageUpload';
 
 const JOB_CATEGORIES = [
   { id: 'graphic-design', label: 'Graphic Design' },
@@ -173,6 +174,8 @@ const JobContracts = () => {
     checkAccess();
   }, [user, authLoading, navigate, loadContracts, loadClients]);
 
+  const [viewContract, setViewContract] = useState<JobContract | null>(null);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || !user) return;
@@ -182,20 +185,19 @@ const JobContracts = () => {
       setReferenceFiles(prev => [...prev, entry]);
 
       try {
-        const ext = file.name.split('.').pop();
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from('job-reference-files').upload(path, file);
-        if (error) throw error;
+        const uploadResult = await uploadToStorage({
+          bucket: 'job-reference-files',
+          file,
+          userId: user.id,
+        });
 
-        const { data: signed } = await supabase.storage
-          .from('job-reference-files')
-          .createSignedUrl(path, 60 * 60 * 24 * 365);
-        const url = signed?.signedUrl ?? '';
+        const url = uploadResult.url;
         setReferenceFiles(prev => prev.map(f => f.file === file ? { ...f, uploading: false, url } : f));
+        toast({ title: 'Attachment Added! 📎', description: `${file.name} attached successfully.` });
       } catch (err: any) {
         console.error('Upload error:', err);
         setReferenceFiles(prev => prev.filter(f => f.file !== file));
-        toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+        toast({ title: 'Upload failed', description: err.message || 'Failed to upload photo', variant: 'destructive' });
       }
     }
     e.target.value = '';
@@ -675,6 +677,14 @@ const JobContracts = () => {
                           <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
+                              size="icon" aria-label="View contract details"
+                              title="View Contract Details & Attached Photos"
+                              onClick={() => setViewContract(c)}
+                            >
+                              <Eye className="w-4 h-4 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
                               size="icon" aria-label="View details"
                               title="View Related Submissions"
                               onClick={() => window.open(`/superadmin/qa-reviewer?contract=${encodeURIComponent(c.title)}`, '_blank')}
@@ -840,43 +850,68 @@ const JobContracts = () => {
 
             {/* Reference Files Upload */}
             <div>
-              <Label>Reference Files</Label>
-              <div className="mt-2 border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors">
+              <div className="flex items-center justify-between mb-1.5">
+                <Label className="text-xs font-semibold">Reference Photos & Attachments</Label>
+                <span className="text-[11px] text-muted-foreground">PNG, JPG, PDF, ZIP (Max 50MB)</span>
+              </div>
+              <div
+                className="mt-1 border-2 border-dashed border-border/80 rounded-xl p-5 text-center hover:border-primary/60 hover:bg-primary/5 transition-all cursor-pointer bg-muted/10 group"
+                onClick={() => document.getElementById('ref-file-upload')?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (e.dataTransfer.files) {
+                    handleFileUpload({ target: { files: e.dataTransfer.files, value: '' } } as any);
+                  }
+                }}
+              >
                 <input
                   id="ref-file-upload"
                   type="file"
                   multiple
-                  accept="image/*,.pdf"
+                  accept="image/*,.pdf,.zip,.rar,.svg,.webp"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <label htmlFor="ref-file-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                  <Upload className="w-6 h-6 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Click to upload reference images</span>
-                </label>
+                <div className="flex flex-col items-center gap-1.5 pointer-events-none">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Upload className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-xs font-semibold text-foreground">Click or drag & drop reference photos & files</span>
+                  <span className="text-[10px] text-muted-foreground">Attach client assets, moodboards, logos, or specifications</span>
+                </div>
               </div>
               {referenceFiles.length > 0 && (
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {referenceFiles.map((f, i) => (
-                    <div key={i} className="relative group rounded-lg overflow-hidden border border-border">
+                    <div key={i} className="relative group rounded-xl overflow-hidden border border-border/70 bg-card/60 shadow-xs">
                       {f.file.type.startsWith('image/') ? (
-                        <img src={URL.createObjectURL(f.file)} alt="" className="w-full h-20 object-cover" />
+                        <img src={URL.createObjectURL(f.file)} alt="" className="w-full h-24 object-cover" />
                       ) : (
-                        <div className="w-full h-20 flex items-center justify-center bg-muted">
-                          <FileText className="w-6 h-6 text-muted-foreground" />
+                        <div className="w-full h-24 flex flex-col items-center justify-center bg-muted/40 p-2 text-center">
+                          <FileText className="w-7 h-7 text-primary mb-1" />
+                          <span className="text-[10px] text-muted-foreground truncate w-full px-1">{f.file.name}</span>
                         </div>
                       )}
-                      {f.uploading && (
-                        <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                        </div>
-                      )}
+                      <div className="p-1.5 bg-background/80 backdrop-blur-xs border-t border-border/40 flex items-center justify-between">
+                        <span className="text-[10px] font-medium truncate max-w-[120px]">{f.file.name}</span>
+                        {f.uploading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        ) : (
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                        )}
+                      </div>
                       <button
                         type="button"
-                        onClick={() => removeReferenceFile(i)}
-                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeReferenceFile(i);
+                        }}
+                        className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md opacity-90 hover:opacity-100 transition-opacity"
+                        title="Remove file"
                       >
-                        <XCircle className="w-3 h-3" />
+                        <XCircle className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
@@ -1001,6 +1036,106 @@ const JobContracts = () => {
             >
               {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Push to Marketplace
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contract Details & Reference Files Inspection Dialog */}
+      <Dialog open={!!viewContract} onOpenChange={(open) => !open && setViewContract(null)}>
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              {viewContract && (
+                <Badge variant="outline" className="text-[10px] font-semibold">
+                  {getCategoryLabel(viewContract.category)}
+                </Badge>
+              )}
+              <Badge className="text-[10px] capitalize">
+                {viewContract?.status}
+              </Badge>
+            </div>
+            <DialogTitle className="text-lg font-bold">{viewContract?.title}</DialogTitle>
+            <DialogDescription className="text-xs">
+              Client: {viewContract?.client_name || 'Internal / Unspecified'} • Budget: {viewContract?.budget || 'Standard'} • Deadline: {viewContract?.deadline ? format(new Date(viewContract.deadline), 'dd MMM yyyy') : 'Open'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <div>
+              <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Description / Brief</Label>
+              <p className="mt-1 whitespace-pre-wrap rounded-lg bg-muted/20 border border-border/40 p-3 text-xs leading-relaxed text-foreground">
+                {viewContract?.description || 'No description provided.'}
+              </p>
+            </div>
+
+            {viewContract?.requirements && (
+              <div>
+                <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Requirements</Label>
+                <p className="mt-1 whitespace-pre-wrap rounded-lg bg-muted/20 border border-border/40 p-3 text-xs leading-relaxed text-foreground">
+                  {viewContract.requirements}
+                </p>
+              </div>
+            )}
+
+            {viewContract?.special_instructions && (
+              <div>
+                <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Special Instructions</Label>
+                <p className="mt-1 whitespace-pre-wrap rounded-lg bg-muted/20 border border-border/40 p-3 text-xs leading-relaxed text-foreground">
+                  {viewContract.special_instructions}
+                </p>
+              </div>
+            )}
+
+            {/* Attached Reference Photos & Files */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Attached Reference Files & Photos ({viewContract?.reference_files?.length || 0})
+                </Label>
+              </div>
+              {!viewContract?.reference_files || viewContract.reference_files.length === 0 ? (
+                <div className="p-4 rounded-xl border border-dashed border-border/60 bg-muted/10 text-center text-muted-foreground italic">
+                  No reference photos or documents were attached to this contract.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {viewContract.reference_files.map((fileUrl, idx) => {
+                    const isImg = /\.(jpe?g|png|webp|gif|svg)($|\?)/i.test(fileUrl);
+                    return (
+                      <div key={idx} className="group relative rounded-xl border border-border/60 overflow-hidden bg-card/60 flex flex-col justify-between shadow-xs">
+                        {isImg ? (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="block overflow-hidden h-28 bg-black/20">
+                            <img src={fileUrl} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          </a>
+                        ) : (
+                          <div className="h-28 flex flex-col items-center justify-center p-3 text-center bg-muted/30">
+                            <FileText className="w-8 h-8 text-primary mb-1" />
+                            <span className="text-[10px] text-muted-foreground truncate w-full">Asset #{idx + 1}</span>
+                          </div>
+                        )}
+                        <div className="p-2 border-t border-border/40 flex items-center justify-between bg-background/50">
+                          <span className="text-[10px] font-medium truncate max-w-[90px]">Asset #{idx + 1}</span>
+                          <a
+                            href={fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-semibold"
+                          >
+                            <ExternalLink className="w-3 h-3" /> View
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setViewContract(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

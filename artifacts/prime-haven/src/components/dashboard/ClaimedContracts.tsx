@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle2, XCircle, Loader2, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +19,8 @@ interface Claim {
         budget: string | null;
         deadline: string | null;
         status: string;
+        description?: string | null;
+        reference_files?: string[] | null;
     };
 }
 
@@ -43,7 +45,7 @@ const ClaimedContracts = () => {
                 .from('job_contract_claims')
                 .select(`
         id, status, claimed_at,
-        contract:job_contracts(id, title, category, budget, deadline, status)
+        contract:job_contracts(id, title, category, budget, deadline, status, description, reference_files)
       `)
                 .eq('designer_id', user.id)
                 .eq('status', 'active')
@@ -140,6 +142,22 @@ const ClaimedContracts = () => {
                                         </span>
                                     )}
                                 </div>
+                                {contract?.reference_files && contract.reference_files.length > 0 && (
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                        {contract.reference_files.map((rf, rfi) => (
+                                            <a
+                                                key={rfi}
+                                                href={rf}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline bg-primary/10 hover:bg-primary/20 rounded-md px-2 py-0.5 transition-colors"
+                                            >
+                                                <Paperclip className="w-2.5 h-2.5" />
+                                                Reference #{rfi + 1}
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
                                 {contract?.budget && (

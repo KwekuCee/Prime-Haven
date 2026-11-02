@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Calendar, DollarSign, Clock, ChevronRight } from 'lucide-react';
+import { Briefcase, Calendar, DollarSign, Clock, ChevronRight, FileText, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +43,7 @@ interface JobContract {
   status: string;
   created_at: string;
   active_designers_count?: number;
+  reference_files?: string[] | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -86,7 +87,7 @@ const AvailableJobs = () => {
 
         const { data, error } = await supabase
           .from('job_contracts')
-          .select('id, title, description, category, deadline, budget, client_name, status, created_at, active_designers_count, target_professions')
+          .select('id, title, description, category, deadline, budget, client_name, status, created_at, active_designers_count, target_professions, reference_files')
           .in('status', ['active', 'in_progress'])
           .order('created_at', { ascending: false });
         if (!error && data) {
@@ -186,7 +187,42 @@ const AvailableJobs = () => {
               <p className={`text-xs text-muted-foreground mb-3 ${expanded === job.id ? '' : 'line-clamp-2'}`}>
                 {job.description}
               </p>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              {expanded === job.id && job.reference_files && job.reference_files.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border/40 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                    <ImageIcon className="w-3.5 h-3.5 text-primary" />
+                    <span>Attached Reference Photos & Files ({job.reference_files.length})</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {job.reference_files.map((fileUrl, idx) => {
+                      const isImg = /\.(jpe?g|png|webp|gif|svg)($|\?)/i.test(fileUrl);
+                      return (
+                        <a
+                          key={idx}
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="group relative rounded-lg border border-border/60 overflow-hidden bg-background/50 hover:border-primary/50 transition-colors p-1.5 flex items-center gap-2"
+                        >
+                          {isImg ? (
+                            <img src={fileUrl} alt={`Reference ${idx + 1}`} className="w-8 h-8 rounded object-cover shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-muted/50 flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4 text-primary" />
+                            </div>
+                          )}
+                          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground truncate flex-1">
+                            Reference File #{idx + 1}
+                          </span>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0 mr-1" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-3">
                 {job.budget && (
                   <span className="flex items-center gap-1">
                     <DollarSign className="w-3 h-3 text-primary" />
