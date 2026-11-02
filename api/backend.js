@@ -771,18 +771,27 @@ module.exports = async function backendHandler(req, res, next) {
       let shouldAddEarningsToDesigner = false;
 
       if (v_talent_earned > 0) {
+        const cOrPId = (v_contract && v_contract.id) || v_sub.contract_id || (v_project && v_project.id) || v_sub.client_project_id;
         const existRes = await fetch(
-          `${targetUrl}/rest/v1/job_earnings?select=id&submission_id=eq.${encodeURIComponent(v_sub.id)}&limit=1`,
+          `${targetUrl}/rest/v1/job_earnings?select=id,submission_id,contract_id,project_id,amount&designer_id=eq.${encodeURIComponent(v_sub.designer_id)}`,
           { headers: srHeaders }
         );
         const existRows = existRes.ok ? await existRes.json() : [];
-        if (!Array.isArray(existRows) || existRows.length === 0) {
+        const existingEarning = Array.isArray(existRows)
+          ? existRows.find(
+              (r) =>
+                (r.submission_id && r.submission_id === v_sub.id) ||
+                (cOrPId && (r.contract_id === cOrPId || r.project_id === cOrPId))
+            )
+          : null;
+
+        if (!existingEarning) {
           const insEarnRes = await fetch(`${targetUrl}/rest/v1/job_earnings`, {
             method: "POST",
             headers: srHeaders,
             body: JSON.stringify({
               designer_id: v_sub.designer_id,
-              project_id: (v_project && v_project.id) || v_sub.client_project_id || null,
+              project_id: cOrPId || null,
               contract_id: (v_contract && v_contract.id) || v_sub.contract_id || null,
               submission_id: v_sub.id,
               job_price: v_parsed_price,
@@ -797,6 +806,19 @@ module.exports = async function backendHandler(req, res, next) {
           if (insEarnRes.ok) {
             shouldAddEarningsToDesigner = true;
           }
+        } else {
+          await fetch(`${targetUrl}/rest/v1/job_earnings?id=eq.${encodeURIComponent(existingEarning.id)}`, {
+            method: "PATCH",
+            headers: srHeaders,
+            body: JSON.stringify({
+              project_id: cOrPId || existingEarning.project_id,
+              contract_id: (v_contract && v_contract.id) || v_sub.contract_id || existingEarning.contract_id,
+              submission_id: v_sub.id || existingEarning.submission_id,
+              amount: v_talent_earned,
+              status: "available",
+              updated_at: nowIso,
+            }),
+          });
         }
       }
 

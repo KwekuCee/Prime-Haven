@@ -46,7 +46,7 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
     (supabase as any).from('designer_details').select('user_id, monthly_points, total_points, professional_title'),
     (supabase as any)
       .from('submissions')
-      .select('id, designer_id, project_name, service_type, client_ref, client_project_id, status, points_awarded, client_accepted, ph_approved, created_at'),
+      .select('id, designer_id, project_name, service_type, client_ref, client_project_id, contract_id, status, points_awarded, client_accepted, ph_approved, created_at'),
     (supabase as any).from('job_contracts').select('id, budget, title, category, status'),
     (supabase as any).from('job_contract_claims').select('id, contract_id, designer_id, status'),
     (supabase as any).from('client_projects').select('id, price_ghs, budget, title, category, accepted_designer_id, status'),
@@ -91,6 +91,13 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
     const designerId = sub.designer_id;
     if (!designerId) return;
 
+    if (!creditedProjectsByDesigner[designerId]) {
+      creditedProjectsByDesigner[designerId] = new Set<string>();
+    }
+    if (contractEarningsByDesigner[designerId] === undefined) {
+      contractEarningsByDesigner[designerId] = 0;
+    }
+
     const isApproved =
       sub.client_accepted === true ||
       sub.ph_approved === true ||
@@ -99,13 +106,23 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
 
     let matchedBudget = 0;
     let matchedProjectId: string | null = null;
+    let matchedContractId: string | null = null;
+
+    // 0. Check direct contract_id
+    if (sub.contract_id && contractsMap.has(sub.contract_id)) {
+      const c = contractsMap.get(sub.contract_id);
+      matchedBudget = parseBudgetGhs(c.budget);
+      matchedProjectId = c.id;
+      matchedContractId = c.id;
+    }
 
     // 1. Check client_project_id
-    if (sub.client_project_id) {
+    if (matchedBudget <= 0 && sub.client_project_id) {
       if (contractsMap.has(sub.client_project_id)) {
         const c = contractsMap.get(sub.client_project_id);
         matchedBudget = parseBudgetGhs(c.budget);
         matchedProjectId = c.id;
+        matchedContractId = c.id;
       } else if (projectsMap.has(sub.client_project_id)) {
         const p = projectsMap.get(sub.client_project_id);
         matchedBudget = Number(p.price_ghs) || parseBudgetGhs(p.budget);
@@ -119,6 +136,7 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
         const c = contractsMap.get(sub.client_ref);
         matchedBudget = parseBudgetGhs(c.budget);
         matchedProjectId = c.id;
+        matchedContractId = c.id;
       } else if (ordersMap.has(sub.client_ref)) {
         const o = ordersMap.get(sub.client_ref);
         matchedBudget = Number(o.price) || 0;
@@ -146,14 +164,18 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
         if (c) {
           matchedBudget = parseBudgetGhs(c.budget);
           matchedProjectId = c.id;
+          matchedContractId = c.id;
         }
       }
     }
 
     // If a contract/project budget was matched, credit 70% to talent
     if (matchedBudget > 0) {
-      if (matchedProjectId && creditedProjectsByDesigner[designerId]) {
+      if (matchedProjectId) {
         creditedProjectsByDesigner[designerId].add(matchedProjectId);
+      }
+      if (matchedContractId) {
+        creditedProjectsByDesigner[designerId].add(matchedContractId);
       }
       const talentEarned = Math.round(matchedBudget * shareRatio * 100) / 100;
       contractEarningsByDesigner[designerId] = (contractEarningsByDesigner[designerId] || 0) + talentEarned;
@@ -162,6 +184,7 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
         designer_id: designerId,
         submission_id: sub.id,
         project_id: matchedProjectId,
+        contract_id: matchedContractId || (contractsMap.has(matchedProjectId || '') ? matchedProjectId : null),
         job_price: matchedBudget,
         share_percent: revenueSharePercent,
         amount: talentEarned,
@@ -188,11 +211,17 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
       }
     });
 
+    // Check if any submission was already filed or approved for this contract
+    const hasSubmission = allSubmissions.some((s) =>
+      (s.contract_id === c.id || s.client_project_id === c.id || s.client_ref === c.id) &&
+      (s.client_accepted || s.ph_approved || ['approved', 'completed', 'ph_approved', 'client_accepted'].includes(String(s.status || '').toLowerCase()))
+    );
+
     claimingTalents.forEach((designerId) => {
       if (!creditedProjectsByDesigner[designerId]) {
         creditedProjectsByDesigner[designerId] = new Set<string>();
       }
-      if (creditedProjectsByDesigner[designerId].has(c.id)) {
+      if (hasSubmission || creditedProjectsByDesigner[designerId].has(c.id)) {
         return; // Already credited through submission
       }
       creditedProjectsByDesigner[designerId].add(c.id);
@@ -204,6 +233,7 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
         designer_id: designerId,
         submission_id: null,
         project_id: c.id,
+        contract_id: c.id,
         job_price: contractBudget,
         share_percent: revenueSharePercent,
         amount: talentEarned,
@@ -223,7 +253,11 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
     if (!creditedProjectsByDesigner[designerId]) {
       creditedProjectsByDesigner[designerId] = new Set<string>();
     }
-    if (creditedProjectsByDesigner[designerId].has(p.id)) return;
+    const hasSubmission = allSubmissions.some((s) =>
+      (s.client_project_id === p.id || s.client_ref === p.id) &&
+      (s.client_accepted || s.ph_approved || ['approved', 'completed', 'ph_approved', 'client_accepted'].includes(String(s.status || '').toLowerCase()))
+    );
+    if (hasSubmission || creditedProjectsByDesigner[designerId].has(p.id)) return;
     creditedProjectsByDesigner[designerId].add(p.id);
 
     const talentEarned = Math.round(projBudget * shareRatio * 100) / 100;
@@ -233,6 +267,7 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
       designer_id: designerId,
       submission_id: null,
       project_id: p.id,
+      contract_id: null,
       job_price: projBudget,
       share_percent: revenueSharePercent,
       amount: talentEarned,
@@ -295,17 +330,20 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
   // Sync with job_earnings table if earnings were computed
   if (earningsToSync.length > 0) {
     try {
+      const { data: currentEarnings } = await (supabase as any)
+        .from('job_earnings')
+        .select('id, designer_id, submission_id, project_id, contract_id');
+      const allCurrent = (currentEarnings || []) as any[];
+
       for (const earning of earningsToSync) {
-        // Upsert by checking existing earning for this submission_id or project_id & designer_id
-        let existingQuery = (supabase as any).from('job_earnings').select('id');
-        if (earning.submission_id) {
-          existingQuery = existingQuery.eq('submission_id', earning.submission_id);
-        } else if (earning.project_id && earning.designer_id) {
-          existingQuery = existingQuery.eq('project_id', earning.project_id).eq('designer_id', earning.designer_id);
-        } else {
-          continue;
-        }
-        const { data: existing } = await existingQuery.maybeSingle();
+        // Find if this earning already exists by submission_id OR contract_id/project_id + designer_id
+        const existing = allCurrent.find((row) => {
+          if (row.designer_id !== earning.designer_id) return false;
+          if (earning.submission_id && row.submission_id && row.submission_id === earning.submission_id) return true;
+          if (earning.contract_id && (row.contract_id === earning.contract_id || row.project_id === earning.contract_id)) return true;
+          if (earning.project_id && (row.project_id === earning.project_id || row.contract_id === earning.project_id)) return true;
+          return false;
+        });
 
         if (existing?.id) {
           await (supabase as any)
@@ -315,14 +353,17 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
               status: earning.status,
               job_price: earning.job_price,
               share_percent: earning.share_percent,
+              contract_id: earning.contract_id || earning.project_id || existing.contract_id,
+              project_id: earning.project_id || earning.contract_id || existing.project_id,
               updated_at: nowIso,
             })
             .eq('id', existing.id);
         } else {
-          await (supabase as any).from('job_earnings').insert({
+          const { data: newRow } = await (supabase as any).from('job_earnings').insert({
             designer_id: earning.designer_id,
             submission_id: earning.submission_id,
-            project_id: earning.project_id,
+            project_id: earning.project_id || earning.contract_id,
+            contract_id: earning.contract_id || earning.project_id,
             job_price: earning.job_price,
             share_percent: earning.share_percent,
             amount: earning.amount,
@@ -330,7 +371,8 @@ export const recalculateSalaries = async (): Promise<RecalculateSalariesResult> 
             status: 'available',
             created_at: nowIso,
             updated_at: nowIso,
-          });
+          }).select('id, designer_id, submission_id, project_id, contract_id').maybeSingle();
+          if (newRow) allCurrent.push(newRow);
         }
       }
     } catch (syncErr) {

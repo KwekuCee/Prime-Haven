@@ -34,9 +34,10 @@ const Payments = () => {
       try {
         setLoading(true);
         const { data: designerData } = await supabase.from('designer_details').select('salary_estimated').eq('user_id', user.id).maybeSingle();
-        const [{ data: paymentsData }, { data: withdrawalsData }] = await Promise.all([
+        const [{ data: paymentsData }, { data: withdrawalsData }, { data: earningRows }] = await Promise.all([
           supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
           supabase.from('withdrawals').select('id, amount, status, created_at, currency').eq('user_id', user.id).order('created_at', { ascending: false }),
+          (supabase as any).from('job_earnings').select('amount, status, contract_id, project_id, submission_id').eq('designer_id', user.id).in('status', ['available', 'earned']),
         ]);
 
         const combined = [
@@ -48,10 +49,23 @@ const Payments = () => {
         const totalEarned = (paymentsData || [])
           .filter(p => (p.type === 'salary' || p.type === 'commission' || p.type === 'tip') && p.status === 'completed')
           .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        const seenKeys = new Set<string>();
+        const availableFromEarnings = ((earningRows || []) as any[]).reduce((sum: number, r: any) => {
+          const k = r.contract_id || r.project_id || r.submission_id;
+          if (k) {
+            if (seenKeys.has(k)) return sum;
+            seenKeys.add(k);
+          }
+          return sum + Number(r.amount || 0);
+        }, 0);
+
+        const nextPayment = Math.max(availableFromEarnings, Number(designerData?.salary_estimated || 0));
+
         setPaymentStats({
           totalEarned,
           pendingPayments: combined.filter((p: any) => p.status === 'pending').length,
-          nextPayment: designerData?.salary_estimated || 0,
+          nextPayment,
         });
       } catch { toast({ title: "Error loading payments", variant: "destructive" }); }
       finally { setLoading(false); }

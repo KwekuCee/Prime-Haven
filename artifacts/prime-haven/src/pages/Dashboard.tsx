@@ -348,25 +348,58 @@ const Dashboard = () => {
         }
         if (submissionsResult.data) setSubmissions(submissionsResult.data);
 
+        const [contractsRes, projectsRes] = await Promise.all([
+          (supabase as any).from('job_contracts').select('id, title'),
+          (supabase as any).from('client_projects').select('id, title')
+        ]);
+        const titleMap = new Map<string, string>();
+        (contractsRes?.data || []).forEach((c: any) => { if (c.id && c.title) titleMap.set(c.id, c.title); });
+        (projectsRes?.data || []).forEach((p: any) => { if (p.id && p.title) titleMap.set(p.id, p.title); });
+        (submissionsResult?.data || []).forEach((s: any) => {
+          if (s.id && s.project_name) titleMap.set(s.id, s.project_name);
+          if (s.contract_id && s.project_name) titleMap.set(s.contract_id, s.project_name);
+          if (s.client_project_id && s.project_name) titleMap.set(s.client_project_id, s.project_name);
+        });
+
         // Earnings: flat share of every completed job, released on client approval
         const share = await getRevenueSharePercent();
         setSharePercent(share);
         const { data: earningRows } = await (supabase as any)
           .from('job_earnings')
-          .select('id, project_id, submission_id, job_price, share_percent, amount, status, created_at')
+          .select('id, project_id, contract_id, submission_id, job_price, share_percent, amount, status, created_at')
           .eq('designer_id', user.id)
           .order('created_at', { ascending: false });
-        const mappedEarnings: JobEarning[] = ((earningRows || []) as any[]).map((r) => ({
-          id: r.id,
-          project_id: r.project_id,
-          submission_id: r.submission_id,
-          job_price: r.job_price,
-          share_percent: r.share_percent,
-          amount: r.amount,
-          status: r.status,
-          created_at: r.created_at,
-          project_title: null,
-        }));
+
+        // Deduplicate earnings by job identifier so no job is ever double-counted
+        const seenJobKeys = new Set<string>();
+        const mappedEarnings: JobEarning[] = [];
+
+        for (const r of ((earningRows || []) as any[])) {
+          const dedupeKey = r.contract_id || r.project_id || r.submission_id;
+          if (dedupeKey) {
+            if (seenJobKeys.has(dedupeKey)) continue; // Skip duplicate
+            seenJobKeys.add(dedupeKey);
+          }
+
+          const resolvedTitle =
+            (r.contract_id && titleMap.get(r.contract_id)) ||
+            (r.project_id && titleMap.get(r.project_id)) ||
+            (r.submission_id && titleMap.get(r.submission_id)) ||
+            'Project';
+
+          mappedEarnings.push({
+            id: r.id,
+            project_id: r.project_id,
+            submission_id: r.submission_id,
+            job_price: r.job_price,
+            share_percent: r.share_percent,
+            amount: r.amount,
+            status: r.status,
+            created_at: r.created_at,
+            project_title: resolvedTitle,
+          });
+        }
+
         setEarnings(mappedEarnings);
         const availableEarned = mappedEarnings
           .filter((e) => e.status === 'earned' || e.status === 'available')
