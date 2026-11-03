@@ -1857,6 +1857,97 @@ module.exports = async function backendHandler(req, res, next) {
     }
   }
 
+  // 7c. /functions/v1/set-user-password
+  if (urlPath === "/functions/v1/set-user-password" && req.method === "POST") {
+    try {
+      const { user, isAdmin } = await verifyCaller(req);
+      if (!user) return sendJson(res, 401, { error: "Unauthorized" });
+      if (!isAdmin) return sendJson(res, 403, { error: "Forbidden: Superadmin access required" });
+
+      const body = await readJsonBody(req);
+      const targetUserId = String((body && (body.userId || body.user_id)) || "").trim();
+      const newPassword = String((body && body.password) || "").trim();
+
+      if (!targetUserId || !newPassword) {
+        return sendJson(res, 400, { error: "Missing required field: userId or password" });
+      }
+
+      if (newPassword.length < 6) {
+        return sendJson(res, 400, { error: "Password must be at least 6 characters" });
+      }
+
+      const updRes = await fetch(`${targetUrl}/auth/v1/admin/users/${encodeURIComponent(targetUserId)}`, {
+        method: "PUT",
+        headers: srHeaders,
+        body: JSON.stringify({
+          password: newPassword,
+          email_confirm: true,
+        }),
+      });
+
+      if (!updRes.ok) {
+        const errText = await updRes.text();
+        return sendJson(res, updRes.status, { error: "Failed to update password", details: errText });
+      }
+
+      try {
+        await fetch(`${targetUrl}/rest/v1/system_logs`, {
+          method: "POST",
+          headers: srHeaders,
+          body: JSON.stringify({
+            action_type: "user_password_set",
+            admin_id: user.id,
+            description: `Password updated by admin for user ${targetUserId}`,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      } catch {}
+
+      return sendJson(res, 200, { success: true, message: "User password updated successfully." });
+    } catch (err) {
+      console.error("Set user password error:", err);
+      return sendJson(res, 500, { error: err?.message || "Failed to set user password" });
+    }
+  }
+
+  // 7d. /functions/v1/generate-login-link
+  if (urlPath === "/functions/v1/generate-login-link" && req.method === "POST") {
+    try {
+      const { user, isAdmin } = await verifyCaller(req);
+      if (!user) return sendJson(res, 401, { error: "Unauthorized" });
+      if (!isAdmin) return sendJson(res, 403, { error: "Forbidden: Superadmin access required" });
+
+      const body = await readJsonBody(req);
+      const email = String((body && body.email) || "").trim();
+
+      if (!email) {
+        return sendJson(res, 400, { error: "Missing required field: email" });
+      }
+
+      const genRes = await fetch(`${targetUrl}/auth/v1/admin/generate_link`, {
+        method: "POST",
+        headers: srHeaders,
+        body: JSON.stringify({
+          type: "magiclink",
+          email,
+        }),
+      });
+
+      if (!genRes.ok) {
+        const errText = await genRes.text();
+        return sendJson(res, genRes.status, { error: "Failed to generate link", details: errText });
+      }
+
+      const linkData = await genRes.json();
+      const actionLink = (linkData && linkData.properties && linkData.properties.action_link) || "";
+
+      return sendJson(res, 200, { success: true, actionLink, email });
+    } catch (err) {
+      console.error("Generate login link error:", err);
+      return sendJson(res, 500, { error: err?.message || "Failed to generate login link" });
+    }
+  }
+
   // 8. /functions/v1/send-client-email
   if (urlPath === "/functions/v1/send-client-email" && req.method === "POST") {
     try {

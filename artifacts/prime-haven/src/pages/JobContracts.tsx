@@ -244,9 +244,9 @@ const JobContracts = () => {
       const fileUrls = referenceFiles.filter(f => f.url).map(f => f.url!);
 
       const professionMap: Record<string, string[]> = {
-        'graphic-design': ['Graphic Designer'],
-        'app-design': ['UI/UX Designer'],
-        'web-dev': ['Web Developer'],
+        'graphic-design': ['Graphic Designer', 'Graphic Design', 'graphic-design'],
+        'app-design': ['UI/UX Designer', 'UI/UX Design', 'app-design'],
+        'web-dev': ['Web Developer', 'Web Development', 'web-dev'],
       };
 
       const { data: contract, error } = await supabase

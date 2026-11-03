@@ -36,7 +36,9 @@ import {
   Send as SendIcon,
   Smartphone,
   Volume2,
-  BellRing
+  BellRing,
+  KeyRound,
+  Link as LinkIcon
 } from 'lucide-react';
 import { useDeviceNotifications } from '@/hooks/useDeviceNotifications';
 import { Button } from '@/components/ui/button';
@@ -313,6 +315,10 @@ const SuperAdminDashboard = () => {
   const [viewFilesSubmission, setViewFilesSubmission] = useState<Submission | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [passwordUser, setPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
   const [rejectSubmission, setRejectSubmission] = useState<Submission | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [correctionRequestSubmission, setCorrectionRequestSubmission] = useState<Submission | null>(null);
@@ -1043,16 +1049,8 @@ const SuperAdminDashboard = () => {
       let resData: any = null;
       let deleteSuccess = false;
 
-      // 1. Try invoking delete-user via functions
-      const invokeResult = await supabase.functions.invoke('delete-user', {
-        body: { user_id: targetUser.id },
-      });
-
-      if (!invokeResult.error && invokeResult.data && !(invokeResult.data as any).error) {
-        deleteSuccess = true;
-        resData = invokeResult.data;
-      } else {
-        // 2. Direct fallback to /api/functions/delete-user
+      // 1. Direct call to server-side endpoint (/api/functions/delete-user)
+      try {
         const fallbackRes = await fetch('/api/functions/delete-user', {
           method: 'POST',
           headers: {
@@ -1062,11 +1060,32 @@ const SuperAdminDashboard = () => {
           body: JSON.stringify({ user_id: targetUser.id }),
         });
         resData = await fallbackRes.json().catch(() => ({}));
-        if (fallbackRes.ok && !resData.error) {
+        if (fallbackRes.ok && (resData?.success || !resData?.error)) {
           deleteSuccess = true;
-        } else {
-          throw new Error(resData?.error || resData?.message || invokeResult.error?.message || 'Could not delete this account.');
         }
+      } catch (e) {
+        console.warn('Direct delete API call error, trying functions.invoke...', e);
+      }
+
+      // 2. Fallback to supabase.functions.invoke if direct call did not succeed
+      if (!deleteSuccess) {
+        try {
+          const invokeResult = await supabase.functions.invoke('delete-user', {
+            body: { user_id: targetUser.id },
+          });
+          if (!invokeResult.error && invokeResult.data && !(invokeResult.data as any).error) {
+            deleteSuccess = true;
+            resData = invokeResult.data;
+          } else if (invokeResult.error) {
+            console.warn('Functions invoke error:', invokeResult.error);
+          }
+        } catch (invokeErr) {
+          console.warn('Functions invoke caught error:', invokeErr);
+        }
+      }
+
+      if (!deleteSuccess) {
+        throw new Error(resData?.error || resData?.message || 'Could not delete this account.');
       }
 
       toast({
@@ -1085,6 +1104,80 @@ const SuperAdminDashboard = () => {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Handle setting a user's password directly (Super Admin override)
+  const handleSetUserPassword = async () => {
+    if (!passwordUser || !newPassword.trim()) return;
+    if (newPassword.trim().length < 6) {
+      toast({ title: 'Invalid Password', description: 'Password must be at least 6 characters.', variant: 'destructive' });
+      return;
+    }
+    setIsSettingPassword(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('Session expired. Please sign in again.');
+
+      const res = await fetch('/api/functions/set-user-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: passwordUser.id, password: newPassword.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to update user password.');
+      }
+
+      toast({
+        title: 'Password Updated! 🔑',
+        description: `New password assigned to ${passwordUser.full_name || passwordUser.email}. They can now log in immediately.`,
+      });
+      setPasswordUser(null);
+      setNewPassword('');
+    } catch (err: any) {
+      console.error('Set password error:', err);
+      toast({ title: 'Update Failed', description: err.message || 'Could not update password.', variant: 'destructive' });
+    } finally {
+      setIsSettingPassword(false);
+    }
+  };
+
+  // Handle instant magic login link generation
+  const handleGenerateLoginLink = async (targetUser: User) => {
+    setIsGeneratingLink(targetUser.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('Session expired. Please sign in again.');
+
+      const res = await fetch('/api/functions/generate-login-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: targetUser.email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error || !data.actionLink) {
+        throw new Error(data.error || 'Failed to generate magic login link.');
+      }
+
+      await navigator.clipboard.writeText(data.actionLink);
+      toast({
+        title: 'Magic Login Link Copied! 🔗',
+        description: `Direct 1-click login link for ${targetUser.full_name || targetUser.email} copied to clipboard! Send this link to them directly.`,
+      });
+    } catch (err: any) {
+      console.error('Generate login link error:', err);
+      toast({ title: 'Link Generation Failed', description: err.message || 'Could not generate login link.', variant: 'destructive' });
+    } finally {
+      setIsGeneratingLink(null);
     }
   };
 
@@ -2074,12 +2167,14 @@ const SuperAdminDashboard = () => {
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground">{format(new Date(userItem.created_at), 'MMM d, yy')}</TableCell>
                               <TableCell className="text-right">
-                                <DropdownMenu>
+                                <DropdownMenu modal={false}>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Settings className="w-3.5 h-3.5" /></Button>
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="User actions">
+                                      <Settings className="w-3.5 h-3.5" />
+                                    </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-44">
-                                    <DropdownMenuLabel className="text-xs">Actions</DropdownMenuLabel>
+                                  <DropdownMenuContent align="end" className="w-52">
+                                    <DropdownMenuLabel className="text-xs">Account Actions</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     {userItem.is_active ? (
                                       <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'suspend')} className="text-xs">Suspend</DropdownMenuItem>
@@ -2087,18 +2182,31 @@ const SuperAdminDashboard = () => {
                                       <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'activate')} className="text-xs">Activate</DropdownMenuItem>
                                     )}
                                     {userItem.user_roles?.[0]?.role === 'designer' && (
-                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'promote')} className="text-xs">Promote</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'promote')} className="text-xs">Promote to Admin</DropdownMenuItem>
                                     )}
                                     {userItem.user_roles?.[0]?.role === 'superadmin' && (
-                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'demote')} className="text-xs">Demote</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleUserAction(userItem.id, 'demote')} className="text-xs">Demote from Admin</DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs"><Edit className="w-3 h-3 mr-2" />Edit</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs"><Award className="w-3 h-3 mr-2" />Gift Points</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs">
+                                      <Edit className="w-3 h-3 mr-2" />Edit Profile
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => { setPasswordUser(userItem); setNewPassword(''); }} className="text-xs font-medium text-primary">
+                                      <KeyRound className="w-3 h-3 mr-2" />Set Password
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleGenerateLoginLink(userItem)} className="text-xs" disabled={isGeneratingLink === userItem.id}>
+                                      <LinkIcon className="w-3 h-3 mr-2 text-emerald-500" />
+                                      {isGeneratingLink === userItem.id ? 'Generating...' : 'Copy Login Link'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs">
+                                      <Award className="w-3 h-3 mr-2" />Gift Points
+                                    </DropdownMenuItem>
                                     {userItem.id !== user?.id && (
                                       <>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive"><Trash2 className="w-3 h-3 mr-2" />Delete</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive">
+                                          <Trash2 className="w-3 h-3 mr-2" />Delete Account
+                                        </DropdownMenuItem>
                                       </>
                                     )}
                                   </DropdownMenuContent>
@@ -2131,17 +2239,32 @@ const SuperAdminDashboard = () => {
                                 <div className="text-[11px] text-muted-foreground truncate">{userItem.email}</div>
                               </div>
                             </div>
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0"><Settings className="w-3.5 h-3.5" /></Button>
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" aria-label="User actions">
+                                  <Settings className="w-3.5 h-3.5" />
+                                </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs"><Edit className="w-3 h-3 mr-2" />Edit</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs"><Award className="w-3 h-3 mr-2" />Gift Points</DropdownMenuItem>
+                              <DropdownMenuContent align="end" className="w-52">
+                                <DropdownMenuItem onClick={() => setEditUser(userItem)} className="text-xs">
+                                  <Edit className="w-3 h-3 mr-2" />Edit Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setPasswordUser(userItem); setNewPassword(''); }} className="text-xs font-medium text-primary">
+                                  <KeyRound className="w-3 h-3 mr-2" />Set Password
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleGenerateLoginLink(userItem)} className="text-xs" disabled={isGeneratingLink === userItem.id}>
+                                  <LinkIcon className="w-3 h-3 mr-2 text-emerald-500" />
+                                  {isGeneratingLink === userItem.id ? 'Generating...' : 'Copy Login Link'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setGiftPointsUser(userItem); setGiftPointsAmount(''); setGiftPointsReason(''); }} className="text-xs">
+                                  <Award className="w-3 h-3 mr-2" />Gift Points
+                                </DropdownMenuItem>
                                 {userItem.id !== user?.id && (
                                   <>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive"><Trash2 className="w-3 h-3 mr-2" />Delete</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setDeleteConfirmUser(userItem)} className="text-xs text-destructive">
+                                      <Trash2 className="w-3 h-3 mr-2" />Delete Account
+                                    </DropdownMenuItem>
                                   </>
                                 )}
                               </DropdownMenuContent>
@@ -2387,6 +2510,53 @@ const SuperAdminDashboard = () => {
       </Dialog>
 
       <EditUserDialog open={!!editUser} onOpenChange={(open: boolean) => !open && setEditUser(null)} user={editUser} currentAdminId={user?.id} onSaved={() => loadDashboardDataSafe()} />
+
+      {/* Set Password Dialog */}
+      <Dialog open={!!passwordUser} onOpenChange={(open: boolean) => { if (!open) { setPasswordUser(null); setNewPassword(''); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-primary" />
+              Set Password for Talent
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Directly assign a new login password for <strong>{passwordUser?.full_name || passwordUser?.email}</strong>. This updates their account immediately without requiring email verification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs font-semibold">New Password</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  type="text"
+                  placeholder="Enter new password (min. 6 characters)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-9 text-sm font-mono"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs shrink-0"
+                  onClick={() => {
+                    const rnd = 'Prime#' + Math.random().toString(36).slice(-6) + '!';
+                    setNewPassword(rnd);
+                  }}
+                >
+                  Generate
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => { setPasswordUser(null); setNewPassword(''); }}>Cancel</Button>
+            <Button size="sm" onClick={handleSetUserPassword} disabled={isSettingPassword || newPassword.trim().length < 6}>
+              {isSettingPassword ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />Saving...</> : <><Save className="w-3.5 h-3.5 mr-1.5" />Update Password</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Link Preview */}
       <Dialog open={!!previewLinkUrl} onOpenChange={(open: boolean) => !open && setPreviewLinkUrl(null)}>
